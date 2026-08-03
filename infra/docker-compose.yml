@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: fretcorridor
       POSTGRES_DB: fretcorridor
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -66,6 +66,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  service-geo:
+    build:
+      context: ../backend/service-geo
+    container_name: fretcorridor-service-geo
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres-data:

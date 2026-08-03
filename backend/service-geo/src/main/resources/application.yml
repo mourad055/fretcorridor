@@ -1,0 +1,25 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: service-geo
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    # Le schema est pilote par Flyway, jamais par Hibernate en auto (garde-fou anti-derive)
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
+  flyway:
+    enabled: true
+    schemas: geo
+    default-schema: geo
+
+logging:
+  level:
+    com.fretcorridor.geo: DEBUG
