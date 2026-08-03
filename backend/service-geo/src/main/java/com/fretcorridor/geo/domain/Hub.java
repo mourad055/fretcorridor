@@ -42,6 +42,13 @@ public class Hub {
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
     private Point position;
 
+    // Index H3 de la cellule hexagonale contenant ce hub (cf migration V3).
+    // Calcule une seule fois a la creation par ZonageH3Service (pas ici : l'entite
+    // n'a pas acces a la resolution configurable, qui vit en base) - jamais recalcule
+    // ensuite, un hub ne change pas de position une fois cree.
+    @Column(name = "h3_index", length = 20)
+    private String h3Index;
+
     // Renseigne automatiquement a la creation (cf @PrePersist ci-dessous), jamais par le client :
     // evite toute incoherence si un appelant envoie une date fantaisiste
     @Column(name = "date_creation", nullable = false, updatable = false)
@@ -51,12 +58,22 @@ public class Hub {
     protected Hub() {
     }
 
-    // Constructeur metier : c'est celui-ci que le controller utilise pour creer un Hub
+    // Constructeur metier historique (sans h3Index) - conserve pour compatibilite,
+    // mais deprecie : passer desormais par le constructeur avec h3Index pour que
+    // le zonage soit toujours renseigne des la creation.
+    @Deprecated
     public Hub(String nom, String ville, TypeHub typeHub, Point position) {
+        this(nom, ville, typeHub, position, null);
+    }
+
+    // Constructeur metier complet : c'est celui-ci que le controller utilise desormais,
+    // avec l'index H3 deja calcule en amont par ZonageH3Service.
+    public Hub(String nom, String ville, TypeHub typeHub, Point position, String h3Index) {
         this.nom = nom;
         this.ville = ville;
         this.typeHub = typeHub;
         this.position = position;
+        this.h3Index = h3Index;
     }
 
     // Hook JPA declenche juste avant l'INSERT : garantit que dateCreation est toujours
@@ -74,5 +91,6 @@ public class Hub {
     public String getVille() { return ville; }
     public TypeHub getTypeHub() { return typeHub; }
     public Point getPosition() { return position; }
+    public String getH3Index() { return h3Index; }
     public Instant getDateCreation() { return dateCreation; }
 }

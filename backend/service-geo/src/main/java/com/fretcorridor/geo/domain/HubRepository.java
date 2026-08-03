@@ -2,6 +2,7 @@ package com.fretcorridor.geo.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -10,6 +11,9 @@ import java.util.UUID;
  * de X km", futur besoin pour le filtrage L0 d'OPT) n'est necessaire.
  */
 public interface HubRepository extends JpaRepository<Hub, UUID> {
-    // A completer plus tard : requetes spatiales (ex. via @Query + fonctions PostGIS ST_DWithin)
-    // quand OPT aura besoin du filtrage geospatial reel, cf Sprint 5.
+
+    // Coeur du filtre L0 d'OPT : retrouver tous les hubs dont l'index H3 correspond
+    // a la cellule cherchee ou a l'une de ses voisines (k-ring calcule cote service,
+    // pas ici - ce repository ne fait que filtrer sur une liste d'index deja resolue).
+    List<Hub> findByH3IndexIn(List<String> indexH3);
 }

@@ -2,6 +2,7 @@ package com.fretcorridor.geo.web;
 
 import com.fretcorridor.geo.domain.Hub;
 import com.fretcorridor.geo.domain.HubRepository;
+import com.fretcorridor.geo.domain.ZonageH3Service;
 import com.fretcorridor.geo.web.dto.HubCreationRequest;
 import com.fretcorridor.geo.web.dto.HubResponse;
 import jakarta.validation.Valid;
@@ -10,7 +11,6 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -34,11 +34,15 @@ public class HubController {
     private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 
     private final HubRepository hubRepository;
+    // Calcule l'index H3 a la creation - jamais fait dans l'entite elle-meme,
+    // qui n'a pas acces a la resolution configurable stockee en base.
+    private final ZonageH3Service zonageH3Service;
 
     // Injection par constructeur (pas de @Autowired sur un champ) : rend les dependances
     // explicites et facilite les tests unitaires avec un mock
-    public HubController(HubRepository hubRepository) {
+    public HubController(HubRepository hubRepository, ZonageH3Service zonageH3Service) {
         this.hubRepository = hubRepository;
+        this.zonageH3Service = zonageH3Service;
     }
 
     // Liste complete des hubs. Pas de pagination pour l'instant (volume faible en Phase 1,
@@ -67,7 +71,12 @@ public class HubController {
         // Attention a l'ordre JTS : Coordinate(x, y) = Coordinate(longitude, latitude),
         // inverse de l'ordre naturel "latitude, longitude" - source classique d'erreur silencieuse
         Point position = GEOMETRY_FACTORY.createPoint(new Coordinate(request.longitude(), request.latitude()));
-        Hub hub = new Hub(request.nom(), request.ville(), request.typeHub(), position);
+
+        // Index H3 calcule une seule fois, ici, a la creation - jamais recalcule ensuite
+        // (un hub ne change pas de position une fois cree, cf commentaire sur le champ h3Index).
+        String h3Index = zonageH3Service.indexPourPoint(request.latitude(), request.longitude());
+
+        Hub hub = new Hub(request.nom(), request.ville(), request.typeHub(), position, h3Index);
         return HubResponse.from(hubRepository.save(hub));
     }
 }

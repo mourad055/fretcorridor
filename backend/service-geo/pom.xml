@@ -35,6 +35,13 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Uber H3 : zonage geospatial hexagonal, utilise pour le filtre L0 d'OPT -->
+        <dependency>
+            <groupId>com.uber</groupId>
+            <artifactId>h3</artifactId>
+            <version>4.1.1</version>
+        </dependency>
+
         <!-- PostgreSQL + PostGIS -->
         <dependency>
             <groupId>org.postgresql</groupId>

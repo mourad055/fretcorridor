@@ -19,6 +19,9 @@ public record HubResponse(
         TypeHub typeHub,
         double latitude,
         double longitude,
+        // Expose pour verification manuelle (curl/tests) et pour que Mobile/Web
+        // puissent eventuellement afficher/debugger le zonage sans requete separee.
+        String h3Index,
         Instant dateCreation
 ) {
     // Factory de conversion Hub -> HubResponse : centralise la logique de mapping
@@ -31,6 +34,7 @@ public record HubResponse(
                 hub.getTypeHub(),
                 hub.getPosition().getY(), // JTS : Y = latitude
                 hub.getPosition().getX(), // JTS : X = longitude (attention a l'ordre, source d'erreurs frequentes)
+                hub.getH3Index(),
                 hub.getDateCreation()
         );
     }
