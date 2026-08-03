@@ -8,12 +8,18 @@ import java.util.UUID;
 
 /**
  * Noeud du reseau geospatial : ville, plateforme ou point de consolidation.
- * cf CDC v4 §13 - Entite Hub. Relation n-n avec Axe.
+ * cf CDC v4 S13 - Entite Hub. Relation n-n avec Axe (a implementer dans un increment suivant).
+ *
+ * Cette entite appartient au schema "geo" (isolation par service, cf Plan d'execution S4.1) :
+ * aucun autre microservice n'a d'acces direct a cette table, tout passe par l'API REST
+ * (synchrone pour OPT/TRK, meme porteur) ou par evenement Kafka (autre porteur).
  */
 @Entity
 @Table(name = "hub", schema = "geo")
 public class Hub {
 
+    // UUID genere par la base (gen_random_uuid(), cf migration Flyway V1) plutot que par l'appli :
+    // evite toute collision entre plusieurs instances du service scale horizontalement
     @Id
     @GeneratedValue
     private UUID id;
@@ -24,21 +30,28 @@ public class Hub {
     @Column(nullable = false, length = 150)
     private String ville;
 
+    // Stocke en base comme VARCHAR (cf contrainte CHECK dans la migration SQL),
+    // mappe ici en enum cote Java pour la securite de type
     @Enumerated(EnumType.STRING)
     @Column(name = "type_hub", nullable = false, length = 30)
     private TypeHub typeHub;
 
-    // SRID 4326 (WGS84) - coherent avec les coordonnees GPS brutes captures par FLT
+    // SRID 4326 (WGS84) : coherent avec les coordonnees GPS brutes capturees par le module FLT
+    // (mobile), indispensable pour que TRK puisse comparer position vehicule et position hub
+    // sans conversion de referentiel
     @Column(nullable = false, columnDefinition = "geometry(Point,4326)")
     private Point position;
 
+    // Renseigne automatiquement a la creation (cf @PrePersist ci-dessous), jamais par le client :
+    // evite toute incoherence si un appelant envoie une date fantaisiste
     @Column(name = "date_creation", nullable = false, updatable = false)
     private Instant dateCreation;
 
+    // Constructeur vide requis par JPA (proxy, hydratation reflexive) - jamais utilise directement
     protected Hub() {
-        // requis par JPA
     }
 
+    // Constructeur metier : c'est celui-ci que le controller utilise pour creer un Hub
     public Hub(String nom, String ville, TypeHub typeHub, Point position) {
         this.nom = nom;
         this.ville = ville;
@@ -46,11 +59,16 @@ public class Hub {
         this.position = position;
     }
 
+    // Hook JPA declenche juste avant l'INSERT : garantit que dateCreation est toujours
+    // le timestamp serveur au moment de la persistance, jamais laisse a null ni falsifiable
     @PrePersist
     void onCreate() {
         this.dateCreation = Instant.now();
     }
 
+    // Getters uniquement : l'entite est immuable une fois creee (pas de setters).
+    // Toute evolution future (ex. desactivation d'un hub) devra passer par une methode
+    // metier explicite plutot qu'un setter generique.
     public UUID getId() { return id; }
     public String getNom() { return nom; }
     public String getVille() { return ville; }

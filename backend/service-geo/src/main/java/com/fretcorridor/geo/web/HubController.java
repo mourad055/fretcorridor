@@ -18,22 +18,31 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * API interne de consultation/gestion des hubs.
- * Consommee en synchrone par OPT/TRK (meme porteur) ; consommee via evenement Kafka
- * par les modules d'un autre porteur (ADM notamment) - a brancher dans un increment suivant.
+ * API interne de consultation/gestion des hubs (Sprint 3 - fondation geospatiale).
+ *
+ * Consommee en synchrone REST par OPT/TRK (meme porteur, moi - cf regle de communication
+ * du perimetre Moteur : appels directs justifies par le budget de latence L0 ~50ms).
+ * Consommee via evenement Kafka par tout module d'un autre porteur (Web/ADM notamment) -
+ * a brancher dans un increment suivant, jamais d'appel synchrone cross-porteur.
  */
 @RestController
 @RequestMapping("/api/geo/hubs")
 public class HubController {
 
+    // Reutilisable et thread-safe : une seule instance suffit pour tout le service,
+    // pas besoin de la recreer a chaque requete
     private static final GeometryFactory GEOMETRY_FACTORY = new GeometryFactory(new PrecisionModel(), 4326);
 
     private final HubRepository hubRepository;
 
+    // Injection par constructeur (pas de @Autowired sur un champ) : rend les dependances
+    // explicites et facilite les tests unitaires avec un mock
     public HubController(HubRepository hubRepository) {
         this.hubRepository = hubRepository;
     }
 
+    // Liste complete des hubs. Pas de pagination pour l'instant (volume faible en Phase 1,
+    // un seul axe) - a revoir des que le nombre de hubs grandit (Phase 2+).
     @GetMapping
     public List<HubResponse> lister() {
         return hubRepository.findAll().stream()
@@ -41,6 +50,8 @@ public class HubController {
                 .toList();
     }
 
+    // Consultation unitaire. 404 explicite si l'id n'existe pas, plutot que null
+    // ou une exception non geree - le consommateur (OPT/TRK) recoit une reponse HTTP claire.
     @GetMapping("/{id}")
     public HubResponse consulter(@PathVariable UUID id) {
         Hub hub = hubRepository.findById(id)
@@ -48,9 +59,13 @@ public class HubController {
         return HubResponse.from(hub);
     }
 
+    // Creation d'un hub. @Valid declenche les contraintes de HubCreationRequest avant
+    // meme d'entrer dans la methode - toute donnee invalide est rejetee en 400 automatiquement.
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public HubResponse creer(@Valid @RequestBody HubCreationRequest request) {
+        // Attention a l'ordre JTS : Coordinate(x, y) = Coordinate(longitude, latitude),
+        // inverse de l'ordre naturel "latitude, longitude" - source classique d'erreur silencieuse
         Point position = GEOMETRY_FACTORY.createPoint(new Coordinate(request.longitude(), request.latitude()));
         Hub hub = new Hub(request.nom(), request.ville(), request.typeHub(), position);
         return HubResponse.from(hubRepository.save(hub));
