@@ -1,0 +1,21 @@
+# Build outputs
+target/
+build/
+dist/
+node_modules/
+.angular/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Env / secrets
+.env
+.env.local
+
+# Claude Code local state
+.claude/settings.local.json

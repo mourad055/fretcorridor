@@ -1,0 +1,40 @@
+name: backend-web-scope
+
+on:
+  pull_request:
+    paths:
+      - "backend/gateway/**"
+      - "backend/service-pay/**"
+      - "backend/service-bur/**"
+      - "backend/service-adm/**"
+  push:
+    branches: [main]
+    paths:
+      - "backend/gateway/**"
+      - "backend/service-pay/**"
+      - "backend/service-bur/**"
+      - "backend/service-adm/**"
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [gateway, service-pay, service-bur, service-adm]
+    defaults:
+      run:
+        working-directory: backend/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - name: Build & test (if module initialized)
+        run: |
+          if [ -f pom.xml ]; then
+            mvn -B verify
+          else
+            echo "Module ${{ matrix.service }} not yet initialized — skipping"
+          fi
