@@ -1,0 +1,31 @@
+# Configuration par defaut : utilisee en run local (hors Docker), profil actif = "default".
+server:
+  port: 8084
+
+spring:
+  application:
+    name: service-geo
+  datasource:
+    # Port 5434 : port expose cote hote par docker-compose.yml (mapping "5434:5432").
+    # En profil "docker" (cf application-docker.yml), cette URL est remplacee par
+    # jdbc:postgresql://postgres:5432/... (nom de service Compose, port interne).
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      # Garde-fou anti-derive : le schema est TOUJOURS pilote par Flyway (migrations versionnees),
+      # jamais par Hibernate auto-ddl. "validate" fait juste echouer le demarrage si le schema
+      # reel ne correspond pas a ce que JPA attend - aucune modification automatique en base.
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG95Dialect
+  flyway:
+    enabled: true
+    schemas: geo
+    default-schema: geo
+
+logging:
+  level:
+    com.fretcorridor.geo: DEBUG
