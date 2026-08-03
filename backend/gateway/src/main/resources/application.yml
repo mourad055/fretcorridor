@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      routes: []
+      # Aucune route vers les autres microservices pour l'instant (Sprint 1) :
+      # aucun service en aval n'est encore livré. Les routes sont ajoutées au fil
+      # des sprints, au fur et à mesure que service-geo/service-mat/service-opt/etc.
+      # exposent un contrat stable dans shared-contracts/.
+
+fretcorridor:
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:dev-secret-change-me-in-production-min-32-bytes}
+    validity-minutes: 60
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
