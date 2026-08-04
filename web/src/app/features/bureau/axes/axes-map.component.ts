@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AxeService } from './axe.service';
 import { Axe, layoutHubs, layoutSegments } from './axe.models';
 import { MissionsListComponent } from '../missions/missions-list.component';
+import { PositionsListComponent } from '../positions/positions-list.component';
 
 /**
  * FE-BUR-01 (Sprint 3) : un Bureau voit une carte des axes de son tenant.
@@ -13,7 +14,7 @@ import { MissionsListComponent } from '../missions/missions-list.component';
 @Component({
   selector: 'app-axes-map',
   standalone: true,
-  imports: [CommonModule, MissionsListComponent],
+  imports: [CommonModule, MissionsListComponent, PositionsListComponent],
   templateUrl: './axes-map.component.html',
 })
 export class AxesMapComponent implements OnInit {

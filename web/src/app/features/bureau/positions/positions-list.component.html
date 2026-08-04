@@ -1,0 +1,26 @@
+<section class="positions-list">
+  <h2>Suivi temps réel</h2>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && positions().length === 0">Aucun véhicule en suivi sur votre territoire.</p>
+
+  <table *ngIf="!loading() && positions().length > 0">
+    <thead>
+      <tr>
+        <th>Véhicule</th>
+        <th>Latitude</th>
+        <th>Longitude</th>
+        <th>Dernière position</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let position of positions()">
+        <td>{{ position.vehiculeLabel }}</td>
+        <td>{{ position.latitude }}</td>
+        <td>{{ position.longitude }}</td>
+        <td>{{ age(position) }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
