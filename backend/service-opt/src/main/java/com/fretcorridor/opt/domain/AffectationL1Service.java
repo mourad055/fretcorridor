@@ -5,7 +5,12 @@ import com.fretcorridor.opt.client.CandidatCoutDto;
 import com.fretcorridor.opt.client.CoutLotRequestDto;
 import com.fretcorridor.opt.client.CoutLotResponseDto;
 import com.fretcorridor.opt.client.CoutResponseDto;
+import com.fretcorridor.opt.client.ItineraireRequestDto;
+import com.fretcorridor.opt.client.ItineraireResponseDto;
 import com.fretcorridor.opt.client.ServiceMatClient;
+import com.fretcorridor.opt.client.ValhallaClient;
+import com.fretcorridor.opt.tarification.TarificationL4Service;
+import com.fretcorridor.opt.tarification.TarificationResultat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -37,9 +42,14 @@ public class AffectationL1Service {
     private static final Logger log = LoggerFactory.getLogger(AffectationL1Service.class);
 
     private final ServiceMatClient serviceMatClient;
+    private final ValhallaClient valhallaClient;
+    private final TarificationL4Service tarificationL4Service;
 
-    public AffectationL1Service(ServiceMatClient serviceMatClient) {
+    public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
+                                 TarificationL4Service tarificationL4Service) {
         this.serviceMatClient = serviceMatClient;
+        this.valhallaClient = valhallaClient;
+        this.tarificationL4Service = tarificationL4Service;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
@@ -92,20 +102,75 @@ public class AffectationL1Service {
         List<AffectationResultat> resultatsFinaux = new ArrayList<>(nbDemandes);
         for (int i = 0; i < nbDemandes; i++) {
             int indiceCapacite = affectationParDemande[i];
-            UUID demandeId = demandes.get(i).demandeId();
+            DemandeAvecCandidats demande = demandes.get(i);
+            UUID demandeId = demande.demandeId();
 
             if (indiceCapacite == -1) {
-                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null));
-            } else {
-                UUID capaciteId = capacitesReference.get(indiceCapacite);
-                resultatsFinaux.add(new AffectationResultat(
-                        demandeId,
-                        capaciteId,
-                        BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
-                        cycleMatchingIds[i][indiceCapacite]));
+                // Pas d'affectation ce cycle (plus de demandes que de capacites) -
+                // pas d'itineraire a calculer, pas de tarification non plus :
+                // ce n'est pas un mode degrade, juste l'absence d'affectation.
+                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null));
+                continue;
             }
+
+            UUID capaciteId = capacitesReference.get(indiceCapacite);
+            CandidatCoutDto candidatRetenu = demande.candidats().get(indiceCapacite);
+
+            // Etape 3 du moteur V0 (README module optimisation) : appel Valhalla
+            // pour le calcul de trajet, une fois l'affectation optimale connue -
+            // jamais avant, pour ne pas calculer d'itineraires inutiles sur des
+            // candidats finalement non retenus (le budget Valhalla, cf ADR dans
+            // ValhallaClientProperties, est nettement plus genereux que L0/L1 mais
+            // reste couteux a l'echelle d'un lot entier).
+            ItineraireResponseDto itineraire = calculerItineraireSiPossible(demande, candidatRetenu);
+
+            // Etape 4 du moteur V0 (Tarification L4, CDC S8.9) : la distance
+            // vient de Valhalla si l'itineraire a pu etre calcule, null sinon
+            // (regime FORFAITAIRE_VEHICULE n'en a pas besoin - cf
+            // TarificationL4Service). facteurTensionBrut = ZERO explicite :
+            // l'observatoire de marche (EF-BUR, Phase 3) n'alimente pas
+            // encore ce signal en V0 - tension neutre plutot qu'un chiffre
+            // invente, jamais l'inverse.
+            Double distanceMetres = itineraire != null ? itineraire.distanceMetres() : null;
+            TarificationResultat tarification = tarificationL4Service.calculer(
+                    demande.axeId(), candidatRetenu.typeVehicule(), demande.poidsTaxableKg(),
+                    distanceMetres, BigDecimal.ZERO);
+
+            resultatsFinaux.add(new AffectationResultat(
+                    demandeId,
+                    capaciteId,
+                    BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
+                    cycleMatchingIds[i][indiceCapacite],
+                    itineraire,
+                    tarification));
         }
 
         return new AffectationLotResultat(false, resultatsFinaux);
+    }
+
+    /**
+     * Construit la requete Valhalla (position de la capacite -> origine demande
+     * -> destination demande) et delegue a ValhallaClient. Retourne null sans
+     * lancer d'exception si une coordonnee manque (candidat/demande incomplets,
+     * cf javadoc ProfilCamionDto sur la faible completude des donnees ouvertes
+     * africaines) ou si Valhalla echoue - degradation gracieuse en cascade,
+     * jamais de blocage du cycle L1 pour une seule affectation (ENF-DIS-04).
+     */
+    private ItineraireResponseDto calculerItineraireSiPossible(DemandeAvecCandidats demande,
+                                                                 CandidatCoutDto candidatRetenu) {
+        if (candidatRetenu.positionCapacite() == null
+                || demande.origineDemande() == null
+                || demande.destinationDemande() == null) {
+            log.warn("Coordonnees incompletes pour la demande {} / capacite {} - "
+                            + "itineraire Valhalla non calcule (mode degrade sur ce candidat uniquement).",
+                    demande.demandeId(), candidatRetenu.capaciteId());
+            return null;
+        }
+
+        ItineraireRequestDto requete = new ItineraireRequestDto(
+                List.of(candidatRetenu.positionCapacite(), demande.origineDemande(), demande.destinationDemande()),
+                candidatRetenu.profilCamion());
+
+        return valhallaClient.calculerItineraire(requete);
     }
 }
