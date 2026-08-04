@@ -1,5 +1,8 @@
 server:
-  port: 8080
+  # 8082 : le 8080 standard est déjà occupé par un autre service sur cette
+  # machine de développement partagée (cf. docs/adr/0006). Surchargeable via
+  # SERVER_PORT en environnement d'intégration/production.
+  port: ${SERVER_PORT:8082}
 
 spring:
   application:

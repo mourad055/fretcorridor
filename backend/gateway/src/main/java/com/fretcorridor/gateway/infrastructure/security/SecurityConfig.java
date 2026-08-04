@@ -53,7 +53,9 @@ public class SecurityConfig {
 
     private CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:4200"));
+        // 4200 : port par défaut de `ng serve`. 4201 : port dédié aux tests E2E
+        // Playwright sur cette machine de développement (cf. docs/adr/0006).
+        configuration.setAllowedOriginPatterns(List.of("http://localhost:4200", "http://localhost:4201"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Idempotency-Key"));
         configuration.setAllowCredentials(true);
