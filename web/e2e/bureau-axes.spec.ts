@@ -3,6 +3,8 @@ import { test, expect } from '@playwright/test';
 /**
  * FE-BUR-01 (Sprint 3) : un Bureau voit une carte des axes de son tenant ;
  * isolation tenant vérifiée (Bureau A ne voit pas les axes du tenant B).
+ * Sélecteurs scopés à .axes-map : la page /bureau embarque aussi le tableau
+ * des missions appariées depuis le Sprint 5 (mission.list.component).
  */
 test.describe('Carte des axes — Bureau', () => {
   test('un Bureau voit les axes de son propre tenant', async ({ page }) => {
@@ -12,9 +14,10 @@ test.describe('Carte des axes — Bureau', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
 
-    await expect(page.locator('tbody tr')).toHaveCount(2);
-    await expect(page.locator('tbody')).toContainText('Douala');
-    await expect(page.locator('tbody')).toContainText('Yaoundé');
+    const axesTable = page.locator('.axes-map > table');
+    await expect(axesTable.locator('tbody tr')).toHaveCount(2);
+    await expect(axesTable.locator('tbody')).toContainText('Douala');
+    await expect(axesTable.locator('tbody')).toContainText('Yaoundé');
   });
 
   test("un Bureau d'un autre tenant ne voit pas les axes du premier", async ({ page }) => {
@@ -24,9 +27,10 @@ test.describe('Carte des axes — Bureau', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
 
-    await expect(page.locator('tbody tr')).toHaveCount(1);
-    await expect(page.locator('tbody')).toContainText("N'Djamena");
-    await expect(page.locator('tbody')).not.toContainText('Yaoundé');
-    await expect(page.locator('tbody')).not.toContainText('Bafoussam');
+    const axesTable = page.locator('.axes-map > table');
+    await expect(axesTable.locator('tbody tr')).toHaveCount(1);
+    await expect(axesTable.locator('tbody')).toContainText("N'Djamena");
+    await expect(axesTable.locator('tbody')).not.toContainText('Yaoundé');
+    await expect(axesTable.locator('tbody')).not.toContainText('Bafoussam');
   });
 });

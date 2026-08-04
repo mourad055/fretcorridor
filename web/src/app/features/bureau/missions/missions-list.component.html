@@ -1,0 +1,28 @@
+<section class="missions-list">
+  <h2>Missions appariées</h2>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && missions().length === 0">Aucune mission appariée sur votre territoire.</p>
+
+  <table *ngIf="!loading() && missions().length > 0">
+    <thead>
+      <tr>
+        <th>Transporteur</th>
+        <th>Origine</th>
+        <th>Destination</th>
+        <th>Enlèvement</th>
+        <th>Statut</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let mission of missions()">
+        <td>{{ mission.transporteurNom }}</td>
+        <td>{{ mission.origine }}</td>
+        <td>{{ mission.destination }}</td>
+        <td>{{ mission.enlevementLe | date: 'short' }}</td>
+        <td>{{ mission.statut }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
