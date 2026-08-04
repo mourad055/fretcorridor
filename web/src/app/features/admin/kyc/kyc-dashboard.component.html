@@ -1,0 +1,45 @@
+<main class="kyc-dashboard">
+  <h1>Validation KYC</h1>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+  <p *ngIf="loading()">Chargement…</p>
+
+  <p *ngIf="!loading() && dossiers().length === 0">Aucun dossier en attente.</p>
+
+  <table *ngIf="!loading() && dossiers().length > 0">
+    <thead>
+      <tr>
+        <th>Acteur</th>
+        <th>Téléphone</th>
+        <th>Type</th>
+        <th>Soumis le</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let dossier of dossiers()">
+        <td>{{ dossier.acteurNom }}</td>
+        <td>{{ dossier.acteurTelephone }}</td>
+        <td>{{ dossier.typeActeur }}</td>
+        <td>{{ dossier.soumisLe | date: 'short' }}</td>
+        <td>
+          <button
+            type="button"
+            [disabled]="dossierEnCours() === dossier.id"
+            (click)="decide(dossier, 'VALIDE')"
+          >
+            Valider
+          </button>
+          <button
+            type="button"
+            [disabled]="dossierEnCours() === dossier.id"
+            (click)="decide(dossier, 'REJETE')"
+          >
+            Rejeter
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</main>

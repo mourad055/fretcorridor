@@ -5,7 +5,7 @@ import { LoginComponent } from './features/login/login.component';
 import { ForbiddenComponent } from './features/forbidden/forbidden.component';
 import { BureauHomeComponent } from './features/bureau/bureau-home.component';
 import { TransporteurHomeComponent } from './features/transporteur/transporteur-home.component';
-import { AdminHomeComponent } from './features/admin/admin-home.component';
+import { KycDashboardComponent } from './features/admin/kyc/kyc-dashboard.component';
 import { roleGuard, guestGuard } from './core/auth/role.guard';
 import { AuthService } from './core/auth/auth.service';
 import { HOME_ROUTE_BY_ROLE } from './core/auth/auth.models';
@@ -28,6 +28,6 @@ export const routes: Routes = [
     canActivate: [roleGuard],
     data: { role: 'TRANSPORTEUR' },
   },
-  { path: 'admin', component: AdminHomeComponent, canActivate: [roleGuard], data: { role: 'ADMIN' } },
+  { path: 'admin', component: KycDashboardComponent, canActivate: [roleGuard], data: { role: 'ADMIN' } },
   { path: '**', redirectTo: 'login' },
 ];
