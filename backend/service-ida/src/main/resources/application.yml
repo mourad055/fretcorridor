@@ -1,0 +1,30 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: service-ida
+  sql:
+    init:
+      mode: always
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: service_ida
+    open-in-view: false
+
+fretcorridor:
+  jwt:
+    secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+    expiration-access-ms: 86400000    # 24h
+    expiration-refresh-ms: 2592000000 # 30 jours
+
+logging:
+  level:
+    com.flysoft.fretcorridor: DEBUG
