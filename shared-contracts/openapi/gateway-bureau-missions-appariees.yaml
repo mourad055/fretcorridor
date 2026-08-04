@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — Gateway — Missions appariées (Bureau)
+  version: "1.0.0"
+  description: >
+    FE-BUR-01 (Sprint 5, missions appariées) : un Bureau voit les missions
+    appariées de son propre tenant. Le tenantId est résolu exclusivement depuis
+    le JWT (ENF-MUL-01). Consomme aujourd'hui un adaptateur mock côté gateway,
+    en attendant service-opt (Moteur) — TODO(moteur).
+servers:
+  - url: http://localhost:8082
+
+paths:
+  /api/v1/bureau/missions-appariees:
+    get:
+      operationId: listBureauMissionsAppariees
+      summary: Liste les missions appariées du tenant de l'acteur Bureau authentifié
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Missions appariées du tenant courant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MissionAppariee'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Rôle insuffisant (réservé au rôle BUREAU)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    MissionAppariee:
+      type: object
+      required: [id, transporteurNom, origine, destination, enlevementLe, statut]
+      properties:
+        id:
+          type: string
+        transporteurNom:
+          type: string
+        origine:
+          type: string
+        destination:
+          type: string
+        enlevementLe:
+          type: string
+          format: date-time
+        statut:
+          type: string
+          enum: [CONFIRMEE, EN_COURS, CLOTUREE]
