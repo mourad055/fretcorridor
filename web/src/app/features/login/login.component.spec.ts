@@ -1,0 +1,64 @@
+import { TestBed } from '@angular/core/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideRouter, Router } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { LoginComponent } from './login.component';
+import { environment } from '../../../environments/environment';
+
+describe('LoginComponent', () => {
+  let httpMock: HttpTestingController;
+  let router: Router;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [LoginComponent],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'bureau', children: [] }]),
+      ],
+    }).compileComponents();
+
+    httpMock = TestBed.inject(HttpTestingController);
+    router = TestBed.inject(Router);
+  });
+
+  afterEach(() => httpMock.verify());
+
+  it('redirects to the role home route on successful login', async () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const navigateSpy = jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const component = fixture.componentInstance;
+    component.phone.set('+237600000001');
+    component.code.set('123456');
+    component.submit();
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/login`);
+    req.flush({ token: 'header.eyJzdWIiOiJhIn0.sig', role: 'BUREAU', tenantId: 'tenant-1' });
+
+    expect(navigateSpy).toHaveBeenCalledWith('/bureau');
+  });
+
+  it('shows an error message on invalid credentials, without navigating', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const navigateSpy = jest.spyOn(router, 'navigateByUrl');
+
+    const component = fixture.componentInstance;
+    component.phone.set('+237699999999');
+    component.code.set('000000');
+    component.submit();
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/login`);
+    req.flush({ title: 'Authentification refusée' }, { status: 401, statusText: 'Unauthorized' });
+    fixture.detectChanges();
+
+    expect(navigateSpy).not.toHaveBeenCalled();
+    expect(component.errorMessage()).toBe('Numéro de téléphone ou code invalide.');
+    const alert = fixture.debugElement.query(By.css('[role="alert"]'));
+    expect(alert.nativeElement.textContent).toContain('Numéro de téléphone ou code invalide.');
+  });
+});

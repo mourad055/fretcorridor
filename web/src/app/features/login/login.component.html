@@ -1,0 +1,33 @@
+<main class="login-screen">
+  <h1>FretCorridor</h1>
+  <form (ngSubmit)="submit()" #loginForm="ngForm">
+    <label for="phone">Numéro de téléphone</label>
+    <input
+      id="phone"
+      name="phone"
+      type="tel"
+      autocomplete="tel"
+      [ngModel]="phone()"
+      (ngModelChange)="phone.set($event)"
+      required
+    />
+
+    <label for="code">Code reçu par SMS</label>
+    <input
+      id="code"
+      name="code"
+      type="text"
+      inputmode="numeric"
+      autocomplete="one-time-code"
+      [ngModel]="code()"
+      (ngModelChange)="code.set($event)"
+      required
+    />
+
+    <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+    <button type="submit" [disabled]="submitting() || loginForm.invalid">
+      {{ submitting() ? 'Connexion…' : 'Se connecter' }}
+    </button>
+  </form>
+</main>
