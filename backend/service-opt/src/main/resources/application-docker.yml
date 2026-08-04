@@ -7,3 +7,7 @@ spring:
       base-url: http://service-geo:8084
       connect-timeout-ms: 200
       read-timeout-ms: 300
+    service-mat:
+      base-url: http://service-mat:8086
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
