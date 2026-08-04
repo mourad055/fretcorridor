@@ -113,7 +113,6 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8086:8086"
-
     depends_on:
       postgres:
         condition: service_healthy
