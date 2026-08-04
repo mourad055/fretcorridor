@@ -11,34 +11,40 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 
 /**
- * Construit le RestClient utilise pour appeler service-geo en synchrone interne.
+ * Construit les RestClient utilises pour les appels synchrones internes du
+ * Moteur (meme porteur) : service-geo (L0) et service-mat (L1).
  *
- * Choix RestClient plutot que RestTemplate (en maintenance, aucune evolution prevue)
- * ou WebClient (reactif - inutile ici, OPT appelle GEO de facon strictement
- * bloquante et sequentielle dans son cycle L0, pas de besoin de non-blocking).
- *
- * API ClientHttpRequestFactorySettings / ClientHttpRequestFactories : package
- * org.springframework.boot.web.client, valable Spring Boot 3.3.x (ce module).
- * A NE PAS confondre avec org.springframework.http.client.ClientHttpRequestFactorySettings
- * + ClientHttpRequestFactoryBuilder, qui n'existent qu'a partir de Boot 3.4 / Framework 6.2.
- *
- * Timeouts geres au niveau de la factory de requetes, pas au niveau de chaque
- * appel individuel : garantit qu'aucun appel ne peut oublier de les definir.
+ * Choix RestClient plutot que RestTemplate (en maintenance) ou WebClient
+ * (reactif - inutile ici, appels strictement bloquants et sequentiels dans
+ * le cycle L0/L1). Timeouts geres au niveau de la factory de requetes, pas
+ * au niveau de chaque appel : garantit qu'aucun appel ne peut oublier de les
+ * definir.
  */
 @Configuration
-@EnableConfigurationProperties(ServiceGeoClientProperties.class)
+@EnableConfigurationProperties({ServiceGeoClientProperties.class, ServiceMatClientProperties.class})
 public class RestClientConfig {
 
     @Bean
     public RestClient serviceGeoRestClient(ServiceGeoClientProperties properties) {
+        return construireRestClient(properties.getBaseUrl(),
+                properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    @Bean
+    public RestClient serviceMatRestClient(ServiceMatClientProperties properties) {
+        return construireRestClient(properties.getBaseUrl(),
+                properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    private RestClient construireRestClient(String baseUrl, int connectTimeoutMs, int readTimeoutMs) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
-                .withConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
-                .withReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));
+                .withConnectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .withReadTimeout(Duration.ofMillis(readTimeoutMs));
 
         ClientHttpRequestFactory requestFactory = ClientHttpRequestFactories.get(settings);
 
         return RestClient.builder()
-                .baseUrl(properties.getBaseUrl())
+                .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
                 .build();
     }

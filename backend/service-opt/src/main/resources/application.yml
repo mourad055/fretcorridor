@@ -23,6 +23,10 @@ spring:
       # jamais rester bloque indefiniment (cf ENF-DIS-04, degradation gracieuse).
       connect-timeout-ms: 200
       read-timeout-ms: 300
+    service-mat:
+      base-url: http://localhost:8086
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
 logging:
   level:
     com.fretcorridor.opt: DEBUG
