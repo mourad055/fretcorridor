@@ -1,0 +1,60 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — Gateway — Suivi temps réel (Bureau)
+  version: "1.0.0"
+  description: >
+    FE-TRK-04 / RG-043 (Sprint 6) : un Bureau voit les positions de son propre
+    tenant, toujours accompagnées de leur âge en secondes — jamais une position
+    sans âge exploitable. Le tenantId est résolu exclusivement depuis le JWT
+    (ENF-MUL-01). Consomme aujourd'hui un adaptateur mock côté gateway, en
+    attendant service-trk (Moteur) — TODO(moteur).
+servers:
+  - url: http://localhost:8082
+
+paths:
+  /api/v1/bureau/positions:
+    get:
+      operationId: listBureauPositions
+      summary: Liste les dernières positions connues des véhicules du tenant courant
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Positions du tenant courant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Position'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Rôle insuffisant (réservé au rôle BUREAU)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Position:
+      type: object
+      required: [id, vehiculeLabel, latitude, longitude, capturedLe, ageSecondes]
+      properties:
+        id:
+          type: string
+        vehiculeLabel:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        capturedLe:
+          type: string
+          format: date-time
+        ageSecondes:
+          type: integer
+          description: Calculé à chaque restitution — jamais absent (RG-043).
