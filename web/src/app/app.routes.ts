@@ -3,7 +3,7 @@ import { inject } from '@angular/core';
 import { Router, type CanActivateFn } from '@angular/router';
 import { LoginComponent } from './features/login/login.component';
 import { ForbiddenComponent } from './features/forbidden/forbidden.component';
-import { BureauHomeComponent } from './features/bureau/bureau-home.component';
+import { AxesMapComponent } from './features/bureau/axes/axes-map.component';
 import { TransporteurHomeComponent } from './features/transporteur/transporteur-home.component';
 import { KycDashboardComponent } from './features/admin/kyc/kyc-dashboard.component';
 import { roleGuard, guestGuard } from './core/auth/role.guard';
@@ -21,7 +21,7 @@ export const routes: Routes = [
   { path: '', component: LoginComponent, canActivate: [rootRedirectGuard] },
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   { path: '403', component: ForbiddenComponent },
-  { path: 'bureau', component: BureauHomeComponent, canActivate: [roleGuard], data: { role: 'BUREAU' } },
+  { path: 'bureau', component: AxesMapComponent, canActivate: [roleGuard], data: { role: 'BUREAU' } },
   {
     path: 'transporteur',
     component: TransporteurHomeComponent,

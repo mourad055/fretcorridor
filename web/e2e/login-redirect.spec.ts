@@ -14,7 +14,7 @@ test.describe('Connexion et redirection par rôle', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
 
     await expect(page).toHaveURL(/\/bureau$/);
-    await expect(page.getByRole('heading', { name: 'Bureau de fret' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Carte des axes' })).toBeVisible();
   });
 
   test('un Transporteur authentifié est redirigé vers /transporteur', async ({ page }) => {
