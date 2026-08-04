@@ -90,6 +90,19 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+  service-mat:
+    build:
+      context: ../backend/service-mat
+      dockerfile: Dockerfile
+    container_name: fretcorridor-service-mat
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8086:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres-data:
   minio-data:
