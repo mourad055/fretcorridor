@@ -1,5 +1,6 @@
 package com.fretcorridor.opt.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.client.ClientHttpRequestFactories;
 import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
@@ -11,27 +12,42 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 
 /**
- * Construit les RestClient utilises pour les appels synchrones internes du
- * Moteur (meme porteur) : service-geo (L0) et service-mat (L1).
+ * Construit les RestClient utilises pour les appels du Moteur :
+ * service-geo (L0, synchrone interne), service-mat (L1, synchrone interne),
+ * Valhalla (itineraires, integration externe au meme titre que OSRM/OpenStreetMap
+ * cf Plan d'execution S1).
  *
- * Choix RestClient plutot que RestTemplate (en maintenance) ou WebClient
- * (reactif - inutile ici, appels strictement bloquants et sequentiels dans
- * le cycle L0/L1). Timeouts geres au niveau de la factory de requetes, pas
- * au niveau de chaque appel : garantit qu'aucun appel ne peut oublier de les
- * definir.
+ * Trois beans du meme type RestClient : @Qualifier explicite sur chaque bean
+ * ET sur chaque point d'injection (ServiceGeoClient, ServiceMatClient,
+ * ValhallaClient) - Spring resoudrait par nom de parametre sans lui, mais un
+ * qualifier explicite est plus sur (survit a un renommage accidentel de
+ * parametre) et plus lisible.
  */
 @Configuration
-@EnableConfigurationProperties({ServiceGeoClientProperties.class, ServiceMatClientProperties.class})
+@EnableConfigurationProperties({
+        ServiceGeoClientProperties.class,
+        ServiceMatClientProperties.class,
+        ValhallaClientProperties.class
+})
 public class RestClientConfig {
 
     @Bean
+    @Qualifier("serviceGeoRestClient")
     public RestClient serviceGeoRestClient(ServiceGeoClientProperties properties) {
         return construireRestClient(properties.getBaseUrl(),
                 properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
     }
 
     @Bean
+    @Qualifier("serviceMatRestClient")
     public RestClient serviceMatRestClient(ServiceMatClientProperties properties) {
+        return construireRestClient(properties.getBaseUrl(),
+                properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    @Bean
+    @Qualifier("valhallaRestClient")
+    public RestClient valhallaRestClient(ValhallaClientProperties properties) {
         return construireRestClient(properties.getBaseUrl(),
                 properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
     }

@@ -27,7 +27,7 @@ public class ServiceGeoClient {
 
     private final RestClient restClient;
 
-    public ServiceGeoClient(RestClient serviceGeoRestClient) {
+    public ServiceGeoClient(@org.springframework.beans.factory.annotation.Qualifier("serviceGeoRestClient") RestClient serviceGeoRestClient) {
         this.restClient = serviceGeoRestClient;
     }
 
