@@ -24,7 +24,7 @@ public class ServiceMatClient {
 
     private final RestClient restClient;
 
-    public ServiceMatClient(RestClient serviceMatRestClient) {
+    public ServiceMatClient(@org.springframework.beans.factory.annotation.Qualifier("serviceMatRestClient") RestClient serviceMatRestClient) {
         this.restClient = serviceMatRestClient;
     }
 
