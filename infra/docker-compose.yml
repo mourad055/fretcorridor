@@ -91,6 +91,19 @@ services:
       postgres:
         condition: service_healthy
 
+  service-ida:
+    build:
+      context: ../backend/service-ida
+    container_name: fretcorridor-service-ida
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8081:8081"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   service-mat:
     build:
       context: ../backend/service-mat
@@ -100,9 +113,22 @@ services:
       SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8086:8086"
+
     depends_on:
       postgres:
         condition: service_healthy
+
+
+  gateway:
+    build:
+      context: ../backend/gateway
+    container_name: fretcorridor-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    depends_on:
+      - service-ida
 
 volumes:
   postgres-data:
