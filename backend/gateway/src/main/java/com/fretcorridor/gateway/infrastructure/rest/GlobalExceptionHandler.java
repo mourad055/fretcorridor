@@ -1,6 +1,9 @@
 package com.fretcorridor.gateway.infrastructure.rest;
 
 import com.fretcorridor.gateway.domain.InvalidCredentialsException;
+import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
+import com.fretcorridor.gateway.domain.kyc.KycDossierIntrouvableException;
+import com.fretcorridor.gateway.infrastructure.rest.kyc.KycController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,6 +32,27 @@ public class GlobalExceptionHandler {
                 .orElse("Requête invalide");
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
         problem.setTitle("Requête invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(KycDossierIntrouvableException.class)
+    public ProblemDetail handleKycDossierIntrouvable(KycDossierIntrouvableException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Dossier introuvable");
+        return problem;
+    }
+
+    @ExceptionHandler(DecisionInvalideException.class)
+    public ProblemDetail handleDecisionInvalide(DecisionInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Décision invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(KycController.MissingIdempotencyKeyException.class)
+    public ProblemDetail handleMissingIdempotencyKey(KycController.MissingIdempotencyKeyException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("En-tête manquant");
         return problem;
     }
 }
