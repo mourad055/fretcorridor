@@ -1,0 +1,5 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=docker (cf infra/docker-compose.yml).
+# Ne remplace que l'URL JDBC - meme convention que service-geo et service-opt.
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/fretcorridor

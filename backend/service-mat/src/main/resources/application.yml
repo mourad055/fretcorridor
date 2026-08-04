@@ -1,0 +1,26 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: service-mat
+  datasource:
+    # Port 5434 : port expose cote hote par docker-compose.yml (mapping "5434:5432"),
+    # meme convention que service-geo et service-opt. En profil "docker" (cf
+    # application-docker.yml), remplace par jdbc:postgresql://postgres:5432/...
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      # Garde-fou anti-derive, identique aux autres services : le schema est
+      # TOUJOURS pilote par Flyway, jamais par Hibernate auto-ddl.
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    schemas: mat
+    default-schema: mat
+
+logging:
+  level:
+    com.fretcorridor.mat: DEBUG
