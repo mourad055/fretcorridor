@@ -1,0 +1,9 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=docker (cf infra/docker-compose.yml).
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/fretcorridor
+  client:
+    service-geo:
+      base-url: http://service-geo:8084
+      connect-timeout-ms: 200
+      read-timeout-ms: 300

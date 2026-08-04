@@ -79,6 +79,17 @@ services:
       postgres:
         condition: service_healthy
 
+  service-opt:
+    build:
+      context: ../backend/service-opt
+    container_name: fretcorridor-service-opt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8085:8085"
+    depends_on:
+      postgres:
+        condition: service_healthy
 volumes:
   postgres-data:
   minio-data:

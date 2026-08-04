@@ -1,0 +1,28 @@
+# Configuration par defaut : run local hors Docker, profil actif = "default".
+server:
+  port: 8085
+spring:
+  application:
+    name: service-opt
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    schemas: opt
+    default-schema: opt
+  client:
+    service-geo:
+      base-url: http://localhost:8084
+      # Timeouts stricts et explicites (jamais de valeur par defaut implicite) :
+      # coherent avec le budget L0 ~50ms - si GEO ne repond pas vite, OPT ne doit
+      # jamais rester bloque indefiniment (cf ENF-DIS-04, degradation gracieuse).
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
+logging:
+  level:
+    com.fretcorridor.opt: DEBUG
