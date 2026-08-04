@@ -1,0 +1,28 @@
+server:
+  port: ${SERVER_PORT:8083}
+
+spring:
+  application:
+    name: service-bur
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fretcorridor}
+    username: ${SPRING_DATASOURCE_USERNAME:fretcorridor}
+    password: ${SPRING_DATASOURCE_PASSWORD:fretcorridor}
+  jpa:
+    hibernate:
+      # ddl-auto=update est un choix de développement (Phase 1) ; les migrations
+      # versionnées (Flyway/Liquibase) sont attendues avant la mise en production.
+      ddl-auto: update
+    open-in-view: false
+
+fretcorridor:
+  bur:
+    # EF-BUR-04 (anticipé) : seuil minimal d'effectif avant restitution d'une
+    # statistique agrégée. Valeur de développement volontairement basse.
+    seuil-agregation: ${FRETCORRIDOR_BUR_SEUIL_AGREGATION:3}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
