@@ -25,7 +25,9 @@ public class MockIdaAuthenticationAdapter implements AuthenticationPort {
     private final Map<String, Actor> actorsByPhone = Map.of(
             "+237600000001", new Actor("actor-bureau-1", "+237600000001", Role.BUREAU, "tenant-bgft-douala"),
             "+237600000002", new Actor("actor-transporteur-1", "+237600000002", Role.TRANSPORTEUR, "tenant-bgft-douala"),
-            "+237600000003", new Actor("actor-admin-1", "+237600000003", Role.ADMIN, "tenant-flysoft")
+            "+237600000003", new Actor("actor-admin-1", "+237600000003", Role.ADMIN, "tenant-flysoft"),
+            // Second tenant Bureau, pour les tests et démonstrations d'isolation multi-tenant (ENF-MUL-01).
+            "+235600000004", new Actor("actor-bureau-2", "+235600000004", Role.BUREAU, "tenant-bgft-tchad")
     );
 
     @Override

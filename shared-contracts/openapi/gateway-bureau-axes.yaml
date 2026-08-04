@@ -1,0 +1,57 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — Gateway — Carte des axes (Bureau)
+  version: "1.0.0"
+  description: >
+    FE-BUR-01 (Sprint 3, version carte) : un Bureau voit les axes de son propre
+    tenant. Le tenantId est résolu exclusivement depuis le JWT (ENF-MUL-01) —
+    aucun paramètre de requête ne permet de consulter un autre tenant. Consomme
+    aujourd'hui un adaptateur mock côté gateway, en attendant service-geo
+    (Moteur) — TODO(moteur).
+servers:
+  - url: http://localhost:8082
+
+paths:
+  /api/v1/bureau/axes:
+    get:
+      operationId: listBureauAxes
+      summary: Liste les axes du tenant de l'acteur Bureau authentifié
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Axes du tenant courant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Axe'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Rôle insuffisant (réservé au rôle BUREAU)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Axe:
+      type: object
+      required: [id, origine, destination, distanceKm, etatActivation]
+      properties:
+        id:
+          type: string
+        origine:
+          type: string
+        destination:
+          type: string
+        distanceKm:
+          type: number
+        etatActivation:
+          type: string
+          enum: [VISIBILITE, MATCHING, PAIEMENT]

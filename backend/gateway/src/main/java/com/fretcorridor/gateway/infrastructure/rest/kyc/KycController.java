@@ -4,6 +4,7 @@ import com.fretcorridor.gateway.domain.kyc.KycPort;
 import com.fretcorridor.gateway.infrastructure.audit.AuditLog;
 import com.fretcorridor.gateway.infrastructure.rest.kyc.dto.DecisionRequest;
 import com.fretcorridor.gateway.infrastructure.rest.kyc.dto.KycDossierResponse;
+import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,7 +38,7 @@ public class KycController {
     public Mono<ResponseEntity<KycDossierResponse>> decide(
             @PathVariable String dossierId,
             @Valid @RequestBody DecisionRequest request,
-            @AuthenticationPrincipal String operateurId,
+            @AuthenticationPrincipal AuthenticatedActor actor,
             ServerWebExchange exchange
     ) {
         String idempotencyKey = exchange.getRequest().getHeaders().getFirst("X-Idempotency-Key");
@@ -47,7 +48,7 @@ public class KycController {
 
         return kycPort.decider(dossierId, request.decision(), idempotencyKey)
                 .doOnNext(dossier -> auditLog.enregistrer(
-                        operateurId,
+                        actor.actorId(),
                         "KYC_DECISION_" + request.decision(),
                         "kyc-dossier:" + dossierId))
                 .map(dossier -> ResponseEntity.ok(KycDossierResponse.from(dossier)));

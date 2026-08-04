@@ -1,5 +1,6 @@
 package com.fretcorridor.gateway.infrastructure.rest;
 
+import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,17 +17,17 @@ import java.util.Map;
 public class RoleProtectedSampleController {
 
     @GetMapping("/api/v1/bureau/ping")
-    public Map<String, String> bureauPing(@AuthenticationPrincipal String actorId) {
-        return Map.of("message", "Bureau — accès autorisé", "actorId", actorId);
+    public Map<String, String> bureauPing(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return Map.of("message", "Bureau — accès autorisé", "actorId", actor.actorId());
     }
 
     @GetMapping("/api/v1/transporteur/ping")
-    public Map<String, String> transporteurPing(@AuthenticationPrincipal String actorId) {
-        return Map.of("message", "Transporteur — accès autorisé", "actorId", actorId);
+    public Map<String, String> transporteurPing(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return Map.of("message", "Transporteur — accès autorisé", "actorId", actor.actorId());
     }
 
     @GetMapping("/api/v1/admin/ping")
-    public Map<String, String> adminPing(@AuthenticationPrincipal String actorId) {
-        return Map.of("message", "Administration — accès autorisé", "actorId", actorId);
+    public Map<String, String> adminPing(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return Map.of("message", "Administration — accès autorisé", "actorId", actor.actorId());
     }
 }

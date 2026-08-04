@@ -1,5 +1,6 @@
 package com.fretcorridor.gateway.infrastructure.security;
 
+import com.fretcorridor.gateway.domain.Role;
 import io.jsonwebtoken.Claims;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
@@ -34,10 +35,10 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
             return Mono.error(new BadCredentialsException("Jeton invalide ou expiré"));
         }
         Claims c = claims.get();
-        String role = c.get("role", String.class);
+        Role role = Role.valueOf(c.get("role", String.class));
         var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-        var authenticated = new UsernamePasswordAuthenticationToken(c.getSubject(), token, authorities);
-        authenticated.setDetails(c);
+        var principal = new AuthenticatedActor(c.getSubject(), role, c.get("tenantId", String.class));
+        var authenticated = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         return Mono.just(authenticated);
     }
 }
