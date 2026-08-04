@@ -1,0 +1,9 @@
+<section class="transporteur-missions">
+  <h2>Mes missions</h2>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && missions().length === 0">Aucune mission pour l'instant.</p>
+
+  <app-mission-chronologie *ngIf="!loading() && missions().length > 0" [missions]="missions()" />
+</section>

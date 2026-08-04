@@ -1,0 +1,9 @@
+<section class="bureau-chronologie">
+  <h2>Chronologie des missions</h2>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && missions().length === 0">Aucune mission sur votre territoire.</p>
+
+  <app-mission-chronologie *ngIf="!loading() && missions().length > 0" [missions]="missions()" />
+</section>

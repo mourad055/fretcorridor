@@ -19,10 +19,11 @@ describe('AxesMapComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  /** Le composant embarque <app-missions-list> et <app-positions-list>, qui déclenchent leurs propres requêtes au chargement. */
+  /** Le composant embarque missions-list, positions-list et bureau-chronologie, qui déclenchent leurs propres requêtes au chargement. */
   function flushSiblingRequests(): void {
     httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-appariees`).flush([]);
     httpMock.expectOne(`${environment.apiBaseUrl}/bureau/positions`).flush([]);
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-chronologie`).flush([]);
   }
 
   it('affiche un axe par ligne du tableau au chargement', () => {
