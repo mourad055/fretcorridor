@@ -4,7 +4,7 @@ import { Router, type CanActivateFn } from '@angular/router';
 import { LoginComponent } from './features/login/login.component';
 import { ForbiddenComponent } from './features/forbidden/forbidden.component';
 import { AxesMapComponent } from './features/bureau/axes/axes-map.component';
-import { TransporteurHomeComponent } from './features/transporteur/transporteur-home.component';
+import { CapacitesListComponent } from './features/transporteur/capacites/capacites-list.component';
 import { KycDashboardComponent } from './features/admin/kyc/kyc-dashboard.component';
 import { roleGuard, guestGuard } from './core/auth/role.guard';
 import { AuthService } from './core/auth/auth.service';
@@ -24,7 +24,7 @@ export const routes: Routes = [
   { path: 'bureau', component: AxesMapComponent, canActivate: [roleGuard], data: { role: 'BUREAU' } },
   {
     path: 'transporteur',
-    component: TransporteurHomeComponent,
+    component: CapacitesListComponent,
     canActivate: [roleGuard],
     data: { role: 'TRANSPORTEUR' },
   },

@@ -25,7 +25,7 @@ test.describe('Connexion et redirection par rôle', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
 
     await expect(page).toHaveURL(/\/transporteur$/);
-    await expect(page.getByRole('heading', { name: 'Transporteur' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mes capacités déclarées' })).toBeVisible();
   });
 
   test('des identifiants invalides affichent une erreur explicite, sans redirection', async ({ page }) => {

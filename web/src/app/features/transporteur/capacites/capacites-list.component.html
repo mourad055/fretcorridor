@@ -1,0 +1,32 @@
+<main class="capacites-list">
+  <h1>Mes capacités déclarées</h1>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && capacites().length === 0">Aucune capacité déclarée pour l'instant.</p>
+
+  <table *ngIf="!loading() && capacites().length > 0">
+    <thead>
+      <tr>
+        <th>Véhicule</th>
+        <th>Origine</th>
+        <th>Destination</th>
+        <th>Départ</th>
+        <th>Poids taxable</th>
+        <th>Mode de collecte</th>
+        <th>État</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let capacite of capacites()">
+        <td>{{ capacite.vehicule }}</td>
+        <td>{{ capacite.origine }}</td>
+        <td>{{ capacite.destination }}</td>
+        <td>{{ capacite.departLe | date: 'short' }}</td>
+        <td>{{ capacite.poidsTaxableKg }} kg</td>
+        <td>{{ capacite.modeCollecte }}</td>
+        <td>{{ capacite.etat }}</td>
+      </tr>
+    </tbody>
+  </table>
+</main>
