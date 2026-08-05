@@ -18,9 +18,6 @@ spring:
   client:
     service-geo:
       base-url: http://localhost:8084
-      # Timeouts stricts et explicites (jamais de valeur par defaut implicite) :
-      # coherent avec le budget L0 ~50ms - si GEO ne repond pas vite, OPT ne doit
-      # jamais rester bloque indefiniment (cf ENF-DIS-04, degradation gracieuse).
       connect-timeout-ms: 200
       read-timeout-ms: 300
     service-mat:
@@ -29,11 +26,16 @@ spring:
       read-timeout-ms: 300
     valhalla:
       base-url: http://localhost:8002
-      # Contrairement a service-mat (meme porteur, latence ~ms), Valhalla est
-      # une dependance reseau externe - on garde le defaut Java (2000ms,
-      # cf ValhallaClientProperties) plutot que le timeout serre des appels
-      # internes. Ne pas copier les valeurs de service-mat ici.
       connect-timeout-ms: 500
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+        retries: 3
 logging:
   level:
     com.fretcorridor.opt: DEBUG

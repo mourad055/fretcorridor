@@ -9,6 +9,9 @@ import com.fretcorridor.opt.client.ItineraireRequestDto;
 import com.fretcorridor.opt.client.ItineraireResponseDto;
 import com.fretcorridor.opt.client.ServiceMatClient;
 import com.fretcorridor.opt.client.ValhallaClient;
+import com.fretcorridor.opt.messaging.AffectationConfirmeeEvent;
+import com.fretcorridor.opt.messaging.OptEventPublisher;
+import com.fretcorridor.opt.messaging.PropositionEmiseEvent;
 import com.fretcorridor.opt.tarification.TarificationL4Service;
 import com.fretcorridor.opt.tarification.TarificationResultat;
 import org.slf4j.Logger;
@@ -16,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -44,18 +48,18 @@ public class AffectationL1Service {
     private final ServiceMatClient serviceMatClient;
     private final ValhallaClient valhallaClient;
     private final TarificationL4Service tarificationL4Service;
-    // Persiste l'affectation confirmee : comble le trou d'architecture identifie -
-    // c'est la source de verite que TRK consultera en synchrone interne (meme
-    // porteur) pour connaitre origine/destination d'une mission et calculer son ETA.
     private final AffectationRepository affectationRepository;
+    private final OptEventPublisher eventPublisher;
 
     public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
                                  TarificationL4Service tarificationL4Service,
-                                 AffectationRepository affectationRepository) {
+                                 AffectationRepository affectationRepository,
+                                 OptEventPublisher eventPublisher) {
         this.serviceMatClient = serviceMatClient;
         this.valhallaClient = valhallaClient;
         this.tarificationL4Service = tarificationL4Service;
         this.affectationRepository = affectationRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
@@ -112,9 +116,6 @@ public class AffectationL1Service {
             UUID demandeId = demande.demandeId();
 
             if (indiceCapacite == -1) {
-                // Pas d'affectation ce cycle (plus de demandes que de capacites) -
-                // pas d'itineraire a calculer, pas de tarification non plus :
-                // ce n'est pas un mode degrade, juste l'absence d'affectation.
                 resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null, null));
                 continue;
             }
@@ -122,30 +123,13 @@ public class AffectationL1Service {
             UUID capaciteId = capacitesReference.get(indiceCapacite);
             CandidatCoutDto candidatRetenu = demande.candidats().get(indiceCapacite);
 
-            // Etape 3 du moteur V0 (README module optimisation) : appel Valhalla
-            // pour le calcul de trajet, une fois l'affectation optimale connue -
-            // jamais avant, pour ne pas calculer d'itineraires inutiles sur des
-            // candidats finalement non retenus (le budget Valhalla, cf ADR dans
-            // ValhallaClientProperties, est nettement plus genereux que L0/L1 mais
-            // reste couteux a l'echelle d'un lot entier).
             ItineraireResponseDto itineraire = calculerItineraireSiPossible(demande, candidatRetenu);
 
-            // Etape 4 du moteur V0 (Tarification L4, CDC S8.9) : la distance
-            // vient de Valhalla si l'itineraire a pu etre calcule, null sinon
-            // (regime FORFAITAIRE_VEHICULE n'en a pas besoin - cf
-            // TarificationL4Service). facteurTensionBrut = ZERO explicite :
-            // l'observatoire de marche (EF-BUR, Phase 3) n'alimente pas
-            // encore ce signal en V0 - tension neutre plutot qu'un chiffre
-            // invente, jamais l'inverse.
             Double distanceMetres = itineraire != null ? itineraire.distanceMetres() : null;
             TarificationResultat tarification = tarificationL4Service.calculer(
                     demande.axeId(), candidatRetenu.typeVehicule(), demande.poidsTaxableKg(),
                     distanceMetres, BigDecimal.ZERO);
 
-            // Persistance de l'affectation confirmee (comble le trou d'architecture) :
-            // toutes les coordonnees itineraire/tarification sont extraites ici en
-            // valeurs nullables individuelles - chaque champ peut etre en mode
-            // degrade independamment (cf javadoc Affectation), jamais tout ou rien.
             Affectation affectation = new Affectation(
                     demandeId, capaciteId, cycleMatchingIds[i][indiceCapacite],
                     demande.origineDemande().latitude(), demande.origineDemande().longitude(),
@@ -171,19 +155,64 @@ public class AffectationL1Service {
                     cycleMatchingIds[i][indiceCapacite],
                     itineraire,
                     tarification));
+
+            // --- Publication Kafka : PropositionEmise (→ service-mkt) ---
+            if (missionId != null && tarification != null) {
+                PropositionEmiseEvent proposition = new PropositionEmiseEvent(
+                        UUID.randomUUID(),
+                        cycleMatchingIds[i][indiceCapacite],
+                        demandeId,
+                        capaciteId,
+                        missionId,
+                        demande.axeId(),
+                        1, // rang 1 pour l'affectation optimale
+                        "Affectation optimale L1 (Kuhn-Munkres)",
+                        tarification.prixTransport(),
+                        tarification.commissionPlateforme(),
+                        "XAF",
+                        itineraire != null ? itineraire.distanceMetres() : 0,
+                        itineraire != null ? itineraire.dureeSecondes() : null,
+                        demande.origineDemande() != null ? "Origine" : null,
+                        demande.destinationDemande() != null ? "Destination" : null,
+                        Instant.now()
+                );
+                eventPublisher.publierPropositionEmise(proposition);
+
+                // --- Publication Kafka : AffectationConfirmee (→ service-exe) ---
+                AffectationConfirmeeEvent confirmation = new AffectationConfirmeeEvent(
+                        UUID.randomUUID(),
+                        missionId,
+                        demandeId,
+                        capaciteId,
+                        candidatRetenu.vehiculeId(),
+                        candidatRetenu.transporteurId(),
+                        demande.chargeurId(),
+                        demande.axeId(),
+                        demande.origineDemande() != null ? demande.origineDemande().latitude() : 0,
+                        demande.origineDemande() != null ? demande.origineDemande().longitude() : 0,
+                        null,
+                        demande.destinationDemande() != null ? demande.destinationDemande().latitude() : 0,
+                        demande.destinationDemande() != null ? demande.destinationDemande().longitude() : 0,
+                        null,
+                        itineraire != null ? itineraire.distanceMetres() : null,
+                        itineraire != null ? itineraire.dureeSecondes() : null,
+                        itineraire != null ? itineraire.intervalleConfianceSecondes() : null,
+                        itineraire != null ? itineraire.geometrieEncodee() : null,
+                        tarification.prixTransport(),
+                        tarification.commissionPlateforme(),
+                        tarification.montantVerseTransporteur(),
+                        "XAF",
+                        candidatRetenu.modeCollecte(),
+                        candidatRetenu.modeRemise(),
+                        Instant.now()
+                );
+                eventPublisher.publierAffectationConfirmee(confirmation);
+            }
         }
 
         return new AffectationLotResultat(false, resultatsFinaux);
     }
 
-    /**
-     * Construit la requete Valhalla (position de la capacite -> origine demande
-     * -> destination demande) et delegue a ValhallaClient. Retourne null sans
-     * lancer d'exception si une coordonnee manque (candidat/demande incomplets,
-     * cf javadoc ProfilCamionDto sur la faible completude des donnees ouvertes
-     * africaines) ou si Valhalla echoue - degradation gracieuse en cascade,
-     * jamais de blocage du cycle L1 pour une seule affectation (ENF-DIS-04).
-     */
     private ItineraireResponseDto calculerItineraireSiPossible(DemandeAvecCandidats demande,
                                                                  CandidatCoutDto candidatRetenu) {
         if (candidatRetenu.positionCapacite() == null
