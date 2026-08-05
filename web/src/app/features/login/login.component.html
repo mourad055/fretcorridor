@@ -1,33 +1,72 @@
-<main class="login-screen">
-  <h1>FretCorridor</h1>
-  <form (ngSubmit)="submit()" #loginForm="ngForm">
-    <label for="phone">Numéro de téléphone</label>
-    <input
-      id="phone"
-      name="phone"
-      type="tel"
-      autocomplete="tel"
-      [ngModel]="phone()"
-      (ngModelChange)="phone.set($event)"
-      required
-    />
+<section class="login-page">
+  <div class="login-layout">
+    <div class="login-pane">
+      <div class="login-card">
+        <header class="login-card__header">
+          <div class="login-card__logo">
+            <app-brand-logo size="lg" />
+          </div>
+          <h1 class="login-card__title">Connexion</h1>
+          <p class="login-card__hint">Le corridor de fret, connecté.</p>
+        </header>
 
-    <label for="code">Code reçu par SMS</label>
-    <input
-      id="code"
-      name="code"
-      type="text"
-      inputmode="numeric"
-      autocomplete="one-time-code"
-      [ngModel]="code()"
-      (ngModelChange)="code.set($event)"
-      required
-    />
+        <form class="login-form" (ngSubmit)="submit()" #loginForm="ngForm">
+          <div class="field">
+            <label class="field__label" for="phone">Numéro de téléphone</label>
+            <input
+              id="phone"
+              name="phone"
+              class="field__input"
+              type="tel"
+              autocomplete="tel"
+              [ngModel]="phone()"
+              (ngModelChange)="phone.set($event)"
+              required
+            />
+          </div>
 
-    <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+          <div class="field">
+            <label class="field__label" for="code">Code reçu par SMS</label>
+            <input
+              id="code"
+              name="code"
+              class="field__input"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              [ngModel]="code()"
+              (ngModelChange)="code.set($event)"
+              required
+            />
+          </div>
 
-    <button type="submit" [disabled]="submitting() || loginForm.invalid">
-      {{ submitting() ? 'Connexion…' : 'Se connecter' }}
-    </button>
-  </form>
-</main>
+          <p class="login-form__error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+          <button class="fc-btn fc-btn--primary fc-btn--block" type="submit" [disabled]="submitting() || loginForm.invalid">
+            {{ submitting() ? 'Connexion…' : 'Se connecter' }}
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="login-showcase" aria-hidden="true">
+      <video
+        class="login-showcase__video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        poster="/assets/login-preview-poster.jpg"
+        src="/assets/login-preview.mp4"
+      ></video>
+
+      <div class="login-showcase__scrim"></div>
+
+      <div class="login-showcase__caption">
+        <p class="login-showcase__title">FretCorridor</p>
+        <p class="login-showcase__subtitle">Le corridor de fret, connecté.</p>
+      </div>
+    </div>
+  </div>
+</section>

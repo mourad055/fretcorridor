@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { HOME_ROUTE_BY_ROLE } from '../../core/auth/auth.models';
+import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo.component';
 
 /**
  * FE-WEB-01 : écran de connexion unique (téléphone + code), aucune indication
@@ -13,8 +14,9 @@ import { HOME_ROUTE_BY_ROLE } from '../../core/auth/auth.models';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BrandLogoComponent],
   templateUrl: './login.component.html',
+  styleUrl: './login.component.css',
 })
 export class LoginComponent {
   readonly phone = signal('');
