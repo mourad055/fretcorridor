@@ -1,0 +1,9 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=docker (cf infra/docker-compose.yml).
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/fretcorridor
+  kafka:
+    # Listener PLAINTEXT interne (kafka:29092), pas localhost - cf correction
+    # du double-listener ci-dessus. C'est la ligne qui aurait echoue en silence
+    # avant la correction.
+    bootstrap-servers: kafka:29092

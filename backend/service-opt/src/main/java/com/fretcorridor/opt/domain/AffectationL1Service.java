@@ -44,12 +44,18 @@ public class AffectationL1Service {
     private final ServiceMatClient serviceMatClient;
     private final ValhallaClient valhallaClient;
     private final TarificationL4Service tarificationL4Service;
+    // Persiste l'affectation confirmee : comble le trou d'architecture identifie -
+    // c'est la source de verite que TRK consultera en synchrone interne (meme
+    // porteur) pour connaitre origine/destination d'une mission et calculer son ETA.
+    private final AffectationRepository affectationRepository;
 
     public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
-                                 TarificationL4Service tarificationL4Service) {
+                                 TarificationL4Service tarificationL4Service,
+                                 AffectationRepository affectationRepository) {
         this.serviceMatClient = serviceMatClient;
         this.valhallaClient = valhallaClient;
         this.tarificationL4Service = tarificationL4Service;
+        this.affectationRepository = affectationRepository;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
@@ -109,7 +115,7 @@ public class AffectationL1Service {
                 // Pas d'affectation ce cycle (plus de demandes que de capacites) -
                 // pas d'itineraire a calculer, pas de tarification non plus :
                 // ce n'est pas un mode degrade, juste l'absence d'affectation.
-                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null));
+                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null, null));
                 continue;
             }
 
@@ -136,9 +142,31 @@ public class AffectationL1Service {
                     demande.axeId(), candidatRetenu.typeVehicule(), demande.poidsTaxableKg(),
                     distanceMetres, BigDecimal.ZERO);
 
+            // Persistance de l'affectation confirmee (comble le trou d'architecture) :
+            // toutes les coordonnees itineraire/tarification sont extraites ici en
+            // valeurs nullables individuelles - chaque champ peut etre en mode
+            // degrade independamment (cf javadoc Affectation), jamais tout ou rien.
+            Affectation affectation = new Affectation(
+                    demandeId, capaciteId, cycleMatchingIds[i][indiceCapacite],
+                    demande.origineDemande().latitude(), demande.origineDemande().longitude(),
+                    demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
+                    itineraire != null ? itineraire.distanceMetres() : null,
+                    itineraire != null ? itineraire.dureeSecondes() : null,
+                    itineraire != null ? itineraire.intervalleConfianceSecondes() : null,
+                    itineraire != null ? itineraire.geometrieEncodee() : null,
+                    BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
+                    tarification.baremeId(), tarification.baremeVersion(), tarification.regime(),
+                    tarification.coutBase(), tarification.coutVariablePoidsTaxable(),
+                    tarification.coutServices(), tarification.facteurTensionApplique(),
+                    tarification.prixTransportAvantPlancher(), tarification.plancherApplique(),
+                    tarification.prixTransport(), tarification.commissionPlateforme(),
+                    tarification.montantVerseTransporteur(), tarification.modeDegrade());
+            UUID missionId = affectationRepository.save(affectation).getId();
+
             resultatsFinaux.add(new AffectationResultat(
                     demandeId,
                     capaciteId,
+                    missionId,
                     BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
                     cycleMatchingIds[i][indiceCapacite],
                     itineraire,

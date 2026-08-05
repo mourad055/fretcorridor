@@ -2,6 +2,7 @@ package com.fretcorridor.opt.config;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
@@ -18,6 +19,12 @@ import org.springframework.validation.annotation.Validated;
  * appel externe cacheable) - extrapolation raisonnable, PAS une exigence
  * citee du CDC. readTimeoutMs=2000 reprend le plafond "sans cache" de L3
  * comme majorant prudent en attendant un cache Redis sur les trajets frequents.
+ *
+ * margeRatioEta : DECISION D'EQUIPE egalement. ENF-TRK-01/02 exige une "ETA
+ * dynamique avec intervalle de confiance" sans fixer de formule. On applique
+ * un ratio simple (defaut 15%) sur la duree brute Valhalla en attendant un
+ * modele plus fin (base sur l'historique de trafic reel, hors perimetre V0).
+ * A documenter comme hypothese explicite dans docs/, pas comme valeur figee.
  */
 @ConfigurationProperties(prefix = "spring.client.valhalla")
 @Validated
@@ -32,10 +39,18 @@ public class ValhallaClientProperties {
     @Positive
     private int readTimeoutMs = 2000;
 
+    @PositiveOrZero
+    private double margeRatioEta = 0.15;
+
     public String getBaseUrl() { return baseUrl; }
     public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
+
     public int getConnectTimeoutMs() { return connectTimeoutMs; }
     public void setConnectTimeoutMs(int connectTimeoutMs) { this.connectTimeoutMs = connectTimeoutMs; }
+
     public int getReadTimeoutMs() { return readTimeoutMs; }
     public void setReadTimeoutMs(int readTimeoutMs) { this.readTimeoutMs = readTimeoutMs; }
+
+    public double getMargeRatioEta() { return margeRatioEta; }
+    public void setMargeRatioEta(double margeRatioEta) { this.margeRatioEta = margeRatioEta; }
 }
