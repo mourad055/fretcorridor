@@ -1,0 +1,20 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  application:
+    name: service-pay
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fretcorridor}
+    username: ${SPRING_DATASOURCE_USERNAME:fretcorridor}
+    password: ${SPRING_DATASOURCE_PASSWORD:fretcorridor}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
