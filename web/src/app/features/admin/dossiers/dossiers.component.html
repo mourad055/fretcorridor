@@ -15,6 +15,7 @@
   <table *ngIf="!loading() && dossiers().length > 0">
     <thead>
       <tr>
+        <th>Mission</th>
         <th>Type</th>
         <th>Priorité</th>
         <th>Statut</th>
@@ -24,6 +25,7 @@
     </thead>
     <tbody>
       <tr *ngFor="let dossier of dossiers()">
+        <td>{{ dossier.missionId }}</td>
         <td>{{ dossier.type }}</td>
         <td>{{ dossier.priorite }}</td>
         <td>{{ dossier.statut }}</td>
@@ -32,7 +34,7 @@
           <button type="button" (click)="prendreEnCharge(dossier.id)" [disabled]="dossier.statut === 'CLOS'">
             Prendre en charge
           </button>
-          <button type="button" (click)="ouvrirDossier(dossier.id)">Consulter</button>
+          <button type="button" (click)="ouvrirDossier(dossier.id)">Voir le dossier</button>
         </td>
       </tr>
     </tbody>

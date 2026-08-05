@@ -12,10 +12,12 @@ import { defineConfig, devices } from '@playwright/test';
  * Depuis le Sprint 8 : service-pay est un service réel (pas un mock) — il doit
  * tourner pour que les endpoints de paiement de la gateway répondent, adossé
  * à Postgres réel sur le port 5434 (cf. docs/adr/0006, addendum Sprint 8).
+ * Depuis le Sprint 10 : service-adm (back-office) est également réel, adossé
+ * à la même base Postgres partagée (tables distinctes, pas de conflit).
  */
 const WEB_PORT = 4201;
 const JAVA_HOME = 'JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64';
-const SERVICE_PAY_DB = 'SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5434/fretcorridor';
+const SHARED_DB = 'SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5434/fretcorridor';
 
 export default defineConfig({
   testDir: './e2e',
@@ -35,8 +37,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: `${SERVICE_PAY_DB} ${JAVA_HOME} mvn -q -f ../backend/service-pay/pom.xml spring-boot:run`,
+      command: `${SHARED_DB} ${JAVA_HOME} mvn -q -f ../backend/service-pay/pom.xml spring-boot:run`,
       url: 'http://localhost:8084/actuator/health',
+      reuseExistingServer: false,
+      timeout: 180_000,
+    },
+    {
+      command: `${SHARED_DB} ${JAVA_HOME} mvn -q -f ../backend/service-adm/pom.xml spring-boot:run`,
+      url: 'http://localhost:8085/actuator/health',
       reuseExistingServer: false,
       timeout: 180_000,
     },

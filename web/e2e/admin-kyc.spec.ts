@@ -24,7 +24,8 @@ test.describe('Dashboard KYC Admin', () => {
   });
 
   test("un admin voit la file d'attente et peut valider un dossier", async ({ page }) => {
-    const rows = page.locator('tbody tr');
+    const kycTable = page.locator('.kyc-dashboard > table');
+    const rows = kycTable.locator('tbody tr');
     const initialCount = await rows.count();
     expect(initialCount).toBeGreaterThan(0);
 
@@ -33,11 +34,12 @@ test.describe('Dashboard KYC Admin', () => {
     await firstRow.getByRole('button', { name: 'Valider' }).click();
 
     await expect(rows).toHaveCount(initialCount - 1);
-    await expect(page.locator('tbody')).not.toContainText(acteurNom ?? '');
+    await expect(kycTable.locator('tbody')).not.toContainText(acteurNom ?? '');
   });
 
   test('un admin peut rejeter un dossier', async ({ page }) => {
-    const rows = page.locator('tbody tr');
+    const kycTable = page.locator('.kyc-dashboard > table');
+    const rows = kycTable.locator('tbody tr');
     const initialCount = await rows.count();
     expect(initialCount).toBeGreaterThan(0);
 
