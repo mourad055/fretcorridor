@@ -1,0 +1,79 @@
+asyncapi: '2.6.0'
+info:
+  title: PositionBrute
+  version: 0.1.0-draft
+  description: >
+    BROUILLON, redige cote Moteur (Personne 3) en l'absence de contrat existant
+    dans shared-contracts/. A VALIDER avec Personne 1 (Mobile, porteur de
+    service-flt, qui publiera cet evenement) au point de synchronisation
+    hebdomadaire des contrats d'API (cf Feuille de route S5.1) avant toute
+    implementation cote FLT. Ne pas considerer ce contrat comme fige.
+channels:
+  position-brute:
+    publish:
+      summary: Position GPS brute capturee par l'app Chauffeur/Transporteur (module FLT, Mobile)
+      message:
+        $ref: '#/components/messages/PositionBrute'
+components:
+  messages:
+    PositionBrute:
+      name: PositionBrute
+      title: Position GPS brute
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PositionBrutePayload'
+  schemas:
+    PositionBrutePayload:
+      type: object
+      required:
+        - eventId
+        - missionId
+        - vehiculeId
+        - latitude
+        - longitude
+        - sourceCapture
+        - horodatageCapture
+        - horodatageTransmission
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: >
+            Cle d'idempotence generee par FLT AU MOMENT DE LA CAPTURE (pas de
+            la transmission) - indispensable pour que TRK deduplique les
+            re-envois issus du mode hors ligne sans creer de doublon
+            (ENF-SEC-03, Plan d'execution S4.3).
+        missionId:
+          type: string
+          format: uuid
+        vehiculeId:
+          type: string
+          format: uuid
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        sourceCapture:
+          type: string
+          enum: [GPS_NATIF, GPS_DEGRADE, MANUEL]
+          description: Mode de capture - affiche a l'utilisateur avec l'age de la position (EF-TRK-04).
+        precisionMetres:
+          type: number
+          format: double
+          nullable: true
+          description: Precision GPS rapportee par l'appareil, si disponible.
+        horodatageCapture:
+          type: string
+          format: date-time
+          description: >
+            Horodatage au moment de la capture sur l'appareil - distinct de la
+            transmission (meme principe que EF-EXE-04/05).
+        horodatageTransmission:
+          type: string
+          format: date-time
+          description: >
+            Horodatage au moment de l'envoi reel au backend - peut etre tres
+            posterieur a horodatageCapture en cas de coupure reseau prolongee
+            (app chauffeur offline-first, ENF-OFF-01).
