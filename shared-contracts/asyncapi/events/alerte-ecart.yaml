@@ -62,6 +62,7 @@ components:
             format: date-time
           agePositionSecondes:
             type: integer
+            format: int64
           sourceCapture:
             type: string
           horodatageDetection:

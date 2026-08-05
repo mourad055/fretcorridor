@@ -1,7 +1,7 @@
 package com.fretcorridor.opt.domain;
 
 import com.fretcorridor.opt.client.CandidatCoutDto;
-import com.fretcorridor.opt.client.PointGeoDto;
+import com.fretcorridor.dto.PointGeoDto;
 
 import java.util.List;
 import java.util.UUID;
