@@ -3,13 +3,16 @@ version: "3.9"
 services:
   postgres:
     image: postgis/postgis:16-3.4
-    container_name: fretcorridor-postgres
+    # Nom et port non standards : cette machine de développement partagée a
+    # déjà d'autres services nommés/portés ainsi (cf. docs/adr/0006, même
+    # principe appliqué ici pour Postgres).
+    container_name: fretcorridor-web-postgres
     environment:
       POSTGRES_USER: fretcorridor
       POSTGRES_PASSWORD: fretcorridor
       POSTGRES_DB: fretcorridor
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
