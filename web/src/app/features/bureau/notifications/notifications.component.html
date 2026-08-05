@@ -1,0 +1,17 @@
+<section class="notifications">
+  <h2>Centre de notifications</h2>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && notifications().length === 0">Aucune notification pour l'instant.</p>
+
+  <ul class="notifications-list" *ngIf="!loading() && notifications().length > 0">
+    <li *ngFor="let notification of notifications()">
+      <span class="notifications-canal">{{ notification.canal }}</span>
+      <strong>{{ notification.objet }}</strong>
+      <p>{{ notification.resume }}</p>
+      <span class="notifications-destinataire">{{ notification.destinataire }}</span>
+      <time [attr.datetime]="notification.envoyeeLe">{{ notification.envoyeeLe | date: 'short' }}</time>
+    </li>
+  </ul>
+</section>

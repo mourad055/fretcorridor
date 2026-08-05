@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — Gateway — Centre de notifications (Bureau)
+  version: "1.0.0"
+  description: >
+    Sprint 9 (PRD §9) : centre de notifications côté web, canal email. Un
+    Bureau ne voit que les notifications de son propre tenant (ENF-MUL-01).
+    Consomme aujourd'hui un adaptateur mock côté gateway, en attendant
+    service-not (Mobile) — TODO(mobile).
+servers:
+  - url: http://localhost:8082
+
+paths:
+  /api/v1/bureau/notifications:
+    get:
+      operationId: listBureauNotifications
+      summary: Liste les notifications envoyées au tenant de l'acteur Bureau
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Notifications du tenant courant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Rôle insuffisant (réservé au rôle BUREAU)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Notification:
+      type: object
+      required: [id, canal, destinataire, objet, resume, envoyeeLe]
+      properties:
+        id:
+          type: string
+        canal:
+          type: string
+          enum: [EMAIL]
+        destinataire:
+          type: string
+        objet:
+          type: string
+        resume:
+          type: string
+        envoyeeLe:
+          type: string
+          format: date-time
