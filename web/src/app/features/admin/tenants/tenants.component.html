@@ -1,0 +1,32 @@
+<section class="tenants">
+  <h2>Gestion des tenants</h2>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && tenants().length === 0">Aucun tenant enregistré.</p>
+
+  <table *ngIf="!loading() && tenants().length > 0">
+    <thead>
+      <tr>
+        <th>Identifiant</th>
+        <th>Nom</th>
+        <th>Pays</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let tenant of tenants()">
+        <td>{{ tenant.id }}</td>
+        <td>{{ tenant.nom }}</td>
+        <td>{{ tenant.pays }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <label for="tenant-id">Identifiant</label>
+  <input id="tenant-id" [ngModel]="nouvelId()" (ngModelChange)="nouvelId.set($event)" />
+  <label for="tenant-nom">Nom</label>
+  <input id="tenant-nom" [ngModel]="nouvelNom()" (ngModelChange)="nouvelNom.set($event)" />
+  <label for="tenant-pays">Pays</label>
+  <input id="tenant-pays" [ngModel]="nouveauPays()" (ngModelChange)="nouveauPays.set($event)" />
+  <button type="button" (click)="creer()">Créer le tenant</button>
+</section>

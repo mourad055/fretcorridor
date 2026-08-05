@@ -1,0 +1,32 @@
+<section class="configurations">
+  <h2>Configuration versionnée</h2>
+
+  <label for="configuration-cle">Clé</label>
+  <input id="configuration-cle" [ngModel]="cle()" (ngModelChange)="cle.set($event)" />
+  <button type="button" (click)="consulter()">Consulter l'historique</button>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+  <table *ngIf="historique().length > 0">
+    <thead>
+      <tr>
+        <th>Version</th>
+        <th>Valeur</th>
+        <th>Auteur</th>
+        <th>Créée le</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let version of historique()">
+        <td>{{ version.version }}</td>
+        <td>{{ version.valeur }}</td>
+        <td>{{ version.auteur }}</td>
+        <td>{{ version.creeLe | date: 'short' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <label for="configuration-valeur">Nouvelle valeur</label>
+  <input id="configuration-valeur" [ngModel]="nouvelleValeur()" (ngModelChange)="nouvelleValeur.set($event)" />
+  <button type="button" (click)="definir()">Définir une nouvelle version</button>
+</section>

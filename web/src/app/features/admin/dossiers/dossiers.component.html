@@ -1,0 +1,69 @@
+<section class="dossiers">
+  <h2>File de travail</h2>
+
+  <label for="dossiers-tenant">Tenant</label>
+  <select id="dossiers-tenant" [ngModel]="tenantSelectionne()" (ngModelChange)="tenantSelectionne.set($event)">
+    <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
+  </select>
+  <button type="button" (click)="consulterFileDeTravail()">Consulter</button>
+  <button type="button" (click)="declencherEscalade()">Détecter les dossiers en retard</button>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && dossiers().length === 0">Aucun dossier dans la file de travail.</p>
+
+  <table *ngIf="!loading() && dossiers().length > 0">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Priorité</th>
+        <th>Statut</th>
+        <th>Délai</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let dossier of dossiers()">
+        <td>{{ dossier.type }}</td>
+        <td>{{ dossier.priorite }}</td>
+        <td>{{ dossier.statut }}</td>
+        <td>{{ dossier.delaiTraitement | date: 'short' }}</td>
+        <td>
+          <button type="button" (click)="prendreEnCharge(dossier.id)" [disabled]="dossier.statut === 'CLOS'">
+            Prendre en charge
+          </button>
+          <button type="button" (click)="ouvrirDossier(dossier.id)">Consulter</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="dossier-consolide" *ngIf="dossierConsolide() as consolide">
+    <h3>Dossier {{ consolide.dossier.id }}</h3>
+    <p>Parties : {{ consolide.dossier.parties.join(', ') }}</p>
+
+    <div *ngIf="consolide.mission as mission">
+      <h4>Chronologie de la mission {{ mission.id }}</h4>
+      <ul>
+        <li *ngFor="let etape of mission.etapes">{{ etape.type }} — {{ etape.lieu }} ({{ etape.etat }})</li>
+      </ul>
+    </div>
+
+    <div *ngIf="consolide.ecritures.length > 0">
+      <h4>Écritures</h4>
+      <ul>
+        <li *ngFor="let ecriture of consolide.ecritures">{{ ecriture.nature }} — {{ ecriture.montant }}</li>
+      </ul>
+    </div>
+
+    <div *ngIf="consolide.dossier.statut !== 'CLOS'">
+      <label for="dossier-decision">Décision</label>
+      <input id="dossier-decision" [ngModel]="decisionTexte()" (ngModelChange)="decisionTexte.set($event)" />
+      <label for="dossier-motif">Motif</label>
+      <input id="dossier-motif" [ngModel]="motifTexte()" (ngModelChange)="motifTexte.set($event)" />
+      <button type="button" (click)="trancher()">Trancher</button>
+    </div>
+
+    <button type="button" (click)="fermerDossier()">Fermer</button>
+  </div>
+</section>

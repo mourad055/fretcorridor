@@ -1,0 +1,28 @@
+<section class="journal-audit">
+  <h2>Journal d'audit</h2>
+
+  <button type="button" (click)="exporter()">Exporter en CSV</button>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+  <p *ngIf="!loading() && entrees().length === 0">Aucune entrée dans le journal d'audit.</p>
+
+  <table *ngIf="!loading() && entrees().length > 0">
+    <thead>
+      <tr>
+        <th>Acteur</th>
+        <th>Action</th>
+        <th>Ressource</th>
+        <th>Horodatage</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let entree of entrees()">
+        <td>{{ entree.acteurId }}</td>
+        <td>{{ entree.action }}</td>
+        <td>{{ entree.ressource }}</td>
+        <td>{{ entree.horodatage | date: 'short' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</section>

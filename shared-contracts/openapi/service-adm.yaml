@@ -1,0 +1,455 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — service-adm
+  version: "1.0.0"
+  description: >
+    Sprint 10 (PRD §9, back-office complet). File de travail priorisée
+    (modération, incidents, litiges) avec escalade automatique sur
+    dépassement de délai, configuration versionnée et auditée (jamais
+    modifiée en place), gestion des tenants, journal d'audit append-only
+    (ENF-SEC-02). L'ouverture d'un dossier par POST direct est temporaire —
+    remplacée par une consommation d'événements Kafka
+    (LitigeSignale/IncidentDetecte) une fois le bus câblé pour ce service.
+servers:
+  - url: http://localhost:8085
+
+paths:
+  /api/v1/dossiers:
+    get:
+      operationId: fileDeTravail
+      summary: Liste les dossiers d'un tenant, priorisés (priorité haute puis délai le plus proche)
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File de travail du tenant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dossier'
+    post:
+      operationId: ouvrirDossier
+      summary: Ouvre un nouveau dossier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OuvrirDossierRequest'
+      responses:
+        '201':
+          description: Dossier ouvert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+
+  /api/v1/dossiers/{dossierId}:
+    get:
+      operationId: consulterDossier
+      summary: Consulte un dossier par son identifiant
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dossier trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '404':
+          description: Dossier introuvable (RFC 7807)
+
+  /api/v1/dossiers/{dossierId}/prise-en-charge:
+    post:
+      operationId: prendreEnChargeDossier
+      summary: Passe le dossier en cours de traitement
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [acteurId]
+              properties:
+                acteurId:
+                  type: string
+      responses:
+        '200':
+          description: Dossier pris en charge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '404':
+          description: Dossier introuvable (RFC 7807)
+        '409':
+          description: Dossier déjà clos (RFC 7807)
+
+  /api/v1/dossiers/{dossierId}/decision:
+    post:
+      operationId: deciderDossier
+      summary: Clôture le dossier par une décision journalisée
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, motif, acteurId]
+              properties:
+                decision:
+                  type: string
+                motif:
+                  type: string
+                acteurId:
+                  type: string
+      responses:
+        '200':
+          description: Dossier clos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+        '404':
+          description: Dossier introuvable (RFC 7807)
+        '409':
+          description: Dossier déjà clos (RFC 7807)
+
+  /api/v1/dossiers/escalade:
+    post:
+      operationId: declencherEscalade
+      summary: Détecte et escalade automatiquement les dossiers dont le délai de traitement est dépassé
+      responses:
+        '200':
+          description: Dossiers escaladés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dossier'
+
+  /api/v1/configurations/{cle}:
+    get:
+      operationId: valeurCouranteConfiguration
+      summary: Valeur courante d'une configuration versionnée
+      parameters:
+        - name: cle
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: perimetre
+          in: query
+          schema:
+            type: string
+            default: GLOBAL
+      responses:
+        '200':
+          description: Version courante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Configuration'
+        '404':
+          description: Aucune version définie
+    put:
+      operationId: definirConfiguration
+      summary: Crée une nouvelle version de la configuration (jamais de modification en place)
+      parameters:
+        - name: cle
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [valeur, auteur]
+              properties:
+                perimetre:
+                  type: string
+                valeur:
+                  type: string
+                auteur:
+                  type: string
+      responses:
+        '200':
+          description: Nouvelle version créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Configuration'
+
+  /api/v1/configurations/{cle}/historique:
+    get:
+      operationId: historiqueConfiguration
+      summary: Historique complet des versions d'une configuration
+      parameters:
+        - name: cle
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: perimetre
+          in: query
+          schema:
+            type: string
+            default: GLOBAL
+      responses:
+        '200':
+          description: Historique des versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Configuration'
+
+  /api/v1/tenants:
+    get:
+      operationId: listerTenants
+      summary: Liste tous les tenants
+      responses:
+        '200':
+          description: Tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tenant'
+    post:
+      operationId: creerTenant
+      summary: Crée un nouveau tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, nom, pays, auteur]
+              properties:
+                id:
+                  type: string
+                nom:
+                  type: string
+                pays:
+                  type: string
+                auteur:
+                  type: string
+      responses:
+        '201':
+          description: Tenant créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        '409':
+          description: Identifiant déjà utilisé (RFC 7807)
+
+  /api/v1/journal-audit:
+    get:
+      operationId: listerJournalAudit
+      summary: Liste les entrées du journal d'audit (append-only)
+      parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entrées du journal
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntreeJournalAudit'
+    post:
+      operationId: enregistrerAudit
+      summary: Enregistre une entrée d'audit (append-only, aucune mise à jour ni suppression possible)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [acteurId, action, ressource]
+              properties:
+                tenantId:
+                  type: string
+                acteurId:
+                  type: string
+                action:
+                  type: string
+                ressource:
+                  type: string
+      responses:
+        '201':
+          description: Entrée enregistrée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntreeJournalAudit'
+
+  /api/v1/journal-audit/export:
+    get:
+      operationId: exporterJournalAudit
+      summary: Exporte le journal d'audit au format CSV
+      parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Export CSV
+          content:
+            text/csv:
+              schema:
+                type: string
+
+components:
+  schemas:
+    OuvrirDossierRequest:
+      type: object
+      required: [tenantId, type, priorite, delaiTraitement]
+      properties:
+        tenantId:
+          type: string
+        type:
+          type: string
+          enum: [MODERATION, INCIDENT, LITIGE]
+        priorite:
+          type: string
+          enum: [BASSE, NORMALE, HAUTE]
+        missionId:
+          type: string
+        parties:
+          type: array
+          items:
+            type: string
+        preuvesReferences:
+          type: array
+          items:
+            type: string
+        delaiTraitement:
+          type: string
+          format: date-time
+
+    Dossier:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        type:
+          type: string
+          enum: [MODERATION, INCIDENT, LITIGE]
+        priorite:
+          type: string
+          enum: [BASSE, NORMALE, HAUTE]
+        statut:
+          type: string
+          enum: [OUVERT, EN_COURS, ESCALADE, CLOS]
+        missionId:
+          type: string
+        parties:
+          type: array
+          items:
+            type: string
+        preuvesReferences:
+          type: array
+          items:
+            type: string
+        ouvertLe:
+          type: string
+          format: date-time
+        delaiTraitement:
+          type: string
+          format: date-time
+        priseEnChargeParActeurId:
+          type: string
+        decision:
+          type: string
+        motifDecision:
+          type: string
+        decidePar:
+          type: string
+        decideLe:
+          type: string
+          format: date-time
+
+    Configuration:
+      type: object
+      properties:
+        cle:
+          type: string
+        perimetre:
+          type: string
+        valeur:
+          type: string
+        auteur:
+          type: string
+        version:
+          type: integer
+        creeLe:
+          type: string
+          format: date-time
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+        nom:
+          type: string
+        pays:
+          type: string
+
+    EntreeJournalAudit:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        acteurId:
+          type: string
+        action:
+          type: string
+        ressource:
+          type: string
+        horodatage:
+          type: string
+          format: date-time
