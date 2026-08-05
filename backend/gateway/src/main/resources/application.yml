@@ -19,6 +19,10 @@ fretcorridor:
   jwt:
     secret: ${FRETCORRIDOR_JWT_SECRET:dev-secret-change-me-in-production-min-32-bytes}
     validity-minutes: 60
+  service-pay:
+    # service-pay est réellement implémenté (contrairement aux autres services
+    # de ce périmètre) — appel HTTP réel, pas un mock (cf. docs/adr).
+    base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://localhost:8084}
 
 management:
   endpoints:
