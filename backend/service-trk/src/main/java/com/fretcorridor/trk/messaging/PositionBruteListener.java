@@ -103,7 +103,15 @@ public class PositionBruteListener {
                 dernierePosition.getLongitude()   // TODO Phase 2 : remplacer par destination réelle
         );
 
-        if (eta.isDisponible()) {
+        // Garde-fou defensif (meme principe que ValhallaClient/TarificationL4Service
+        // ailleurs dans ce perimetre) : eta ne devrait jamais etre null en
+        // production (EtaCalculator renvoie toujours un EtaResultat, y compris
+        // "indisponible" via EtaResultat.indisponible(...), jamais une reference
+        // null litterale) - mais une future evolution de EtaCalculator (ou un
+        // mock de test mal cadre) ne doit jamais faire planter l'ingestion d'une
+        // position reelle pour autant. ENF-DIS-04 : le suivi ne doit jamais
+        // s'arreter a cause d'un echec du calcul d'ETA.
+        if (eta != null && eta.isDisponible()) {
             PositionEtaEvent etaEvent = new PositionEtaEvent(
                     UUID.randomUUID(),
                     missionId,
