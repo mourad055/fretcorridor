@@ -1,0 +1,40 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: service-trk
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    schemas: trk
+    default-schema: trk
+  kafka:
+    # Listener PLAINTEXT_HOST (localhost:9092) - profil par defaut = run hors Docker.
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: service-trk
+      # earliest, pas latest : coherent avec EF-TRK-01 (ingestion tolerante a la
+      # connectivite) - si service-trk redemarre apres un arret, il doit rattraper
+      # les positions publiees pendant son absence, jamais les perdre silencieusement.
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        # Le producteur (service-flt, Mobile - code Dart/Flutter cote app, backend
+        # Java distinct) n'inclura pas l'en-tete __TypeId__ specifique a Spring -
+        # on force donc le type de desserialisation cible plutot que de compter
+        # dessus, pour rester compatible avec un producteur non-Spring.
+        spring.json.value.default.type: com.fretcorridor.trk.messaging.PositionBruteEvent
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: com.fretcorridor.trk.messaging
+
+logging:
+  level:
+    com.fretcorridor.trk: DEBUG
