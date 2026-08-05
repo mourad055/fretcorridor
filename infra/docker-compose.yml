@@ -100,7 +100,8 @@ services:
 
   service-geo:
     build:
-      context: ../backend/service-geo
+      context: ../backend
+      dockerfile: service-geo/Dockerfile
     container_name: fretcorridor-service-geo
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -112,7 +113,8 @@ services:
 
   service-opt:
     build:
-      context: ../backend/service-opt
+      context: ../backend
+      dockerfile: service-opt/Dockerfile
     container_name: fretcorridor-service-opt
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -143,8 +145,8 @@ services:
 
   service-mat:
     build:
-      context: ../backend/service-mat
-      dockerfile: Dockerfile
+      context: ../backend
+      dockerfile: service-mat/Dockerfile
     container_name: fretcorridor-service-mat
     environment:
       SPRING_PROFILES_ACTIVE: docker
@@ -156,7 +158,8 @@ services:
 
   service-trk:
     build:
-      context: ../backend/service-trk
+      context: ../backend
+      dockerfile: service-trk/Dockerfile
     container_name: fretcorridor-service-trk
     environment:
       SPRING_PROFILES_ACTIVE: docker
