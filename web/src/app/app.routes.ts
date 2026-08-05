@@ -6,6 +6,7 @@ import { ForbiddenComponent } from './features/forbidden/forbidden.component';
 import { AxesMapComponent } from './features/bureau/axes/axes-map.component';
 import { CapacitesListComponent } from './features/transporteur/capacites/capacites-list.component';
 import { KycDashboardComponent } from './features/admin/kyc/kyc-dashboard.component';
+import { ShellComponent } from './layout/shell/shell.component';
 import { roleGuard, guestGuard } from './core/auth/role.guard';
 import { AuthService } from './core/auth/auth.service';
 import { HOME_ROUTE_BY_ROLE } from './core/auth/auth.models';
@@ -21,13 +22,19 @@ export const routes: Routes = [
   { path: '', component: LoginComponent, canActivate: [rootRedirectGuard] },
   { path: 'login', component: LoginComponent, canActivate: [guestGuard] },
   { path: '403', component: ForbiddenComponent },
-  { path: 'bureau', component: AxesMapComponent, canActivate: [roleGuard], data: { role: 'BUREAU' } },
   {
-    path: 'transporteur',
-    component: CapacitesListComponent,
-    canActivate: [roleGuard],
-    data: { role: 'TRANSPORTEUR' },
+    path: '',
+    component: ShellComponent,
+    children: [
+      { path: 'bureau', component: AxesMapComponent, canActivate: [roleGuard], data: { role: 'BUREAU' } },
+      {
+        path: 'transporteur',
+        component: CapacitesListComponent,
+        canActivate: [roleGuard],
+        data: { role: 'TRANSPORTEUR' },
+      },
+      { path: 'admin', component: KycDashboardComponent, canActivate: [roleGuard], data: { role: 'ADMIN' } },
+    ],
   },
-  { path: 'admin', component: KycDashboardComponent, canActivate: [roleGuard], data: { role: 'ADMIN' } },
   { path: '**', redirectTo: 'login' },
 ];

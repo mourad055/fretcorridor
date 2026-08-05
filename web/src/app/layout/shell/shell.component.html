@@ -1,0 +1,27 @@
+<div class="shell">
+  <header class="shell__header">
+    <div class="shell__header-inner">
+      <div class="shell__brand">
+        <app-brand-logo size="sm" />
+        @if (roleLabel()) {
+          <span class="shell__role">{{ roleLabel() }}</span>
+        }
+        @if (session()?.tenantId) {
+          <span class="shell__tenant">{{ session()?.tenantId }}</span>
+        }
+      </div>
+
+      <div class="shell__actions">
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="logout()">
+          Déconnexion
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell__main">
+    <div class="shell__main-inner">
+      <router-outlet />
+    </div>
+  </main>
+</div>
