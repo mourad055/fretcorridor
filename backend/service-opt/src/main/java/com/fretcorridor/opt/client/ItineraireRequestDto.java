@@ -1,5 +1,7 @@
 package com.fretcorridor.opt.client;
 
+import com.fretcorridor.dto.PointGeoDto;
+
 import java.util.List;
 
 /**
