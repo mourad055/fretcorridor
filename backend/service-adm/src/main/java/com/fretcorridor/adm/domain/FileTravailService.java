@@ -34,6 +34,10 @@ public class FileTravailService {
         return dossierPort.lister(tenantId).stream().sorted(PAR_PRIORITE_PUIS_DELAI).toList();
     }
 
+    public Dossier consulter(String dossierId) {
+        return dossierPort.parId(dossierId).orElseThrow(() -> new DossierIntrouvableException(dossierId));
+    }
+
     public Dossier prendreEnCharge(String dossierId, String acteurId) {
         Dossier dossier = dossierPort.parId(dossierId).orElseThrow(() -> new DossierIntrouvableException(dossierId));
         Dossier misAJour = dossier.priseEnCharge(acteurId);
