@@ -12,8 +12,9 @@ test.describe('Capacités déclarées — Transporteur', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/transporteur$/);
 
-    await expect(page.locator('tbody tr')).toHaveCount(2);
-    await expect(page.locator('tbody')).toContainText('Camion 10T');
+    const capacitesTable = page.locator('table.capacites-table');
+    await expect(capacitesTable.locator('tbody tr')).toHaveCount(2);
+    await expect(capacitesTable.locator('tbody')).toContainText('Camion 10T');
   });
 
   test("un second Transporteur ne voit pas les capacités du premier", async ({ page }) => {
@@ -23,8 +24,9 @@ test.describe('Capacités déclarées — Transporteur', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/transporteur$/);
 
-    await expect(page.locator('tbody tr')).toHaveCount(1);
-    await expect(page.locator('tbody')).toContainText('Fourgon 3T');
-    await expect(page.locator('tbody')).not.toContainText('Camion 10T');
+    const capacitesTable = page.locator('table.capacites-table');
+    await expect(capacitesTable.locator('tbody tr')).toHaveCount(1);
+    await expect(capacitesTable.locator('tbody')).toContainText('Fourgon 3T');
+    await expect(capacitesTable.locator('tbody')).not.toContainText('Camion 10T');
   });
 });

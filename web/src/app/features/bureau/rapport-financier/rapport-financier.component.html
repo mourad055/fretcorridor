@@ -1,0 +1,8 @@
+<section class="rapport-financier">
+  <h2>Rapport financier</h2>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+
+  <app-ecritures-table *ngIf="!loading()" [ecritures]="ecritures()" />
+</section>

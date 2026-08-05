@@ -1,0 +1,23 @@
+<table *ngIf="ecritures.length > 0">
+  <thead>
+    <tr>
+      <th>Mission</th>
+      <th>Nature</th>
+      <th>Sens</th>
+      <th>Montant</th>
+      <th>Date</th>
+      <th>Statut</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let ecriture of ecritures">
+      <td>{{ ecriture.missionId }}</td>
+      <td>{{ ecriture.nature }}</td>
+      <td>{{ ecriture.sens }}</td>
+      <td>{{ ecriture.montant }}</td>
+      <td>{{ ecriture.creeLe | date: 'short' }}</td>
+      <td>{{ ecriture.statut }}</td>
+    </tr>
+  </tbody>
+</table>
+<p *ngIf="ecritures.length === 0">Aucune écriture.</p>

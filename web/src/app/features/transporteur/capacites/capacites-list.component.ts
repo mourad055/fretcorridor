@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { CapaciteService } from './capacite.service';
 import { Capacite } from './capacite.models';
 import { TransporteurMissionsComponent } from '../missions/transporteur-missions.component';
+import { PaiementComponent } from '../paiement/paiement.component';
 
 /** FE-TRP-01 (Sprint 4) : un Transporteur voit ses capacités déclarées, lecture seule. */
 @Component({
   selector: 'app-capacites-list',
   standalone: true,
-  imports: [CommonModule, TransporteurMissionsComponent],
+  imports: [CommonModule, TransporteurMissionsComponent, PaiementComponent],
   templateUrl: './capacites-list.component.html',
 })
 export class CapacitesListComponent implements OnInit {

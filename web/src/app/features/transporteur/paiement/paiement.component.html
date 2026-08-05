@@ -1,0 +1,11 @@
+<section class="paiement">
+  <h2>Solde &amp; paiement</h2>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+
+  <ng-container *ngIf="!loading() && solde() as s">
+    <p class="solde-montant">Solde reçu à ce jour : <strong>{{ s.solde }}</strong></p>
+    <app-ecritures-table [ecritures]="s.historique" />
+  </ng-container>
+</section>

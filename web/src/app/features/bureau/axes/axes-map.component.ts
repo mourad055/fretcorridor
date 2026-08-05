@@ -5,6 +5,7 @@ import { Axe, layoutHubs, layoutSegments } from './axe.models';
 import { MissionsListComponent } from '../missions/missions-list.component';
 import { PositionsListComponent } from '../positions/positions-list.component';
 import { BureauChronologieComponent } from '../chronologie/bureau-chronologie.component';
+import { RapportFinancierComponent } from '../rapport-financier/rapport-financier.component';
 
 /**
  * FE-BUR-01 (Sprint 3) : un Bureau voit une carte des axes de son tenant.
@@ -15,7 +16,7 @@ import { BureauChronologieComponent } from '../chronologie/bureau-chronologie.co
 @Component({
   selector: 'app-axes-map',
   standalone: true,
-  imports: [CommonModule, MissionsListComponent, PositionsListComponent, BureauChronologieComponent],
+  imports: [CommonModule, MissionsListComponent, PositionsListComponent, BureauChronologieComponent, RapportFinancierComponent],
   templateUrl: './axes-map.component.html',
 })
 export class AxesMapComponent implements OnInit {

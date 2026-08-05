@@ -32,9 +32,10 @@ describe('CapacitesListComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  /** Le composant embarque <app-transporteur-missions>, qui déclenche sa propre requête au chargement. */
+  /** Le composant embarque <app-transporteur-missions> et <app-paiement>, qui déclenchent leurs propres requêtes au chargement. */
   function flushMissionsRequest(): void {
     httpMock.expectOne(`${environment.apiBaseUrl}/transporteur/missions`).flush([]);
+    httpMock.expectOne(`${environment.apiBaseUrl}/transporteur/paiement`).flush({ solde: 0, historique: [] });
   }
 
   it('affiche une ligne par capacite declaree au chargement', () => {

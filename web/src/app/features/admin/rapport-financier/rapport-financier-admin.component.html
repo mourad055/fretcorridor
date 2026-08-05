@@ -1,0 +1,14 @@
+<section class="rapport-financier-admin">
+  <h2>Rapport financier (consultation transverse)</h2>
+
+  <label for="tenant-select">Tenant</label>
+  <select id="tenant-select" name="tenant" [ngModel]="tenantSelectionne()" (ngModelChange)="tenantSelectionne.set($event)">
+    <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
+  </select>
+  <button type="button" (click)="consulter()" [disabled]="loading()">Consulter</button>
+
+  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p *ngIf="loading()">Chargement…</p>
+
+  <app-ecritures-table *ngIf="!loading() && ecritures() as e" [ecritures]="e" />
+</section>
