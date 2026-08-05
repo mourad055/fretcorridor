@@ -11,6 +11,15 @@ import java.util.UUID;
  * de demandes que de capacites disponibles dans le lot) - reprise au cycle
  * suivant plutot que forcee sur une capacite deja prise.
  *
+ * missionId : identifiant genere UNIQUEMENT quand capaciteId != null (cf
+ * AffectationL1Service.persisterSiAffecte) - c'est l'id de la ligne
+ * opt.affectation correspondante. Point d'ancrage du contrat comble ici :
+ * TRK appellera GET /api/opt/affectations/{missionId} en synchrone interne
+ * pour recuperer origine/destination et calculer son ETA ; le meme id sera
+ * porte par l'evenement Kafka AffectationConfirmee vers service-exe (Mobile)
+ * quand ce producteur sera code, pour que Mobile et TRK parlent de la meme
+ * mission sans ambiguite.
+ *
  * itineraire == null dans deux cas bien distincts, jamais confondus dans les
  * logs (cf AffectationL1Service) :
  *   1) capaciteId == null : pas d'affectation, donc pas d'itineraire a
@@ -23,14 +32,10 @@ import java.util.UUID;
 public record AffectationResultat(
         UUID demandeId,
         UUID capaciteId,
+        UUID missionId,
         BigDecimal coutTotal,
         UUID cycleMatchingId,
         ItineraireResponseDto itineraire,
-        // Etape 4 du moteur V0 (README, "Tarification en sortie de cycle").
-        // Meme convention que itineraire : null si pas d'affectation (cas
-        // normal), TarificationResultat.modeDegrade()==true si affectation
-        // valide mais prix non calculable (cf TarificationL4Service) -
-        // jamais confondus, jamais de prix invente en silence.
         com.fretcorridor.opt.tarification.TarificationResultat tarification
 ) {
 }

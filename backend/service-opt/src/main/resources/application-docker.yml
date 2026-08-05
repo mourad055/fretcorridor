@@ -11,3 +11,10 @@ spring:
       base-url: http://service-mat:8086
       connect-timeout-ms: 200
       read-timeout-ms: 300
+    valhalla:
+      base-url: http://valhalla:8002
+      # Contrairement a service-mat (meme porteur, latence ~ms), Valhalla est
+      # une dependance reseau externe - on garde le defaut Java (2000ms,
+      # cf ValhallaClientProperties) plutot que le timeout serre des appels
+      # internes. Ne pas copier les valeurs de service-mat ici.
+      connect-timeout-ms: 500
