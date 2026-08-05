@@ -1,23 +1,29 @@
 package com.fretcorridor.gateway.infrastructure.rest.kyc;
 
-import com.fretcorridor.gateway.infrastructure.audit.AuditLog;
+import com.fretcorridor.gateway.domain.adm.AdmPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Map;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * FE-ADM-06 + ENF-SEC-02 : dashboard KYC, RBAC et journalisation des décisions.
  * DirtiesContext par méthode : l'adaptateur mock est un singleton avec état mutable
- * (dossiers, journal) — chaque test doit repartir des 3 dossiers d'amorçage, sans
+ * (dossiers) — chaque test doit repartir des 3 dossiers d'amorçage, sans
  * dépendre de l'ordre d'exécution ni des autres classes de test partageant le contexte.
+ * Le journal d'audit réel appelle service-adm par HTTP — remplacé ici par un
+ * double, comme PayReadPort dans les tests Sprint 8.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
@@ -27,8 +33,8 @@ class KycControllerTest {
     @Autowired
     private WebTestClient webTestClient;
 
-    @Autowired
-    private AuditLog auditLog;
+    @MockBean
+    private AdmPort admPort;
 
     private String tokenFor(String phone) {
         return webTestClient.post().uri("/api/v1/auth/login")
@@ -69,6 +75,7 @@ class KycControllerTest {
     void an_admin_can_validate_a_dossier_and_the_action_is_journalized() {
         String adminToken = tokenFor("+237600000003");
         String idempotencyKey = UUID.randomUUID().toString();
+        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.post().uri("/api/v1/admin/kyc/kyc-1/decision")
                 .header("Authorization", "Bearer " + adminToken)
@@ -80,9 +87,8 @@ class KycControllerTest {
                 .expectBody()
                 .jsonPath("$.statut").isEqualTo("VALIDE");
 
-        assertThat(auditLog.consulter())
-                .anyMatch(entry -> entry.action().equals("KYC_DECISION_VALIDE")
-                        && entry.ressource().equals("kyc-dossier:kyc-1"));
+        verify(admPort).enregistrerAudit(any(), any(), org.mockito.ArgumentMatchers.eq("KYC_DECISION_VALIDE"),
+                org.mockito.ArgumentMatchers.eq("kyc-dossier:kyc-1"));
     }
 
     @Test

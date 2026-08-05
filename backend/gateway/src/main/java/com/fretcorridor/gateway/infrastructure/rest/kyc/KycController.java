@@ -1,7 +1,7 @@
 package com.fretcorridor.gateway.infrastructure.rest.kyc;
 
+import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.domain.kyc.KycPort;
-import com.fretcorridor.gateway.infrastructure.audit.AuditLog;
 import com.fretcorridor.gateway.infrastructure.rest.kyc.dto.DecisionRequest;
 import com.fretcorridor.gateway.infrastructure.rest.kyc.dto.KycDossierResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
@@ -22,11 +22,11 @@ import reactor.core.publisher.Mono;
 public class KycController {
 
     private final KycPort kycPort;
-    private final AuditLog auditLog;
+    private final AdmPort admPort;
 
-    public KycController(KycPort kycPort, AuditLog auditLog) {
+    public KycController(KycPort kycPort, AdmPort admPort) {
         this.kycPort = kycPort;
-        this.auditLog = auditLog;
+        this.admPort = admPort;
     }
 
     @GetMapping("/pending")
@@ -47,10 +47,10 @@ public class KycController {
         }
 
         return kycPort.decider(dossierId, request.decision(), idempotencyKey)
-                .doOnNext(dossier -> auditLog.enregistrer(
-                        actor.actorId(),
-                        "KYC_DECISION_" + request.decision(),
-                        "kyc-dossier:" + dossierId))
+                .flatMap(dossier -> admPort
+                        .enregistrerAudit(actor.tenantId(), actor.actorId(), "KYC_DECISION_" + request.decision(),
+                                "kyc-dossier:" + dossierId)
+                        .thenReturn(dossier))
                 .map(dossier -> ResponseEntity.ok(KycDossierResponse.from(dossier)));
     }
 

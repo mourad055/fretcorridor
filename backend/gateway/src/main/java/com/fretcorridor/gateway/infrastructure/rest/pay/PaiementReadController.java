@@ -1,7 +1,7 @@
 package com.fretcorridor.gateway.infrastructure.rest.pay;
 
+import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.domain.pay.PayReadPort;
-import com.fretcorridor.gateway.infrastructure.audit.AuditLog;
 import com.fretcorridor.gateway.infrastructure.rest.pay.dto.EcritureVueResponse;
 import com.fretcorridor.gateway.infrastructure.rest.pay.dto.SoldeTransporteurResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
@@ -23,11 +23,11 @@ import java.math.BigDecimal;
 public class PaiementReadController {
 
     private final PayReadPort payReadPort;
-    private final AuditLog auditLog;
+    private final AdmPort admPort;
 
-    public PaiementReadController(PayReadPort payReadPort, AuditLog auditLog) {
+    public PaiementReadController(PayReadPort payReadPort, AdmPort admPort) {
         this.payReadPort = payReadPort;
-        this.auditLog = auditLog;
+        this.admPort = admPort;
     }
 
     @GetMapping("/api/v1/transporteur/paiement")
@@ -52,7 +52,7 @@ public class PaiementReadController {
             @AuthenticationPrincipal AuthenticatedActor actor
     ) {
         // ENF-SEC-02 : consultation transverse d'un tenant par un Admin, journalisée nominativement.
-        auditLog.enregistrer(actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + tenantId);
-        return payReadPort.rapportDuTenant(tenantId).map(EcritureVueResponse::from).collectList();
+        return admPort.enregistrerAudit(tenantId, actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + tenantId)
+                .then(payReadPort.rapportDuTenant(tenantId).map(EcritureVueResponse::from).collectList());
     }
 }

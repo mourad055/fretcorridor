@@ -1,8 +1,8 @@
 package com.fretcorridor.gateway.infrastructure.rest.pay;
 
+import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.domain.pay.EcritureVue;
 import com.fretcorridor.gateway.domain.pay.PayReadPort;
-import com.fretcorridor.gateway.infrastructure.audit.AuditLog;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,13 +10,15 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -34,8 +36,8 @@ class PaiementReadControllerTest {
     @MockBean
     private PayReadPort payReadPort;
 
-    @Autowired
-    private AuditLog auditLog;
+    @MockBean
+    private AdmPort admPort;
 
     private String tokenFor(String phone) {
         return webTestClient.post().uri("/api/v1/auth/login")
@@ -96,17 +98,15 @@ class PaiementReadControllerTest {
     void an_admin_consulting_another_tenant_s_report_is_journalized() {
         String token = tokenFor("+237600000003");
         when(payReadPort.rapportDuTenant(any())).thenReturn(Flux.empty());
-        int auditSizeBefore = auditLog.consulter().size();
+        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/admin/rapport-financier/tenant-bgft-tchad")
                 .header("Authorization", "Bearer " + token)
                 .exchange()
                 .expectStatus().isOk();
 
-        assertThat(auditLog.consulter().size()).isGreaterThan(auditSizeBefore);
-        assertThat(auditLog.consulter())
-                .anyMatch(entry -> entry.action().equals("CONSULTATION_RAPPORT_FINANCIER")
-                        && entry.ressource().equals("tenant:tenant-bgft-tchad"));
+        verify(admPort).enregistrerAudit(eq("tenant-bgft-tchad"), any(), eq("CONSULTATION_RAPPORT_FINANCIER"),
+                eq("tenant:tenant-bgft-tchad"));
     }
 
     @Test

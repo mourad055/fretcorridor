@@ -1,14 +1,13 @@
 package com.fretcorridor.adm.infrastructure.rest;
 
 import com.fretcorridor.adm.domain.JournalAuditService;
+import com.fretcorridor.adm.infrastructure.rest.dto.EnregistrerAuditRequest;
 import com.fretcorridor.adm.infrastructure.rest.dto.EntreeJournalAuditResponse;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -21,6 +20,13 @@ public class JournalAuditController {
 
     public JournalAuditController(JournalAuditService journalAuditService) {
         this.journalAuditService = journalAuditService;
+    }
+
+    @PostMapping
+    public ResponseEntity<EntreeJournalAuditResponse> enregistrer(@Valid @RequestBody EnregistrerAuditRequest request) {
+        var entree = journalAuditService.enregistrer(request.tenantId(), request.acteurId(), request.action(),
+                request.ressource());
+        return ResponseEntity.status(201).body(EntreeJournalAuditResponse.from(entree));
     }
 
     @GetMapping

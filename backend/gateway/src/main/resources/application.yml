@@ -23,6 +23,9 @@ fretcorridor:
     # service-pay est réellement implémenté (contrairement aux autres services
     # de ce périmètre) — appel HTTP réel, pas un mock (cf. docs/adr).
     base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://localhost:8084}
+  service-adm:
+    # service-adm est réellement implémenté (Sprint 10) — appel HTTP réel.
+    base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8085}
 
 management:
   endpoints:

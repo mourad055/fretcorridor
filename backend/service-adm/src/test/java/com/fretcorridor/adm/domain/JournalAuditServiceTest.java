@@ -12,6 +12,14 @@ class JournalAuditServiceTest {
     private final JournalAuditService service = new JournalAuditService(journalAuditPort);
 
     @Test
+    void enregistrer_une_entree_la_rend_immediatement_listable() {
+        service.enregistrer("tenant-bgft-douala", "actor-admin-1", "KYC_DECISION_VALIDE", "kyc-dossier:dossier-1");
+
+        assertThat(service.lister("tenant-bgft-douala"))
+                .anyMatch(e -> e.action().equals("KYC_DECISION_VALIDE") && e.acteurId().equals("actor-admin-1"));
+    }
+
+    @Test
     void exporter_le_journal_en_csv_inclut_une_ligne_par_entree() {
         journalAuditPort.enregistrer(new EntreeJournalAudit("entree-1", "tenant-bgft-douala", "actor-admin-1",
                 "DOSSIER_OUVERT", "dossier:dossier-1", Instant.parse("2026-08-05T10:00:00Z")));
