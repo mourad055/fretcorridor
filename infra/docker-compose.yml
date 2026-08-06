@@ -70,66 +70,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # Service d'itineraires (calcul de trajet, ETA) consomme par service-opt.
-  # Extrapolation d'equipe : le CDC v4.0 ne fixe pas de budget de latence
-  # propre a Valhalla (le tableau L0-L4 du S8.10 couvre le moteur, pas ce
-  # service tiers) - on l'assimile au budget L3 par choix d'equipe, a
-  # documenter dans docs/adr/.
-  valhalla:
-    # Epingle par digest plutot que ':latest' (CDC S8.10 : reproductibilite
-    # des executions). L'image officielle ne publie aucun tag semver (pas de
-    # '3.7.0' Docker) - le 3.7.0 du CDC S8.11.2/S8.14 designe la version du
-    # LOGICIEL Valhalla (release Git 2026-04-28), pas un tag d'image existant.
-    # Digest capture le 2026-08-04, cf docs/adr/0004-valhalla-image-digest.md.
-    image: ghcr.io/valhalla/valhalla-scripted@sha256:e454d110227a83804785ff271628d36548388777939f5e18a887ee1bc3f0ffef
-    container_name: fretcorridor-valhalla
-    environment:
-      tile_urls: https://download.geofabrik.de/africa/cameroon-260803.osm.pbf
-      use_tiles_ignore_pbf: "True"
-      force_rebuild: "False"
-    ports:
-      - "8002:8002"
-    volumes:
-      - valhalla-data:/custom_files
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/status"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 180s
-
-  service-geo:
-    build:
-      context: ../backend
-      dockerfile: service-geo/Dockerfile
-    container_name: fretcorridor-service-geo
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-    ports:
-      - "8084:8084"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  service-opt:
-    build:
-      context: ../backend
-      dockerfile: service-opt/Dockerfile
-    container_name: fretcorridor-service-opt
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-    ports:
-      - "8085:8085"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      # Pas de "condition: service_healthy" ici : conforme a ENF-DIS-04,
-      # OPT ne doit jamais rester bloque si Valhalla est indisponible ou
-      # encore en train de construire son graphe (degradation gracieuse
-      # cote ValhallaClient, retourne null, ne bloque jamais OPT).
-      valhalla:
-        condition: service_started
-
   service-ida:
     build:
       context: ../backend/service-ida
@@ -142,39 +82,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
-  service-mat:
-    build:
-      context: ../backend
-      dockerfile: service-mat/Dockerfile
-    container_name: fretcorridor-service-mat
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-    ports:
-      - "8086:8086"
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  service-trk:
-    build:
-      context: ../backend
-      dockerfile: service-trk/Dockerfile
-    container_name: fretcorridor-service-trk
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-    ports:
-      - "8087:8087"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      # Pas de "condition: service_healthy" sur kafka (aucun healthcheck
-      # defini dessus dans ce compose) : le consumer Spring Kafka retente la
-      # connexion en arriere-plan si le broker n'est pas encore pret au
-      # demarrage, sans bloquer ni faire planter service-trk (EF-TRK-01,
-      # ingestion tolerante a la connectivite).
-      kafka:
-        condition: service_started
 
   gateway:
     build:
@@ -201,4 +108,3 @@ services:
 volumes:
   postgres-data:
   minio-data:
-  valhalla-data:

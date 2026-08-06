@@ -1,0 +1,28 @@
+# Bloc Docker Compose du service-geo (Moteur — GEO : axes, hubs, zonage H3).
+# Ne contient PAS l'infra partagee (Postgres, Kafka...) : ce fichier s'empile
+# TOUJOURS sur infra/docker-compose.yml, jamais utilisable seul.
+#
+# Usage :
+#   docker compose -f infra/docker-compose.yml \
+#                   -f backend/service-geo/docker-compose.service-geo.yml up -d
+#
+# Justification complete : docs/adr/0005-docker-compose-par-service.md
+# (plan d'execution S2.2/S2.3 : infra/docker-compose.yml = infra seule ;
+# chaque microservice a son propre deploiement independant).
+services:
+  service-geo:
+    build:
+      # ".." et non "../backend" : ce fichier vit desormais dans
+      # backend/service-geo/, un niveau plus profond qu'avant (infra/).
+      # Le contexte doit rester backend/ pour que le Dockerfile puisse
+      # copier common-libs/ ET service-geo/ (module Maven multi-projet).
+      context: ../backend
+      dockerfile: service-geo/Dockerfile
+    container_name: fretcorridor-service-geo
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8084:8084"
+    depends_on:
+      postgres:
+        condition: service_healthy
