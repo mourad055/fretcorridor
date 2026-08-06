@@ -1,11 +1,14 @@
-<section class="tenants">
-  <h2>Gestion des tenants</h2>
+<section class="tenants fc-panel">
+  <h2 class="fc-panel__title">Gestion des tenants</h2>
 
-  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-  <p *ngIf="loading()">Chargement…</p>
-  <p *ngIf="!loading() && tenants().length === 0">Aucun tenant enregistré.</p>
+  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+    <div class="fc-skeleton__line"></div>
+    <div class="fc-skeleton__line"></div>
+  </div>
+  <div class="fc-empty" *ngIf="!loading() && tenants().length === 0">Aucun tenant enregistré.</div>
 
-  <table *ngIf="!loading() && tenants().length > 0">
+  <table class="fc-table" *ngIf="!loading() && tenants().length > 0">
     <thead>
       <tr>
         <th>Identifiant</th>
@@ -22,11 +25,17 @@
     </tbody>
   </table>
 
-  <label for="tenant-id">Identifiant</label>
-  <input id="tenant-id" [ngModel]="nouvelId()" (ngModelChange)="nouvelId.set($event)" />
-  <label for="tenant-nom">Nom</label>
-  <input id="tenant-nom" [ngModel]="nouvelNom()" (ngModelChange)="nouvelNom.set($event)" />
-  <label for="tenant-pays">Pays</label>
-  <input id="tenant-pays" [ngModel]="nouveauPays()" (ngModelChange)="nouveauPays.set($event)" />
-  <button type="button" (click)="creer()">Créer le tenant</button>
+  <div class="field">
+    <label class="field__label" for="tenant-id">Identifiant</label>
+    <input id="tenant-id" class="field__input" [ngModel]="nouvelId()" (ngModelChange)="nouvelId.set($event)" />
+  </div>
+  <div class="field">
+    <label class="field__label" for="tenant-nom">Nom</label>
+    <input id="tenant-nom" class="field__input" [ngModel]="nouvelNom()" (ngModelChange)="nouvelNom.set($event)" />
+  </div>
+  <div class="field">
+    <label class="field__label" for="tenant-pays">Pays</label>
+    <input id="tenant-pays" class="field__input" [ngModel]="nouveauPays()" (ngModelChange)="nouveauPays.set($event)" />
+  </div>
+  <button type="button" class="fc-btn fc-btn--primary" (click)="creer()">Créer le tenant</button>
 </section>

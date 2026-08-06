@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DossiersService } from './dossiers.service';
 import { Dossier, DossierConsolide } from '../../../shared/models/dossier.models';
+import { StatusBadgeComponent, dossierStatusVariant } from '../../../shared/components/status-badge/status-badge.component';
 
 /**
  * FE-ADM-01/02 (Sprint 10) : un admin traite un dossier de bout en bout —
@@ -13,10 +14,11 @@ import { Dossier, DossierConsolide } from '../../../shared/models/dossier.models
 @Component({
   selector: 'app-dossiers',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StatusBadgeComponent],
   templateUrl: './dossiers.component.html',
 })
 export class DossiersComponent {
+  readonly dossierStatusVariant = dossierStatusVariant;
   readonly tenants = ['tenant-bgft-douala', 'tenant-bgft-tchad', 'tenant-flysoft'];
   readonly tenantSelectionne = signal(this.tenants[0]);
   readonly dossiers = signal<Dossier[]>([]);

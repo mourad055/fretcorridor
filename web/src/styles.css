@@ -410,6 +410,44 @@ a {
   }
 }
 
+/* ── Champ de formulaire (repris de login V3, généralisé) ── */
+.field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: var(--fc-space-3);
+}
+
+.field__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.field__input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--fc-border);
+  border-radius: var(--fc-radius-sm);
+  background: var(--fc-surface);
+  color: var(--fc-text);
+  transition:
+    border-color var(--fc-duration) var(--fc-ease),
+    box-shadow var(--fc-duration) var(--fc-ease);
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--fc-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc-primary) 18%, transparent);
+}
+
+.field__error {
+  margin: 0;
+  color: var(--fc-danger);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
 /* ── Boutons ──────────────────────────────────────────── */
 .fc-btn {
   display: inline-flex;

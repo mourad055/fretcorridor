@@ -24,7 +24,7 @@ test.describe('Dashboard KYC Admin', () => {
   });
 
   test("un admin voit la file d'attente et peut valider un dossier", async ({ page }) => {
-    const kycTable = page.locator('.kyc-dashboard > table');
+    const kycTable = page.locator('table.kyc-table');
     const rows = kycTable.locator('tbody tr');
     const initialCount = await rows.count();
     expect(initialCount).toBeGreaterThan(0);
@@ -38,7 +38,7 @@ test.describe('Dashboard KYC Admin', () => {
   });
 
   test('un admin peut rejeter un dossier', async ({ page }) => {
-    const kycTable = page.locator('.kyc-dashboard > table');
+    const kycTable = page.locator('table.kyc-table');
     const rows = kycTable.locator('tbody tr');
     const initialCount = await rows.count();
     expect(initialCount).toBeGreaterThan(0);

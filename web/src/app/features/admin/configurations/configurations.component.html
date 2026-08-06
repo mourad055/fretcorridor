@@ -1,13 +1,17 @@
-<section class="configurations">
-  <h2>Configuration versionnée</h2>
+<section class="configurations fc-panel">
+  <h2 class="fc-panel__title">Configuration versionnée</h2>
 
-  <label for="configuration-cle">Clé</label>
-  <input id="configuration-cle" [ngModel]="cle()" (ngModelChange)="cle.set($event)" />
-  <button type="button" (click)="consulter()">Consulter l'historique</button>
+  <div class="fc-filters">
+    <div class="fc-filters__field">
+      <label class="fc-filters__label" for="configuration-cle">Clé</label>
+      <input id="configuration-cle" class="fc-filters__input" [ngModel]="cle()" (ngModelChange)="cle.set($event)" />
+    </div>
+    <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()">Consulter l'historique</button>
+  </div>
 
-  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
 
-  <table *ngIf="historique().length > 0">
+  <table class="fc-table" *ngIf="historique().length > 0">
     <thead>
       <tr>
         <th>Version</th>
@@ -26,7 +30,9 @@
     </tbody>
   </table>
 
-  <label for="configuration-valeur">Nouvelle valeur</label>
-  <input id="configuration-valeur" [ngModel]="nouvelleValeur()" (ngModelChange)="nouvelleValeur.set($event)" />
-  <button type="button" (click)="definir()">Définir une nouvelle version</button>
+  <div class="field">
+    <label class="field__label" for="configuration-valeur">Nouvelle valeur</label>
+    <input id="configuration-valeur" class="field__input" [ngModel]="nouvelleValeur()" (ngModelChange)="nouvelleValeur.set($event)" />
+  </div>
+  <button type="button" class="fc-btn fc-btn--primary" (click)="definir()">Définir une nouvelle version</button>
 </section>

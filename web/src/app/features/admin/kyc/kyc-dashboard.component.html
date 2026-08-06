@@ -1,47 +1,59 @@
-<main class="kyc-dashboard">
-  <h1>Validation KYC</h1>
+<main class="kyc-dashboard fc-page">
+  <header class="fc-page__header">
+    <div>
+      <h1 class="fc-page__title">Validation KYC</h1>
+    </div>
+  </header>
 
-  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
 
-  <p *ngIf="loading()">Chargement…</p>
+  <section class="fc-panel">
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && dossiers().length === 0">Aucun dossier en attente.</div>
 
-  <p *ngIf="!loading() && dossiers().length === 0">Aucun dossier en attente.</p>
-
-  <table *ngIf="!loading() && dossiers().length > 0">
-    <thead>
-      <tr>
-        <th>Acteur</th>
-        <th>Téléphone</th>
-        <th>Type</th>
-        <th>Soumis le</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let dossier of dossiers()">
-        <td>{{ dossier.acteurNom }}</td>
-        <td>{{ dossier.acteurTelephone }}</td>
-        <td>{{ dossier.typeActeur }}</td>
-        <td>{{ dossier.soumisLe | date: 'short' }}</td>
-        <td>
-          <button
-            type="button"
-            [disabled]="dossierEnCours() === dossier.id"
-            (click)="decide(dossier, 'VALIDE')"
-          >
-            Valider
-          </button>
-          <button
-            type="button"
-            [disabled]="dossierEnCours() === dossier.id"
-            (click)="decide(dossier, 'REJETE')"
-          >
-            Rejeter
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+    <table class="fc-table kyc-table" *ngIf="!loading() && dossiers().length > 0">
+      <thead>
+        <tr>
+          <th>Acteur</th>
+          <th>Téléphone</th>
+          <th>Type</th>
+          <th>Soumis le</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let dossier of dossiers()">
+          <td>{{ dossier.acteurNom }}</td>
+          <td>{{ dossier.acteurTelephone }}</td>
+          <td>{{ dossier.typeActeur }}</td>
+          <td>{{ dossier.soumisLe | date: 'short' }}</td>
+          <td>
+            <div class="fc-actions">
+              <button
+                type="button"
+                class="fc-btn fc-btn--primary fc-btn--sm"
+                [disabled]="dossierEnCours() === dossier.id"
+                (click)="decide(dossier, 'VALIDE')"
+              >
+                Valider
+              </button>
+              <button
+                type="button"
+                class="fc-btn fc-btn--ghost fc-btn--sm"
+                [disabled]="dossierEnCours() === dossier.id"
+                (click)="decide(dossier, 'REJETE')"
+              >
+                Rejeter
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
 
   <app-rapport-financier-admin />
   <app-dossiers />
