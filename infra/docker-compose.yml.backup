@@ -70,7 +70,29 @@ services:
       timeout: 5s
       retries: 10
 
+  service-ida:
+    build:
+      context: ../backend/service-ida
+    container_name: fretcorridor-service-ida
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8081:8081"
 
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ../backend/gateway
+    container_name: fretcorridor-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8088:8080"
+    depends_on:
+      - service-ida
 
   pgadmin:
     image: dpage/pgadmin4:latest

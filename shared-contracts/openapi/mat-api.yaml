@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor - Service de matching (MAT)
+  description: Calcul du coût composite pour un lot de candidats.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8084
+    description: Service MAT local
+paths:
+  /api/mat/couts/calculer-lot:
+    post:
+      summary: Calcule le coût composite pour chaque candidat du lot
+      operationId: calculerLot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CoutLotRequest'
+      responses:
+        '200':
+          description: Coûts calculés
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CoutLotResponse'
+        '400':
+          description: Erreur de validation
+components:
+  schemas:
+    CoutLotRequest:
+      type: object
+      required: [demandeId, candidats]
+      properties:
+        demandeId: { type: string, format: uuid }
+        candidats:
+          type: array
+          items: { $ref: '#/components/schemas/PaireCandidatRequest' }
+    PaireCandidatRequest:
+      type: object
+      required: [capaciteId, valeursCriteres]
+      properties:
+        capaciteId: { type: string, format: uuid }
+        valeursCriteres:
+          type: object
+          additionalProperties: { type: number, format: double, minimum: 0, maximum: 1 }
+    CoutLotResponse:
+      type: object
+      properties:
+        demandeId: { type: string, format: uuid }
+        versionModeleUtilisee: { type: integer, nullable: true }
+        modeDegrade: { type: boolean }
+        resultats:
+          type: array
+          items: { $ref: '#/components/schemas/CoutResponse' }
+    CoutResponse:
+      type: object
+      properties:
+        capaciteId: { type: string, format: uuid }
+        cycleMatchingId: { type: string, format: uuid }
+        coutTotal: { type: number, format: double }
