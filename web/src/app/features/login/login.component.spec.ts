@@ -61,4 +61,21 @@ describe('LoginComponent', () => {
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));
     expect(alert.nativeElement.textContent).toContain('Numéro de téléphone ou code invalide.');
   });
+
+  it('logs in with the demo account credentials and redirects to its home route', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const navigateSpy = jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const component = fixture.componentInstance;
+    component.loginAsDemo(component.demoAccounts[0]);
+
+    expect(component.phone()).toBe('+237600000001');
+    expect(component.code()).toBe('123456');
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/login`);
+    req.flush({ token: 'header.eyJzdWIiOiJhIn0.sig', role: 'BUREAU', tenantId: 'tenant-1' });
+
+    expect(navigateSpy).toHaveBeenCalledWith('/bureau');
+  });
 });

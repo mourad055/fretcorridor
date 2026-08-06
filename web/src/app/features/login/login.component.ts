@@ -5,6 +5,12 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth/auth.service';
 import { HOME_ROUTE_BY_ROLE } from '../../core/auth/auth.models';
 import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo.component';
+import { environment } from '../../../environments/environment';
+
+interface DemoAccount {
+  label: string;
+  phone: string;
+}
 
 /**
  * FE-WEB-01 : écran de connexion unique (téléphone + code), aucune indication
@@ -23,6 +29,13 @@ export class LoginComponent {
   readonly code = signal('');
   readonly errorMessage = signal<string | null>(null);
   readonly submitting = signal(false);
+
+  readonly enableDemoLogin = environment.enableDemoLogin;
+  readonly demoAccounts: DemoAccount[] = [
+    { label: 'Bureau de fret', phone: '+237600000001' },
+    { label: 'Transporteur', phone: '+237600000002' },
+    { label: 'Administration', phone: '+237600000003' },
+  ];
 
   constructor(
     private readonly authService: AuthService,
@@ -43,5 +56,14 @@ export class LoginComponent {
         this.errorMessage.set('Numéro de téléphone ou code invalide.');
       },
     });
+  }
+
+  loginAsDemo(account: DemoAccount): void {
+    if (this.submitting()) {
+      return;
+    }
+    this.phone.set(account.phone);
+    this.code.set('123456');
+    this.submit();
   }
 }

@@ -100,6 +100,32 @@
   font-weight: 600;
 }
 
+/* ── Comptes de démonstration (dev uniquement, cf. environment.enableDemoLogin) ── */
+.login-demo {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed var(--fc-border);
+}
+
+.login-demo__label {
+  margin: 0 0 0.65rem;
+  color: var(--fc-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.login-demo__buttons {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.login-demo__btn {
+  justify-content: center;
+}
+
 /* ── Volet vidéo (droite) ── */
 .login-showcase {
   position: relative;

@@ -46,6 +46,21 @@
             {{ submitting() ? 'Connexion…' : 'Se connecter' }}
           </button>
         </form>
+
+        <div class="login-demo" *ngIf="enableDemoLogin">
+          <p class="login-demo__label">Comptes de démonstration</p>
+          <div class="login-demo__buttons">
+            <button
+              type="button"
+              class="fc-btn fc-btn--ghost fc-btn--sm fc-btn--block login-demo__btn"
+              *ngFor="let account of demoAccounts"
+              [disabled]="submitting()"
+              (click)="loginAsDemo(account)"
+            >
+              {{ account.label }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
