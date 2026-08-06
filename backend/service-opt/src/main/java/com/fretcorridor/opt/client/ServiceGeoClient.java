@@ -58,4 +58,27 @@ public class ServiceGeoClient {
             return List.of();
         }
     }
+
+    /**
+     * Axes ou le matching est actif (EF-GEO-03) - c'est sur cette liste que
+     * MatchingCycleService boucle pour declencher un cycle par axe. Un axe
+     * absent de cette liste n'est jamais propose au matching, meme s'il a des
+     * capacites/demandes en attente (EF-MAT-01, "actif seulement si l'axe
+     * l'autorise").
+     */
+    public List<AxeActifDto> axesActifsMatching() {
+        try {
+            AxeActifDto[] resultat = restClient.get()
+                    .uri("/api/geo/axes/actifs-matching")
+                    .retrieve()
+                    .body(AxeActifDto[].class);
+
+            return resultat == null ? List.of() : List.of(resultat);
+
+        } catch (RestClientException exception) {
+            log.warn("Echec appel service-geo (axes-actifs-matching) - mode degrade active, "
+                    + "aucun cycle de matching ne sera declenche ce tour : {}", exception.getMessage());
+            return List.of();
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package com.fretcorridor.trk.messaging;
 
+import com.fretcorridor.trk.client.AffectationDto;
+import com.fretcorridor.trk.client.ServiceOptClient;
 import com.fretcorridor.trk.domain.AnomalieDetector;
 import com.fretcorridor.trk.domain.EtaCalculator;
 import com.fretcorridor.trk.domain.Position;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -23,15 +26,18 @@ public class PositionBruteListener {
     private final EtaCalculator etaCalculator;
     private final AnomalieDetector anomalieDetector;
     private final TrkEventPublisher eventPublisher;
+    private final ServiceOptClient serviceOptClient;
 
     public PositionBruteListener(PositionRepository positionRepository,
                                  EtaCalculator etaCalculator,
                                  AnomalieDetector anomalieDetector,
-                                 TrkEventPublisher eventPublisher) {
+                                 TrkEventPublisher eventPublisher,
+                                 ServiceOptClient serviceOptClient) {
         this.positionRepository = positionRepository;
         this.etaCalculator = etaCalculator;
         this.anomalieDetector = anomalieDetector;
         this.eventPublisher = eventPublisher;
+        this.serviceOptClient = serviceOptClient;
     }
 
     @KafkaListener(topics = "position-brute", groupId = "service-trk")
@@ -64,14 +70,23 @@ public class PositionBruteListener {
 
         List<Position> positions = positionRepository.findByMissionIdOrderByHorodatageCaptureAsc(missionId);
 
-        // ETA
-        EtaCalculator.EtaResultat eta = etaCalculator.calculer(
-                positions,
-                dernierePosition.getLatitude(),  // Phase 2 : destination réelle
-                dernierePosition.getLongitude()
-        );
+        // ETA - la destination reelle de la mission vient de service-opt
+        // (AffectationController), plus jamais la position courante du
+        // vehicule en substitut : ca donnait un ETA toujours ~0 (bug corrige,
+        // cf audit - haversine(dernierePosition, dernierePosition) = 0).
+        Optional<AffectationDto> affectation = serviceOptClient.obtenirAffectation(missionId);
 
-        if (eta != null && eta.isDisponible()) {
+        if (affectation.isEmpty()) {
+            log.debug("Affectation introuvable ou service-opt injoignable pour la mission {} - "
+                    + "pas d'ETA calcule ce tour (mode degrade, ENF-DIS-04).", missionId);
+        } else {
+            EtaCalculator.EtaResultat eta = etaCalculator.calculer(
+                    positions,
+                    affectation.get().destinationLatitude(),
+                    affectation.get().destinationLongitude()
+            );
+
+            if (eta != null && eta.isDisponible()) {
             PositionEtaEvent etaEvent = new PositionEtaEvent(
                     UUID.randomUUID(),
                     missionId,
@@ -87,7 +102,8 @@ public class PositionBruteListener {
                     dernierePosition.getSourceCapture(),
                     Instant.now()
             );
-            eventPublisher.publierPositionEta(etaEvent);
+                eventPublisher.publierPositionEta(etaEvent);
+            }
         }
 
         // Anomalies
