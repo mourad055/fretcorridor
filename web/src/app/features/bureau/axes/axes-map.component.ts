@@ -7,6 +7,7 @@ import { PositionsListComponent } from '../positions/positions-list.component';
 import { BureauChronologieComponent } from '../chronologie/bureau-chronologie.component';
 import { RapportFinancierComponent } from '../rapport-financier/rapport-financier.component';
 import { NotificationsComponent } from '../notifications/notifications.component';
+import { StatusBadgeComponent, axeStatusVariant } from '../../../shared/components/status-badge/status-badge.component';
 
 /**
  * FE-BUR-01 (Sprint 3) : un Bureau voit une carte des axes de son tenant.
@@ -24,6 +25,7 @@ import { NotificationsComponent } from '../notifications/notifications.component
     BureauChronologieComponent,
     RapportFinancierComponent,
     NotificationsComponent,
+    StatusBadgeComponent,
   ],
   templateUrl: './axes-map.component.html',
 })
@@ -53,4 +55,6 @@ export class AxesMapComponent implements OnInit {
   etatClass(axe: Axe): string {
     return 'axe-' + axe.etatActivation.toLowerCase();
   }
+
+  readonly axeStatusVariant = axeStatusVariant;
 }

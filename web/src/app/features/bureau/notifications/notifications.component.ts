@@ -9,6 +9,7 @@ import { NotificationItem } from '../../../shared/models/notification.models';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './notifications.component.html',
+  styleUrl: './notifications.component.css',
 })
 export class NotificationsComponent implements OnInit {
   readonly notifications = signal<NotificationItem[]>([]);

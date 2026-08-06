@@ -8,6 +8,7 @@ import { Mission } from '../../models/mission.models';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './mission-chronologie.component.html',
+  styleUrl: './mission-chronologie.component.css',
 })
 export class MissionChronologieComponent {
   @Input({ required: true }) missions: Mission[] = [];

@@ -1,4 +1,4 @@
-<table *ngIf="ecritures.length > 0">
+<table class="fc-table" *ngIf="ecritures.length > 0">
   <thead>
     <tr>
       <th>Mission</th>
@@ -16,8 +16,8 @@
       <td>{{ ecriture.sens }}</td>
       <td>{{ ecriture.montant }}</td>
       <td>{{ ecriture.creeLe | date: 'short' }}</td>
-      <td>{{ ecriture.statut }}</td>
+      <td><app-status-badge [label]="ecriture.statut" [variant]="ecritureStatusVariant(ecriture.statut)" /></td>
     </tr>
   </tbody>
 </table>
-<p *ngIf="ecritures.length === 0">Aucune écriture.</p>
+<div class="fc-empty" *ngIf="ecritures.length === 0">Aucune écriture.</div>

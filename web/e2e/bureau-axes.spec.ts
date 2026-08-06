@@ -14,7 +14,7 @@ test.describe('Carte des axes — Bureau', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
 
-    const axesTable = page.locator('.axes-map > table');
+    const axesTable = page.locator('table.axes-table');
     await expect(axesTable.locator('tbody tr')).toHaveCount(2);
     await expect(axesTable.locator('tbody')).toContainText('Douala');
     await expect(axesTable.locator('tbody')).toContainText('Yaoundé');
@@ -27,7 +27,7 @@ test.describe('Carte des axes — Bureau', () => {
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
 
-    const axesTable = page.locator('.axes-map > table');
+    const axesTable = page.locator('table.axes-table');
     await expect(axesTable.locator('tbody tr')).toHaveCount(1);
     await expect(axesTable.locator('tbody')).toContainText("N'Djamena");
     await expect(axesTable.locator('tbody')).not.toContainText('Yaoundé');

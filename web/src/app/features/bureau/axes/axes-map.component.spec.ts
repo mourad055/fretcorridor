@@ -39,7 +39,7 @@ describe('AxesMapComponent', () => {
     flushSiblingRequests();
     fixture.detectChanges();
 
-    const rows = fixture.debugElement.queryAll(By.css('.axes-map > table tbody tr'));
+    const rows = fixture.debugElement.queryAll(By.css('table.axes-table tbody tr'));
     expect(rows).toHaveLength(2);
     const lines = fixture.debugElement.queryAll(By.css('svg line.axe-line'));
     expect(lines).toHaveLength(2);

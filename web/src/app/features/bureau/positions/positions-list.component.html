@@ -1,11 +1,14 @@
-<section class="positions-list">
-  <h2>Suivi temps réel</h2>
+<section class="positions-list fc-panel">
+  <h2 class="fc-panel__title">Suivi temps réel</h2>
 
-  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-  <p *ngIf="loading()">Chargement…</p>
-  <p *ngIf="!loading() && positions().length === 0">Aucun véhicule en suivi sur votre territoire.</p>
+  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+    <div class="fc-skeleton__line"></div>
+    <div class="fc-skeleton__line"></div>
+  </div>
+  <div class="fc-empty" *ngIf="!loading() && positions().length === 0">Aucun véhicule en suivi sur votre territoire.</div>
 
-  <table *ngIf="!loading() && positions().length > 0">
+  <table class="fc-table" *ngIf="!loading() && positions().length > 0">
     <thead>
       <tr>
         <th>Véhicule</th>

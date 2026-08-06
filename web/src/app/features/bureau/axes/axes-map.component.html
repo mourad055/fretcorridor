@@ -1,48 +1,59 @@
-<main class="axes-map">
-  <h1>Carte des axes</h1>
+<main class="axes-map fc-page">
+  <header class="fc-page__header">
+    <div>
+      <h1 class="fc-page__title">Carte des axes</h1>
+      <p class="fc-page__subtitle">Axes activés sur votre territoire.</p>
+    </div>
+  </header>
 
-  <p role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-  <p *ngIf="loading()">Chargement…</p>
-  <p *ngIf="!loading() && axes().length === 0">Aucun axe activé sur votre territoire.</p>
+  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
 
-  <svg *ngIf="!loading() && axes().length > 0" viewBox="0 0 660 160" role="img" aria-label="Carte schématique des axes de mon territoire">
-    <line
-      *ngFor="let segment of segments()"
-      [attr.x1]="segment.x1"
-      [attr.y1]="segment.y1"
-      [attr.x2]="segment.x2"
-      [attr.y2]="segment.y2"
-      [ngClass]="etatClass(segment.axe)"
-      class="axe-line"
-    />
-    <text *ngFor="let segment of segments()" [attr.x]="segment.midX" [attr.y]="segment.midY" text-anchor="middle" class="axe-label">
-      {{ segment.axe.distanceKm }} km
-    </text>
-    <g *ngFor="let hub of hubs()">
-      <circle [attr.cx]="hub.x" [attr.cy]="hub.y" r="6" class="hub-dot" />
-      <text [attr.x]="hub.x" [attr.y]="hub.y + 24" text-anchor="middle" class="hub-label">{{ hub.nom }}</text>
-    </g>
-  </svg>
+  <section class="fc-panel">
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && axes().length === 0">Aucun axe activé sur votre territoire.</div>
 
-  <table *ngIf="!loading() && axes().length > 0">
-    <caption>Détail des axes</caption>
-    <thead>
-      <tr>
-        <th>Origine</th>
-        <th>Destination</th>
-        <th>Distance</th>
-        <th>État</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let axe of axes()">
-        <td>{{ axe.origine }}</td>
-        <td>{{ axe.destination }}</td>
-        <td>{{ axe.distanceKm }} km</td>
-        <td>{{ axe.etatActivation }}</td>
-      </tr>
-    </tbody>
-  </table>
+    <svg *ngIf="!loading() && axes().length > 0" viewBox="0 0 660 160" role="img" aria-label="Carte schématique des axes de mon territoire">
+      <line
+        *ngFor="let segment of segments()"
+        [attr.x1]="segment.x1"
+        [attr.y1]="segment.y1"
+        [attr.x2]="segment.x2"
+        [attr.y2]="segment.y2"
+        [ngClass]="etatClass(segment.axe)"
+        class="axe-line"
+      />
+      <text *ngFor="let segment of segments()" [attr.x]="segment.midX" [attr.y]="segment.midY" text-anchor="middle" class="axe-label">
+        {{ segment.axe.distanceKm }} km
+      </text>
+      <g *ngFor="let hub of hubs()">
+        <circle [attr.cx]="hub.x" [attr.cy]="hub.y" r="6" class="hub-dot" />
+        <text [attr.x]="hub.x" [attr.y]="hub.y + 24" text-anchor="middle" class="hub-label">{{ hub.nom }}</text>
+      </g>
+    </svg>
+
+    <table class="fc-table axes-table" *ngIf="!loading() && axes().length > 0">
+      <caption>Détail des axes</caption>
+      <thead>
+        <tr>
+          <th>Origine</th>
+          <th>Destination</th>
+          <th>Distance</th>
+          <th>État</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let axe of axes()">
+          <td>{{ axe.origine }}</td>
+          <td>{{ axe.destination }}</td>
+          <td>{{ axe.distanceKm }} km</td>
+          <td><app-status-badge [label]="axe.etatActivation" [variant]="axeStatusVariant(axe.etatActivation)" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
 
   <app-missions-list />
   <app-positions-list />

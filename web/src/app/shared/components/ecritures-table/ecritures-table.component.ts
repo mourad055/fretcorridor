@@ -1,13 +1,16 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ecriture } from '../../models/ecriture.models';
+import { StatusBadgeComponent, ecritureStatusVariant } from '../status-badge/status-badge.component';
 
 @Component({
   selector: 'app-ecritures-table',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StatusBadgeComponent],
   templateUrl: './ecritures-table.component.html',
 })
 export class EcrituresTableComponent {
   @Input({ required: true }) ecritures: Ecriture[] = [];
+
+  readonly ecritureStatusVariant = ecritureStatusVariant;
 }
