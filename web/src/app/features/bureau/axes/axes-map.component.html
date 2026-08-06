@@ -15,24 +15,7 @@
     </div>
     <div class="fc-empty" *ngIf="!loading() && axes().length === 0">Aucun axe activé sur votre territoire.</div>
 
-    <svg *ngIf="!loading() && axes().length > 0" viewBox="0 0 660 160" role="img" aria-label="Carte schématique des axes de mon territoire">
-      <line
-        *ngFor="let segment of segments()"
-        [attr.x1]="segment.x1"
-        [attr.y1]="segment.y1"
-        [attr.x2]="segment.x2"
-        [attr.y2]="segment.y2"
-        [ngClass]="etatClass(segment.axe)"
-        class="axe-line"
-      />
-      <text *ngFor="let segment of segments()" [attr.x]="segment.midX" [attr.y]="segment.midY" text-anchor="middle" class="axe-label">
-        {{ segment.axe.distanceKm }} km
-      </text>
-      <g *ngFor="let hub of hubs()">
-        <circle [attr.cx]="hub.x" [attr.cy]="hub.y" r="6" class="hub-dot" />
-        <text [attr.x]="hub.x" [attr.y]="hub.y + 24" text-anchor="middle" class="hub-label">{{ hub.nom }}</text>
-      </g>
-    </svg>
+    <app-corridor-map *ngIf="!loading() && axes().length > 0" [axes]="axes()" />
 
     <table class="fc-table axes-table" *ngIf="!loading() && axes().length > 0">
       <caption>Détail des axes</caption>

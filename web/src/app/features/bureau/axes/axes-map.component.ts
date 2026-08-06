@@ -1,7 +1,8 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AxeService } from './axe.service';
-import { Axe, layoutHubs, layoutSegments } from './axe.models';
+import { Axe } from './axe.models';
+import { CorridorMapComponent } from './corridor-map.component';
 import { MissionsListComponent } from '../missions/missions-list.component';
 import { PositionsListComponent } from '../positions/positions-list.component';
 import { BureauChronologieComponent } from '../chronologie/bureau-chronologie.component';
@@ -11,15 +12,17 @@ import { StatusBadgeComponent, axeStatusVariant } from '../../../shared/componen
 
 /**
  * FE-BUR-01 (Sprint 3) : un Bureau voit une carte des axes de son tenant.
- * Représentation schématique (positions calculées, pas de coordonnées
- * géographiques réelles) — voir docs/adr/0007. La cartographie géospatiale
- * réelle suivra service-geo (Moteur).
+ * Carte géospatiale réelle (Leaflet), centrée sur le corridor CEMAC
+ * Cameroun–Tchad — voir docs/adr/0007, addendum Sprint 12. Les coordonnées
+ * de hubs proviennent d'un référentiel statique en attendant service-geo
+ * (Moteur).
  */
 @Component({
   selector: 'app-axes-map',
   standalone: true,
   imports: [
     CommonModule,
+    CorridorMapComponent,
     MissionsListComponent,
     PositionsListComponent,
     BureauChronologieComponent,
@@ -34,9 +37,6 @@ export class AxesMapComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
 
-  readonly hubs = computed(() => layoutHubs(this.axes()));
-  readonly segments = computed(() => layoutSegments(this.axes(), this.hubs()));
-
   constructor(private readonly axeService: AxeService) {}
 
   ngOnInit(): void {
@@ -50,10 +50,6 @@ export class AxesMapComponent implements OnInit {
         this.loading.set(false);
       },
     });
-  }
-
-  etatClass(axe: Axe): string {
-    return 'axe-' + axe.etatActivation.toLowerCase();
   }
 
   readonly axeStatusVariant = axeStatusVariant;

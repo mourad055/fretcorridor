@@ -41,8 +41,7 @@ describe('AxesMapComponent', () => {
 
     const rows = fixture.debugElement.queryAll(By.css('table.axes-table tbody tr'));
     expect(rows).toHaveLength(2);
-    const lines = fixture.debugElement.queryAll(By.css('svg line.axe-line'));
-    expect(lines).toHaveLength(2);
+    expect(fixture.debugElement.query(By.css('app-corridor-map'))).toBeTruthy();
   });
 
   it("affiche un message si aucun axe n'est activé", () => {
