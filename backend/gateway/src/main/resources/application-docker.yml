@@ -1,8 +1,0 @@
-spring:
-  cloud:
-    gateway:
-      routes:
-        - id: service-ida
-          uri: http://service-ida:8081
-          predicates:
-            - Path=/api/auth/**,/api/acteurs/**
