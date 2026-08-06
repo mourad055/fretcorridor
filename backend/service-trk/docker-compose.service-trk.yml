@@ -1,0 +1,22 @@
+# Bloc Docker Compose du service-trk (Moteur — TRK : suivi/ETA, detection d'anomalies).
+# Cf backend/service-geo/docker-compose.service-geo.yml pour l'explication complète du patron.
+services:
+  service-trk:
+    build:
+      context: ../backend
+      dockerfile: service-trk/Dockerfile
+    container_name: fretcorridor-service-trk
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8087:8087"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Pas de "condition: service_healthy" sur kafka (aucun healthcheck
+      # defini dessus dans ce compose) : le consumer Spring Kafka retente la
+      # connexion en arriere-plan si le broker n'est pas encore pret au
+      # demarrage, sans bloquer ni faire planter service-trk (EF-TRK-01,
+      # ingestion tolerante a la connectivite).
+      kafka:
+        condition: service_started
