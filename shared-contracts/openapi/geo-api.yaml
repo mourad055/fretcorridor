@@ -329,7 +329,7 @@ components:
           format: uuid
         visibiliteActive:
           type: boolean
-          default: true
+          default: false
         matchingActif:
           type: boolean
           default: false
@@ -389,7 +389,7 @@ components:
           example: "Douala"
         typeHub:
           type: string
-          enum: [PLATEFORME, PORT, AEROPORT, ENTREPOT, POINT_RELAIS]
+          enum: [VILLE, PLATEFORME, POINT_CONSOLIDATION]
         latitude:
           type: number
           format: double
