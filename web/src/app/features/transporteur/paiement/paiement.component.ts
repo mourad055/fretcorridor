@@ -10,6 +10,7 @@ import { EcrituresTableComponent } from '../../../shared/components/ecritures-ta
   standalone: true,
   imports: [CommonModule, EcrituresTableComponent],
   templateUrl: './paiement.component.html',
+  styleUrl: './paiement.component.css',
 })
 export class PaiementComponent implements OnInit {
   readonly solde = signal<SoldeTransporteur | null>(null);
