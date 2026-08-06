@@ -2,6 +2,7 @@ package com.fretcorridor.opt;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Moteur d'optimisation FretCorridor - perimetre Personne 3 (Moteur).
@@ -12,6 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * (service-mkt recoit PropositionEmise, service-exe recoit AffectationConfirmee).
  */
 @SpringBootApplication
+@EnableScheduling // MatchingCycleService : cycle de matching par fenetre, EF-MAT-01
 public class ServiceOptApplication {
     public static void main(String[] args) {
         SpringApplication.run(ServiceOptApplication.class, args);
