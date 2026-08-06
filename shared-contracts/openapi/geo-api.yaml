@@ -1,35 +1,16 @@
 openapi: 3.0.3
 info:
-  title: Service GEO - Référentiel géospatial
+  title: FretCorridor - Service Géospatial (GEO)
+  description: Référentiel géospatial : axes, hubs, zonage H3.
   version: 1.0.0
-  description: |
-    API interne du référentiel géospatial FretCorridor (Sprint 3, EF-GEO-01/02/03).
-    
-    **Porteur** : Personne 3 (Moteur)
-    **Consommateurs** :
-    - OPT (filtre L0, synchrone interne)
-    - TRK (écart de trajectoire, synchrone interne)
-    - Web (cartes Bureau, via API exposée)
-    - Mobile (axes disponibles, verrous visibles)
-    
-    **Règle de communication** : synchrone REST direct pour les consommateurs
-    internes Moteur (budget L0 ~50ms). Pour Web/Mobile, les données sont
-    consommées via cette API REST (lecture seule pour les cartes).
-
 servers:
-  - url: http://localhost:8084
-    description: Service GEO local (hors Docker)
-
+  - url: http://localhost:8085
+    description: Service GEO local
 paths:
-  # =========================================================================
-  # AXES
-  # =========================================================================
   /api/geo/axes:
     get:
-      operationId: listerAxes
-      summary: Liste tous les axes
-      description: Retourne tous les axes configurés, avec leur état d'activation.
-      tags: [Axes]
+      summary: Liste des axes
+      operationId: getAxes
       responses:
         '200':
           description: Liste des axes
@@ -39,41 +20,16 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AxeResponse'
-    post:
-      operationId: creerAxe
-      summary: Crée un nouvel axe
-      description: |
-        Crée un axe reliant deux hubs distincts.
-        Les états d'activation (visibilité, matching, paiement) sont indépendants (EF-GEO-03).
-      tags: [Axes]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AxeCreationRequest'
-      responses:
-        '201':
-          description: Axe créé
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AxeResponse'
-        '400':
-          description: Hubs identiques ou invalides
-
-  /api/geo/axes/{id}:
+  /api/geo/axes/{code}:
     get:
-      operationId: obtenirAxe
-      summary: Consulte un axe par ID
-      tags: [Axes]
+      summary: Détail d'un axe
+      operationId: getAxeByCode
       parameters:
-        - name: id
+        - name: code
           in: path
           required: true
           schema:
             type: string
-            format: uuid
       responses:
         '200':
           description: Axe trouvé
@@ -83,73 +39,36 @@ paths:
                 $ref: '#/components/schemas/AxeResponse'
         '404':
           description: Axe introuvable
-
-  /api/geo/axes/actifs-matching:
-    get:
-      operationId: listerAxesActifsPourMatching
-      summary: Liste les axes où le matching est activé
-      description: |
-        Consommé par OPT pour savoir sur quels axes lancer les cycles (EF-GEO-03).
-        Seuls les axes avec matchingActif=true sont retournés.
-      tags: [Axes]
-      responses:
-        '200':
-          description: Liste des axes actifs pour le matching
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AxeResponse'
-
-  /api/geo/axes/{id}/etats/{etat}:
     patch:
-      operationId: basculerEtat
-      summary: Active/désactive un état indépendant d'un axe
-      description: |
-        Bascule un des trois états d'activation indépendamment (EF-GEO-03).
-        L'état "visibilite" contrôle l'affichage sur les cartes,
-        "matching" autorise les cycles d'appariement,
-        "paiement" autorise les transactions sur l'axe.
-      tags: [Axes]
+      summary: Mise à jour des états d'activation
+      operationId: updateActivationStates
       parameters:
-        - name: id
+        - name: code
           in: path
           required: true
           schema:
             type: string
-            format: uuid
-        - name: etat
-          in: path
-          required: true
-          schema:
-            type: string
-            enum: [visibilite, matching, paiement]
-        - name: actif
-          in: query
-          required: true
-          schema:
-            type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                visibiliteActive: { type: boolean }
+                matchingActif: { type: boolean }
+                paiementActif: { type: boolean }
       responses:
         '200':
-          description: État basculé
+          description: États mis à jour
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AxeResponse'
-        '400':
-          description: État inconnu
-        '404':
-          description: Axe introuvable
-
-  # =========================================================================
-  # HUBS
-  # =========================================================================
   /api/geo/hubs:
     get:
-      operationId: listerHubs
-      summary: Liste tous les hubs
-      tags: [Hubs]
+      summary: Liste des hubs
+      operationId: getHubs
       responses:
         '200':
           description: Liste des hubs
@@ -160,12 +79,8 @@ paths:
                 items:
                   $ref: '#/components/schemas/HubResponse'
     post:
-      operationId: creerHub
-      summary: Crée un nouveau hub
-      description: |
-        Crée un hub avec sa position géographique.
-        L'index H3 est calculé automatiquement à la création.
-      tags: [Hubs]
+      summary: Créer un hub
+      operationId: createHub
       requestBody:
         required: true
         content:
@@ -179,243 +94,69 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HubResponse'
-
-  /api/geo/hubs/{id}:
-    get:
-      operationId: consulterHub
-      summary: Consulte un hub par ID
-      tags: [Hubs]
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Hub trouvé
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/HubResponse'
-        '404':
-          description: Hub introuvable
-
-  # =========================================================================
-  # ZONAGE H3
-  # =========================================================================
-  /api/geo/zonage/index:
-    get:
-      operationId: indexPourPoint
-      summary: Calcule l'index H3 d'un point
-      description: |
-        Convertit des coordonnées GPS en index H3 (résolution configurée).
-        Utilisé par OPT pour indexer l'origine d'une demande avant recherche de hubs proches.
-      tags: [Zonage H3]
-      parameters:
-        - name: latitude
-          in: query
-          required: true
-          schema:
-            type: number
-            format: double
-        - name: longitude
-          in: query
-          required: true
-          schema:
-            type: number
-            format: double
-      responses:
-        '200':
-          description: Index H3
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "881fa34c9fffff"
-
-  /api/geo/zonage/k-ring:
-    get:
-      operationId: kRing
-      summary: Cellules H3 voisines (k-ring)
-      description: |
-        Retourne la cellule centrale et ses k anneaux de voisines.
-        Utilisé principalement pour le debug/vérification manuelle du zonage.
-      tags: [Zonage H3]
-      parameters:
-        - name: indexH3
-          in: query
-          required: true
-          schema:
-            type: string
-        - name: k
-          in: query
-          required: false
-          schema:
-            type: integer
-            default: 1
-      responses:
-        '200':
-          description: Liste des index H3
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-
   /api/geo/zonage/hubs-proches:
     get:
-      operationId: hubsProches
-      summary: Hubs proches d'un point (filtre L0)
-      description: |
-        **Endpoint métier principal pour OPT (filtre L0).**
-        
-        Retourne tous les hubs dans la cellule H3 du point donné et ses k anneaux
-        voisins. Réduit l'espace de recherche avant l'affectation Kuhn-Munkres (L1).
-        
-        Budget de latence : ~50 ms (appel synchrone interne).
-      tags: [Zonage H3]
+      summary: Hubs autour d'un point (filtrage L0)
+      operationId: getHubsProches
       parameters:
         - name: latitude
           in: query
           required: true
-          schema:
-            type: number
-            format: double
+          schema: { type: number, format: double }
         - name: longitude
           in: query
           required: true
-          schema:
-            type: number
-            format: double
+          schema: { type: number, format: double }
         - name: k
           in: query
           required: false
-          schema:
-            type: integer
-            default: 1
+          schema: { type: integer, default: 1 }
       responses:
         '200':
-          description: Hubs trouvés dans la zone
+          description: Liste des hubs proches
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/HubResponse'
-
-# ===========================================================================
-# SCHÉMAS
-# ===========================================================================
+                  $ref: '#/components/schemas/HubProcheDto'
 components:
   schemas:
-    AxeCreationRequest:
-      type: object
-      required:
-        - nom
-        - hubOrigineId
-        - hubDestinationId
-      properties:
-        nom:
-          type: string
-          example: "Douala-Yaoundé"
-        hubOrigineId:
-          type: string
-          format: uuid
-        hubDestinationId:
-          type: string
-          format: uuid
-        visibiliteActive:
-          type: boolean
-          default: false
-        matchingActif:
-          type: boolean
-          default: false
-        paiementActif:
-          type: boolean
-          default: false
-        parametres:
-          type: string
-          description: Paramètres JSON libres par axe (matching, tarification)
-
     AxeResponse:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        nom:
-          type: string
-        hubOrigine:
-          $ref: '#/components/schemas/HubResume'
-        hubDestination:
-          $ref: '#/components/schemas/HubResume'
-        visibiliteActive:
-          type: boolean
-        matchingActif:
-          type: boolean
-        paiementActif:
-          type: boolean
-        parametres:
-          type: string
-
-    HubResume:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        nom:
-          type: string
-        ville:
-          type: string
-
-    HubCreationRequest:
-      type: object
-      required:
-        - nom
-        - ville
-        - typeHub
-        - latitude
-        - longitude
-      properties:
-        nom:
-          type: string
-          example: "Plateforme logistique de Douala"
-        ville:
-          type: string
-          example: "Douala"
-        typeHub:
-          type: string
-          enum: [VILLE, PLATEFORME, POINT_CONSOLIDATION]
-        latitude:
-          type: number
-          format: double
-        longitude:
-          type: number
-          format: double
-
+        id: { type: string, format: uuid }
+        code: { type: string }
+        nom: { type: string }
+        visibiliteActive: { type: boolean }
+        matchingActif: { type: boolean }
+        paiementActif: { type: boolean }
+        fenetreMatchingMs: { type: integer }
+        rayonAppariementKm: { type: integer }
+        surcoucheSecuritaire: { type: string, nullable: true }
+        hubs:
+          type: array
+          items: { $ref: '#/components/schemas/HubResponse' }
     HubResponse:
       type: object
       properties:
-        id:
-          type: string
-          format: uuid
-        nom:
-          type: string
-        ville:
-          type: string
-        typeHub:
-          type: string
-        latitude:
-          type: number
-        longitude:
-          type: number
-        h3Index:
-          type: string
-          description: Index H3 calculé à la création
-        dateCreation:
-          type: string
-          format: date-time
+        id: { type: string, format: uuid }
+        code: { type: string }
+        nom: { type: string }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        type: { type: string, enum: [VILLE, PLATEFORME, POINT_CONSOLIDATION] }
+    HubCreationRequest:
+      type: object
+      required: [code, nom, latitude, longitude, type]
+      properties:
+        code: { type: string }
+        nom: { type: string }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        type: { type: string, enum: [VILLE, PLATEFORME, POINT_CONSOLIDATION] }
+    HubProcheDto:
+      type: object
+      properties:
+        hub: { $ref: '#/components/schemas/HubResponse' }
+        distanceKm: { type: number, format: double }
