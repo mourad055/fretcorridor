@@ -18,8 +18,8 @@ spring:
   client:
     service-geo:
       base-url: http://localhost:8084
-      connect-timeout-ms: 200
-      read-timeout-ms: 300
+      connect-timeout-ms: 20
+      read-timeout-ms: 50
     service-mat:
       base-url: http://localhost:8086
       connect-timeout-ms: 200
