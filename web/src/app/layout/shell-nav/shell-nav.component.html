@@ -1,0 +1,11 @@
+<nav class="shell-nav" aria-label="Navigation principale">
+  <a
+    *ngFor="let onglet of onglets()"
+    class="shell-nav__link"
+    [routerLink]="onglet.path"
+    [routerLinkActive]="'shell-nav__link--active'"
+    [routerLinkActiveOptions]="{ exact: onglet.exact }"
+  >
+    {{ onglet.label }}
+  </a>
+</nav>

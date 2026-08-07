@@ -1,27 +1,29 @@
-<section class="rapport-financier-admin fc-panel">
-  <h2 class="fc-panel__title">Rapport financier (consultation transverse)</h2>
+<main class="fc-page">
+  <section class="rapport-financier-admin fc-panel">
+    <h2 class="fc-panel__title">Rapport financier (consultation transverse)</h2>
 
-  <div class="fc-filters">
-    <div class="fc-filters__field">
-      <label class="fc-filters__label" for="tenant-select">Tenant</label>
-      <select
-        id="tenant-select"
-        name="tenant"
-        class="fc-filters__select"
-        [ngModel]="tenantSelectionne()"
-        (ngModelChange)="tenantSelectionne.set($event)"
-      >
-        <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
-      </select>
+    <div class="fc-filters">
+      <div class="fc-filters__field">
+        <label class="fc-filters__label" for="tenant-select">Tenant</label>
+        <select
+          id="tenant-select"
+          name="tenant"
+          class="fc-filters__select"
+          [ngModel]="tenantSelectionne()"
+          (ngModelChange)="tenantSelectionne.set($event)"
+        >
+          <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
+        </select>
+      </div>
+      <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()" [disabled]="loading()">Consulter</button>
     </div>
-    <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()" [disabled]="loading()">Consulter</button>
-  </div>
 
-  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-  <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-    <div class="fc-skeleton__line"></div>
-    <div class="fc-skeleton__line"></div>
-  </div>
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
 
-  <app-ecritures-table *ngIf="!loading() && ecritures() as e" [ecritures]="e" />
-</section>
+    <app-ecritures-table *ngIf="!loading() && ecritures() as e" [ecritures]="e" />
+  </section>
+</main>

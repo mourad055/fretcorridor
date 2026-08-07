@@ -39,6 +39,7 @@ test.describe('Back-office — Admin (Sprint 10)', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/admin$/);
+    await page.goto('/admin/dossiers');
 
     const dossiersSection = page.locator('.dossiers');
     await dossiersSection.getByLabel('Tenant').selectOption('tenant-bgft-douala');
@@ -70,6 +71,7 @@ test.describe('Back-office — Admin (Sprint 10)', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/admin$/);
+    await page.goto('/admin/dossiers');
 
     const dossiersSection = page.locator('.dossiers');
     await dossiersSection.getByLabel('Tenant').selectOption('tenant-bgft-douala');

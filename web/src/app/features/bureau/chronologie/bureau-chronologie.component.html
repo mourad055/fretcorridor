@@ -1,12 +1,14 @@
-<section class="bureau-chronologie fc-panel">
-  <h2 class="fc-panel__title">Chronologie des missions</h2>
+<main class="fc-page">
+  <section class="bureau-chronologie fc-panel">
+    <h2 class="fc-panel__title">Chronologie des missions</h2>
 
-  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-  <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-    <div class="fc-skeleton__line"></div>
-    <div class="fc-skeleton__line"></div>
-  </div>
-  <div class="fc-empty" *ngIf="!loading() && missions().length === 0">Aucune mission sur votre territoire.</div>
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && missions().length === 0">Aucune mission sur votre territoire.</div>
 
-  <app-mission-chronologie *ngIf="!loading() && missions().length > 0" [missions]="missions()" />
-</section>
+    <app-mission-chronologie *ngIf="!loading() && missions().length > 0" [missions]="missions()" />
+  </section>
+</main>

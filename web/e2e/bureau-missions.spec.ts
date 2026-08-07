@@ -11,6 +11,7 @@ test.describe('Missions appariées — Bureau', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
+    await page.goto('/bureau/missions');
 
     const missionsSection = page.locator('.missions-list');
     await expect(missionsSection.locator('tbody tr')).toHaveCount(2);
@@ -23,6 +24,7 @@ test.describe('Missions appariées — Bureau', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
+    await page.goto('/bureau/missions');
 
     const missionsSection = page.locator('.missions-list');
     await expect(missionsSection.locator('tbody tr')).toHaveCount(1);

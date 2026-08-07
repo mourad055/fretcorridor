@@ -1,88 +1,90 @@
-<section class="dossiers fc-panel">
-  <h2 class="fc-panel__title">File de travail</h2>
+<main class="fc-page">
+  <section class="dossiers fc-panel">
+    <h2 class="fc-panel__title">File de travail</h2>
 
-  <div class="fc-filters">
-    <div class="fc-filters__field">
-      <label class="fc-filters__label" for="dossiers-tenant">Tenant</label>
-      <select id="dossiers-tenant" class="fc-filters__select" [ngModel]="tenantSelectionne()" (ngModelChange)="tenantSelectionne.set($event)">
-        <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
-      </select>
-    </div>
-    <div class="fc-actions">
-      <button type="button" class="fc-btn fc-btn--primary" (click)="consulterFileDeTravail()">Consulter</button>
-      <button type="button" class="fc-btn fc-btn--ghost" (click)="declencherEscalade()">Détecter les dossiers en retard</button>
-    </div>
-  </div>
-
-  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-  <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-    <div class="fc-skeleton__line"></div>
-    <div class="fc-skeleton__line"></div>
-  </div>
-  <div class="fc-empty" *ngIf="!loading() && dossiers().length === 0">Aucun dossier dans la file de travail.</div>
-
-  <table class="fc-table" *ngIf="!loading() && dossiers().length > 0">
-    <thead>
-      <tr>
-        <th>Mission</th>
-        <th>Type</th>
-        <th>Priorité</th>
-        <th>Statut</th>
-        <th>Délai</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let dossier of dossiers()">
-        <td>{{ dossier.missionId }}</td>
-        <td>{{ dossier.type }}</td>
-        <td>{{ dossier.priorite }}</td>
-        <td><app-status-badge [label]="dossier.statut" [variant]="dossierStatusVariant(dossier.statut)" /></td>
-        <td>{{ dossier.delaiTraitement | date: 'short' }}</td>
-        <td>
-          <div class="fc-actions">
-            <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="prendreEnCharge(dossier.id)" [disabled]="dossier.statut === 'CLOS'">
-              Prendre en charge
-            </button>
-            <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="ouvrirDossier(dossier.id)">Voir le dossier</button>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="dossier-consolide fc-panel" *ngIf="dossierConsolide() as consolide">
-    <h3 class="fc-panel__title">Dossier {{ consolide.dossier.id }}</h3>
-
-    <dl class="fc-dl">
-      <div class="fc-dl__row">
-        <dt>Parties</dt>
-        <dd>{{ consolide.dossier.parties.join(', ') }}</dd>
+    <div class="fc-filters">
+      <div class="fc-filters__field">
+        <label class="fc-filters__label" for="dossiers-tenant">Tenant</label>
+        <select id="dossiers-tenant" class="fc-filters__select" [ngModel]="tenantSelectionne()" (ngModelChange)="tenantSelectionne.set($event)">
+          <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
+        </select>
       </div>
-    </dl>
-
-    <div *ngIf="consolide.mission as mission">
-      <h4 class="fc-panel__title">Chronologie de la mission {{ mission.id }}</h4>
-      <ul class="fc-list">
-        <li class="fc-list__item" *ngFor="let etape of mission.etapes">{{ etape.type }} — {{ etape.lieu }} ({{ etape.etat }})</li>
-      </ul>
+      <div class="fc-actions">
+        <button type="button" class="fc-btn fc-btn--primary" (click)="consulterFileDeTravail()">Consulter</button>
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="declencherEscalade()">Détecter les dossiers en retard</button>
+      </div>
     </div>
 
-    <div *ngIf="consolide.ecritures.length > 0">
-      <h4 class="fc-panel__title">Écritures</h4>
-      <ul class="fc-list">
-        <li class="fc-list__item" *ngFor="let ecriture of consolide.ecritures">{{ ecriture.nature }} — {{ ecriture.montant }}</li>
-      </ul>
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
     </div>
+    <div class="fc-empty" *ngIf="!loading() && dossiers().length === 0">Aucun dossier dans la file de travail.</div>
 
-    <div class="field" *ngIf="consolide.dossier.statut !== 'CLOS'">
-      <label class="field__label" for="dossier-decision">Décision</label>
-      <input id="dossier-decision" class="field__input" [ngModel]="decisionTexte()" (ngModelChange)="decisionTexte.set($event)" />
-      <label class="field__label" for="dossier-motif">Motif</label>
-      <input id="dossier-motif" class="field__input" [ngModel]="motifTexte()" (ngModelChange)="motifTexte.set($event)" />
-      <button type="button" class="fc-btn fc-btn--primary" (click)="trancher()">Trancher</button>
+    <table class="fc-table" *ngIf="!loading() && dossiers().length > 0">
+      <thead>
+        <tr>
+          <th>Mission</th>
+          <th>Type</th>
+          <th>Priorité</th>
+          <th>Statut</th>
+          <th>Délai</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let dossier of dossiers()">
+          <td>{{ dossier.missionId }}</td>
+          <td>{{ dossier.type }}</td>
+          <td>{{ dossier.priorite }}</td>
+          <td><app-status-badge [label]="dossier.statut" [variant]="dossierStatusVariant(dossier.statut)" /></td>
+          <td>{{ dossier.delaiTraitement | date: 'short' }}</td>
+          <td>
+            <div class="fc-actions">
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="prendreEnCharge(dossier.id)" [disabled]="dossier.statut === 'CLOS'">
+                Prendre en charge
+              </button>
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="ouvrirDossier(dossier.id)">Voir le dossier</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="dossier-consolide fc-panel" *ngIf="dossierConsolide() as consolide">
+      <h3 class="fc-panel__title">Dossier {{ consolide.dossier.id }}</h3>
+
+      <dl class="fc-dl">
+        <div class="fc-dl__row">
+          <dt>Parties</dt>
+          <dd>{{ consolide.dossier.parties.join(', ') }}</dd>
+        </div>
+      </dl>
+
+      <div *ngIf="consolide.mission as mission">
+        <h4 class="fc-panel__title">Chronologie de la mission {{ mission.id }}</h4>
+        <ul class="fc-list">
+          <li class="fc-list__item" *ngFor="let etape of mission.etapes">{{ etape.type }} — {{ etape.lieu }} ({{ etape.etat }})</li>
+        </ul>
+      </div>
+
+      <div *ngIf="consolide.ecritures.length > 0">
+        <h4 class="fc-panel__title">Écritures</h4>
+        <ul class="fc-list">
+          <li class="fc-list__item" *ngFor="let ecriture of consolide.ecritures">{{ ecriture.nature }} — {{ ecriture.montant }}</li>
+        </ul>
+      </div>
+
+      <div class="field" *ngIf="consolide.dossier.statut !== 'CLOS'">
+        <label class="field__label" for="dossier-decision">Décision</label>
+        <input id="dossier-decision" class="field__input" [ngModel]="decisionTexte()" (ngModelChange)="decisionTexte.set($event)" />
+        <label class="field__label" for="dossier-motif">Motif</label>
+        <input id="dossier-motif" class="field__input" [ngModel]="motifTexte()" (ngModelChange)="motifTexte.set($event)" />
+        <button type="button" class="fc-btn fc-btn--primary" (click)="trancher()">Trancher</button>
+      </div>
+
+      <button type="button" class="fc-btn fc-btn--ghost" (click)="fermerDossier()">Fermer</button>
     </div>
-
-    <button type="button" class="fc-btn fc-btn--ghost" (click)="fermerDossier()">Fermer</button>
-  </div>
-</section>
+  </section>
+</main>

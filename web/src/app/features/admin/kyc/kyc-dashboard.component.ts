@@ -2,24 +2,16 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KycService } from './kyc.service';
 import { KycDossier } from './kyc.models';
-import { RapportFinancierAdminComponent } from '../rapport-financier/rapport-financier-admin.component';
-import { DossiersComponent } from '../dossiers/dossiers.component';
-import { ConfigurationsComponent } from '../configurations/configurations.component';
-import { TenantsComponent } from '../tenants/tenants.component';
-import { JournalAuditComponent } from '../journal-audit/journal-audit.component';
 
-/** FE-ADM-06 : un admin voit une liste de KYC en attente et peut la faire passer à validé/rejeté. */
+/**
+ * FE-ADM-06 : un admin voit une liste de KYC en attente et peut la faire
+ * passer à validé/rejeté. Onglet « KYC » du tableau de bord Admin — voir
+ * docs/adr, Sprint 14 (navigation par onglets).
+ */
 @Component({
   selector: 'app-kyc-dashboard',
   standalone: true,
-  imports: [
-    CommonModule,
-    RapportFinancierAdminComponent,
-    DossiersComponent,
-    ConfigurationsComponent,
-    TenantsComponent,
-    JournalAuditComponent,
-  ],
+  imports: [CommonModule],
   templateUrl: './kyc-dashboard.component.html',
 })
 export class KycDashboardComponent implements OnInit {

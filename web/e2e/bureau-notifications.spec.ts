@@ -11,6 +11,7 @@ test.describe('Centre de notifications — Bureau', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
+    await page.goto('/bureau/notifications');
 
     const notifications = page.locator('.notifications');
     await expect(notifications.locator('li')).toHaveCount(2);
@@ -24,6 +25,7 @@ test.describe('Centre de notifications — Bureau', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
+    await page.goto('/bureau/notifications');
 
     const notifications = page.locator('.notifications');
     await expect(notifications.locator('li')).toHaveCount(1);

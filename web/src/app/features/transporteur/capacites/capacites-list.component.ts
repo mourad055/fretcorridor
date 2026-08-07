@@ -2,14 +2,16 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CapaciteService } from './capacite.service';
 import { Capacite } from './capacite.models';
-import { TransporteurMissionsComponent } from '../missions/transporteur-missions.component';
-import { PaiementComponent } from '../paiement/paiement.component';
 
-/** FE-TRP-01 (Sprint 4) : un Transporteur voit ses capacités déclarées, lecture seule. */
+/**
+ * FE-TRP-01 (Sprint 4) : un Transporteur voit ses capacités déclarées,
+ * lecture seule. Onglet « Capacités » du tableau de bord Transporteur —
+ * voir docs/adr, Sprint 14 (navigation par onglets).
+ */
 @Component({
   selector: 'app-capacites-list',
   standalone: true,
-  imports: [CommonModule, TransporteurMissionsComponent, PaiementComponent],
+  imports: [CommonModule],
   templateUrl: './capacites-list.component.html',
 })
 export class CapacitesListComponent implements OnInit {

@@ -11,6 +11,7 @@ test.describe('Chronologie de mission', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
+    await page.goto('/bureau/chronologie');
 
     const chronologie = page.locator('.bureau-chronologie');
     await expect(chronologie.locator('app-mission-chronologie article')).toHaveCount(2);
@@ -22,6 +23,7 @@ test.describe('Chronologie de mission', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/transporteur$/);
+    await page.goto('/transporteur/missions');
 
     const mesMissions = page.locator('.transporteur-missions');
     await expect(mesMissions.locator('app-mission-chronologie article')).toHaveCount(1);
@@ -34,6 +36,7 @@ test.describe('Chronologie de mission', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/transporteur$/);
+    await page.goto('/transporteur/missions');
 
     const mesMissions = page.locator('.transporteur-missions');
     await expect(mesMissions.locator('app-mission-chronologie article')).toHaveCount(1);

@@ -3,11 +3,6 @@ import { CommonModule } from '@angular/common';
 import { AxeService } from './axe.service';
 import { Axe } from './axe.models';
 import { CorridorMapComponent } from './corridor-map.component';
-import { MissionsListComponent } from '../missions/missions-list.component';
-import { PositionsListComponent } from '../positions/positions-list.component';
-import { BureauChronologieComponent } from '../chronologie/bureau-chronologie.component';
-import { RapportFinancierComponent } from '../rapport-financier/rapport-financier.component';
-import { NotificationsComponent } from '../notifications/notifications.component';
 import { StatusBadgeComponent, axeStatusVariant } from '../../../shared/components/status-badge/status-badge.component';
 
 /**
@@ -15,21 +10,13 @@ import { StatusBadgeComponent, axeStatusVariant } from '../../../shared/componen
  * Carte géospatiale réelle (Leaflet), centrée sur le corridor CEMAC
  * Cameroun–Tchad — voir docs/adr/0007, addendum Sprint 12. Les coordonnées
  * de hubs proviennent d'un référentiel statique en attendant service-geo
- * (Moteur).
+ * (Moteur). Onglet « Axes » du tableau de bord Bureau — voir docs/adr,
+ * Sprint 14 (navigation par onglets).
  */
 @Component({
   selector: 'app-axes-map',
   standalone: true,
-  imports: [
-    CommonModule,
-    CorridorMapComponent,
-    MissionsListComponent,
-    PositionsListComponent,
-    BureauChronologieComponent,
-    RapportFinancierComponent,
-    NotificationsComponent,
-    StatusBadgeComponent,
-  ],
+  imports: [CommonModule, CorridorMapComponent, StatusBadgeComponent],
   templateUrl: './axes-map.component.html',
 })
 export class AxesMapComponent implements OnInit {

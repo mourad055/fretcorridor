@@ -32,18 +32,11 @@ describe('CapacitesListComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  /** Le composant embarque <app-transporteur-missions> et <app-paiement>, qui déclenchent leurs propres requêtes au chargement. */
-  function flushMissionsRequest(): void {
-    httpMock.expectOne(`${environment.apiBaseUrl}/transporteur/missions`).flush([]);
-    httpMock.expectOne(`${environment.apiBaseUrl}/transporteur/paiement`).flush({ solde: 0, historique: [] });
-  }
-
   it('affiche une ligne par capacite declaree au chargement', () => {
     const fixture = TestBed.createComponent(CapacitesListComponent);
     fixture.detectChanges();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/transporteur/capacites`).flush(CAPACITES);
-    flushMissionsRequest();
     fixture.detectChanges();
 
     const rows = fixture.debugElement.queryAll(By.css('tbody tr'));
@@ -55,7 +48,6 @@ describe('CapacitesListComponent', () => {
     fixture.detectChanges();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/transporteur/capacites`).flush([]);
-    flushMissionsRequest();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Aucune capacité déclarée');
@@ -68,7 +60,6 @@ describe('CapacitesListComponent', () => {
     httpMock
       .expectOne(`${environment.apiBaseUrl}/transporteur/capacites`)
       .flush({ title: 'Erreur' }, { status: 500, statusText: 'Server Error' });
-    flushMissionsRequest();
     fixture.detectChanges();
 
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));

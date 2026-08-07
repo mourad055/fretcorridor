@@ -1,31 +1,33 @@
-<section class="missions-list fc-panel">
-  <h2 class="fc-panel__title">Missions appariées</h2>
+<main class="fc-page">
+  <section class="missions-list fc-panel">
+    <h2 class="fc-panel__title">Missions appariées</h2>
 
-  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-  <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-    <div class="fc-skeleton__line"></div>
-    <div class="fc-skeleton__line"></div>
-  </div>
-  <div class="fc-empty" *ngIf="!loading() && missions().length === 0">Aucune mission appariée sur votre territoire.</div>
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && missions().length === 0">Aucune mission appariée sur votre territoire.</div>
 
-  <table class="fc-table" *ngIf="!loading() && missions().length > 0">
-    <thead>
-      <tr>
-        <th>Transporteur</th>
-        <th>Origine</th>
-        <th>Destination</th>
-        <th>Enlèvement</th>
-        <th>Statut</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let mission of missions()">
-        <td>{{ mission.transporteurNom }}</td>
-        <td>{{ mission.origine }}</td>
-        <td>{{ mission.destination }}</td>
-        <td>{{ mission.enlevementLe | date: 'short' }}</td>
-        <td>{{ mission.statut }}</td>
-      </tr>
-    </tbody>
-  </table>
-</section>
+    <table class="fc-table" *ngIf="!loading() && missions().length > 0">
+      <thead>
+        <tr>
+          <th>Transporteur</th>
+          <th>Origine</th>
+          <th>Destination</th>
+          <th>Enlèvement</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let mission of missions()">
+          <td>{{ mission.transporteurNom }}</td>
+          <td>{{ mission.origine }}</td>
+          <td>{{ mission.destination }}</td>
+          <td>{{ mission.enlevementLe | date: 'short' }}</td>
+          <td>{{ mission.statut }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>

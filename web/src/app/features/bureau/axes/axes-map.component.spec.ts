@@ -19,15 +19,6 @@ describe('AxesMapComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  /** Le composant embarque missions-list, positions-list, bureau-chronologie, rapport-financier et notifications, qui déclenchent leurs propres requêtes au chargement. */
-  function flushSiblingRequests(): void {
-    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-appariees`).flush([]);
-    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/positions`).flush([]);
-    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-chronologie`).flush([]);
-    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/rapport-financier`).flush([]);
-    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/notifications`).flush([]);
-  }
-
   it('affiche un axe par ligne du tableau au chargement', () => {
     const fixture = TestBed.createComponent(AxesMapComponent);
     fixture.detectChanges();
@@ -36,7 +27,6 @@ describe('AxesMapComponent', () => {
       { id: 'axe-1', origine: 'Douala', destination: 'Yaoundé', distanceKm: 300, etatActivation: 'PAIEMENT' },
       { id: 'axe-2', origine: 'Douala', destination: 'Bafoussam', distanceKm: 350, etatActivation: 'MATCHING' },
     ]);
-    flushSiblingRequests();
     fixture.detectChanges();
 
     const rows = fixture.debugElement.queryAll(By.css('table.axes-table tbody tr'));
@@ -49,7 +39,6 @@ describe('AxesMapComponent', () => {
     fixture.detectChanges();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/bureau/axes`).flush([]);
-    flushSiblingRequests();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Aucun axe activé');
@@ -62,7 +51,6 @@ describe('AxesMapComponent', () => {
     httpMock
       .expectOne(`${environment.apiBaseUrl}/bureau/axes`)
       .flush({ title: 'Erreur' }, { status: 500, statusText: 'Server Error' });
-    flushSiblingRequests();
     fixture.detectChanges();
 
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));

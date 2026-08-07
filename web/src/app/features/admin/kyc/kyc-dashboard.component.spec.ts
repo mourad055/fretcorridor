@@ -24,18 +24,11 @@ describe('KycDashboardComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  /** Le composant embarque tenants et journal-audit, qui déclenchent leurs propres requêtes au chargement. */
-  function flushSiblingRequests(): void {
-    httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([]);
-    httpMock.expectOne(`${environment.apiBaseUrl}/admin/journal-audit`).flush([]);
-  }
-
   it('affiche la liste des dossiers en attente au chargement', () => {
     const fixture = TestBed.createComponent(KycDashboardComponent);
     fixture.detectChanges();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/pending`).flush(PENDING);
-    flushSiblingRequests();
     fixture.detectChanges();
 
     const rows = fixture.debugElement.queryAll(By.css('tbody tr'));
@@ -46,7 +39,6 @@ describe('KycDashboardComponent', () => {
     const fixture = TestBed.createComponent(KycDashboardComponent);
     fixture.detectChanges();
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/pending`).flush(PENDING);
-    flushSiblingRequests();
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
@@ -67,7 +59,6 @@ describe('KycDashboardComponent', () => {
     httpMock
       .expectOne(`${environment.apiBaseUrl}/admin/kyc/pending`)
       .flush({ title: 'Erreur' }, { status: 500, statusText: 'Server Error' });
-    flushSiblingRequests();
     fixture.detectChanges();
 
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));

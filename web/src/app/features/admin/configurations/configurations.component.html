@@ -1,38 +1,40 @@
-<section class="configurations fc-panel">
-  <h2 class="fc-panel__title">Configuration versionnée</h2>
+<main class="fc-page">
+  <section class="configurations fc-panel">
+    <h2 class="fc-panel__title">Configuration versionnée</h2>
 
-  <div class="fc-filters">
-    <div class="fc-filters__field">
-      <label class="fc-filters__label" for="configuration-cle">Clé</label>
-      <input id="configuration-cle" class="fc-filters__input" [ngModel]="cle()" (ngModelChange)="cle.set($event)" />
+    <div class="fc-filters">
+      <div class="fc-filters__field">
+        <label class="fc-filters__label" for="configuration-cle">Clé</label>
+        <input id="configuration-cle" class="fc-filters__input" [ngModel]="cle()" (ngModelChange)="cle.set($event)" />
+      </div>
+      <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()">Consulter l'historique</button>
     </div>
-    <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()">Consulter l'historique</button>
-  </div>
 
-  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
 
-  <table class="fc-table" *ngIf="historique().length > 0">
-    <thead>
-      <tr>
-        <th>Version</th>
-        <th>Valeur</th>
-        <th>Auteur</th>
-        <th>Créée le</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let version of historique()">
-        <td>{{ version.version }}</td>
-        <td>{{ version.valeur }}</td>
-        <td>{{ version.auteur }}</td>
-        <td>{{ version.creeLe | date: 'short' }}</td>
-      </tr>
-    </tbody>
-  </table>
+    <table class="fc-table" *ngIf="historique().length > 0">
+      <thead>
+        <tr>
+          <th>Version</th>
+          <th>Valeur</th>
+          <th>Auteur</th>
+          <th>Créée le</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let version of historique()">
+          <td>{{ version.version }}</td>
+          <td>{{ version.valeur }}</td>
+          <td>{{ version.auteur }}</td>
+          <td>{{ version.creeLe | date: 'short' }}</td>
+        </tr>
+      </tbody>
+    </table>
 
-  <div class="field">
-    <label class="field__label" for="configuration-valeur">Nouvelle valeur</label>
-    <input id="configuration-valeur" class="field__input" [ngModel]="nouvelleValeur()" (ngModelChange)="nouvelleValeur.set($event)" />
-  </div>
-  <button type="button" class="fc-btn fc-btn--primary" (click)="definir()">Définir une nouvelle version</button>
-</section>
+    <div class="field">
+      <label class="field__label" for="configuration-valeur">Nouvelle valeur</label>
+      <input id="configuration-valeur" class="field__input" [ngModel]="nouvelleValeur()" (ngModelChange)="nouvelleValeur.set($event)" />
+    </div>
+    <button type="button" class="fc-btn fc-btn--primary" (click)="definir()">Définir une nouvelle version</button>
+  </section>
+</main>

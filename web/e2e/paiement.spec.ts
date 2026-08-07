@@ -50,6 +50,7 @@ test.describe('Paiement — Sprint 8', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/transporteur$/);
+    await page.goto('/transporteur/paiement');
 
     const paiementSection = page.locator('.paiement');
     await expect(paiementSection).toContainText(missionId);
@@ -66,6 +67,7 @@ test.describe('Paiement — Sprint 8', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/bureau$/);
+    await page.goto('/bureau/rapport-financier');
 
     const rapportSection = page.locator('.rapport-financier');
     await expect(rapportSection).toContainText(missionId);
@@ -81,6 +83,7 @@ test.describe('Paiement — Sprint 8', () => {
     await page.getByLabel('Code reçu par SMS').fill('123456');
     await page.getByRole('button', { name: 'Se connecter' }).click();
     await expect(page).toHaveURL(/\/admin$/);
+    await page.goto('/admin/rapport-financier');
 
     const adminSection = page.locator('.rapport-financier-admin');
     await adminSection.getByLabel('Tenant').selectOption('tenant-bgft-douala');

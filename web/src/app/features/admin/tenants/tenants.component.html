@@ -1,41 +1,43 @@
-<section class="tenants fc-panel">
-  <h2 class="fc-panel__title">Gestion des tenants</h2>
+<main class="fc-page">
+  <section class="tenants fc-panel">
+    <h2 class="fc-panel__title">Gestion des tenants</h2>
 
-  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-  <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-    <div class="fc-skeleton__line"></div>
-    <div class="fc-skeleton__line"></div>
-  </div>
-  <div class="fc-empty" *ngIf="!loading() && tenants().length === 0">Aucun tenant enregistré.</div>
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && tenants().length === 0">Aucun tenant enregistré.</div>
 
-  <table class="fc-table" *ngIf="!loading() && tenants().length > 0">
-    <thead>
-      <tr>
-        <th>Identifiant</th>
-        <th>Nom</th>
-        <th>Pays</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let tenant of tenants()">
-        <td>{{ tenant.id }}</td>
-        <td>{{ tenant.nom }}</td>
-        <td>{{ tenant.pays }}</td>
-      </tr>
-    </tbody>
-  </table>
+    <table class="fc-table" *ngIf="!loading() && tenants().length > 0">
+      <thead>
+        <tr>
+          <th>Identifiant</th>
+          <th>Nom</th>
+          <th>Pays</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tenant of tenants()">
+          <td>{{ tenant.id }}</td>
+          <td>{{ tenant.nom }}</td>
+          <td>{{ tenant.pays }}</td>
+        </tr>
+      </tbody>
+    </table>
 
-  <div class="field">
-    <label class="field__label" for="tenant-id">Identifiant</label>
-    <input id="tenant-id" class="field__input" [ngModel]="nouvelId()" (ngModelChange)="nouvelId.set($event)" />
-  </div>
-  <div class="field">
-    <label class="field__label" for="tenant-nom">Nom</label>
-    <input id="tenant-nom" class="field__input" [ngModel]="nouvelNom()" (ngModelChange)="nouvelNom.set($event)" />
-  </div>
-  <div class="field">
-    <label class="field__label" for="tenant-pays">Pays</label>
-    <input id="tenant-pays" class="field__input" [ngModel]="nouveauPays()" (ngModelChange)="nouveauPays.set($event)" />
-  </div>
-  <button type="button" class="fc-btn fc-btn--primary" (click)="creer()">Créer le tenant</button>
-</section>
+    <div class="field">
+      <label class="field__label" for="tenant-id">Identifiant</label>
+      <input id="tenant-id" class="field__input" [ngModel]="nouvelId()" (ngModelChange)="nouvelId.set($event)" />
+    </div>
+    <div class="field">
+      <label class="field__label" for="tenant-nom">Nom</label>
+      <input id="tenant-nom" class="field__input" [ngModel]="nouvelNom()" (ngModelChange)="nouvelNom.set($event)" />
+    </div>
+    <div class="field">
+      <label class="field__label" for="tenant-pays">Pays</label>
+      <input id="tenant-pays" class="field__input" [ngModel]="nouveauPays()" (ngModelChange)="nouveauPays.set($event)" />
+    </div>
+    <button type="button" class="fc-btn fc-btn--primary" (click)="creer()">Créer le tenant</button>
+  </section>
+</main>
