@@ -35,6 +35,12 @@ public class Affectation {
     @Column(name = "capacite_id", nullable = false)
     private UUID capaciteId;
 
+    // EF-GEO-01 ("rattacher toute mission a un axe") - nullable car une
+    // demande sans axe connu au moment de sa publication reste possible
+    // en mode degrade (cf DemandeAvecCandidats.axeId, deja nullable).
+    @Column(name = "axe_id")
+    private UUID axeId;
+
     @Column(name = "cycle_matching_id")
     private UUID cycleMatchingId;
 
@@ -117,7 +123,7 @@ public class Affectation {
     // Constructeur complet : c'est AffectationL1Service qui l'utilise, au
     // moment ou une affectation valide (capaciteId != null) sort du solveur
     // Kuhn-Munkres - jamais construit ailleurs.
-    public Affectation(UUID demandeId, UUID capaciteId, UUID cycleMatchingId,
+    public Affectation(UUID demandeId, UUID capaciteId, UUID cycleMatchingId, UUID axeId,
                         double origineLatitude, double origineLongitude,
                         double destinationLatitude, double destinationLongitude,
                         Double distanceMetres, Double dureeSecondes,
@@ -132,6 +138,7 @@ public class Affectation {
         this.demandeId = demandeId;
         this.capaciteId = capaciteId;
         this.cycleMatchingId = cycleMatchingId;
+        this.axeId = axeId;
         this.origineLatitude = origineLatitude;
         this.origineLongitude = origineLongitude;
         this.destinationLatitude = destinationLatitude;
@@ -165,6 +172,7 @@ public class Affectation {
     public UUID getDemandeId() { return demandeId; }
     public UUID getCapaciteId() { return capaciteId; }
     public UUID getCycleMatchingId() { return cycleMatchingId; }
+    public UUID getAxeId() { return axeId; }
     public double getOrigineLatitude() { return origineLatitude; }
     public double getOrigineLongitude() { return origineLongitude; }
     public double getDestinationLatitude() { return destinationLatitude; }

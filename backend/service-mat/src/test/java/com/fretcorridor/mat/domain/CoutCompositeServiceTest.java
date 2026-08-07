@@ -37,11 +37,15 @@ class CoutCompositeServiceTest {
         UUID demandeId = UUID.randomUUID();
         UUID capaciteId = UUID.randomUUID();
 
-        when(modelePonderationRepository.findFirstByActifTrue()).thenReturn(Optional.empty());
+        // Test sans axe specifique (axeId=null) : resoudreModele() saute directement
+        // au repli sur le modele par defaut - meme cas "aucun modele actif" qu'avant,
+        // exprime maintenant via findFirstByAxeIdIsNullAndActifTrue plutot que
+        // l'ancienne findFirstByActifTrue (RG-106, ponderations par axe).
+        when(modelePonderationRepository.findFirstByAxeIdIsNullAndActifTrue()).thenReturn(Optional.empty());
 
         CandidatCout candidat = new CandidatCout(capaciteId, Map.of("A", 0.5, "B", 0.8));
 
-        CoutLotResponse response = service.calculerCoutsLot(demandeId, List.of(candidat));
+        CoutLotResponse response = service.calculerCoutsLot(demandeId, null, List.of(candidat));
 
         assertThat(response).isNotNull();
         assertThat(response.modeDegrade()).isTrue();
@@ -61,7 +65,7 @@ class CoutCompositeServiceTest {
         ModelePonderation modele = org.mockito.Mockito.mock(ModelePonderation.class);
         when(modele.getId()).thenReturn(modeleId);
         when(modele.getVersion()).thenReturn(1);
-        when(modelePonderationRepository.findFirstByActifTrue()).thenReturn(Optional.of(modele));
+        when(modelePonderationRepository.findFirstByAxeIdIsNullAndActifTrue()).thenReturn(Optional.of(modele));
 
         PonderationCritere critere1 = org.mockito.Mockito.mock(PonderationCritere.class);
         when(critere1.getCodeCritere()).thenReturn("A");
@@ -81,7 +85,7 @@ class CoutCompositeServiceTest {
                 false);
         when(cycleMatchingRepository.saveAll(any())).thenReturn(List.of(cycle));
 
-        CoutLotResponse response = service.calculerCoutsLot(demandeId, List.of(candidat));
+        CoutLotResponse response = service.calculerCoutsLot(demandeId, null, List.of(candidat));
 
         assertThat(response).isNotNull();
         assertThat(response.modeDegrade()).isFalse();

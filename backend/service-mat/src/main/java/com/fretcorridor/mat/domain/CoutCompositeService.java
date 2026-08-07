@@ -63,9 +63,9 @@ public class CoutCompositeService {
      * de lot (ex. contrainte base violee sur le 50e candidat sur 100).
      */
     @Transactional
-    public CoutLotResponse calculerCoutsLot(UUID demandeId, List<CandidatCout> candidats) {
+    public CoutLotResponse calculerCoutsLot(UUID demandeId, UUID axeId, List<CandidatCout> candidats) {
 
-        Optional<ModelePonderation> modeleActifOpt = modelePonderationRepository.findFirstByActifTrue();
+        Optional<ModelePonderation> modeleActifOpt = resoudreModele(axeId);
         boolean modeDegrade = modeleActifOpt.isEmpty();
 
         Map<String, BigDecimal> poidsParCritere;
@@ -142,5 +142,20 @@ public class CoutCompositeService {
         }
 
         return total.setScale(4, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Modele specifique a l'axe en priorite, sinon repli sur le modele par
+     * defaut (RG-106). Meme patron que
+     * TarificationL4Service.resoudreBareme cote service-opt.
+     */
+    private Optional<ModelePonderation> resoudreModele(UUID axeId) {
+        if (axeId != null) {
+            Optional<ModelePonderation> specifique = modelePonderationRepository.findFirstByAxeIdAndActifTrue(axeId);
+            if (specifique.isPresent()) {
+                return specifique;
+            }
+        }
+        return modelePonderationRepository.findFirstByAxeIdIsNullAndActifTrue();
     }
 }

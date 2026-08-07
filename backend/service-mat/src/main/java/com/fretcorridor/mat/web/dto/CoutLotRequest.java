@@ -24,6 +24,10 @@ public record CoutLotRequest(
         @NotNull
         UUID demandeId,
 
+        // Nullable : une demande sans axe connu retombe sur le modele de
+        // ponderation par defaut cote CoutCompositeService (RG-106).
+        UUID axeId,
+
         @NotNull
         @NotEmpty
         @Size(max = 200, message = "200 candidats maximum par lot")
