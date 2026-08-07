@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kyc_provider.dart';
+import '../providers/notification_provider.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'completer_profil_screen.dart';
 import 'mes_demandes_screen.dart';
+import 'paiement_screen.dart';
+import 'notifications_screen.dart';
 
 class HomePlaceholderScreen extends ConsumerWidget {
   const HomePlaceholderScreen({super.key});
@@ -14,6 +17,7 @@ class HomePlaceholderScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final kycState = ref.watch(kycProvider);
     final niveauValide = kycState.niveauKyc != 'NIVEAU_0';
+    final notifState = ref.watch(notificationProvider);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -26,6 +30,32 @@ class HomePlaceholderScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: AppColors.texteMuet),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                ),
+              ),
+              if (notifState.nombreNonLues > 0)
+                Positioned(
+                  top: 10, right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      '${notifState.nombreNonLues}',
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.texteMuet),
             onPressed: () async {
@@ -106,6 +136,16 @@ class HomePlaceholderScreen extends ConsumerWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CompleterProfilScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _CarteAction(
+            icone: Icons.payments_outlined,
+            titre: 'Paiement',
+            description: 'Prestataire agréé — à l\'acceptation d\'une proposition',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaiementScreen()),
             ),
           ),
         ],
