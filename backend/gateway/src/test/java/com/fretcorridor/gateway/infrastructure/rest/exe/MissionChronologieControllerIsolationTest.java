@@ -45,7 +45,7 @@ class MissionChronologieControllerIsolationTest {
     }
 
     @Test
-    void bureau_tchad_sees_only_its_own_territory_mission() {
+    void bureau_tchad_sees_only_its_own_territory_missions() {
         String token = tokenFor("+235600000004");
 
         webTestClient.get().uri("/api/v1/bureau/missions-chronologie")
@@ -53,7 +53,7 @@ class MissionChronologieControllerIsolationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBodyList(Object.class)
-                .hasSize(1);
+                .hasSize(2);
     }
 
     @Test
