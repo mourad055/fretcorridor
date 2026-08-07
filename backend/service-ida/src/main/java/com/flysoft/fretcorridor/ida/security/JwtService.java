@@ -36,6 +36,7 @@ public class JwtService {
                 .claim("telephone", acteur.getTelephone())
                 .claim("roles", roles)
                 .claim("tenantId", acteur.getTenantId())
+                .claim("niveauKyc", acteur.getNiveauKyc().name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationAccessMs))
                 .signWith(cle())
@@ -67,5 +68,9 @@ public class JwtService {
 
     public String extraireTenantId(String token) {
         return extraireClaims(token).get("tenantId", String.class);
+    }
+
+    public String extraireNiveauKyc(String token) {
+        return extraireClaims(token).get("niveauKyc", String.class);
     }
 }

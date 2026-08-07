@@ -38,7 +38,12 @@ public class Acteur {
     // Nom/raison sociale — rempli à l'inscription légère (S1), complété au KYC (S2)
     private String nom;
     private String prenom;
-    private String raisonSociale; // si personne morale
+    private String raisonSociale; // si personne morale (S2, sans Organisation dédiée pour l'instant simple)
+
+    // S2 — lien vers l'entité Organisation si l'acteur est un collaborateur d'une personne morale
+    @ManyToOne
+    @JoinColumn(name = "organisation_id")
+    private Organisation organisation;
 
     @Column(nullable = false)
     private String tenantId; // "MARKETPLACE_CM" par défaut pour l'inscription publique chargeur
@@ -56,10 +61,13 @@ public class Acteur {
     @Builder.Default
     private LocalDateTime dateCreation = LocalDateTime.now();
 
+    // RG-011 : KYC gradué à trois niveaux
+    // NIVEAU_0 : téléphone vérifié, consultation seule
+    // NIVEAU_1 : identité déclarée, publication de demande possible
+    // NIVEAU_2 : pièces vérifiées, acceptation/paiement possibles (hors périmètre actuel)
     public enum NiveauKyc {
-        NIVEAU_0, // aucune vérification
-        NIVEAU_1, // identité + contact
-        NIVEAU_2, // pièces déposées
-        NIVEAU_3  // pièces vérifiées, indice de conformité actif
+        NIVEAU_0,
+        NIVEAU_1,
+        NIVEAU_2
     }
 }
