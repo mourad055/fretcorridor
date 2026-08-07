@@ -1,0 +1,69 @@
+asyncapi: '2.6.0'
+info:
+  title: DemandePubliee
+  version: 0.1.0-draft
+  description: >
+    BROUILLON, redige cote Moteur (Personne 3) en l'absence de contrat existant
+    dans shared-contracts/. A VALIDER avec Personne 1 (Mobile, porteur de
+    service-mkt, qui publiera cet evenement) au point de synchronisation
+    hebdomadaire des contrats d'API (cf Feuille de route S5.1) avant toute
+    implementation cote MKT. Ne pas considerer ce contrat comme fige.
+channels:
+  demande-publiee:
+    publish:
+      summary: Nouvelle demande de transport publiee par un chargeur (module MKT, Mobile)
+      message:
+        $ref: '#/components/messages/DemandePubliee'
+components:
+  messages:
+    DemandePubliee:
+      name: DemandePubliee
+      title: Demande publiee
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DemandePublieePayload'
+  schemas:
+    DemandePublieePayload:
+      type: object
+      required:
+        - eventId
+        - demandeId
+        - axeId
+        - valeursCriteres
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Cle d'idempotence - evite les doublons en file d'attente cote OPT (opt.demande_en_attente).
+        demandeId:
+          type: string
+          format: uuid
+        axeId:
+          type: string
+          format: uuid
+          description: Determine sur quel cycle de matching (par axe actif) cette demande sera evaluee.
+        valeursCriteres:
+          type: object
+          additionalProperties:
+            type: number
+          description: Memes conventions que CapaciteDeclaree.valeursCriteres (voir capacite-declaree.yaml).
+        origine:
+          type: object
+          nullable: true
+          properties:
+            latitude: { type: number, format: double }
+            longitude: { type: number, format: double }
+        destination:
+          type: object
+          nullable: true
+          properties:
+            latitude: { type: number, format: double }
+            longitude: { type: number, format: double }
+          description: >
+            Devient origineLatitude/destinationLatitude de opt.affectation une
+            fois l'affectation confirmee - c'est cette donnee que TRK recupere
+            ensuite via ServiceOptClient pour calculer son ETA reel.
+        poidsTaxableKg:
+          type: number
+          nullable: true
+          description: Regle du maximum deja appliquee en amont cote service-cap (EF-CAP-01/02) - transmis brut, jamais recalcule cote Moteur.

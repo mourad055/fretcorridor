@@ -1,0 +1,28 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: service-flt
+  sql:
+    init:
+      mode: always
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: service_flt
+    open-in-view: false
+
+fretcorridor:
+  jwt:
+    secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+
+logging:
+  level:
+    com.flysoft.fretcorridor: DEBUG

@@ -1,16 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../providers/kyc_provider.dart';
+import '../providers/notification_provider.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
+import 'completer_profil_screen.dart';
+import 'mes_demandes_screen.dart';
+import 'paiement_screen.dart';
+import 'notifications_screen.dart';
 
-// Écran d'accueil temporaire — sera remplacé par l'écran marketplace (Sprint 4)
 class HomePlaceholderScreen extends ConsumerWidget {
   const HomePlaceholderScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
+    final kycState = ref.watch(kycProvider);
+    final niveauValide = kycState.niveauKyc != 'NIVEAU_0';
+    final notifState = ref.watch(notificationProvider);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -23,6 +30,32 @@ class HomePlaceholderScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: AppColors.texteMuet),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                ),
+              ),
+              if (notifState.nombreNonLues > 0)
+                Positioned(
+                  top: 10, right: 10,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(color: AppColors.accent, shape: BoxShape.circle),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      '${notifState.nombreNonLues}',
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.texteMuet),
             onPressed: () async {
@@ -38,26 +71,130 @@ class HomePlaceholderScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.check_circle, color: AppColors.succes, size: 64),
-              const SizedBox(height: 16),
-              Text('Connecté ✅', style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 8),
-              Text('Rôle(s) : ${authState.roles.join(", ")}',
-                  style: const TextStyle(color: AppColors.texteMuet)),
-              const SizedBox(height: 32),
-              const Text(
-                'Sprint 1 — Authentification terminée.\nLa publication de demande (marketplace) arrive au Sprint 4.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppColors.texteMuet, fontSize: 13),
-              ),
-            ],
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          // ── Statut KYC ──────────────────────────────────
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: niveauValide ? const Color(0xFFE7F5EC) : AppColors.surfaceClaire,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: niveauValide ? const Color(0xFF15803D) : AppColors.accent, width: 1),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  niveauValide ? Icons.check_circle : Icons.info_outline,
+                  color: niveauValide ? const Color(0xFF15803D) : AppColors.accent,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        niveauValide ? 'Profil complet — ${kycState.niveauKyc}' : 'Profil à compléter',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      Text(
+                        niveauValide
+                            ? 'Vous pouvez publier des demandes de transport.'
+                            : 'Complétez votre profil pour publier une demande.',
+                        style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!niveauValide)
+                  TextButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CompleterProfilScreen()),
+                    ),
+                    child: const Text('Compléter'),
+                  ),
+              ],
+            ),
           ),
+          const SizedBox(height: 24),
+
+          _CarteAction(
+            icone: Icons.local_shipping_outlined,
+            titre: 'Envoyer une marchandise',
+            description: 'Publiez une demande via le catalogue d\'emballages',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MesDemandesScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _CarteAction(
+            icone: Icons.person_outline,
+            titre: 'Mon profil',
+            description: 'Informations personnelles et niveau KYC',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CompleterProfilScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _CarteAction(
+            icone: Icons.payments_outlined,
+            titre: 'Paiement',
+            description: 'Prestataire agréé — à l\'acceptation d\'une proposition',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PaiementScreen()),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CarteAction extends StatelessWidget {
+  final IconData icone;
+  final String titre;
+  final String description;
+  final VoidCallback onTap;
+
+  const _CarteAction({
+    required this.icone, required this.titre, required this.description, required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.bordure),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44, height: 44,
+              decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(10)),
+              child: Icon(icone, color: AppColors.accent),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(titre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(description, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.texteMuet),
+          ],
         ),
       ),
     );

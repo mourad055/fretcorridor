@@ -2,12 +2,12 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// Passe par la gateway (port 8080), pas directement service-ida (8081) —
+// Passe par la gateway (port 8088), pas directement service-ida (8081) —
 // c'est la gateway qui routera vers le bon microservice à mesure que
 // l'app consomme d'autres services (CAP, MKT, etc.)
 const String baseUrl = String.fromEnvironment(
   'API_BASE',
-  defaultValue: 'http://localhost:8080/api',
+  defaultValue: 'http://localhost:8088/api',
 );
 
 const String keyAccessToken = 'access_token';

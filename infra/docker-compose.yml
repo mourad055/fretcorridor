@@ -70,7 +70,40 @@ services:
       timeout: 5s
       retries: 10
 
+  service-ida:
+    build:
+      context: ../backend/service-ida
+    container_name: fretcorridor-service-ida
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
+  gateway:
+    build:
+      context: ../backend/gateway
+    container_name: fretcorridor-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8088:8080"
+    depends_on:
+      - service-ida
+
+  service-mkt:
+    build:
+      context: ../backend/service-mkt
+    container_name: fretcorridor-service-mkt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   pgadmin:
     image: dpage/pgadmin4:latest
@@ -83,6 +116,42 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+  service-flt:
+    build:
+      context: ../backend/service-flt
+    container_name: fretcorridor-service-flt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  service-exe:
+    build:
+      context: ../backend/service-exe
+    container_name: fretcorridor-service-exe
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8093:8093"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  service-not:
+    build:
+      context: ../backend/service-not
+    container_name: fretcorridor-service-not
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8094:8094"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres-data:
   minio-data:

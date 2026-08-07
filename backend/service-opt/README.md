@@ -9,6 +9,8 @@ Cœur algorithmique du matching, de la planification et de l'optimisation des fl
   - Appel synchrone interne à `service-geo`
   - Budget latence ~50 ms
 - **L1 – Affectation** (§8.5)
+  - Déclenchement par cycle planifié (`MatchingCycleService`, `@Scheduled`), un cycle par axe où `matchingActif=true` — jamais un matching immédiat événement par événement (EF-MAT-01)
+  - Filtre par rayon d'appariement borné par axe, lu dans `Axe.parametres.rayonAppariementKm` (EF-MAT-01/02/03) ; absence de la clé = pas de filtre appliqué ce tour
   - Appariement par lots (jamais glouton)
   - Résolution par algorithme hongrois (Kuhn-Munkres)
   - Coût composite multi-critères via `service-mat`
@@ -53,13 +55,17 @@ Cœur algorithmique du matching, de la planification et de l'optimisation des fl
 
 ## Événements Kafka
 
+### Consommés
+- `capacite-declaree` → depuis service-cap (Mobile) — mis en attente pour le prochain cycle
+- `demande-publiee` → depuis service-mkt (Mobile) — mis en attente pour le prochain cycle
+
 ### Publiés
 - `proposition-emise` → service-mkt
 - `affectation-confirmee` → service-exe
 
 ## Contrat OpenAPI
 
-`shared-contracts/openapi/opt-api.yaml` (à finaliser)
+`shared-contracts/openapi/opt-api.yaml`
 
 ## Statut
 

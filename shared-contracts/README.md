@@ -11,11 +11,14 @@ shared-contracts/
 │ ├── opt-api.yaml # Moteur d'Optimisation (OPT) – à finaliser
 │ └── trk-api.yaml # Service de Suivi (TRK) – pas d'API REST directe
 └── asyncapi/
-├── position-brute.yaml # FLT → TRK (position GPS brute)
-├── proposition-emise.yaml # OPT → MKT (propositions de matching)
-├── affectation-confirmee.yaml # OPT → EXE (affectation confirmée)
-├── position-eta.yaml # TRK → EXE (mise à jour ETA)
-└── alerte-ecart.yaml # TRK → NOT (anomalie détectée)
+└── events/
+    ├── capacite-declaree.yaml # CAP → MAT/OPT (capacité déclarée, brouillon)
+    ├── demande-publiee.yaml # MKT → MAT/OPT (demande publiée, brouillon)
+    ├── position-brute.yaml # FLT → TRK (position GPS brute)
+    ├── proposition-emise.yaml # OPT → MKT (propositions de matching)
+    ├── affectation-confirmee.yaml # OPT → EXE (affectation confirmée)
+    ├── position-eta.yaml # TRK → EXE (mise à jour ETA)
+    └── alerte-ecart.yaml # TRK → NOT (anomalie détectée)
 
 ## Contrats REST (OpenAPI)
 
@@ -23,13 +26,15 @@ shared-contracts/
 |---------|---------|--------|
 | GEO | `openapi/geo-api.yaml` | ✅ Validé pour Phase 1 |
 | MAT | `openapi/mat-api.yaml` | ✅ Validé pour Phase 1 |
-| OPT | `openapi/opt-api.yaml` | ⚠️ À finaliser (endpoints de test → événementiel en Phase 2) |
-| TRK | `openapi/trk-api.yaml` | ❌ Pas d'API REST – tout est événementiel |
+| OPT | `openapi/opt-api.yaml` | ✅ Validé pour Phase 1 (endpoints de test marqués `deprecated`) |
+| TRK | _(aucun fichier)_ | Pas d'API REST directe – tout est événementiel |
 
 ## Contrats événementiels (AsyncAPI)
 
 | Topic | Source → Cible | Statut |
 |-------|----------------|--------|
+| `capacite-declaree` | CAP (Mobile) → MAT/OPT | ⚠️ Brouillon, à valider avec Mobile |
+| `demande-publiee` | MKT (Mobile) → MAT/OPT | ⚠️ Brouillon, à valider avec Mobile |
 | `position-brute` | FLT (Mobile) → TRK | ✅ Défini |
 | `proposition-emise` | OPT → MKT (Mobile) | ✅ Défini |
 | `affectation-confirmee` | OPT → EXE (Mobile) | ✅ Défini |
