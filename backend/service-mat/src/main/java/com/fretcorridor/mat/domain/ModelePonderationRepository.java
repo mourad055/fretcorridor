@@ -7,8 +7,10 @@ import java.util.UUID;
 
 public interface ModelePonderationRepository extends JpaRepository<ModelePonderation, UUID> {
 
-    // Au plus une ligne actif=true garantie par l'index unique partiel (cf migration V1) -
-    // findFirst plutot que find pour rester explicite sur l'intention, meme si en
-    // pratique il ne peut y en avoir qu'une.
-    Optional<ModelePonderation> findFirstByActifTrue();
+    // Modele specifique a l'axe, s'il existe (RG-106, EF-GEO-02).
+    Optional<ModelePonderation> findFirstByAxeIdAndActifTrue(UUID axeId);
+
+    // Modele par defaut (axeId null), utilise en repli. Au plus une ligne
+    // garantie par l'index unique partiel (cf migration V3).
+    Optional<ModelePonderation> findFirstByAxeIdIsNullAndActifTrue();
 }
