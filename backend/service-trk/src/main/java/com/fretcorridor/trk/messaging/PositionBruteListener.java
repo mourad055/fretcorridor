@@ -1,5 +1,7 @@
 package com.fretcorridor.trk.messaging;
 
+import com.fretcorridor.trk.client.AffectationDto;
+import com.fretcorridor.trk.client.ServiceOptClient;
 import com.fretcorridor.trk.domain.AnomalieDetector;
 import com.fretcorridor.trk.domain.EtaCalculator;
 import com.fretcorridor.trk.domain.Position;
@@ -12,20 +14,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
-/**
- * Ingestion de PositionBrute (module FLT, Mobile -> TRK, async Kafka).
- *
- * EF-TRK-01/02 : tolérant à la connectivité (auto-offset-reset=earliest).
- *
- * Flux de traitement après ingestion réussie :
- * 1. Persistance de la position (idempotente)
- * 2. Recalcul de l'ETA → publication PositionETA (→ service-exe)
- * 3. Détection d'anomalies → publication AlerteEcart si anomalie (→ service-not)
- *
- * Idempotence (ENF-SEC-03) : contrainte UNIQUE(event_id) en base.
- */
 @Component
 public class PositionBruteListener {
 
@@ -35,15 +26,18 @@ public class PositionBruteListener {
     private final EtaCalculator etaCalculator;
     private final AnomalieDetector anomalieDetector;
     private final TrkEventPublisher eventPublisher;
+    private final ServiceOptClient serviceOptClient;
 
     public PositionBruteListener(PositionRepository positionRepository,
-                                  EtaCalculator etaCalculator,
-                                  AnomalieDetector anomalieDetector,
-                                  TrkEventPublisher eventPublisher) {
+                                 EtaCalculator etaCalculator,
+                                 AnomalieDetector anomalieDetector,
+                                 TrkEventPublisher eventPublisher,
+                                 ServiceOptClient serviceOptClient) {
         this.positionRepository = positionRepository;
         this.etaCalculator = etaCalculator;
         this.anomalieDetector = anomalieDetector;
         this.eventPublisher = eventPublisher;
+        this.serviceOptClient = serviceOptClient;
     }
 
     @KafkaListener(topics = "position-brute", groupId = "service-trk")
@@ -64,54 +58,35 @@ public class PositionBruteListener {
             positionRepository.save(position);
             log.debug("Position ingérée - mission={}, vehicule={}, eventId={}",
                     event.missionId(), event.vehiculeId(), event.eventId());
-
-            // Après ingestion réussie : ETA + anomalies
             traiterPostIngestion(position);
-
         } catch (DataIntegrityViolationException doublon) {
-            log.info("Position déjà ingérée, doublon ignoré (idempotence) - eventId={}", event.eventId());
+            log.info("Position déjà ingérée, doublon ignoré - eventId={}", event.eventId());
         }
     }
 
-    /**
-     * Traitements déclenchés après ingestion réussie d'une nouvelle position :
-     * - Calcul et publication de l'ETA
-     * - Détection et publication d'anomalies
-     *
-     * Phase 1 (MVP) : utilise uniquement les positions déjà en base.
-     * La dépendance à GEO/OPT (itinéraire retenu, axes/hubs) arrivera en Phase 2.
-     */
     private void traiterPostIngestion(Position dernierePosition) {
         UUID missionId = dernierePosition.getMissionId();
         UUID vehiculeId = dernierePosition.getVehiculeId();
 
-        // Récupérer l'historique récent des positions de cette mission
-        List<Position> positions = positionRepository.findAll()
-                .stream()
-                .filter(p -> p.getMissionId().equals(missionId))
-                .sorted((p1, p2) -> p1.getHorodatageCapture().compareTo(p2.getHorodatageCapture()))
-                .toList();
+        List<Position> positions = positionRepository.findByMissionIdOrderByHorodatageCaptureAsc(missionId);
 
-        // --- ETA (EF-TRK-02) ---
-        // Note MVP : la destination n'est pas encore fournie par OPT (itinéraire retenu).
-        // On utilise la dernière position comme référence ; le vrai calcul viendra en Phase 2
-        // quand TRK consommera l'itinéraire depuis OPT.
-        // Pour l'instant, on publie l'ETA avec distanceRestanteKm=0 (signal "en attente d'itinéraire").
-        EtaCalculator.EtaResultat eta = etaCalculator.calculer(
-                positions,
-                dernierePosition.getLatitude(),  // TODO Phase 2 : remplacer par destination réelle
-                dernierePosition.getLongitude()   // TODO Phase 2 : remplacer par destination réelle
-        );
+        // ETA - la destination reelle de la mission vient de service-opt
+        // (AffectationController), plus jamais la position courante du
+        // vehicule en substitut : ca donnait un ETA toujours ~0 (bug corrige,
+        // cf audit - haversine(dernierePosition, dernierePosition) = 0).
+        Optional<AffectationDto> affectation = serviceOptClient.obtenirAffectation(missionId);
 
-        // Garde-fou defensif (meme principe que ValhallaClient/TarificationL4Service
-        // ailleurs dans ce perimetre) : eta ne devrait jamais etre null en
-        // production (EtaCalculator renvoie toujours un EtaResultat, y compris
-        // "indisponible" via EtaResultat.indisponible(...), jamais une reference
-        // null litterale) - mais une future evolution de EtaCalculator (ou un
-        // mock de test mal cadre) ne doit jamais faire planter l'ingestion d'une
-        // position reelle pour autant. ENF-DIS-04 : le suivi ne doit jamais
-        // s'arreter a cause d'un echec du calcul d'ETA.
-        if (eta != null && eta.isDisponible()) {
+        if (affectation.isEmpty()) {
+            log.debug("Affectation introuvable ou service-opt injoignable pour la mission {} - "
+                    + "pas d'ETA calcule ce tour (mode degrade, ENF-DIS-04).", missionId);
+        } else {
+            EtaCalculator.EtaResultat eta = etaCalculator.calculer(
+                    positions,
+                    affectation.get().destinationLatitude(),
+                    affectation.get().destinationLongitude()
+            );
+
+            if (eta != null && eta.isDisponible()) {
             PositionEtaEvent etaEvent = new PositionEtaEvent(
                     UUID.randomUUID(),
                     missionId,
@@ -127,12 +102,12 @@ public class PositionBruteListener {
                     dernierePosition.getSourceCapture(),
                     Instant.now()
             );
-            eventPublisher.publierPositionEta(etaEvent);
+                eventPublisher.publierPositionEta(etaEvent);
+            }
         }
 
-        // --- Détection d'anomalies (EF-TRK-03) ---
+        // Anomalies
         AnomalieDetector.ResultatDetection detection = anomalieDetector.detecter(missionId, positions);
-
         if (detection.anomalieDetectee()) {
             AlerteEcartEvent alerteEvent = new AlerteEcartEvent(
                     UUID.randomUUID(),
@@ -151,9 +126,6 @@ public class PositionBruteListener {
         }
     }
 
-    /**
-     * Détermine le type d'anomalie principal pour le champ typeAnomalie.
-     */
     private String typeAnomaliePrincipal(AnomalieDetector.ResultatDetection detection) {
         if (detection.absenceProlongee()) return "ABSENCE_PROLONGEE";
         if (detection.arretProlonge()) return "ARRET_PROLONGE";

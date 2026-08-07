@@ -26,6 +26,12 @@ public class ModelePonderation {
     @GeneratedValue
     private UUID id;
 
+    // Nullable = modele par defaut (RG-106, meme principe que
+    // opt.bareme_tarification.axeId) : utilise en repli si aucun modele
+    // specifique a cet axe n'est actif.
+    @Column(name = "axe_id")
+    private UUID axeId;
+
     @Column(nullable = false)
     private Integer version;
 
@@ -43,6 +49,7 @@ public class ModelePonderation {
     }
 
     public UUID getId() { return id; }
+    public UUID getAxeId() { return axeId; }
     public Integer getVersion() { return version; }
     public boolean isActif() { return actif; }
     public String getDescription() { return description; }

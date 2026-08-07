@@ -4,6 +4,11 @@ import com.fretcorridor.geo.domain.Hub;
 import com.fretcorridor.geo.domain.HubRepository;
 import com.fretcorridor.geo.domain.ZonageH3Service;
 import com.fretcorridor.geo.web.dto.HubResponse;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,6 +26,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/geo/zonage")
+@Validated
 public class ZonageController {
 
     private final ZonageH3Service zonageH3Service;
@@ -37,7 +43,9 @@ public class ZonageController {
      * chercher les hubs voisins via /hubs-proches ci-dessous.
      */
     @GetMapping("/index")
-    public String indexPourPoint(@RequestParam double latitude, @RequestParam double longitude) {
+    public String indexPourPoint(
+            @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
+            @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") double longitude) {
         return zonageH3Service.indexPourPoint(latitude, longitude);
     }
 
@@ -47,7 +55,10 @@ public class ZonageController {
      */
     @GetMapping("/k-ring")
     public List<String> kRing(@RequestParam String indexH3,
-                               @RequestParam(defaultValue = "1") int k) {
+                               // Plafond a 3 : suffisant pour le besoin metier (filtre L0
+                               // d'OPT), evite tout calcul de voisinage demesure (deni de
+                               // service applicatif) si un appelant envoie un k arbitraire.
+                               @RequestParam(defaultValue = "1") @Min(0) @Max(3) int k) {
         return zonageH3Service.kRing(indexH3, k);
     }
 
@@ -57,9 +68,10 @@ public class ZonageController {
      * Reduit l'espace de recherche avant l'affectation Kuhn-Munkres (L1).
      */
     @GetMapping("/hubs-proches")
-    public List<HubResponse> hubsProches(@RequestParam double latitude,
-                                          @RequestParam double longitude,
-                                          @RequestParam(defaultValue = "1") int k) {
+    public List<HubResponse> hubsProches(
+            @RequestParam @DecimalMin("-90.0") @DecimalMax("90.0") double latitude,
+            @RequestParam @DecimalMin("-180.0") @DecimalMax("180.0") double longitude,
+            @RequestParam(defaultValue = "1") @Min(0) @Max(3) int k) {
         String indexCentral = zonageH3Service.indexPourPoint(latitude, longitude);
         List<String> cellulesVoisines = zonageH3Service.kRing(indexCentral, k);
 
