@@ -1,0 +1,70 @@
+asyncapi: 3.0.0
+info:
+  title: AlerteEcart
+  version: 1.0.0
+  description: |
+    Événement émis par service-trk (Moteur) lorsqu'une anomalie est détectée.
+    Types : arrêt prolongé, absence de position, saut aberrant, écart de corridor.
+    Consommé par service-not (Mobile) pour notification multicanal.
+
+channels:
+  alerte-ecart:
+    address: alerte-ecart
+    messages:
+      AlerteEcart:
+        $ref: '#/components/messages/AlerteEcart'
+
+operations:
+  onAlert:
+    action: send
+    channel:
+      $ref: '#/channels/alerte-ecart'
+    messages:
+      - $ref: '#/components/messages/AlerteEcart'
+
+components:
+  messages:
+    AlerteEcart:
+      summary: Alerte d'anomalie de suivi GPS.
+      payload:
+        type: object
+        required:
+          - eventId
+          - missionId
+          - typeAnomalie
+          - description
+          - horodatageDetection
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          missionId:
+            type: string
+            format: uuid
+          vehiculeId:
+            type: string
+            format: uuid
+          typeAnomalie:
+            type: string
+            enum:
+              - ABSENCE_PROLONGEE
+              - ARRET_PROLONGE
+              - POSITION_ABERRANTE
+              - ECART_CORRIDOR
+          description:
+            type: string
+          derniereLatitude:
+            type: number
+          derniereLongitude:
+            type: number
+          horodatageDernierePosition:
+            type: string
+            format: date-time
+          agePositionSecondes:
+            type: integer
+            format: int64
+          sourceCapture:
+            type: string
+          horodatageDetection:
+            type: string
+            format: date-time

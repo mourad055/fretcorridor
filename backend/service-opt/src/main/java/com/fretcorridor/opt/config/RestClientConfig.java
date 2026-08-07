@@ -1,5 +1,6 @@
 package com.fretcorridor.opt.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.client.ClientHttpRequestFactories;
 import org.springframework.boot.web.client.ClientHttpRequestFactorySettings;
@@ -11,34 +12,55 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 
 /**
- * Construit le RestClient utilise pour appeler service-geo en synchrone interne.
+ * Construit les RestClient utilises pour les appels du Moteur :
+ * service-geo (L0, synchrone interne), service-mat (L1, synchrone interne),
+ * Valhalla (itineraires, integration externe au meme titre que OSRM/OpenStreetMap
+ * cf Plan d'execution S1).
  *
- * Choix RestClient plutot que RestTemplate (en maintenance, aucune evolution prevue)
- * ou WebClient (reactif - inutile ici, OPT appelle GEO de facon strictement
- * bloquante et sequentielle dans son cycle L0, pas de besoin de non-blocking).
- *
- * API ClientHttpRequestFactorySettings / ClientHttpRequestFactories : package
- * org.springframework.boot.web.client, valable Spring Boot 3.3.x (ce module).
- * A NE PAS confondre avec org.springframework.http.client.ClientHttpRequestFactorySettings
- * + ClientHttpRequestFactoryBuilder, qui n'existent qu'a partir de Boot 3.4 / Framework 6.2.
- *
- * Timeouts geres au niveau de la factory de requetes, pas au niveau de chaque
- * appel individuel : garantit qu'aucun appel ne peut oublier de les definir.
+ * Trois beans du meme type RestClient : @Qualifier explicite sur chaque bean
+ * ET sur chaque point d'injection (ServiceGeoClient, ServiceMatClient,
+ * ValhallaClient) - Spring resoudrait par nom de parametre sans lui, mais un
+ * qualifier explicite est plus sur (survit a un renommage accidentel de
+ * parametre) et plus lisible.
  */
 @Configuration
-@EnableConfigurationProperties(ServiceGeoClientProperties.class)
+@EnableConfigurationProperties({
+        ServiceGeoClientProperties.class,
+        ServiceMatClientProperties.class,
+        ValhallaClientProperties.class
+})
 public class RestClientConfig {
 
     @Bean
+    @Qualifier("serviceGeoRestClient")
     public RestClient serviceGeoRestClient(ServiceGeoClientProperties properties) {
+        return construireRestClient(properties.getBaseUrl(),
+                properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    @Bean
+    @Qualifier("serviceMatRestClient")
+    public RestClient serviceMatRestClient(ServiceMatClientProperties properties) {
+        return construireRestClient(properties.getBaseUrl(),
+                properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    @Bean
+    @Qualifier("valhallaRestClient")
+    public RestClient valhallaRestClient(ValhallaClientProperties properties) {
+        return construireRestClient(properties.getBaseUrl(),
+                properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    private RestClient construireRestClient(String baseUrl, int connectTimeoutMs, int readTimeoutMs) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
-                .withConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
-                .withReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));
+                .withConnectTimeout(Duration.ofMillis(connectTimeoutMs))
+                .withReadTimeout(Duration.ofMillis(readTimeoutMs));
 
         ClientHttpRequestFactory requestFactory = ClientHttpRequestFactories.get(settings);
 
         return RestClient.builder()
-                .baseUrl(properties.getBaseUrl())
+                .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
                 .build();
     }

@@ -1,0 +1,48 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: service-trk
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    schemas: trk
+    default-schema: trk
+  kafka:
+    # PLAINTEXT_HOST (localhost:9092) - profil par defaut = run hors Docker.
+    bootstrap-servers: localhost:9092
+
+    # --- Consumer (PositionBrute entrant depuis service-flt) ---
+    consumer:
+      group-id: service-trk
+      # earliest : coherent avec EF-TRK-01 (ingestion tolerante a la connectivite).
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        # Producteur non-Spring (service-flt) : pas d'en-tete __TypeId__.
+        spring.json.value.default.type: com.fretcorridor.trk.messaging.PositionBruteEvent
+        spring.json.use.type.headers: false
+        spring.json.trusted.packages: com.fretcorridor.trk.messaging
+
+    # --- Producer (PositionETA → service-exe, AlerteEcart → service-not) ---
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        # Idempotence producteur Kafka : éviter les doublons en cas de retry
+        # (ENF-SEC-03, couplé avec un eventId unique côté applicatif).
+        enable.idempotence: true
+        acks: all
+        retries: 3
+
+logging:
+  level:
+    com.fretcorridor.trk: DEBUG
