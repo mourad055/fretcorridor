@@ -187,6 +187,18 @@ services:
     depends_on:
       - service-ida
 
+  service-mkt:
+    build:
+      context: ../backend/service-mkt
+    container_name: fretcorridor-service-mkt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: fretcorridor-pgadmin
