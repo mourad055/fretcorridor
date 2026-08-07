@@ -25,7 +25,7 @@
           <td>{{ mission.origine }}</td>
           <td>{{ mission.destination }}</td>
           <td>{{ mission.enlevementLe | date: 'short' }}</td>
-          <td>{{ mission.statut }}</td>
+          <td><app-status-badge [label]="libelleMissionStatut(mission.statut)" [variant]="missionStatusVariant(mission.statut)" /></td>
         </tr>
       </tbody>
     </table>

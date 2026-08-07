@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { JournalAuditService } from './journal-audit.service';
 import { EntreeJournalAudit } from '../../../shared/models/journal-audit.models';
+import { libelleJournalAction } from '../../../shared/components/status-badge/status-badge.component';
 
 /** FE-ADM-05 (Sprint 10) : journal d'audit consultable et exportable, en lecture seule, append-only. */
 @Component({
@@ -14,6 +15,7 @@ export class JournalAuditComponent implements OnInit {
   readonly entrees = signal<EntreeJournalAudit[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly libelleJournalAction = libelleJournalAction;
 
   constructor(private readonly journalAuditService: JournalAuditService) {}
 

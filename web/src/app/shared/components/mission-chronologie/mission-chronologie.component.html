@@ -2,7 +2,7 @@
   <h3>{{ mission.transporteurNom }} — {{ mission.origine }} → {{ mission.destination }}</h3>
   <ol>
     <li *ngFor="let etape of mission.etapes" [ngClass]="'etape-' + etape.etat.toLowerCase()">
-      {{ etape.type === 'ENLEVEMENT' ? 'Enlèvement' : 'Livraison' }} — {{ etape.lieu }} ({{ etape.etat }})
+      {{ etape.type === 'ENLEVEMENT' ? 'Enlèvement' : 'Livraison' }} — {{ etape.lieu }} ({{ libelleEtapeEtat(etape.etat) }})
     </li>
   </ol>
 </article>

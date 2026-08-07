@@ -26,6 +26,8 @@ describe('MissionChronologieComponent', () => {
     const items = fixture.debugElement.queryAll(By.css('li'));
     expect(items).toHaveLength(2);
     expect(items[0].nativeElement.textContent).toContain('Enlèvement');
+    expect(items[0].nativeElement.textContent).toContain('Terminée');
     expect(items[1].nativeElement.textContent).toContain('Livraison');
+    expect(items[1].nativeElement.textContent).toContain('En cours');
   });
 });

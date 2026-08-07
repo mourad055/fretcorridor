@@ -16,7 +16,7 @@
       <td>{{ ecriture.sens }}</td>
       <td>{{ ecriture.montant }}</td>
       <td>{{ ecriture.creeLe | date: 'short' }}</td>
-      <td><app-status-badge [label]="ecriture.statut" [variant]="ecritureStatusVariant(ecriture.statut)" /></td>
+      <td><app-status-badge [label]="libelleEcritureStatut(ecriture.statut)" [variant]="ecritureStatusVariant(ecriture.statut)" /></td>
     </tr>
   </tbody>
 </table>

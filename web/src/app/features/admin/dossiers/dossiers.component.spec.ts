@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 import { DossiersComponent } from './dossiers.component';
 import { environment } from '../../../../environments/environment';
 
@@ -46,7 +47,7 @@ describe('DossiersComponent', () => {
       .flush([DOSSIER]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('LITIGE');
+    expect(fixture.nativeElement.textContent).toContain('Litige');
   });
 
   it('ouvre le dossier consolidé et permet de trancher', () => {
@@ -74,5 +75,62 @@ describe('DossiersComponent', () => {
     req.flush({ ...DOSSIER, statut: 'CLOS' });
 
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
+  });
+
+  it('désactive les actions de la ligne pendant la prise en charge', () => {
+    const fixture = TestBed.createComponent(DossiersComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.consulterFileDeTravail();
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([DOSSIER]);
+    fixture.detectChanges();
+
+    const [prendreEnCharge, voirDossier] = fixture.debugElement.queryAll(By.css('tbody button'));
+    prendreEnCharge.nativeElement.click();
+    fixture.detectChanges();
+
+    expect(prendreEnCharge.nativeElement.disabled).toBe(true);
+    expect(voirDossier.nativeElement.disabled).toBe(true);
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/dossiers/dossier-1/prise-en-charge`).flush({});
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
+  });
+
+  it('désactive le bouton Trancher pendant la décision', () => {
+    const fixture = TestBed.createComponent(DossiersComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.ouvrirDossier('dossier-1');
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/dossiers/dossier-1`)
+      .flush({ dossier: DOSSIER, mission: null, ecritures: [] });
+    fixture.detectChanges();
+
+    fixture.componentInstance.decisionTexte.set('RESOLU');
+    fixture.componentInstance.motifTexte.set('Preuve conforme');
+    fixture.componentInstance.trancher();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.trancheEnCours()).toBe(true);
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/dossiers/dossier-1/decision`).flush({ ...DOSSIER, statut: 'CLOS' });
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
+
+    expect(fixture.componentInstance.trancheEnCours()).toBe(false);
+  });
+
+  it("désactive le bouton d'escalade pendant la détection", () => {
+    const fixture = TestBed.createComponent(DossiersComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.declencherEscalade();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.escaladeEnCours()).toBe(true);
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/dossiers/escalade`).flush({});
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
+
+    expect(fixture.componentInstance.escaladeEnCours()).toBe(false);
   });
 });

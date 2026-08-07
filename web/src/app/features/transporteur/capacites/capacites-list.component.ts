@@ -2,6 +2,12 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CapaciteService } from './capacite.service';
 import { Capacite } from './capacite.models';
+import {
+  StatusBadgeComponent,
+  capaciteStatusVariant,
+  libelleModeCollecte,
+  libelleCapaciteEtat,
+} from '../../../shared/components/status-badge/status-badge.component';
 
 /**
  * FE-TRP-01 (Sprint 4) : un Transporteur voit ses capacités déclarées,
@@ -11,13 +17,16 @@ import { Capacite } from './capacite.models';
 @Component({
   selector: 'app-capacites-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, StatusBadgeComponent],
   templateUrl: './capacites-list.component.html',
 })
 export class CapacitesListComponent implements OnInit {
   readonly capacites = signal<Capacite[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly capaciteStatusVariant = capaciteStatusVariant;
+  readonly libelleModeCollecte = libelleModeCollecte;
+  readonly libelleCapaciteEtat = libelleCapaciteEtat;
 
   constructor(private readonly capaciteService: CapaciteService) {}
 

@@ -7,12 +7,17 @@
         <label class="fc-filters__label" for="configuration-cle">Clé</label>
         <input id="configuration-cle" class="fc-filters__input" [ngModel]="cle()" (ngModelChange)="cle.set($event)" />
       </div>
-      <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()">Consulter l'historique</button>
+      <button type="button" class="fc-btn fc-btn--primary" [disabled]="loading()" (click)="consulter()">Consulter l'historique</button>
     </div>
 
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && consulte() && historique().length === 0">Aucune version enregistrée pour cette configuration.</div>
 
-    <table class="fc-table" *ngIf="historique().length > 0">
+    <table class="fc-table" *ngIf="!loading() && historique().length > 0">
       <thead>
         <tr>
           <th>Version</th>
@@ -35,6 +40,6 @@
       <label class="field__label" for="configuration-valeur">Nouvelle valeur</label>
       <input id="configuration-valeur" class="field__input" [ngModel]="nouvelleValeur()" (ngModelChange)="nouvelleValeur.set($event)" />
     </div>
-    <button type="button" class="fc-btn fc-btn--primary" (click)="definir()">Définir une nouvelle version</button>
+    <button type="button" class="fc-btn fc-btn--primary" [disabled]="loading()" (click)="definir()">Définir une nouvelle version</button>
   </section>
 </main>

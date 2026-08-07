@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { By } from '@angular/platform-browser';
 import { ConfigurationsComponent } from './configurations.component';
 import { environment } from '../../../../environments/environment';
 
@@ -44,5 +45,51 @@ describe('ConfigurationsComponent', () => {
       .flush([]);
 
     expect(fixture.componentInstance.nouvelleValeur()).toBe('');
+  });
+
+  it('affiche un skeleton pendant la consultation puis le masque', () => {
+    const fixture = TestBed.createComponent(ConfigurationsComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.consulter();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.fc-skeleton')).toBeTruthy();
+
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur/historique`)
+      .flush([]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.fc-skeleton')).toBeFalsy();
+  });
+
+  it("affiche un état vide après une consultation sans version, pas avant", () => {
+    const fixture = TestBed.createComponent(ConfigurationsComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.fc-empty')).toBeFalsy();
+
+    fixture.componentInstance.consulter();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur/historique`)
+      .flush([]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.fc-empty')).toBeTruthy();
+  });
+
+  it('désactive les boutons pendant le chargement', () => {
+    const fixture = TestBed.createComponent(ConfigurationsComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.consulter();
+    fixture.detectChanges();
+
+    const buttons = fixture.debugElement.queryAll(By.css('button'));
+    buttons.forEach((button) => expect(button.nativeElement.disabled).toBe(true));
+
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur/historique`)
+      .flush([]);
   });
 });

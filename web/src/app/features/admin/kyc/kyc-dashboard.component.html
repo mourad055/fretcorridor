@@ -28,7 +28,7 @@
         <tr *ngFor="let dossier of dossiers()">
           <td>{{ dossier.acteurNom }}</td>
           <td>{{ dossier.acteurTelephone }}</td>
-          <td>{{ dossier.typeActeur }}</td>
+          <td>{{ libelleTypeActeur(dossier.typeActeur) }}</td>
           <td>{{ dossier.soumisLe | date: 'short' }}</td>
           <td>
             <div class="fc-actions">

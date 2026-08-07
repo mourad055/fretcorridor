@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Mission } from '../../models/mission.models';
+import { libelleEtapeEtat } from '../status-badge/status-badge.component';
 
 /** Présentation pure, réutilisée par la vue Bureau (territoire) et la vue Transporteur (ses missions). */
 @Component({
@@ -12,4 +13,6 @@ import { Mission } from '../../models/mission.models';
 })
 export class MissionChronologieComponent {
   @Input({ required: true }) missions: Mission[] = [];
+
+  readonly libelleEtapeEtat = libelleEtapeEtat;
 }

@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { KycService } from './kyc.service';
 import { KycDossier } from './kyc.models';
+import { libelleTypeActeur } from '../../../shared/components/status-badge/status-badge.component';
 
 /**
  * FE-ADM-06 : un admin voit une liste de KYC en attente et peut la faire
@@ -19,6 +20,7 @@ export class KycDashboardComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly dossierEnCours = signal<string | null>(null);
+  readonly libelleTypeActeur = libelleTypeActeur;
 
   constructor(private readonly kycService: KycService) {}
 

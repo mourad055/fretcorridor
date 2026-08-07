@@ -105,3 +105,181 @@ export function ecritureStatusVariant(statut?: string): StatusBadgeVariant {
       return 'neutral';
   }
 }
+
+export function missionStatusVariant(statut?: string): StatusBadgeVariant {
+  switch (statut) {
+    case 'CLOTUREE':
+      return 'success';
+    case 'EN_COURS':
+      return 'primary';
+    case 'CONFIRMEE':
+      return 'neutral';
+    default:
+      return 'neutral';
+  }
+}
+
+export function capaciteStatusVariant(etat?: string): StatusBadgeVariant {
+  switch (etat) {
+    case 'APPARIEE':
+      return 'success';
+    case 'PUBLIEE':
+      return 'primary';
+    case 'EXPIREE':
+      return 'danger';
+    default:
+      return 'neutral';
+  }
+}
+
+function humanize(value?: string): string {
+  if (!value) {
+    return '';
+  }
+  const lower = value.toLowerCase().split('_').filter(Boolean).join(' ');
+  return lower.charAt(0).toUpperCase() + lower.slice(1);
+}
+
+/** Libellés FR lisibles pour les enums backend affichés bruts (Sprint 15). */
+export function libelleDossierStatut(statut?: string): string {
+  switch (statut) {
+    case 'OUVERT':
+      return 'Ouvert';
+    case 'EN_COURS':
+      return 'En cours';
+    case 'ESCALADE':
+      return 'Escaladé';
+    case 'CLOS':
+      return 'Clos';
+    default:
+      return statut ?? '';
+  }
+}
+
+export function libelleKycStatut(statut?: string): string {
+  switch (statut) {
+    case 'EN_ATTENTE':
+      return 'En attente';
+    case 'VALIDE':
+      return 'Validé';
+    case 'REJETE':
+      return 'Rejeté';
+    default:
+      return statut ?? '';
+  }
+}
+
+export function libelleAxeEtat(etat?: string): string {
+  switch (etat) {
+    case 'VISIBILITE':
+      return 'Visibilité';
+    case 'MATCHING':
+      return 'Matching';
+    case 'PAIEMENT':
+      return 'Paiement';
+    default:
+      return etat ?? '';
+  }
+}
+
+export function libelleEcritureStatut(statut?: string): string {
+  switch (statut) {
+    case 'VALIDE':
+      return 'Validée';
+    case 'SUSPENDU':
+      return 'Suspendue';
+    default:
+      return statut ?? '';
+  }
+}
+
+export function libelleMissionStatut(statut?: string): string {
+  switch (statut) {
+    case 'CONFIRMEE':
+      return 'Confirmée';
+    case 'EN_COURS':
+      return 'En cours';
+    case 'CLOTUREE':
+      return 'Clôturée';
+    default:
+      return statut ?? '';
+  }
+}
+
+export function libelleModeCollecte(mode?: string): string {
+  switch (mode) {
+    case 'PORTE_A_PORTE':
+      return 'Porte à porte';
+    case 'POINT_DEPOT':
+      return 'Point de dépôt';
+    default:
+      return mode ?? '';
+  }
+}
+
+export function libelleCapaciteEtat(etat?: string): string {
+  switch (etat) {
+    case 'PUBLIEE':
+      return 'Publiée';
+    case 'APPARIEE':
+      return 'Appariée';
+    case 'EXPIREE':
+      return 'Expirée';
+    default:
+      return etat ?? '';
+  }
+}
+
+export function libelleTypeActeur(type?: string): string {
+  switch (type) {
+    case 'CHAUFFEUR':
+      return 'Chauffeur';
+    case 'TRANSPORTEUR_PERSONNE_MORALE':
+      return 'Transporteur (personne morale)';
+    default:
+      return humanize(type);
+  }
+}
+
+export function libelleTypeDossier(type?: string): string {
+  switch (type) {
+    case 'MODERATION':
+      return 'Modération';
+    case 'INCIDENT':
+      return 'Incident';
+    case 'LITIGE':
+      return 'Litige';
+    default:
+      return type ?? '';
+  }
+}
+
+export function libellePrioriteDossier(priorite?: string): string {
+  switch (priorite) {
+    case 'BASSE':
+      return 'Basse';
+    case 'NORMALE':
+      return 'Normale';
+    case 'HAUTE':
+      return 'Haute';
+    default:
+      return priorite ?? '';
+  }
+}
+
+export function libelleEtapeEtat(etat?: string): string {
+  switch (etat) {
+    case 'A_VENIR':
+      return 'À venir';
+    case 'EN_COURS':
+      return 'En cours';
+    case 'TERMINEE':
+      return 'Terminée';
+    default:
+      return etat ?? '';
+  }
+}
+
+export function libelleJournalAction(action?: string): string {
+  return humanize(action);
+}

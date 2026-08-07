@@ -3,7 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DossiersService } from './dossiers.service';
 import { Dossier, DossierConsolide } from '../../../shared/models/dossier.models';
-import { StatusBadgeComponent, dossierStatusVariant } from '../../../shared/components/status-badge/status-badge.component';
+import {
+  StatusBadgeComponent,
+  dossierStatusVariant,
+  libelleDossierStatut,
+  libelleTypeDossier,
+  libellePrioriteDossier,
+  libelleEtapeEtat,
+} from '../../../shared/components/status-badge/status-badge.component';
 
 /**
  * FE-ADM-01/02 (Sprint 10) : un admin traite un dossier de bout en bout —
@@ -19,6 +26,10 @@ import { StatusBadgeComponent, dossierStatusVariant } from '../../../shared/comp
 })
 export class DossiersComponent {
   readonly dossierStatusVariant = dossierStatusVariant;
+  readonly libelleDossierStatut = libelleDossierStatut;
+  readonly libelleTypeDossier = libelleTypeDossier;
+  readonly libellePrioriteDossier = libellePrioriteDossier;
+  readonly libelleEtapeEtat = libelleEtapeEtat;
   readonly tenants = ['tenant-bgft-douala', 'tenant-bnft-ndjamena', 'tenant-flysoft'];
   readonly tenantSelectionne = signal(this.tenants[0]);
   readonly dossiers = signal<Dossier[]>([]);
@@ -28,6 +39,9 @@ export class DossiersComponent {
   readonly dossierConsolide = signal<DossierConsolide | null>(null);
   readonly decisionTexte = signal('');
   readonly motifTexte = signal('');
+  readonly dossierEnCours = signal<string | null>(null);
+  readonly trancheEnCours = signal(false);
+  readonly escaladeEnCours = signal(false);
 
   constructor(private readonly dossiersService: DossiersService) {}
 
@@ -47,16 +61,30 @@ export class DossiersComponent {
   }
 
   prendreEnCharge(dossierId: string): void {
+    this.dossierEnCours.set(dossierId);
     this.dossiersService.priseEnCharge(dossierId).subscribe({
-      next: () => this.consulterFileDeTravail(),
-      error: () => this.errorMessage.set('Impossible de prendre en charge ce dossier.'),
+      next: () => {
+        this.dossierEnCours.set(null);
+        this.consulterFileDeTravail();
+      },
+      error: () => {
+        this.errorMessage.set('Impossible de prendre en charge ce dossier.');
+        this.dossierEnCours.set(null);
+      },
     });
   }
 
   ouvrirDossier(dossierId: string): void {
+    this.dossierEnCours.set(dossierId);
     this.dossiersService.consulter(dossierId).subscribe({
-      next: (consolide) => this.dossierConsolide.set(consolide),
-      error: () => this.errorMessage.set('Impossible de charger le dossier consolidé.'),
+      next: (consolide) => {
+        this.dossierConsolide.set(consolide);
+        this.dossierEnCours.set(null);
+      },
+      error: () => {
+        this.errorMessage.set('Impossible de charger le dossier consolidé.');
+        this.dossierEnCours.set(null);
+      },
     });
   }
 
@@ -71,19 +99,31 @@ export class DossiersComponent {
     if (!consolide) {
       return;
     }
+    this.trancheEnCours.set(true);
     this.dossiersService.decider(consolide.dossier.id, this.decisionTexte(), this.motifTexte()).subscribe({
       next: () => {
+        this.trancheEnCours.set(false);
         this.fermerDossier();
         this.consulterFileDeTravail();
       },
-      error: () => this.errorMessage.set('Impossible d\'enregistrer la décision.'),
+      error: () => {
+        this.errorMessage.set('Impossible d\'enregistrer la décision.');
+        this.trancheEnCours.set(false);
+      },
     });
   }
 
   declencherEscalade(): void {
+    this.escaladeEnCours.set(true);
     this.dossiersService.declencherEscalade().subscribe({
-      next: () => this.consulterFileDeTravail(),
-      error: () => this.errorMessage.set('Impossible de déclencher l\'escalade.'),
+      next: () => {
+        this.escaladeEnCours.set(false);
+        this.consulterFileDeTravail();
+      },
+      error: () => {
+        this.errorMessage.set('Impossible de déclencher l\'escalade.');
+        this.escaladeEnCours.set(false);
+      },
     });
   }
 }

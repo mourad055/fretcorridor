@@ -39,6 +39,8 @@ describe('MissionsListComponent', () => {
 
     const rows = fixture.debugElement.queryAll(By.css('tbody tr'));
     expect(rows).toHaveLength(1);
+    expect(fixture.nativeElement.textContent).toContain('Confirmée');
+    expect(fixture.nativeElement.textContent).not.toContain('CONFIRMEE');
   });
 
   it("affiche un message si aucune mission n'est appariee", () => {

@@ -41,6 +41,9 @@ describe('CapacitesListComponent', () => {
 
     const rows = fixture.debugElement.queryAll(By.css('tbody tr'));
     expect(rows).toHaveLength(1);
+    expect(fixture.nativeElement.textContent).toContain('Porte à porte');
+    expect(fixture.nativeElement.textContent).toContain('Publiée');
+    expect(fixture.nativeElement.textContent).not.toContain('PORTE_A_PORTE');
   });
 
   it("affiche un message si aucune capacite n'est declaree", () => {

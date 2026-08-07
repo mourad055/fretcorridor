@@ -32,7 +32,7 @@
           <td>{{ axe.origine }}</td>
           <td>{{ axe.destination }}</td>
           <td>{{ axe.distanceKm }} km</td>
-          <td><app-status-badge [label]="axe.etatActivation" [variant]="axeStatusVariant(axe.etatActivation)" /></td>
+          <td><app-status-badge [label]="libelleAxeEtat(axe.etatActivation)" [variant]="axeStatusVariant(axe.etatActivation)" /></td>
         </tr>
       </tbody>
     </table>

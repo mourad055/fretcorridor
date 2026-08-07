@@ -33,6 +33,8 @@ describe('KycDashboardComponent', () => {
 
     const rows = fixture.debugElement.queryAll(By.css('tbody tr'));
     expect(rows).toHaveLength(2);
+    expect(fixture.nativeElement.textContent).toContain('Chauffeur');
+    expect(fixture.nativeElement.textContent).toContain('Transporteur (personne morale)');
   });
 
   it("retire un dossier de la liste apres validation", () => {

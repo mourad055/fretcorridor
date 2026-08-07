@@ -27,7 +27,7 @@ describe('JournalAuditComponent', () => {
     ]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('DOSSIER_OUVERT');
+    expect(fixture.nativeElement.textContent).toContain('Dossier ouvert');
   });
 
   it("affiche un message si le journal est vide", () => {

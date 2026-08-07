@@ -25,7 +25,7 @@
       <tbody>
         <tr *ngFor="let entree of entrees()">
           <td>{{ entree.acteurId }}</td>
-          <td>{{ entree.action }}</td>
+          <td>{{ libelleJournalAction(entree.action) }}</td>
           <td>{{ entree.ressource }}</td>
           <td>{{ entree.horodatage | date: 'short' }}</td>
         </tr>
