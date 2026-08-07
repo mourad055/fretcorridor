@@ -92,7 +92,7 @@ public class AffectationL1Service {
             DemandeAvecCandidats demande = demandes.get(i);
 
             CoutLotResponseDto reponse = serviceMatClient.calculerCoutsLot(
-                    new CoutLotRequestDto(demande.demandeId(), demande.candidats()));
+                    new CoutLotRequestDto(demande.demandeId(), demande.axeId(), demande.candidats()));
 
             if (reponse == null) {
                 log.warn("service-mat injoignable pour la demande {} - lot L1 en mode degrade, "
@@ -131,7 +131,7 @@ public class AffectationL1Service {
                     distanceMetres, BigDecimal.ZERO);
 
             Affectation affectation = new Affectation(
-                    demandeId, capaciteId, cycleMatchingIds[i][indiceCapacite],
+                    demandeId, capaciteId, cycleMatchingIds[i][indiceCapacite], demande.axeId(),
                     demande.origineDemande().latitude(), demande.origineDemande().longitude(),
                     demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
                     itineraire != null ? itineraire.distanceMetres() : null,

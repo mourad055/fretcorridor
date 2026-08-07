@@ -1,5 +1,7 @@
 package com.fretcorridor.trk.messaging;
 
+import com.fretcorridor.trk.client.AffectationDto;
+import com.fretcorridor.trk.client.ServiceOptClient;
 import com.fretcorridor.trk.domain.AnomalieDetector;
 import com.fretcorridor.trk.domain.EtaCalculator;
 import com.fretcorridor.trk.domain.Position;
@@ -10,6 +12,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -21,8 +24,9 @@ class PositionBruteListenerTest {
     private final EtaCalculator etaCalculator = mock(EtaCalculator.class);
     private final AnomalieDetector anomalieDetector = mock(AnomalieDetector.class);
     private final TrkEventPublisher eventPublisher = mock(TrkEventPublisher.class);
+    private final ServiceOptClient serviceOptClient = mock(ServiceOptClient.class);
     private final PositionBruteListener listener = new PositionBruteListener(
-            positionRepository, etaCalculator, anomalieDetector, eventPublisher);
+            positionRepository, etaCalculator, anomalieDetector, eventPublisher, serviceOptClient);
 
     @Test
     void ingerePositionValideSansErreur() {
@@ -30,6 +34,15 @@ class PositionBruteListenerTest {
 
         // Mocker save()
         when(positionRepository.save(any(Position.class))).thenReturn(null);
+
+        // Mocker ServiceOptClient : sans ce stub, obtenirAffectation() renvoie
+        // Optional.empty() par defaut (mock non stubbe) et le calcul d'ETA
+        // serait court-circuite - on teste ici le chemin nominal complet,
+        // celui du bug corrige (destination reelle via service-opt, plus
+        // jamais la position courante du vehicule en substitut).
+        AffectationDto affectation = new AffectationDto(
+                UUID.randomUUID(), 4.05, 9.71, 3.848, 11.502); // Douala -> Yaounde
+        when(serviceOptClient.obtenirAffectation(any())).thenReturn(Optional.of(affectation));
 
         // Mocker EtaCalculator pour retourner un resultat valide
         Instant now = Instant.now();

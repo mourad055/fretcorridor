@@ -7,7 +7,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5434/fretcorridor
     username: fretcorridor
-    password: fretcorridor
+    password: ${DB_PASSWORD:fretcorridor}
   jpa:
     hibernate:
       ddl-auto: validate
@@ -15,6 +15,14 @@ spring:
     enabled: true
     schemas: trk
     default-schema: trk
+  client:
+    service-opt:
+      base-url: http://localhost:8085
+      # Timeouts stricts, meme principe que GEO/MAT cote OPT (ENF-DIS-04) :
+      # si OPT ne repond pas vite, TRK ne doit jamais rester bloque - au pire
+      # pas d'ETA ce tour, l'ingestion de position continue normalement.
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
   kafka:
     # PLAINTEXT_HOST (localhost:9092) - profil par defaut = run hors Docker.
     bootstrap-servers: localhost:9092
