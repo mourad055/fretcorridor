@@ -26,8 +26,8 @@ public class MockNotAdapter implements NotificationPort {
                     "bureau.douala@bgft.example", "Écart de réconciliation détecté",
                     "Une alerte de réconciliation a été levée sur la mission mission-a.",
                     Instant.now().minus(1, ChronoUnit.DAYS)),
-            new Notification("not-3", "tenant-bgft-tchad", CanalNotification.EMAIL,
-                    "bureau.tchad@bgft.example", "Dossier KYC validé",
+            new Notification("not-3", "tenant-bnft-ndjamena", CanalNotification.EMAIL,
+                    "bureau.tchad@bnft.example", "Dossier KYC validé",
                     "Le dossier KYC d'un transporteur de votre territoire a été validé.",
                     Instant.now().minus(3, ChronoUnit.HOURS))
     );

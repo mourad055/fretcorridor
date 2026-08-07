@@ -20,9 +20,9 @@ describe('RapportFinancierAdminService', () => {
 
   it('fetches the financial report of the selected tenant', () => {
     let result: unknown;
-    service.rapport('tenant-bgft-tchad').subscribe((ecritures) => (result = ecritures));
+    service.rapport('tenant-bnft-ndjamena').subscribe((ecritures) => (result = ecritures));
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bgft-tchad`);
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bnft-ndjamena`);
     expect(req.request.method).toBe('GET');
     req.flush([]);
 

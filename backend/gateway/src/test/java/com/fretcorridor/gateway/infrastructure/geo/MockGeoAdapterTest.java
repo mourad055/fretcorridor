@@ -18,8 +18,8 @@ class MockGeoAdapterTest {
 
     @Test
     void returns_a_different_set_for_a_different_tenant() {
-        StepVerifier.create(adapter.listerAxesParTenant("tenant-bgft-tchad").collectList())
-                .assertNext(axes -> assertThat(axes).hasSize(1).allMatch(a -> a.tenantId().equals("tenant-bgft-tchad")))
+        StepVerifier.create(adapter.listerAxesParTenant("tenant-bnft-ndjamena").collectList())
+                .assertNext(axes -> assertThat(axes).hasSize(1).allMatch(a -> a.tenantId().equals("tenant-bnft-ndjamena")))
                 .verifyComplete();
     }
 

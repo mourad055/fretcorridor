@@ -100,13 +100,13 @@ class PaiementReadControllerTest {
         when(payReadPort.rapportDuTenant(any())).thenReturn(Flux.empty());
         when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
 
-        webTestClient.get().uri("/api/v1/admin/rapport-financier/tenant-bgft-tchad")
+        webTestClient.get().uri("/api/v1/admin/rapport-financier/tenant-bnft-ndjamena")
                 .header("Authorization", "Bearer " + token)
                 .exchange()
                 .expectStatus().isOk();
 
-        verify(admPort).enregistrerAudit(eq("tenant-bgft-tchad"), any(), eq("CONSULTATION_RAPPORT_FINANCIER"),
-                eq("tenant:tenant-bgft-tchad"));
+        verify(admPort).enregistrerAudit(eq("tenant-bnft-ndjamena"), any(), eq("CONSULTATION_RAPPORT_FINANCIER"),
+                eq("tenant:tenant-bnft-ndjamena"));
     }
 
     @Test

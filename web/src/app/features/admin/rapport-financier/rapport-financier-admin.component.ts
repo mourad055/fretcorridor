@@ -17,7 +17,7 @@ import { EcrituresTableComponent } from '../../../shared/components/ecritures-ta
   templateUrl: './rapport-financier-admin.component.html',
 })
 export class RapportFinancierAdminComponent {
-  readonly tenants = ['tenant-bgft-douala', 'tenant-bgft-tchad', 'tenant-flysoft'];
+  readonly tenants = ['tenant-bgft-douala', 'tenant-bnft-ndjamena', 'tenant-flysoft'];
   readonly tenantSelectionne = signal(this.tenants[0]);
   readonly ecritures = signal<Ecriture[] | null>(null);
   readonly loading = signal(false);

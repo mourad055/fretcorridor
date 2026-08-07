@@ -19,7 +19,7 @@ import { StatusBadgeComponent, dossierStatusVariant } from '../../../shared/comp
 })
 export class DossiersComponent {
   readonly dossierStatusVariant = dossierStatusVariant;
-  readonly tenants = ['tenant-bgft-douala', 'tenant-bgft-tchad', 'tenant-flysoft'];
+  readonly tenants = ['tenant-bgft-douala', 'tenant-bnft-ndjamena', 'tenant-flysoft'];
   readonly tenantSelectionne = signal(this.tenants[0]);
   readonly dossiers = signal<Dossier[]>([]);
   readonly loading = signal(false);

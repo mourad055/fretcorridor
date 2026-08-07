@@ -20,7 +20,7 @@ public class MockGeoAdapter implements GeoPort {
     private final List<Axe> axes = List.of(
             new Axe("axe-1", "tenant-bgft-douala", "Douala", "Yaoundé", 300, AxeEtatActivation.PAIEMENT),
             new Axe("axe-2", "tenant-bgft-douala", "Douala", "Bafoussam", 350, AxeEtatActivation.MATCHING),
-            new Axe("axe-3", "tenant-bgft-tchad", "N'Djamena", "Moundou", 470, AxeEtatActivation.VISIBILITE)
+            new Axe("axe-3", "tenant-bnft-ndjamena", "N'Djamena", "Moundou", 470, AxeEtatActivation.VISIBILITE)
     );
 
     @Override

@@ -20,10 +20,10 @@ class MockTrkAdapterTest {
 
     @Test
     void returns_a_different_set_for_a_different_tenant() {
-        StepVerifier.create(adapter.listerPositionsParTenant("tenant-bgft-tchad").collectList())
+        StepVerifier.create(adapter.listerPositionsParTenant("tenant-bnft-ndjamena").collectList())
                 .assertNext(positions -> assertThat(positions)
                         .hasSize(1)
-                        .allMatch(p -> p.tenantId().equals("tenant-bgft-tchad")))
+                        .allMatch(p -> p.tenantId().equals("tenant-bnft-ndjamena")))
                 .verifyComplete();
     }
 
