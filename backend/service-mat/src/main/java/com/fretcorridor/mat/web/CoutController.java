@@ -41,7 +41,7 @@ public class CoutController {
                 .map(paire -> new CandidatCout(paire.capaciteId(), paire.valeursCriteres()))
                 .toList();
 
-        return coutCompositeService.calculerCoutsLot(request.demandeId(), candidats);
+        return coutCompositeService.calculerCoutsLot(request.demandeId(), request.axeId(), candidats);
     }
 
     /**

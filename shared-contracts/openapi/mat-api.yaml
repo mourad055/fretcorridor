@@ -4,7 +4,7 @@ info:
   description: Calcul du coût composite pour un lot de candidats.
   version: 1.0.0
 servers:
-  - url: http://localhost:8084
+  - url: http://localhost:8086
     description: Service MAT local
 paths:
   /api/mat/couts/calculer-lot:

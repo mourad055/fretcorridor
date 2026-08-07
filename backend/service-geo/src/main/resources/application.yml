@@ -11,7 +11,7 @@ spring:
     # jdbc:postgresql://postgres:5432/... (nom de service Compose, port interne).
     url: jdbc:postgresql://localhost:5434/fretcorridor
     username: fretcorridor
-    password: fretcorridor
+    password: ${DB_PASSWORD:fretcorridor}
   jpa:
     hibernate:
       # Garde-fou anti-derive : le schema est TOUJOURS pilote par Flyway (migrations versionnees),
