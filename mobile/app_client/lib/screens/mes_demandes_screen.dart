@@ -5,6 +5,7 @@ import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
 import 'publier_demande_screen.dart';
 import 'propositions_screen.dart';
+import 'suivi_screen.dart';
 
 class MesDemandesScreen extends ConsumerWidget {
   const MesDemandesScreen({super.key});
@@ -100,6 +101,16 @@ class _DemandeCard extends StatelessWidget {
                 child: Text(demande.statut, style: const TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.bold)),
               ),
               const Spacer(),
+              TextButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SuiviScreen(demandeId: demande.id)),
+                ),
+                icon: const Icon(Icons.location_on_outlined, size: 14, color: AppColors.accent),
+                label: const Text('Suivi', style: TextStyle(fontSize: 11, color: AppColors.accent)),
+                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+              ),
+              const SizedBox(width: 6),
               const Text('Voir les propositions', style: TextStyle(fontSize: 11, color: AppColors.texteMuet)),
               const Icon(Icons.chevron_right, size: 16, color: AppColors.texteMuet),
             ]),
