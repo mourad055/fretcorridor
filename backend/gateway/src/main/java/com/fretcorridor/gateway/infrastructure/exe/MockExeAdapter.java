@@ -32,6 +32,11 @@ public class MockExeAdapter implements ExePort {
                     "N'Djamena", "Moundou", List.of(
                     new EtapeMission(1, EtapeType.ENLEVEMENT, "N'Djamena", EtapeEtat.TERMINEE),
                     new EtapeMission(2, EtapeType.LIVRAISON, "Moundou", EtapeEtat.TERMINEE)
+            )),
+            new Mission("mission-d", "tenant-bnft-ndjamena", "actor-transporteur-tchad-2", "Logistique Sahel Tchad",
+                    "N'Djamena", "Sarh", List.of(
+                    new EtapeMission(1, EtapeType.ENLEVEMENT, "N'Djamena", EtapeEtat.EN_COURS),
+                    new EtapeMission(2, EtapeType.LIVRAISON, "Sarh", EtapeEtat.A_VENIR)
             ))
     );
 

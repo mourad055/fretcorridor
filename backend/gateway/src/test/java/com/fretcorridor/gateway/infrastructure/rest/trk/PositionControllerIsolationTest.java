@@ -56,9 +56,11 @@ class PositionControllerIsolationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.length()").isEqualTo(1)
+                .jsonPath("$.length()").isEqualTo(2)
                 .jsonPath("$[0].vehiculeLabel").isEqualTo("Camion 8T — TD 4321 EF")
-                .jsonPath("$[0].ageSecondes").exists();
+                .jsonPath("$[0].ageSecondes").exists()
+                .jsonPath("$[1].vehiculeLabel").isEqualTo("Camion 10T — TD 9012 GH")
+                .jsonPath("$[1].ageSecondes").exists();
     }
 
     @Test

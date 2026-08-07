@@ -50,8 +50,9 @@ class NotificationControllerIsolationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.length()").isEqualTo(1)
-                .jsonPath("$[0].id").isEqualTo("not-3");
+                .jsonPath("$.length()").isEqualTo(2)
+                .jsonPath("$[0].id").isEqualTo("not-3")
+                .jsonPath("$[1].id").isEqualTo("not-4");
     }
 
     @Test

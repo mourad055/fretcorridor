@@ -24,7 +24,9 @@ public class MockTrkAdapter implements TrkPort {
             new PositionVehicule("pos-2", "tenant-bgft-douala", "Fourgon 3T — LT 5678 CD",
                     4.6167, 11.5167, Instant.now().minus(25, ChronoUnit.MINUTES)),
             new PositionVehicule("pos-3", "tenant-bnft-ndjamena", "Camion 8T — TD 4321 EF",
-                    12.1348, 15.0557, Instant.now().minus(5, ChronoUnit.MINUTES))
+                    12.1348, 15.0557, Instant.now().minus(5, ChronoUnit.MINUTES)),
+            new PositionVehicule("pos-4", "tenant-bnft-ndjamena", "Camion 10T — TD 9012 GH",
+                    9.15, 18.3833, Instant.now().minus(40, ChronoUnit.MINUTES))
     );
 
     @Override

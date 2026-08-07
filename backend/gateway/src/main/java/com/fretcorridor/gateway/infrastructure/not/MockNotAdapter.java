@@ -29,7 +29,11 @@ public class MockNotAdapter implements NotificationPort {
             new Notification("not-3", "tenant-bnft-ndjamena", CanalNotification.EMAIL,
                     "bureau.tchad@bnft.example", "Dossier KYC validé",
                     "Le dossier KYC d'un transporteur de votre territoire a été validé.",
-                    Instant.now().minus(3, ChronoUnit.HOURS))
+                    Instant.now().minus(3, ChronoUnit.HOURS)),
+            new Notification("not-4", "tenant-bnft-ndjamena", CanalNotification.EMAIL,
+                    "bureau.tchad@bnft.example", "Nouvelle mission appariée",
+                    "La mission N'Djamena → Sarh a été appariée à un transporteur.",
+                    Instant.now().minus(45, ChronoUnit.MINUTES))
     );
 
     @Override

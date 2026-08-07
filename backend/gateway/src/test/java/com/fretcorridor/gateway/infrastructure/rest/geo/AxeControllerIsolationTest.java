@@ -53,9 +53,11 @@ class AxeControllerIsolationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.length()").isEqualTo(1)
+                .jsonPath("$.length()").isEqualTo(2)
                 .jsonPath("$[0].origine").isEqualTo("N'Djamena")
-                .jsonPath("$[0].destination").isEqualTo("Moundou");
+                .jsonPath("$[0].destination").isEqualTo("Moundou")
+                .jsonPath("$[1].origine").isEqualTo("N'Djamena")
+                .jsonPath("$[1].destination").isEqualTo("Sarh");
     }
 
     @Test

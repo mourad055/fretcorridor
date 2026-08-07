@@ -50,8 +50,9 @@ class MissionAppparieeControllerIsolationTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.length()").isEqualTo(1)
-                .jsonPath("$[0].transporteurNom").isEqualTo("Transporteur Sahel");
+                .jsonPath("$.length()").isEqualTo(2)
+                .jsonPath("$[0].transporteurNom").isEqualTo("Transporteur Sahel")
+                .jsonPath("$[1].transporteurNom").isEqualTo("Logistique Sahel Tchad");
     }
 
     @Test

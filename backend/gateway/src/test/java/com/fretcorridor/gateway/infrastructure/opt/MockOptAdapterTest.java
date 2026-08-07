@@ -22,7 +22,7 @@ class MockOptAdapterTest {
     void returns_a_different_set_for_a_different_tenant() {
         StepVerifier.create(adapter.listerMissionsParTenant("tenant-bnft-ndjamena").collectList())
                 .assertNext(missions -> assertThat(missions)
-                        .hasSize(1)
+                        .hasSize(2)
                         .allMatch(m -> m.tenantId().equals("tenant-bnft-ndjamena")))
                 .verifyComplete();
     }
