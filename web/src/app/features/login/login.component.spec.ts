@@ -78,4 +78,22 @@ describe('LoginComponent', () => {
 
     expect(navigateSpy).toHaveBeenCalledWith('/bureau');
   });
+
+  it('logs in with the Chad bureau demo account and redirects to its home route', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const navigateSpy = jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const component = fixture.componentInstance;
+    const compteTchad = component.demoAccounts.find((account) => account.phone === '+235600000004');
+    component.loginAsDemo(compteTchad!);
+
+    expect(component.phone()).toBe('+235600000004');
+    expect(component.code()).toBe('123456');
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/login`);
+    req.flush({ token: 'header.eyJzdWIiOiJiIn0.sig', role: 'BUREAU', tenantId: 'tenant-bnft-ndjamena' });
+
+    expect(navigateSpy).toHaveBeenCalledWith('/bureau');
+  });
 });

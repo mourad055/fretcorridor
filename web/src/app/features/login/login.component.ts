@@ -35,6 +35,7 @@ export class LoginComponent {
     { label: 'Bureau de fret', phone: '+237600000001' },
     { label: 'Transporteur', phone: '+237600000002' },
     { label: 'Administration', phone: '+237600000003' },
+    { label: 'Bureau de fret (Tchad)', phone: '+235600000004' },
   ];
 
   constructor(
