@@ -2,6 +2,10 @@
 spring:
   datasource:
     url: jdbc:postgresql://postgres:5432/fretcorridor
+  client:
+    service-opt:
+      # Nom du service Docker Compose (fretcorridor-service-opt), pas localhost.
+      base-url: http://service-opt:8085
   kafka:
     # Listener PLAINTEXT interne (kafka:29092), pas localhost - cf correction
     # du double-listener ci-dessus. C'est la ligne qui aurait echoue en silence

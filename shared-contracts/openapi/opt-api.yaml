@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor - Moteur d'optimisation (OPT)
+  version: 1.0.0
+  description: |
+    API interne du service d'optimisation FretCorridor (Sprint 5, EF-MAT-01/02/03).
+
+    **Porteur** : Personne 3 (Moteur)
+    **Consommateurs** :
+    - TRK (`/api/opt/affectations/{missionId}` uniquement — origine/destination
+      d'une mission pour le calcul d'ETA, synchrone interne, meme porteur)
+
+    **Regle de communication** : synchrone REST direct uniquement entre modules
+    du meme porteur (MAT/OPT/GEO/TRK). Aucun consommateur cross-porteur
+    (Mobile/Web) n'appelle cette API directement — le flux OPT -> Mobile passe
+    exclusivement par evenements Kafka asynchrones (voir shared-contracts/asyncapi/),
+    jamais par cette API REST.
+
+servers:
+  - url: http://localhost:8085
+    description: Service OPT local (hors Docker)
+
+paths:
+  # =========================================================================
+  # AFFECTATIONS (contrat stable, consomme par TRK)
+  # =========================================================================
+  /api/opt/affectations/{missionId}:
+    get:
+      operationId: consulterAffectation
+      summary: Consulte une affectation persistee (= une mission)
+      description: |
+        **Endpoint stable, consomme par TRK (Sprint 6).**
+
+        Comble le trou d'architecture identifie lors de l'audit : TRK n'a
+        aucun autre moyen de connaitre l'origine/destination d'une mission
+        avant de calculer son ETA. L'id de l'Affectation devient le
+        "missionId" utilise par tout le reste du systeme.
+
+        Ne jamais confondre avec l'evenement Kafka AffectationConfirmee
+        (OPT -> Mobile/service-exe, cross-porteur, asynchrone) : deux
+        mecanismes distincts pour deux consommateurs distincts, meme si
+        tous deux portent le meme missionId.
+      tags: [Affectations]
+      parameters:
+        - name: missionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Affectation trouvee
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectationResponse'
+        '404':
+          description: Affectation introuvable
+
+  # =========================================================================
+  # ENDPOINTS DE TEST MANUEL (Sprint 5) — PAS un contrat stable
+  # =========================================================================
+  /api/opt/filtrage-l0:
+    get:
+      operationId: filtrerParZone
+      deprecated: true
+      summary: "[TEST MANUEL] Filtrage L0 brut, hubs proches d'un point"
+      description: |
+        **AVERTISSEMENT** : endpoint de verification manuelle conserve pour
+        les tests de la Phase 1 / Sprint 5 uniquement (cf javadoc
+        FiltrageL0Controller). Vocation a disparaitre au profit d'un
+        declenchement evenementiel (CapaciteDeclaree/DemandePubliee).
+        Ne pas construire d'integration durable dessus.
+      tags: [Test manuel]
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema: { type: number, format: double }
+        - name: longitude
+          in: query
+          required: true
+          schema: { type: number, format: double }
+        - name: k
+          in: query
+          required: false
+          schema: { type: integer, default: 1 }
+      responses:
+        '200':
+          description: Hubs proches trouves
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  description: Miroir de HubResponse (service-geo)
+
+  /api/opt/affectation-l1:
+    post:
+      operationId: calculerAffectation
+      deprecated: true
+      summary: "[TEST MANUEL] Declenchement direct du L1 (Kuhn-Munkres)"
+      description: |
+        **AVERTISSEMENT** : endpoint de verification manuelle conserve pour
+        les tests de la Phase 1 / Sprint 5 uniquement (cf javadoc
+        AffectationL1Controller). Le vrai declenchement en production passe
+        par MatchingCycleService (@Scheduled, par axe actif), jamais par cet
+        appel HTTP direct. Ne pas construire d'integration durable dessus.
+      tags: [Test manuel]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequeteAffectationL1'
+      responses:
+        '200':
+          description: Resultat du lot d'affectation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffectationLotResultat'
+
+components:
+  schemas:
+    AffectationResponse:
+      type: object
+      properties:
+        missionId: { type: string, format: uuid }
+        demandeId: { type: string, format: uuid }
+        capaciteId: { type: string, format: uuid }
+        origineLatitude: { type: number, format: double }
+        origineLongitude: { type: number, format: double }
+        destinationLatitude: { type: number, format: double }
+        destinationLongitude: { type: number, format: double }
+        distanceMetres:
+          type: number
+          format: double
+          nullable: true
+          description: Null si itineraire Valhalla en mode degrade (ENF-DIS-04)
+        dureeSecondes: { type: number, format: double, nullable: true }
+        intervalleConfianceSecondes: { type: number, format: double, nullable: true }
+        prixTransport:
+          type: number
+          format: double
+          nullable: true
+          description: Null si tarificationModeDegrade=true
+        tarificationModeDegrade: { type: boolean }
+        dateCreation: { type: string, format: date-time }
+
+    RequeteAffectationL1:
+      type: object
+      required: [demandes]
+      properties:
+        demandes:
+          type: array
+          maxItems: 50
+          items:
+            type: object
+            description: Miroir de DemandeAvecCandidats (cote Java)
+
+    AffectationLotResultat:
+      type: object
+      properties:
+        modeDegrade: { type: boolean }
+        resultats:
+          type: array
+          items:
+            type: object
+            description: Miroir de AffectationResultat (cote Java)

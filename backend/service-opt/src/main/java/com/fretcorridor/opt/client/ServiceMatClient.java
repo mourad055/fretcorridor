@@ -38,6 +38,7 @@ public class ServiceMatClient {
             return restClient.post()
                     .uri("/api/mat/couts/calculer-lot")
                     .body(requete)
+            .accept(org.springframework.http.MediaType.APPLICATION_JSON)
                     .retrieve()
                     .body(CoutLotResponseDto.class);
 

@@ -1,0 +1,15 @@
+# Bloc Docker Compose du service-mat (Moteur — MAT : coût composite, pondérations).
+# Cf backend/service-geo/docker-compose.service-geo.yml pour l'explication complète du patron.
+services:
+  service-mat:
+    build:
+      context: ../backend
+      dockerfile: service-mat/Dockerfile
+    container_name: fretcorridor-service-mat
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8090:8086"
+    depends_on:
+      postgres:
+        condition: service_healthy
