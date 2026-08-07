@@ -5,6 +5,8 @@ Ce dossier contient les spécifications AsyncAPI des événements Kafka échang�
 ## Structure
 
 asyncapi/events/
+├── capacite-declaree.yaml # CAP → MAT/OPT : capacite declaree (brouillon)
+├── demande-publiee.yaml # MKT → MAT/OPT : demande publiee (brouillon)
 ├── position-brute.yaml # FLT → TRK : position GPS brute
 ├── proposition-emise.yaml # OPT → MKT : proposition de matching
 ├── affectation-confirmee.yaml # OPT → EXE : confirmation d'affectation
@@ -17,6 +19,8 @@ asyncapi/events/
 
 | Topic | Source → Cible | Description | Record Java associé |
 |-------|----------------|-------------|---------------------|
+| `capacite-declaree` | CAP (Mobile) → MAT/OPT | Nouvelle capacité déclarée par un transporteur | `CapaciteDeclareeEvent` |
+| `demande-publiee` | MKT (Mobile) → MAT/OPT | Nouvelle demande publiée par un chargeur | `DemandePublieeEvent` |
 | `position-brute` | FLT (Mobile) → TRK | Position GPS brute d'un véhicule en mission | `PositionBruteEvent` |
 | `proposition-emise` | OPT → MKT (Mobile) | Proposition de matching (jusqu'à 3 par demande) | `PropositionEmiseEvent` |
 | `affectation-confirmee` | OPT → EXE (Mobile) | Confirmation d'affectation – création de mission | `AffectationConfirmeeEvent` |
@@ -187,10 +191,12 @@ asyncapi/events/
 
 ## Statut
 
-✅ Phase 1 – Tous les contrats AsyncAPI sont définis et validés.
+✅ Phase 1 – Tous les contrats AsyncAPI du périmètre Moteur sont écrits ; deux restent des brouillons à valider avec Mobile.
 
 | Fichier | Statut |
 |---------|--------|
+| `capacite-declaree.yaml` | ⚠️ Brouillon, à valider avec Mobile (service-cap) |
+| `demande-publiee.yaml` | ⚠️ Brouillon, à valider avec Mobile (service-mkt) |
 | `position-brute.yaml` | ✅ Validé |
 | `proposition-emise.yaml` | ✅ Validé |
 | `affectation-confirmee.yaml` | ✅ Validé |
