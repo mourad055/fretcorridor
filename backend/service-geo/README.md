@@ -34,9 +34,16 @@ Référentiel géospatial pour FretCorridor : axes, hubs, zonage H3.
 
 | Endpoint | Méthode | Description |
 |----------|---------|-------------|
+| `/api/geo/axes` | POST | Création d'un axe |
 | `/api/geo/axes` | GET | Liste des axes |
-| `/api/geo/axes/{code}` | GET/PATCH | Détail/mise à jour d'un axe |
-| `/api/geo/hubs` | GET/POST | Liste/création des hubs |
+| `/api/geo/axes/{id}` | GET | Détail d'un axe |
+| `/api/geo/axes/actifs-matching` | GET | Axes où `matchingActif=true` (EF-GEO-03) — consommé par OPT |
+| `/api/geo/axes/{id}/etats/{etat}` | PATCH | Bascule un état d'activation (`visibilite`/`matching`/`paiement`), indépendamment des deux autres |
+| `/api/geo/hubs` | POST | Création d'un hub (calcule l'index H3 à la création) |
+| `/api/geo/hubs` | GET | Liste des hubs |
+| `/api/geo/hubs/{id}` | GET | Détail d'un hub |
+| `/api/geo/zonage/index` | GET | Conversion lat/lon → index H3 |
+| `/api/geo/zonage/k-ring` | GET | Voisinage hexagonal d'une cellule H3 |
 | `/api/geo/zonage/hubs-proches` | GET | Filtrage L0 : hubs autour d'un point (H3 k-ring) |
 
 ## Consommé par
