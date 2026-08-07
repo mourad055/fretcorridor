@@ -11,7 +11,8 @@ Ingestion des positions GPS, calcul d'ETA, détection d'anomalies.
 - **Calcul d'ETA** (EF-TRK-02, RG-067, RG-068)
   - Estimation par vitesse moyenne sur les N dernières positions
   - Intervalle de confiance asymétrique (pénalise la sous-estimation)
-  - Phase 1 : destination = dernière position (Phase 2 : destination réelle via OPT)
+  - Destination réelle récupérée via `service-opt` (`ServiceOptClient` → `AffectationController`), synchrone interne — plus de substitution par la dernière position (ancien bug : donnait un ETA toujours ~0, corrigé)
+  - Mode dégradé (ENF-DIS-04) : si l'affectation est introuvable ou `service-opt` injoignable, aucun ETA n'est calculé ce tour plutôt que d'improviser une destination
 - **Détection d'anomalies** (EF-TRK-03, EF-TRK-04)
   - Arrêt prolongé (> 30 min, < 0.1 km parcouru)
   - Absence prolongée de position (> 2h)
@@ -33,7 +34,7 @@ Ingestion des positions GPS, calcul d'ETA, détection d'anomalies.
 
 ## Dépendances
 
-- `service-opt` (missionId → origine/destination – Phase 2)
+- `service-opt` (`ServiceOptClient`, synchrone interne) : missionId → origine/destination réelle de la mission — implémenté
 - `service-geo` (axes/hubs – Phase 2 pour écart de corridor)
 - `Kafka` (consommation de `position-brute`, publication de `position-eta` et `alerte-ecart`)
 - `PostgreSQL` (persistance des positions)
