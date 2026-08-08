@@ -2,6 +2,27 @@
   <section class="missions-list fc-panel">
     <h2 class="fc-panel__title">Missions appariées</h2>
 
+    <div class="fc-filters">
+      <div class="fc-filters__field">
+        <label class="fc-filters__label" for="missions-statut">Statut</label>
+        <select id="missions-statut" class="fc-filters__select" [ngModel]="statutFiltre()" (ngModelChange)="statutFiltre.set($event)">
+          <option value="">Tous</option>
+          <option value="CONFIRMEE">Confirmée</option>
+          <option value="EN_COURS">En cours</option>
+          <option value="CLOTUREE">Clôturée</option>
+        </select>
+      </div>
+      <div class="fc-filters__field">
+        <label class="fc-filters__label" for="missions-axe">Axe</label>
+        <input id="missions-axe" class="fc-filters__select" placeholder="axe-1" [ngModel]="axeIdFiltre()" (ngModelChange)="axeIdFiltre.set($event)" />
+      </div>
+      <div class="fc-actions">
+        <button type="button" class="fc-btn fc-btn--primary" (click)="filtrer()">Filtrer</button>
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="reinitialiserFiltres()">Réinitialiser</button>
+        <button type="button" class="fc-btn fc-btn--ghost" [disabled]="exportEnCours()" (click)="exporter()">Exporter en CSV</button>
+      </div>
+    </div>
+
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
     <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
       <div class="fc-skeleton__line"></div>
@@ -13,21 +34,63 @@
       <thead>
         <tr>
           <th>Transporteur</th>
+          <th>Axe</th>
           <th>Origine</th>
           <th>Destination</th>
           <th>Enlèvement</th>
           <th>Statut</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let mission of missions()">
           <td>{{ mission.transporteurNom }}</td>
+          <td>{{ mission.axeId }}</td>
           <td>{{ mission.origine }}</td>
           <td>{{ mission.destination }}</td>
           <td>{{ mission.enlevementLe | date: 'short' }}</td>
-          <td><app-status-badge [label]="libelleMissionStatut(mission.statut)" [variant]="missionStatusVariant(mission.statut)" /></td>
+          <td><app-status-badge [label]="libelleMissionStatut(mission.statut) | translate" [variant]="missionStatusVariant(mission.statut)" /></td>
+          <td>
+            <button
+              type="button"
+              class="fc-btn fc-btn--ghost fc-btn--sm"
+              [disabled]="detailEnCours() === mission.id"
+              (click)="voirDetail(mission.id)"
+            >
+              Voir le détail
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
+
+    <div class="mission-detail fc-panel" *ngIf="missionSelectionnee() as mission">
+      <h3 class="fc-panel__title">Mission {{ mission.id }}</h3>
+      <dl class="fc-dl">
+        <div class="fc-dl__row">
+          <dt>Transporteur</dt>
+          <dd>{{ mission.transporteurNom }}</dd>
+        </div>
+        <div class="fc-dl__row">
+          <dt>Axe</dt>
+          <dd>{{ mission.axeId }}</dd>
+        </div>
+        <div class="fc-dl__row">
+          <dt>Trajet</dt>
+          <dd>{{ mission.origine }} → {{ mission.destination }}</dd>
+        </div>
+        <div class="fc-dl__row">
+          <dt>Enlèvement</dt>
+          <dd>{{ mission.enlevementLe | date: 'short' }}</dd>
+        </div>
+        <div class="fc-dl__row">
+          <dt>Statut</dt>
+          <dd><app-status-badge [label]="libelleMissionStatut(mission.statut) | translate" [variant]="missionStatusVariant(mission.statut)" /></dd>
+        </div>
+      </dl>
+      <div class="fc-actions">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="fermerDetail()">Fermer</button>
+      </div>
+    </div>
   </section>
 </main>

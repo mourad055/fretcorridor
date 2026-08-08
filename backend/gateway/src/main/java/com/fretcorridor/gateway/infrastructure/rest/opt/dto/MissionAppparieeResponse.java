@@ -6,6 +6,7 @@ import java.time.Instant;
 
 public record MissionAppparieeResponse(
         String id,
+        String axeId,
         String transporteurNom,
         String origine,
         String destination,
@@ -15,6 +16,7 @@ public record MissionAppparieeResponse(
     public static MissionAppparieeResponse from(MissionAppariee mission) {
         return new MissionAppparieeResponse(
                 mission.id(),
+                mission.axeId(),
                 mission.transporteurNom(),
                 mission.origine(),
                 mission.destination(),

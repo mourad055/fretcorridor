@@ -4,10 +4,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { MissionsListComponent } from './missions-list.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 const MISSIONS = [
   {
     id: 'mission-1',
+    axeId: 'axe-1',
     transporteurNom: 'Transport Étoile SARL',
     origine: 'Douala',
     destination: 'Yaoundé',
@@ -22,7 +24,7 @@ describe('MissionsListComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MissionsListComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
@@ -64,5 +66,49 @@ describe('MissionsListComponent', () => {
 
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));
     expect(alert.nativeElement.textContent).toContain('Impossible de charger');
+  });
+
+  it('recharge avec les paramètres de filtre quand on clique sur Filtrer', () => {
+    const fixture = TestBed.createComponent(MissionsListComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-appariees`).flush(MISSIONS);
+    fixture.detectChanges();
+
+    fixture.componentInstance.statutFiltre.set('EN_COURS');
+    fixture.componentInstance.axeIdFiltre.set('axe-2');
+    fixture.componentInstance.filtrer();
+
+    const requete = httpMock.expectOne(
+      (req) => req.url === `${environment.apiBaseUrl}/bureau/missions-appariees` && req.params.get('statut') === 'EN_COURS' && req.params.get('axeId') === 'axe-2',
+    );
+    requete.flush([]);
+  });
+
+  it('affiche le détail d\'une mission sélectionnée', () => {
+    const fixture = TestBed.createComponent(MissionsListComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-appariees`).flush(MISSIONS);
+    fixture.detectChanges();
+
+    fixture.debugElement.query(By.css('tbody tr button')).nativeElement.click();
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-appariees/mission-1`).flush(MISSIONS[0]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Mission mission-1');
+    expect(fixture.nativeElement.textContent).toContain('Douala → Yaoundé');
+  });
+
+  it('déclenche le téléchargement du CSV export en cliquant sur Exporter', () => {
+    const fixture = TestBed.createComponent(MissionsListComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-appariees`).flush(MISSIONS);
+    fixture.detectChanges();
+
+    fixture.componentInstance.exporter();
+
+    const requete = httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-appariees/export`);
+    expect(requete.request.responseType).toBe('text');
+    requete.flush('id,axeId,transporteurNom,origine,destination,enlevementLe,statut\n');
+    expect(fixture.componentInstance.exportEnCours()).toBe(false);
   });
 });

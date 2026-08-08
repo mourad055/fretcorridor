@@ -1,16 +1,26 @@
 package com.fretcorridor.gateway.infrastructure.rest.opt;
 
+import com.fretcorridor.gateway.domain.opt.MissionAppariee;
 import com.fretcorridor.gateway.domain.opt.OptPort;
+import com.fretcorridor.gateway.domain.opt.StatutMission;
+import com.fretcorridor.gateway.infrastructure.rest.opt.dto.MissionAppparieeCsvExporter;
 import com.fretcorridor.gateway.infrastructure.rest.opt.dto.MissionAppparieeResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * FE-BUR-01 (Sprint 5, missions appariées) : un Bureau ne voit que les missions
  * de son propre tenant — le tenantId vient exclusivement du JWT (ENF-MUL-01).
+ * EF-BUR-02 : filtrage, détail et export des flux supervisés.
  */
 @RestController
 public class MissionAppparieeController {
@@ -22,7 +32,40 @@ public class MissionAppparieeController {
     }
 
     @GetMapping("/api/v1/bureau/missions-appariees")
-    public Flux<MissionAppparieeResponse> missionsAppariees(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return optPort.listerMissionsParTenant(actor.tenantId()).map(MissionAppparieeResponse::from);
+    public Flux<MissionAppparieeResponse> missionsAppariees(
+            @AuthenticationPrincipal AuthenticatedActor actor,
+            @RequestParam(required = false) StatutMission statut,
+            @RequestParam(required = false) String axeId) {
+        return missionsFiltrees(actor, statut, axeId).map(MissionAppparieeResponse::from);
+    }
+
+    @GetMapping("/api/v1/bureau/missions-appariees/{missionId}")
+    public Mono<ResponseEntity<MissionAppparieeResponse>> detail(
+            @AuthenticationPrincipal AuthenticatedActor actor,
+            @PathVariable String missionId) {
+        return optPort.listerMissionsParTenant(actor.tenantId())
+                .filter(mission -> mission.id().equals(missionId))
+                .next()
+                .map(mission -> ResponseEntity.ok(MissionAppparieeResponse.from(mission)))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/api/v1/bureau/missions-appariees/export")
+    public Mono<ResponseEntity<String>> exporter(
+            @AuthenticationPrincipal AuthenticatedActor actor,
+            @RequestParam(required = false) StatutMission statut,
+            @RequestParam(required = false) String axeId) {
+        return missionsFiltrees(actor, statut, axeId)
+                .collectList()
+                .map(missions -> ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType("text/csv"))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"missions-supervisees.csv\"")
+                        .body(MissionAppparieeCsvExporter.versCsv(missions)));
+    }
+
+    private Flux<MissionAppariee> missionsFiltrees(AuthenticatedActor actor, StatutMission statut, String axeId) {
+        return optPort.listerMissionsParTenant(actor.tenantId())
+                .filter(mission -> statut == null || mission.statut() == statut)
+                .filter(mission -> axeId == null || axeId.isBlank() || mission.axeId().equals(axeId));
     }
 }
