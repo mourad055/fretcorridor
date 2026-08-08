@@ -51,11 +51,19 @@ public class SecurityConfig {
                 .build();
     }
 
-    private CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // 4200 : port par défaut de `ng serve`. 4201 : port dédié aux tests E2E
         // Playwright sur cette machine de développement (cf. docs/adr/0006).
-        configuration.setAllowedOriginPatterns(List.of("http://localhost:4200", "http://localhost:4201"));
+        // fretcorridor-web.netlify.app : front déployé (Sprint D). Le proxy Netlify
+        // forwarde l'en-tête Origin du navigateur tel quel jusqu'ici même si la
+        // requête est same-origin côté navigateur — sans cette entrée, Spring
+        // Security rejette toute requête POST/PUT/DELETE en 403 avant même
+        // d'atteindre le contrôleur.
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:4200",
+                "http://localhost:4201",
+                "https://fretcorridor-web.netlify.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Idempotency-Key"));
         configuration.setAllowCredentials(true);
