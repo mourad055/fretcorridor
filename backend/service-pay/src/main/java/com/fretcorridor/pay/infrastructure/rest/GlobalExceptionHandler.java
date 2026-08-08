@@ -2,6 +2,7 @@ package com.fretcorridor.pay.infrastructure.rest;
 
 import com.fretcorridor.pay.domain.ReversementSansEncaissementException;
 import com.fretcorridor.pay.domain.SequestreInvalideException;
+import com.fretcorridor.pay.domain.SignatureInvalideException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,6 +23,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleSequestreInvalide(SequestreInvalideException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Transition de séquestre invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(SignatureInvalideException.class)
+    public ProblemDetail handleSignatureInvalide(SignatureInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setTitle("Notification prestataire rejetée (EF-PAY-05)");
         return problem;
     }
 

@@ -21,4 +21,13 @@ public class DomainConfig {
     public ReconciliationService reconciliationService(GrandLivrePort grandLivrePort, PrestatairePaiementPort prestatairePaiementPort) {
         return new ReconciliationService(grandLivrePort, prestatairePaiementPort);
     }
+
+    @Bean
+    public NotificationPrestataireService notificationPrestataireService(
+            GrandLivreService grandLivreService,
+            NotificationIdempotencePort notificationIdempotencePort,
+            SignatureVerifierPort signatureVerifierPort
+    ) {
+        return new NotificationPrestataireService(grandLivreService, notificationIdempotencePort, signatureVerifierPort);
+    }
 }
