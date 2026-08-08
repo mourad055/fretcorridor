@@ -1,0 +1,41 @@
+# Configuration par defaut : run local hors Docker, profil actif = "default".
+server:
+  port: 8085
+spring:
+  application:
+    name: service-opt
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: ${DB_PASSWORD:fretcorridor}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    schemas: opt
+    default-schema: opt
+  client:
+    service-geo:
+      base-url: http://localhost:8084
+      connect-timeout-ms: 20
+      read-timeout-ms: 50
+    service-mat:
+      base-url: http://localhost:8086
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
+    valhalla:
+      base-url: http://localhost:8002
+      connect-timeout-ms: 500
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+        retries: 3
+logging:
+  level:
+    com.fretcorridor.opt: DEBUG

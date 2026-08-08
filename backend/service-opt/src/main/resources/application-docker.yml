@@ -1,0 +1,29 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=docker (cf infra/docker-compose.yml).
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/fretcorridor
+  kafka:
+    # Port 29092 = listener interne PLAINTEXT (KAFKA_ADVERTISED_LISTENERS,
+    # infra/docker-compose.yml), celui que les AUTRES CONTENEURS doivent
+    # utiliser. Le port 9092 est le listener PLAINTEXT_HOST, reserve a la
+    # machine hote (localhost) - un conteneur qui s'y connecte recoit des
+    # metadonnees annoncant 'localhost:9092', qui pointe vers lui-meme une
+    # fois reconnecte, pas vers le broker (cause du TimeoutException
+    # 'Topic proposition-emise not present in metadata after 60000 ms').
+    bootstrap-servers: kafka:29092
+  client:
+    service-geo:
+      base-url: http://service-geo:8084
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
+    service-mat:
+      base-url: http://service-mat:8086
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
+    valhalla:
+      base-url: http://valhalla:8002
+      # Contrairement a service-mat (meme porteur, latence ~ms), Valhalla est
+      # une dependance reseau externe - on garde le defaut Java (2000ms,
+      # cf ValhallaClientProperties) plutot que le timeout serre des appels
+      # internes. Ne pas copier les valeurs de service-mat ici.
+      connect-timeout-ms: 500

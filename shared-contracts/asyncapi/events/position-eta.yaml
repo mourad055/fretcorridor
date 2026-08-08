@@ -1,0 +1,75 @@
+asyncapi: 3.0.0
+info:
+  title: PositionETA
+  version: 1.0.0
+  description: |
+    Événement émis par service-trk (Moteur) après ingestion d'une position
+    et recalcul de l'ETA. Contient l'ETA avec intervalle de confiance (RG-067).
+    Consommé par service-exe (Mobile) pour l'écran de suivi client.
+
+channels:
+  position-eta:
+    address: position-eta
+    messages:
+      PositionETA:
+        $ref: '#/components/messages/PositionETA'
+
+operations:
+  onEtaUpdate:
+    action: send
+    channel:
+      $ref: '#/channels/position-eta'
+    messages:
+      - $ref: '#/components/messages/PositionETA'
+
+components:
+  messages:
+    PositionETA:
+      summary: Mise à jour de l'ETA avec intervalle de confiance.
+      payload:
+        type: object
+        required:
+          - eventId
+          - missionId
+          - derniereLatitude
+          - derniereLongitude
+          - horodatageDernierePosition
+          - horodatageCalcul
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          missionId:
+            type: string
+            format: uuid
+          vehiculeId:
+            type: string
+            format: uuid
+          derniereLatitude:
+            type: number
+          derniereLongitude:
+            type: number
+          horodatageDernierePosition:
+            type: string
+            format: date-time
+          distanceRestanteKm:
+            type: number
+          vitesseEstimeeKmh:
+            type: number
+          etaCentral:
+            type: string
+            format: date-time
+            description: ETA estimée (valeur centrale).
+          etaBorneBasse:
+            type: string
+            format: date-time
+            description: Borne basse de l'intervalle (optimiste).
+          etaBorneHaute:
+            type: string
+            format: date-time
+            description: Borne haute de l'intervalle (pessimiste, RG-068).
+          sourceCapture:
+            type: string
+          horodatageCalcul:
+            type: string
+            format: date-time

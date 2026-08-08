@@ -1,0 +1,98 @@
+asyncapi: 3.0.0
+info:
+  title: PropositionEmise
+  version: 1.0.0
+  description: |
+    Événement émis par service-opt (Moteur) après exécution du cycle L1.
+    Contient jusqu'à 3 propositions classées par demande (EF-MKT-07).
+    Consommé par service-mkt (Mobile) pour affichage dans l'app Client.
+
+channels:
+  proposition-emise:
+    address: proposition-emise
+    messages:
+      PropositionEmise:
+        $ref: '#/components/messages/PropositionEmise'
+
+operations:
+  onProposal:
+    action: send
+    channel:
+      $ref: '#/channels/proposition-emise'
+    messages:
+      - $ref: '#/components/messages/PropositionEmise'
+
+components:
+  messages:
+    PropositionEmise:
+      summary: Proposition de mission émise par le moteur d'optimisation.
+      payload:
+        type: object
+        required:
+          - eventId
+          - cycleMatchingId
+          - demandeId
+          - missionId
+          - rang
+          - prixTransport
+          - devise
+          - horodatageEmission
+        properties:
+          eventId:
+            type: string
+            format: uuid
+            description: Identifiant unique de l'événement (idempotence).
+          cycleMatchingId:
+            type: string
+            format: uuid
+            description: Référence au cycle de matching (traçabilité EF-MAT-11).
+          demandeId:
+            type: string
+            format: uuid
+            description: Demande concernée.
+          capaciteId:
+            type: string
+            format: uuid
+            description: Capacité retenue.
+          missionId:
+            type: string
+            format: uuid
+            description: Mission créée.
+          axeId:
+            type: string
+            format: uuid
+            description: Axe sur lequel la proposition est faite.
+          rang:
+            type: integer
+            minimum: 1
+            maximum: 3
+            description: Rang de la proposition (1 = meilleure).
+          motifClassement:
+            type: string
+            description: Motif lisible du classement (ex. "Meilleur prix").
+          prixTransport:
+            type: number
+            description: Prix du transport (XAF).
+          commissionPlateforme:
+            type: number
+            description: Commission FretCorridor (RG-116).
+          devise:
+            type: string
+            default: XAF
+            description: Code devise ISO 4217.
+          distanceEstimeeMetres:
+            type: number
+            description: Distance estimée par Valhalla.
+          dureeEstimeeSecondes:
+            type: integer
+            description: Durée estimée du trajet.
+          origineNom:
+            type: string
+            description: Nom lisible de l'origine.
+          destinationNom:
+            type: string
+            description: Nom lisible de la destination.
+          horodatageEmission:
+            type: string
+            format: date-time
+            description: Horodatage d'émission de la proposition.

@@ -1,0 +1,8 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=docker (cf infra/docker-compose.yml).
+# Ne remplace QUE l'URL JDBC - Spring fusionne ce fichier par-dessus application.yml,
+# tout le reste (port, flyway, dialect) reste identique au profil par defaut.
+spring:
+  datasource:
+    # "postgres" = nom du service dans docker-compose.yml, resolu via le reseau Docker interne.
+    # Port 5432 = port interne du conteneur postgres (pas le 5434 expose cote hote).
+    url: jdbc:postgresql://postgres:5432/fretcorridor

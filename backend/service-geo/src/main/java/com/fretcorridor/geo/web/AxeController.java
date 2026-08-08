@@ -1,0 +1,114 @@
+package com.fretcorridor.geo.web;
+
+import com.fretcorridor.geo.domain.Axe;
+import com.fretcorridor.geo.domain.AxeRepository;
+import com.fretcorridor.geo.domain.Hub;
+import com.fretcorridor.geo.domain.HubRepository;
+import com.fretcorridor.geo.web.dto.AxeCreationRequest;
+import com.fretcorridor.geo.web.dto.AxeResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * Endpoints internes du referentiel Axe (EF-GEO-01/02/03).
+ * Consomme par OPT (filtre L0, synchrone interne) et par les cartes Web/Mobile
+ * en lecture seule via l'API exposee ici.
+ */
+@RestController
+@RequestMapping("/api/geo/axes")
+public class AxeController {
+
+    private final AxeRepository axeRepository;
+    private final HubRepository hubRepository;
+
+    public AxeController(AxeRepository axeRepository, HubRepository hubRepository) {
+        this.axeRepository = axeRepository;
+        this.hubRepository = hubRepository;
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public AxeResponse creerAxe(@Valid @RequestBody AxeCreationRequest requete) {
+        Hub hubOrigine = trouverHubOuLever(requete.hubOrigineId());
+        Hub hubDestination = trouverHubOuLever(requete.hubDestinationId());
+
+        if (hubOrigine.getId().equals(hubDestination.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "un axe doit relier deux hubs distincts");
+        }
+
+        Axe axe = new Axe(requete.nom(), hubOrigine, hubDestination);
+        if (requete.visibiliteActive() != null) {
+            axe.setVisibiliteActive(requete.visibiliteActive());
+        }
+        if (requete.matchingActif() != null) {
+            axe.setMatchingActif(requete.matchingActif());
+        }
+        if (requete.paiementActif() != null) {
+            axe.setPaiementActif(requete.paiementActif());
+        }
+        if (requete.parametres() != null) {
+            axe.setParametres(requete.parametres());
+        }
+
+        return AxeResponse.from(axeRepository.save(axe));
+    }
+
+    @GetMapping
+    public List<AxeResponse> listerAxes() {
+        return axeRepository.findAll().stream()
+                .map(AxeResponse::from)
+                .toList();
+    }
+
+    @GetMapping("/{id}")
+    public AxeResponse obtenirAxe(@PathVariable UUID id) {
+        return axeRepository.findById(id)
+                .map(AxeResponse::from)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "axe introuvable : " + id));
+    }
+
+    /** Axes actifs pour le matching (EF-GEO-03) — consomme par OPT. */
+    @GetMapping("/actifs-matching")
+    public List<AxeResponse> listerAxesActifsPourMatching() {
+        return axeRepository.findByMatchingActifTrue().stream()
+                .map(AxeResponse::from)
+                .toList();
+    }
+
+    /**
+     * Bascule un des trois etats d'activation, independamment des deux autres
+     * (EF-GEO-03). "etat" doit valoir : visibilite | matching | paiement.
+     */
+    @PatchMapping("/{id}/etats/{etat}")
+    public AxeResponse basculerEtat(@PathVariable UUID id,
+                                     @PathVariable String etat,
+                                     @RequestParam boolean actif) {
+        Axe axe = axeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "axe introuvable : " + id));
+
+        switch (etat) {
+            case "visibilite" -> axe.setVisibiliteActive(actif);
+            case "matching" -> axe.setMatchingActif(actif);
+            case "paiement" -> axe.setPaiementActif(actif);
+            default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "etat inconnu : " + etat + " (attendu : visibilite, matching ou paiement)");
+        }
+
+        return AxeResponse.from(axeRepository.save(axe));
+    }
+
+    private Hub trouverHubOuLever(UUID hubId) {
+        return hubRepository.findById(hubId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "hub introuvable : " + hubId));
+    }
+}

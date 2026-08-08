@@ -8,9 +8,9 @@ services:
     # principe appliqué ici pour Postgres).
     container_name: fretcorridor-web-postgres
     environment:
-      POSTGRES_USER: fretcorridor
-      POSTGRES_PASSWORD: fretcorridor
-      POSTGRES_DB: fretcorridor
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5434:5432"
     volumes:
@@ -49,7 +49,10 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   minio:
@@ -57,8 +60,8 @@ services:
     container_name: fretcorridor-minio
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: fretcorridor
-      MINIO_ROOT_PASSWORD: fretcorridor-secret
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -69,6 +72,88 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  service-ida:
+    build:
+      context: ../backend/service-ida
+    container_name: fretcorridor-service-ida
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ../backend/gateway
+    container_name: fretcorridor-gateway
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8088:8080"
+    depends_on:
+      - service-ida
+
+  service-mkt:
+    build:
+      context: ../backend/service-mkt
+    container_name: fretcorridor-service-mkt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: fretcorridor-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "8091:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  service-flt:
+    build:
+      context: ../backend/service-flt
+    container_name: fretcorridor-service-flt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8083:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  service-exe:
+    build:
+      context: ../backend/service-exe
+    container_name: fretcorridor-service-exe
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8093:8093"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  service-not:
+    build:
+      context: ../backend/service-not
+    container_name: fretcorridor-service-not
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8094:8094"
+    depends_on:
+      postgres:
+        condition: service_healthy
 
 volumes:
   postgres-data:

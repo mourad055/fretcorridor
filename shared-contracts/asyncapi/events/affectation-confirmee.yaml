@@ -1,0 +1,100 @@
+asyncapi: 3.0.0
+info:
+  title: AffectationConfirmee
+  version: 1.0.0
+  description: |
+    Événement émis par service-opt (Moteur) lorsqu'une affectation est confirmée.
+    Déclenche la création de la mission côté service-exe (Mobile).
+    Consommé par service-exe pour l'écran mission chauffeur.
+
+channels:
+  affectation-confirmee:
+    address: affectation-confirmee
+    messages:
+      AffectationConfirmee:
+        $ref: '#/components/messages/AffectationConfirmee'
+
+operations:
+  onConfirmation:
+    action: send
+    channel:
+      $ref: '#/channels/affectation-confirmee'
+    messages:
+      - $ref: '#/components/messages/AffectationConfirmee'
+
+components:
+  messages:
+    AffectationConfirmee:
+      summary: Affectation confirmée, déclenche la création de mission.
+      payload:
+        type: object
+        required:
+          - eventId
+          - missionId
+          - demandeId
+          - capaciteId
+          - prixTransport
+          - devise
+          - horodatageConfirmation
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          missionId:
+            type: string
+            format: uuid
+          demandeId:
+            type: string
+            format: uuid
+          capaciteId:
+            type: string
+            format: uuid
+          vehiculeId:
+            type: string
+            format: uuid
+          transporteurId:
+            type: string
+            format: uuid
+          chargeurId:
+            type: string
+            format: uuid
+          axeId:
+            type: string
+            format: uuid
+          origineLatitude:
+            type: number
+          origineLongitude:
+            type: number
+          origineNom:
+            type: string
+          destinationLatitude:
+            type: number
+          destinationLongitude:
+            type: number
+          destinationNom:
+            type: string
+          distanceEstimeeMetres:
+            type: number
+          dureeEstimeeSecondes:
+            type: integer
+          intervalleConfianceSecondes:
+            type: integer
+          geometrieEncodee:
+            type: string
+            description: Polyline encodée Valhalla.
+          prixTransport:
+            type: number
+          commissionPlateforme:
+            type: number
+          montantVerseTransporteur:
+            type: number
+          devise:
+            type: string
+            default: XAF
+          modeCollecte:
+            type: string
+          modeRemise:
+            type: string
+          horodatageConfirmation:
+            type: string
+            format: date-time
