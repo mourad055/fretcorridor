@@ -1,10 +1,12 @@
 # Analyse de fusion — `origin/dev` × `feature/web-socle`
 
-**Date** : 2026-08-07 (mise à jour le même jour après 47 nouveaux commits sur `dev`)
+**Date** : 2026-08-07, mise à jour le 2026-08-08 après la tentative de fusion réelle (§6)
 **Auteur** : Mourad (volet Web), avec assistance Claude Code
 **Objectif** : évaluer le risque de conflit et la conformité au CDC v4 / Feuille de route V4.2 / Plan d'Exécution V4.2 avant de fusionner `feature/web-socle` dans `dev`.
 
 Méthode : comparaison des deux branches depuis leur ancêtre commun (`b58bda0`, bootstrap initial du monorepo), complétée par un essai de fusion réel dans un worktree Git jetable (annulé ensuite, rien n'a été poussé) pour observer les conflits effectifs plutôt que de les déduire.
+
+**Statut au 2026-08-08 : fusion NON effectuée.** `feature/web-socle` (3 commits supplémentaires : EF-BUR-02, EF-PAY-05, docs — poussés sur `origin/feature/web-socle`) a été confrontée une nouvelle fois à `origin/dev` par un essai de fusion réel. Les 3 conflits identifiés portent sur des décisions d'architecture (quelle implémentation du gateway garder, quel secret/port/routes), pas sur du texte trivial — je ne les ai pas résolus unilatéralement ni poussés sur `dev`, une branche partagée par toute l'équipe. Le détail exact et un plan de résolution proposé sont en §6.
 
 ---
 
@@ -86,3 +88,138 @@ Ne pas fusionner tel quel. Ordre suggéré :
 2. Point de synchro avec Mobile/Moteur sur `shared-contracts/` (surtout `geo-api.yaml` et les événements Kafka) et sur la convention docker-compose, **avant** la fusion.
 3. Fusionner, résoudre les 4 conflits gateway en conservant l'implémentation `web-socle` (plus avancée) mais en réintégrant les routes IDA/MKT du stub `dev` comme point de départ.
 4. Remplacer ensuite, service par service, les adaptateurs Mock par de vrais appels vers `service-ida`, `service-geo`, etc. — c'est le chantier principal post-merge, pas la fusion elle-même.
+
+---
+
+## 6. Tentative de fusion réelle (2026-08-08) — conflits détaillés, non résolus
+
+Commande exécutée dans un worktree Git jetable (aucun commit, aucun push — annulée avec `git merge --abort` puis worktree supprimé) :
+
+```
+git worktree add <tmp> feature/web-socle --detach
+cd <tmp> && git merge --no-commit --no-ff origin/dev
+```
+
+État de `feature/web-socle` au moment du test : `9ed400f` (inclut les 3 commits EF-BUR-02, EF-PAY-05, docs poussés le 2026-08-08). État de `origin/dev` : `6e50991`. Résultat : **3 conflits réels**, tous dans `backend/gateway`. `infra/docker-compose.yml` se fusionne automatiquement (additions des deux côtés, aucun marqueur de conflit) — vérifié après fusion, la liste des services fusionnés est correcte et sans doublon.
+
+### 6.1 `backend/gateway/Dockerfile` — conflit ajout/ajout
+
+```dockerfile
+<<<<<<< HEAD (feature/web-socle)
+# Build multi-étapes : chaque service se construit indépendamment (module
+# Maven autonome, cf. Plan d'Exécution §2.2) — jamais de dépendance sur les
+# autres modules backend/ au moment du build de l'image.
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn -q -B dependency:go-offline
+COPY src ./src
+RUN mvn -q -B package -DskipTests
+=======
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /app
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
+COPY src ./src
+RUN mvn clean package -DskipTests -B
+>>>>>>> origin/dev
+
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+<<<<<<< HEAD (feature/web-socle)
+EXPOSE 8082
+=======
+EXPOSE 8080
+>>>>>>> origin/dev
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
+
+**Nature du conflit** : les deux camps ont créé un `Dockerfile` multi-étapes équivalent, indépendamment. La seule différence de fond est le port exposé (8082 côté `web-socle`, documenté par l'ADR 0006 — 8080 déjà pris sur le poste de dev partagé ; 8080 côté `dev`, jamais reconsidéré depuis le Sprint 1).
+
+**Résolution proposée** : garder la version `HEAD` (web-socle) — `EXPOSE 8082` cohérent avec `application.yml` (ci-dessous) et avec `web/src/environments/environment.development.ts` qui pointe déjà vers `:8082`. Changer ce port supposerait de retoucher aussi le web et l'ADR 0006, sans bénéfice.
+
+### 6.2 `backend/gateway/src/main/resources/application.yml` — conflit ajout/ajout
+
+```yaml
+server:
+<<<<<<< HEAD (feature/web-socle)
+  port: ${SERVER_PORT:8082}
+=======
+  port: 8080
+>>>>>>> origin/dev
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+<<<<<<< HEAD (feature/web-socle)
+      routes: []
+      # Aucune route vers les autres microservices pour l'instant (Sprint 1) :
+      # aucun service en aval n'est encore livré. Les routes sont ajoutées au fil
+      # des sprints, au fur et à mesure que service-geo/service-mat/service-opt/etc.
+      # exposent un contrat stable dans shared-contracts/.
+
+fretcorridor:
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:dev-secret-change-me-in-production-min-32-bytes}
+    validity-minutes: 60
+  service-pay:
+    base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://localhost:8084}
+  service-adm:
+    base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8085}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+=======
+      routes:
+        - id: service-ida
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/**,/api/acteurs/**,/api/kyc/**
+        - id: service-mkt
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/catalogue-emballages/**,/api/demandes/**
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+              - "http://192.168.*.*:*"
+              - "http://10.*.*.*:*"
+            allowedMethods: [GET, POST, PUT, DELETE, PATCH, OPTIONS]
+            allowedHeaders: "*"
+            allowCredentials: true
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+>>>>>>> origin/dev
+```
+
+**Nature du conflit** : c'est le cœur du problème architectural documenté en §3.1/§3.3. `web-socle` implémente les routes en `@RestController` internes (JWT/RBAC/mocks) ; `dev` route par proxy HTTP vers `service-ida`/`service-mkt`.
+
+**Anomalie supplémentaire repérée en marge, à corriger quel que soit le sens de la fusion** : la route `service-mkt` du stub `dev` pointe vers `http://localhost:8082` — c'est exactement le port du gateway lui-même côté `web-socle` (ADR 0006). Si cette route stub était un jour activée telle quelle après fusion, le gateway s'auto-appellerait au lieu d'appeler `service-mkt`. Preuve concrète que les deux gateways n'ont jamais été confrontés en pratique.
+
+**Résolution proposée** :
+1. Garder la structure `HEAD` (JWT/RBAC réels, `fretcorridor.jwt`/`service-pay`/`service-adm`, `management.endpoints`).
+2. Ajouter la config CORS de `dev` (`globalcors`) — absente côté `web-socle`, potentiellement nécessaire pour les apps mobiles/web servies depuis d'autres origines. Vérifier si `SecurityConfig.java` (Java) gère déjà CORS côté `web-socle` avant de dupliquer (risque de configuration contradictoire sinon).
+3. Ne **pas** copier les `routes: [...]` proxy de `dev` telles quelles (mauvais port, et `web-socle` route déjà `service-ida`/`service-mkt` via ses propres contrôleurs + adaptateurs Mock, pas par proxy Spring Cloud Gateway). Décider en équipe : soit le gateway continue à exposer ses propres endpoints agrégés (architecture actuelle `web-socle`) et les Mock IDA/MKT sont remplacés par de vrais appels HTTP vers `service-ida`/`service-mkt` (cf. §3.3 — préférable, cohérent avec l'architecture hexagonale déjà en place), soit on repart sur un gateway proxy pur (architecture `dev`) — mais alors tout le travail RBAC/JWT/PAY/ADM de `web-socle` doit être porté ailleurs. **Ce choix n'est pas technique, il est d'architecture d'équipe — je ne l'ai pas tranché unilatéralement.**
+
+### 6.3 `backend/gateway/pom.xml` — conflit ajout/ajout
+
+Différences : `groupId` (`com.fretcorridor` vs `com.flysoft.fretcorridor`, cf. §3.1 point 4), version Spring Boot parent (3.3.5 vs 3.3.4), description, présence de `spring-cloud-starter-gateway` en dépendance directe côté `dev` (nécessaire à son usage en proxy) contre le jeu de dépendances JWT/sécurité/tests côté `web-socle`.
+
+**Résolution proposée** : garder la structure `HEAD` (JWT, security, validation, actuator, tests) ; ajouter `spring-cloud-starter-gateway` uniquement si la décision du §6.2 point 3 retient un usage proxy pour une partie des routes. Aligner le `groupId` sur `com.fretcorridor` (déjà majoritaire dans le monorepo — Web et Moteur) en équipe, dans un commit séparé du merge pour ne pas noyer ce renommage dans la résolution de conflit.
+
+### 6.4 Pourquoi je n'ai pas poussé de résolution sur `dev`
+
+Les 3 conflits ci-dessus ne sont pas mécaniques : les résoudre suppose de choisir quelle architecture de gateway fait foi pour toute l'équipe, ce qui affecte directement le travail déjà livré par Mobile et Moteur sur `dev`. `dev` est une branche partagée par 3 personnes — y pousser une résolution unilatérale (même correcte à mes yeux) sans validation de l'équipe serait le genre d'action qu'il vaut mieux confirmer avant d'agir. Je n'ai ni résolu ni poussé la fusion ; le worktree de test a été supprimé (`git merge --abort` puis `git worktree remove`), `feature/web-socle` et `origin/dev` sont inchangés.
+
+**Pour débloquer** : trancher en équipe le point du §6.2-3 (Mock adapters à remplacer par de vrais appels HTTP vs gateway proxy pur), puis je peux réaliser la fusion avec cette décision actée, exécuter la suite de tests des deux côtés, et ouvrir une pull request plutôt que de pousser directement sur `dev`.
