@@ -1,5 +1,6 @@
 package com.fretcorridor.gateway.infrastructure.rest;
 
+import com.fretcorridor.gateway.domain.AuthenticationServiceUnavailableException;
 import com.fretcorridor.gateway.domain.InvalidCredentialsException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
 import com.fretcorridor.gateway.domain.kyc.KycDossierIntrouvableException;
@@ -21,6 +22,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problem.setTitle("Authentification refusée");
+        return problem;
+    }
+
+    @ExceptionHandler(AuthenticationServiceUnavailableException.class)
+    public ProblemDetail handleAuthenticationServiceUnavailable(AuthenticationServiceUnavailableException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service d'authentification indisponible");
         return problem;
     }
 

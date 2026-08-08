@@ -85,6 +85,14 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <!-- Sert un vrai serveur HTTP local pour tester ServiceIdaAuthenticationAdapter
+                 sans dépendre d'une instance service-ida réelle (cf. docs/ROADMAP_INTEGRATION_gateway.md). -->
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <version>4.12.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

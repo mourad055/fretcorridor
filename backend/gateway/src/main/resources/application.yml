@@ -26,6 +26,10 @@ fretcorridor:
   service-adm:
     # service-adm est réellement implémenté (Sprint 10) — appel HTTP réel.
     base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8085}
+  service-ida:
+    # service-ida (Mobile) est réellement implémenté — appel HTTP réel pour
+    # l'authentification (cf. docs/ROADMAP_INTEGRATION_gateway.md, Phase 1).
+    base-url: ${FRETCORRIDOR_SERVICE_IDA_URL:http://localhost:8081}
 
 management:
   endpoints:
