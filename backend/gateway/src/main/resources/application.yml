@@ -10,10 +10,9 @@ spring:
   cloud:
     gateway:
       routes: []
-      # Aucune route vers les autres microservices pour l'instant (Sprint 1) :
-      # aucun service en aval n'est encore livré. Les routes sont ajoutées au fil
-      # des sprints, au fur et à mesure que service-geo/service-mat/service-opt/etc.
-      # exposent un contrat stable dans shared-contracts/.
+      # Aucune route déclarative Spring Cloud Gateway : ce gateway expose ses
+      # propres contrôleurs REST (JWT/RBAC, agrégation par port hexagonal),
+      # pas un proxy — cf. docs/ANALYSE_FUSION_dev_web-socle.md §6.2.
 
 fretcorridor:
   jwt:

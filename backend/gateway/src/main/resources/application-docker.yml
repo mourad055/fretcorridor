@@ -1,0 +1,24 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: service-ida
+          uri: http://service-ida:8081
+          predicates:
+            - Path=/api/auth/**,/api/acteurs/**,/api/kyc/**
+        - id: service-mkt
+          uri: http://service-mkt:8082
+          predicates:
+            - Path=/api/catalogue-emballages/**,/api/demandes/**
+        - id: service-flt
+          uri: http://service-flt:8083
+          predicates:
+            - Path=/api/positions/**
+        - id: service-exe
+          uri: http://service-exe:8086
+          predicates:
+            - Path=/api/missions/**
+        - id: service-not
+          uri: http://service-not:8094
+          predicates:
+            - Path=/api/notifications/**

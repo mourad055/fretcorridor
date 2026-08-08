@@ -1,0 +1,79 @@
+asyncapi: '2.6.0'
+info:
+  title: CapaciteDeclaree
+  version: 0.1.0-draft
+  description: >
+    BROUILLON, redige cote Moteur (Personne 3) en l'absence de contrat existant
+    dans shared-contracts/. A VALIDER avec Personne 1 (Mobile, porteur de
+    service-cap, qui publiera cet evenement) au point de synchronisation
+    hebdomadaire des contrats d'API (cf Feuille de route S5.1) avant toute
+    implementation cote CAP. Ne pas considerer ce contrat comme fige.
+channels:
+  capacite-declaree:
+    publish:
+      summary: Nouvelle capacite declaree par un transporteur/chauffeur (module CAP, Mobile)
+      message:
+        $ref: '#/components/messages/CapaciteDeclaree'
+components:
+  messages:
+    CapaciteDeclaree:
+      name: CapaciteDeclaree
+      title: Capacite declaree
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/CapaciteDeclareePayload'
+  schemas:
+    CapaciteDeclareePayload:
+      type: object
+      required:
+        - eventId
+        - capaciteId
+        - axeId
+        - valeursCriteres
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Cle d'idempotence - evite les doublons en file d'attente cote OPT (mat.capacite_en_attente).
+        capaciteId:
+          type: string
+          format: uuid
+        axeId:
+          type: string
+          format: uuid
+          description: Determine sur quel cycle de matching (par axe actif) cette capacite sera evaluee.
+        valeursCriteres:
+          type: object
+          additionalProperties:
+            type: number
+          description: >
+            Valeurs deja normalisees [0,1] par l'emetteur (CAP), une entree par
+            code_critere reconnu par le modele de ponderation actif cote MAT
+            (ex. DISTANCE, DELAI, FIABILITE, PRIX). Un critere absent du modele
+            actif est simplement ignore du calcul, sans erreur.
+        position:
+          type: object
+          nullable: true
+          properties:
+            latitude: { type: number, format: double }
+            longitude: { type: number, format: double }
+          description: Position d'origine de la capacite - necessaire au calcul Valhalla en aval du L1. Nullable, degrade uniquement le calcul aval (ENF-DIS-04).
+        profilCamion:
+          type: object
+          nullable: true
+          properties:
+            hauteurMetres: { type: number, format: double, nullable: true }
+            largeurMetres: { type: number, format: double, nullable: true }
+            longueurMetres: { type: number, format: double, nullable: true }
+            poidsMaxTonnes: { type: number, format: double, nullable: true }
+            chargeMaxParEssieuTonnes: { type: number, format: double, nullable: true }
+            nombreEssieux: { type: integer, nullable: true }
+            matieresDangereuses: { type: boolean }
+          description: >
+            Champs cites au CDC S8.11.2 pour le routage Valhalla compatible
+            poids-lourd. Completude faible attendue sur les donnees ouvertes
+            africaines (CDC) - tous nullable, ne bloquent jamais le matching.
+        typeVehicule:
+          type: string
+          nullable: true
+          description: Chaine libre (pas d'enum), utilisee par la Tarification L4 (CDC S8.9.1) pour selectionner le bareme.
