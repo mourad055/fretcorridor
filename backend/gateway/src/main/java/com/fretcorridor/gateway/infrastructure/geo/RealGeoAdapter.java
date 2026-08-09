@@ -3,29 +3,21 @@ package com.fretcorridor.gateway.infrastructure.geo;
 import com.fretcorridor.gateway.domain.geo.Axe;
 import com.fretcorridor.gateway.domain.geo.GeoPort;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
 /**
- * Appelle le service reel service-geo (Moteur, Sprint 3 livre par
- * @stevetelecom, issue #21). Meme pattern que ServicePayWebClientAdapter.
+ * Appelle le service reel service-geo (Moteur, Sprint 3, @stevetelecom).
  *
- * Implementation active par defaut (production/dev) — decision d'equipe
- * 2026-08-10 (docs/adr, ADR mono-tenant GEO) : la Feuille de route V4
- * §1.1 scope la Phase 1 a un seul axe/tenant reel (BGFT), donc l'absence
- * de filtrage serveur cote service-geo n'a pas de consequence en
- * production tant que ce perimetre tient. Cet adaptateur COLLE le
- * tenantId du JWT sur chaque axe retourne par service-geo (qui n'en
- * filtre aucun lui-meme) : ce n'est PAS une garantie d'isolation
- * ENF-MUL-01 reelle, seulement une absence de risque tant qu'un seul
- * tenant existe. Des qu'un deuxieme tenant institutionnel rejoint GEO
- * (Phase 3, Plan d'Execution S18), service-geo doit exposer un vrai
- * filtre serveur (ex. GET /api/geo/axes?tenantId=) avant que ce
- * comportement ne redevienne sûr — cf. AxeControllerIsolationTest pour le
- * detail de cette limite et son suivi.
+ * ENF-MUL-01 : correction du 2026-08-09 (audit gateway) - le tenantId n'est
+ * plus fabrique a posteriori sur chaque axe retourne. service-geo filtre
+ * desormais reellement en base (GET /api/geo/axes?tenantId=...), ce gateway
+ * ne fait que relayer le tenant du JWT en query param.
  */
 @Component
+@Profile("!mock-geo")
 public class RealGeoAdapter implements GeoPort {
 
     private final WebClient webClient;
@@ -38,22 +30,24 @@ public class RealGeoAdapter implements GeoPort {
     @Override
     public Flux<Axe> listerAxesParTenant(String tenantId) {
         return webClient.get()
-                .uri("/api/geo/axes")
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/geo/axes")
+                        .queryParam("tenantId", tenantId)
+                        .build())
                 .retrieve()
                 .bodyToFlux(AxeGeoResponse.class)
                 .map(dto -> new Axe(
                         dto.id(),
-                        tenantId, // tenant impose par le JWT, pas encore porte par service-geo (Phase 1)
+                        tenantId,
                         dto.hubOrigineNom(),
                         dto.hubDestinationNom(),
-                        0.0, // distanceKm : non expose par service-geo en Phase 1, a calculer via Valhalla en Phase 2
+                        0.0,
                         dto.visibiliteActive(),
                         dto.matchingActif(),
                         dto.paiementActif()
                 ));
     }
 
-    /** Miroir minimal du contrat AxeResponse de service-geo - champs utiles au gateway uniquement. */
     private record AxeGeoResponse(
             String id,
             String hubOrigineNom,
