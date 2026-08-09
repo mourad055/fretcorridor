@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { AxeService } from './axe.service';
 import { Axe } from './axe.models';
 import { CorridorMapComponent } from './corridor-map.component';
-import { StatusBadgeComponent, axeStatusVariant, libelleAxeEtat } from '../../../shared/components/status-badge/status-badge.component';
+import { StatusBadgeComponent, axeVisibiliteVariant, axeMatchingVariant, axePaiementVariant, libelleAxeVisibilite, libelleAxeMatching, libelleAxePaiement } from '../../../shared/components/status-badge/status-badge.component';
 
 /**
  * FE-BUR-01 (Sprint 3) : un Bureau voit une carte des axes de son tenant.
@@ -39,6 +39,10 @@ export class AxesMapComponent implements OnInit {
     });
   }
 
-  readonly axeStatusVariant = axeStatusVariant;
-  readonly libelleAxeEtat = libelleAxeEtat;
+  readonly axeVisibiliteVariant = axeVisibiliteVariant;
+  readonly axeMatchingVariant = axeMatchingVariant;
+  readonly axePaiementVariant = axePaiementVariant;
+  readonly libelleAxeVisibilite = libelleAxeVisibilite;
+  readonly libelleAxeMatching = libelleAxeMatching;
+  readonly libelleAxePaiement = libelleAxePaiement;
 }

@@ -86,6 +86,24 @@ public class Demande {
     @Column(nullable = false)
     private String tenantId;
 
+    // Champs requis par le cycle de matching (Moteur, S5) - ajoutes pour la
+    // publication de DemandePubliee. Nullable au niveau entite : une demande
+    // dont l'axe n'a pas encore ete resolu (ex. villes non couvertes) doit
+    // pouvoir exister en base sans bloquer la creation, meme si publier()
+    // exige ces valeurs avant d'emettre l'evenement (cf DemandeService).
+    private UUID axeId;
+    private Double origineLatitude;
+    private Double origineLongitude;
+    private Double destinationLatitude;
+    private Double destinationLongitude;
+
+    // JSON libre (pas de colonnes dediees par critere) : coherent avec
+    // l'anti-patron "jamais de bareme en dur" deja applique cote MAT/OPT -
+    // un nouveau critere de matching ne doit jamais exiger de migration ici.
+    @Column(columnDefinition = "jsonb")
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    private java.util.Map<String, Double> valeursCriteres;
+
     @Builder.Default
     private LocalDateTime dateCreation = LocalDateTime.now();
 

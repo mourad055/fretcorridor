@@ -82,17 +82,16 @@ export function kycStatusVariant(statut?: string): StatusBadgeVariant {
   }
 }
 
-export function axeStatusVariant(etat?: string): StatusBadgeVariant {
-  switch (etat) {
-    case 'PAIEMENT':
-      return 'success';
-    case 'MATCHING':
-      return 'primary';
-    case 'VISIBILITE':
-      return 'neutral';
-    default:
-      return 'neutral';
-  }
+export function axeVisibiliteVariant(active: boolean): StatusBadgeVariant {
+  return active ? 'neutral' : 'danger';
+}
+
+export function axeMatchingVariant(actif: boolean): StatusBadgeVariant {
+  return actif ? 'primary' : 'danger';
+}
+
+export function axePaiementVariant(actif: boolean): StatusBadgeVariant {
+  return actif ? 'success' : 'danger';
 }
 
 export function ecritureStatusVariant(statut?: string): StatusBadgeVariant {
@@ -169,17 +168,16 @@ export function libelleKycStatut(statut?: string): string {
   }
 }
 
-export function libelleAxeEtat(etat?: string): string {
-  switch (etat) {
-    case 'VISIBILITE':
-      return 'Visibilité';
-    case 'MATCHING':
-      return 'Matching';
-    case 'PAIEMENT':
-      return 'Paiement';
-    default:
-      return etat ?? '';
-  }
+export function libelleAxeVisibilite(active: boolean): string {
+  return active ? 'Visible' : 'Masqué';
+}
+
+export function libelleAxeMatching(actif: boolean): string {
+  return actif ? 'Matching actif' : 'Matching inactif';
+}
+
+export function libelleAxePaiement(actif: boolean): string {
+  return actif ? 'Paiement actif' : 'Paiement inactif';
 }
 
 export function libelleEcritureStatut(statut?: string): string {

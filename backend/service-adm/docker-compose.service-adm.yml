@@ -10,7 +10,7 @@
 services:
   service-adm:
     build:
-      context: backend/service-adm
+      context: ../backend/service-adm
     container_name: fretcorridor-service-adm
     depends_on:
       postgres:
@@ -20,4 +20,4 @@ services:
       SPRING_DATASOURCE_USERNAME: fretcorridor
       SPRING_DATASOURCE_PASSWORD: fretcorridor
     ports:
-      - "8085:8085"
+      - "8095:8085"

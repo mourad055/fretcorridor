@@ -18,6 +18,11 @@ spring:
       hibernate:
         default_schema: service_mkt
     open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 # ⚠️ Même secret que service-ida — obligatoire pour que service-mkt puisse
 # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).

@@ -14,7 +14,7 @@
 services:
   gateway:
     build:
-      context: backend/gateway
+      context: ../backend/gateway
     container_name: fretcorridor-gateway
     environment:
       # Résolvent par nom de conteneur uniquement si les fichiers compose de
@@ -27,5 +27,9 @@ services:
       # migré vers un docker-compose.<service>.yml dédié) : résout par nom de
       # conteneur si ce fichier partagé fait partie de la commande.
       FRETCORRIDOR_SERVICE_IDA_URL: http://service-ida:8081
+      # service-geo (Moteur, Sprint 3, @stevetelecom) est reellement
+      # implemente - resout par nom de conteneur si son propre fichier
+      # compose fait partie de la commande.
+      FRETCORRIDOR_SERVICE_GEO_URL: http://service-geo:8084
     ports:
       - "8082:8082"

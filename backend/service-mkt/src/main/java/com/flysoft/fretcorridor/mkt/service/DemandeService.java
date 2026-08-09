@@ -5,6 +5,9 @@ import com.flysoft.fretcorridor.mkt.entity.CatalogueEmballage;
 import com.flysoft.fretcorridor.mkt.entity.Demande;
 import com.flysoft.fretcorridor.mkt.repository.CatalogueEmballageRepository;
 import com.flysoft.fretcorridor.mkt.repository.DemandeRepository;
+import com.flysoft.fretcorridor.mkt.repository.PropositionRepository;
+import com.flysoft.fretcorridor.mkt.messaging.DemandePublieeEvent;
+import com.flysoft.fretcorridor.mkt.messaging.MktEventPublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,8 @@ public class DemandeService {
 
     private final DemandeRepository demandeRepository;
     private final CatalogueEmballageRepository catalogueRepository;
+    private final MktEventPublisher eventPublisher;
+    private final PropositionRepository propositionRepository;
 
     // RG-038 : publication exige le niveau KYC 1 minimum
     @Transactional
@@ -60,6 +65,27 @@ public class DemandeService {
                 .build();
 
         demande = demandeRepository.save(demande);
+
+        // Publication best-effort (ENF-DIS-04) : une demande dont l'axe/les
+        // criteres ne sont pas encore renseignes est quand meme sauvegardee,
+        // mais n'est pas publiee vers le Moteur tant que ces champs manquent -
+        // evite d'envoyer un evenement incomplet que OPT devrait rejeter.
+        if (demande.getAxeId() != null && demande.getValeursCriteres() != null) {
+            eventPublisher.publierDemandePubliee(new DemandePublieeEvent(
+                    java.util.UUID.randomUUID(),
+                    demande.getId(),
+                    demande.getAxeId(),
+                    demande.getValeursCriteres(),
+                    (demande.getOrigineLatitude() != null && demande.getOrigineLongitude() != null)
+                            ? new DemandePublieeEvent.PointGeo(demande.getOrigineLatitude(), demande.getOrigineLongitude())
+                            : null,
+                    (demande.getDestinationLatitude() != null && demande.getDestinationLongitude() != null)
+                            ? new DemandePublieeEvent.PointGeo(demande.getDestinationLatitude(), demande.getDestinationLongitude())
+                            : null,
+                    java.math.BigDecimal.valueOf(demande.getPoidsTaxableKg())
+            ));
+        }
+
         return DemandeDto.DemandeResponse.fromEntity(demande);
     }
 
@@ -69,13 +95,19 @@ public class DemandeService {
                 .stream().map(DemandeDto.DemandeResponse::fromEntity).toList();
     }
 
-    // S5 — stub en attendant service-mat/service-opt (Moteur).
-    // Retourne toujours une liste vide pour l'instant ; à remplacer par un
-    // vrai appel au moteur de matching dès qu'il sera prêt (voir README).
+    // S5 — plus un stub : lit les Proposition persistees par
+    // PropositionEmiseListener (Kafka, evenement publie par service-opt).
     @Transactional(readOnly = true)
     public List<DemandeDto.PropositionResponse> getPropositions(UUID demandeId, String tenantId) {
         demandeRepository.findByIdAndTenantId(demandeId, tenantId)
                 .orElseThrow(() -> new RuntimeException("DEMANDE_INTROUVABLE"));
-        return List.of();
+
+        return propositionRepository.findByDemandeIdOrderByRangAsc(demandeId).stream()
+                .map(p -> DemandeDto.PropositionResponse.builder()
+                        .id(p.getId())
+                        .motifClassement(p.getMotifClassement())
+                        .prixEstime(p.getPrixTransport() != null ? p.getPrixTransport().toString() : null)
+                        .build())
+                .toList();
     }
 }

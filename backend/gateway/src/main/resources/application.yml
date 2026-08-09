@@ -21,7 +21,7 @@ fretcorridor:
   service-pay:
     # service-pay est réellement implémenté (contrairement aux autres services
     # de ce périmètre) — appel HTTP réel, pas un mock (cf. docs/adr).
-    base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://localhost:8084}
+    base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://localhost:8088}
   service-adm:
     # service-adm est réellement implémenté (Sprint 10) — appel HTTP réel.
     base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8085}
@@ -29,6 +29,10 @@ fretcorridor:
     # service-ida (Mobile) est réellement implémenté — appel HTTP réel pour
     # l'authentification (cf. docs/ROADMAP_INTEGRATION_gateway.md, Phase 1).
     base-url: ${FRETCORRIDOR_SERVICE_IDA_URL:http://localhost:8081}
+  service-geo:
+    # service-geo (Moteur, Sprint 3, @stevetelecom) est réellement implémenté
+    # depuis ce jour — RealGeoAdapter remplace MockGeoAdapter.
+    base-url: ${FRETCORRIDOR_SERVICE_GEO_URL:http://localhost:8084}
 
 management:
   endpoints:
