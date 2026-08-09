@@ -10,7 +10,7 @@
 services:
   service-bur:
     build:
-      context: backend/service-bur
+      context: ../backend/service-bur
     container_name: fretcorridor-service-bur
     depends_on:
       postgres:

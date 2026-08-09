@@ -1,0 +1,15 @@
+# Bloc Docker Compose du service-exe (Mobile).
+# Ne contient PAS l'infra partagee (Postgres, Kafka...) : ce fichier s'empile
+# TOUJOURS sur infra/docker-compose.yml, jamais utilisable seul.
+services:
+  service-exe:
+    build:
+      context: ../backend/service-exe
+    container_name: fretcorridor-service-exe
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8093:8093"
+    depends_on:
+      postgres:
+        condition: service_healthy

@@ -1,0 +1,15 @@
+# Bloc Docker Compose du service-flt (Mobile).
+# Ne contient PAS l'infra partagee (Postgres, Kafka...) : ce fichier s'empile
+# TOUJOURS sur infra/docker-compose.yml, jamais utilisable seul.
+services:
+  service-flt:
+    build:
+      context: ../backend/service-flt
+    container_name: fretcorridor-service-flt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8092:8083"
+    depends_on:
+      postgres:
+        condition: service_healthy

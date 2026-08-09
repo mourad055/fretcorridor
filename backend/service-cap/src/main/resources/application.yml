@@ -1,0 +1,41 @@
+server:
+  port: 8096
+
+spring:
+  application:
+    name: service-cap
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      # Garde-fou anti-derive, identique aux autres services : le schema est
+      # TOUJOURS pilote par Flyway, jamais par Hibernate auto-ddl.
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    schemas: cap
+    default-schema: cap
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+        retries: 3
+
+# EF-CAP-08 : coefficient de conversion volumetrique pour la regle du maximum
+# (poids taxable = max(poids reel, volume x coefficient)). 333 kg/m3 est un
+# ratio courant en fret routier (1 m3 "pese" au moins 333 kg pour la
+# facturation) - PLACEHOLDER a valider avec le metier, jamais code en dur
+# dans le service lui-meme (lu depuis cette config).
+fretcorridor:
+  cap:
+    coefficient-volumetrique-kg-par-m3: 333.0
+
+logging:
+  level:
+    com.flysoft.fretcorridor.cap: DEBUG

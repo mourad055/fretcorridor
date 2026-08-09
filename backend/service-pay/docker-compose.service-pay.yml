@@ -10,7 +10,7 @@
 services:
   service-pay:
     build:
-      context: backend/service-pay
+      context: ../backend/service-pay
     container_name: fretcorridor-service-pay
     depends_on:
       postgres:
@@ -20,4 +20,4 @@ services:
       SPRING_DATASOURCE_USERNAME: fretcorridor
       SPRING_DATASOURCE_PASSWORD: fretcorridor
     ports:
-      - "8084:8084"
+      - "8088:8084"
