@@ -12,13 +12,20 @@ import reactor.core.publisher.Flux;
  * Appelle le service reel service-geo (Moteur, Sprint 3 livre par
  * @stevetelecom, issue #21). Meme pattern que ServicePayWebClientAdapter.
  *
- * ENF-MUL-01 : service-geo n'a pas encore de notion de tenant active en
- * Phase 1 (colonne tenant_id ajoutee, cf migration V4, mais un seul tenant
- * existe - BGFT). Le filtrage par tenant reste donc fait ICI, cote gateway,
- * en attendant le multi-tenant reel (Phase 3, Plan d'execution S18).
+ * NON ACTIF PAR DEFAUT (profil "real-geo" explicite requis) : service-geo
+ * n'a pas encore de notion de tenant active en Phase 1 (colonne tenant_id
+ * ajoutee, cf migration V4, mais un seul tenant reel existe - BGFT). Cet
+ * adaptateur COLLE le tenantId du JWT sur chaque axe retourne par service-geo
+ * (qui n'en filtre aucun), ce qui casse la garantie ENF-MUL-01 que
+ * AxeControllerIsolationTest verifie dès qu'un deuxieme tenant existe. Tant
+ * que l'equipe n'a pas tranche entre "axes mono-tenant assumes en Phase 1"
+ * et "isolation reelle exigee des maintenant" (cf.
+ * docs/ANALYSE_backend-stevetelecom.md §2), MockGeoAdapter reste
+ * l'implementation active par defaut. Activer avec
+ * -Dspring.profiles.active=real-geo une fois la decision prise.
  */
 @Component
-@Profile("!mock-geo")
+@Profile("real-geo")
 public class RealGeoAdapter implements GeoPort {
 
     private final WebClient webClient;

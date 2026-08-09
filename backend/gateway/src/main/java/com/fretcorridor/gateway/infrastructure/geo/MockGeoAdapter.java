@@ -8,12 +8,16 @@ import reactor.core.publisher.Flux;
 import java.util.List;
 
 /**
- * DEPRECIE - remplace par RealGeoAdapter (service-geo reellement branche,
- * Sprint 3 Moteur livre). Conserve temporairement pour reference/rollback,
- * a supprimer une fois RealGeoAdapter valide en integration.
+ * Reste l'implementation ACTIVE PAR DEFAUT (voir RealGeoAdapter, profil
+ * "real-geo" requis pour l'activer) : service-geo reel existe mais ne filtre
+ * pas encore par tenant (Phase 1, un seul tenant reel - BGFT), et
+ * RealGeoAdapter compense en collant le tenantId du JWT sur des donnees non
+ * filtrees plutot que de filtrer reellement - casse ENF-MUL-01 des qu'un
+ * deuxieme tenant existe (cf. docs/ANALYSE_backend-stevetelecom.md §2).
+ * A retirer une fois la decision d'equipe prise et RealGeoAdapter fiabilise.
  */
 @Component
-@org.springframework.context.annotation.Profile("mock-geo")
+@org.springframework.context.annotation.Profile("!real-geo")
 public class MockGeoAdapter implements GeoPort {
 
     private final List<Axe> axes = List.of(
