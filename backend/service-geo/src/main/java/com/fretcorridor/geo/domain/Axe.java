@@ -18,6 +18,12 @@ import java.util.UUID;
  * Les trois etats d'activation (EF-GEO-03) sont volontairement independants :
  * un axe peut etre visible cote mobile/web sans que le matching ou le paiement
  * y soient encore actives (ex. phase de lancement progressif d'un nouvel axe).
+ *
+ * tenantId (ENF-MUL-01, colonne ajoutee migration V4) : isolation reelle par
+ * tenant, filtree en base par AxeRepository.findByTenantId - jamais fabriquee
+ * a posteriori par un appelant (cf. correction suite a l'audit gateway du
+ * 2026-08-09, RealGeoAdapter ne doit jamais reetiqueter des donnees non
+ * filtrees serveur).
  */
 @Entity
 @Table(name = "axe", schema = "geo")
@@ -54,6 +60,12 @@ public class Axe {
     @Column(name = "parametres", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> parametres = Map.of();
 
+    // ENF-MUL-01 : isolation stricte par tenant. Nullable en base (migration
+    // V4, donnees anciennes pre-remplies avec le tenant BGFT par defaut) mais
+    // toujours renseigne a la creation via le constructeur ci-dessous.
+    @Column(name = "tenant_id")
+    private UUID tenantId;
+
     @Column(name = "date_creation", nullable = false, updatable = false)
     private Instant dateCreation;
 
@@ -61,10 +73,11 @@ public class Axe {
         // Requis par JPA.
     }
 
-    public Axe(String nom, Hub hubOrigine, Hub hubDestination) {
+    public Axe(String nom, Hub hubOrigine, Hub hubDestination, UUID tenantId) {
         this.nom = nom;
         this.hubOrigine = hubOrigine;
         this.hubDestination = hubDestination;
+        this.tenantId = tenantId;
     }
 
     @PrePersist
@@ -102,6 +115,10 @@ public class Axe {
 
     public Map<String, Object> getParametres() {
         return parametres;
+    }
+
+    public UUID getTenantId() {
+        return tenantId;
     }
 
     public Instant getDateCreation() {

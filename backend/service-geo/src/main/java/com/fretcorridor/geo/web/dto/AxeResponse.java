@@ -17,6 +17,7 @@ public record AxeResponse(
         boolean matchingActif,
         boolean paiementActif,
         Map<String, Object> parametres,
+        UUID tenantId,
         Instant dateCreation
 ) {
     public static AxeResponse from(Axe axe) {
@@ -31,6 +32,7 @@ public record AxeResponse(
                 axe.isMatchingActif(),
                 axe.isPaiementActif(),
                 axe.getParametres(),
+                axe.getTenantId(),
                 axe.getDateCreation()
         );
     }

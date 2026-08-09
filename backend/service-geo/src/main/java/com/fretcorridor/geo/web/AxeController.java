@@ -8,7 +8,6 @@ import com.fretcorridor.geo.web.dto.AxeCreationRequest;
 import com.fretcorridor.geo.web.dto.AxeResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -19,10 +18,22 @@ import java.util.UUID;
  * Endpoints internes du referentiel Axe (EF-GEO-01/02/03).
  * Consomme par OPT (filtre L0, synchrone interne) et par les cartes Web/Mobile
  * en lecture seule via l'API exposee ici.
+ *
+ * ENF-MUL-01 : isolation stricte par tenant, filtree ICI en base via
+ * AxeRepository.findByTenantId. Correction du 2026-08-09 suite a l'audit
+ * gateway : GET /api/geo/axes?tenantId=... filtre reellement, plus jamais
+ * relabellise a posteriori par un appelant (cf. RealGeoAdapter, gateway).
  */
 @RestController
 @RequestMapping("/api/geo/axes")
 public class AxeController {
+
+    // Tenant unique de la Phase 1 (BGFT, client-ancre) - meme UUID fixe que
+    // celui applique par la migration V4 sur les donnees existantes. Utilise
+    // comme defaut a la creation quand aucun tenantId n'est fourni, pour ne
+    // jamais laisser une ligne orpheline sans tenant.
+    private static final UUID TENANT_PHASE1_PAR_DEFAUT =
+            UUID.fromString("00000000-0000-0000-0000-000000000001");
 
     private final AxeRepository axeRepository;
     private final HubRepository hubRepository;
@@ -43,7 +54,8 @@ public class AxeController {
                     "un axe doit relier deux hubs distincts");
         }
 
-        Axe axe = new Axe(requete.nom(), hubOrigine, hubDestination);
+        UUID tenantId = requete.tenantId() != null ? requete.tenantId() : TENANT_PHASE1_PAR_DEFAUT;
+        Axe axe = new Axe(requete.nom(), hubOrigine, hubDestination, tenantId);
         if (requete.visibiliteActive() != null) {
             axe.setVisibiliteActive(requete.visibiliteActive());
         }
@@ -60,11 +72,19 @@ public class AxeController {
         return AxeResponse.from(axeRepository.save(axe));
     }
 
+    /**
+     * ENF-MUL-01 : si tenantId est fourni, filtre reellement en base
+     * (AxeRepository.findByTenantId) - jamais un filtrage cote appelant.
+     * Sans tenantId (retro-compatibilite OPT, appel interne synchrone qui
+     * n'a pas de notion de tenant), retourne tout - comportement inchange
+     * pour ne pas casser le filtre L0 d'OPT.
+     */
     @GetMapping
-    public List<AxeResponse> listerAxes() {
-        return axeRepository.findAll().stream()
-                .map(AxeResponse::from)
-                .toList();
+    public List<AxeResponse> listerAxes(@RequestParam(required = false) UUID tenantId) {
+        List<Axe> axes = tenantId != null
+                ? axeRepository.findByTenantId(tenantId)
+                : axeRepository.findAll();
+        return axes.stream().map(AxeResponse::from).toList();
     }
 
     @GetMapping("/{id}")
