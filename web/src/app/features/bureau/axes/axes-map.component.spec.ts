@@ -24,8 +24,8 @@ describe('AxesMapComponent', () => {
     fixture.detectChanges();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/bureau/axes`).flush([
-      { id: 'axe-1', origine: 'Douala', destination: 'Yaoundé', distanceKm: 300, etatActivation: 'PAIEMENT' },
-      { id: 'axe-2', origine: 'Douala', destination: 'Bafoussam', distanceKm: 350, etatActivation: 'MATCHING' },
+      { id: 'axe-1', origine: 'Douala', destination: 'Yaoundé', distanceKm: 300, visibiliteActive: true, matchingActif: true, paiementActif: true },
+      { id: 'axe-2', origine: 'Douala', destination: 'Bafoussam', distanceKm: 350, visibiliteActive: true, matchingActif: true, paiementActif: false },
     ]);
     fixture.detectChanges();
 

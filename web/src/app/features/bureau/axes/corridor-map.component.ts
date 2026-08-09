@@ -16,11 +16,28 @@ import { coordonneesVille } from './villes-cemac';
 const CENTRE_CEMAC: [number, number] = [6.5, 12.5];
 const ZOOM_INITIAL = 5;
 
-const COULEUR_PAR_ETAT: Record<string, string> = {
-  VISIBILITE: '#a1a1aa',
-  MATCHING: '#d40f16',
-  PAIEMENT: '#067647',
-};
+const COULEUR_VISIBILITE = '#a1a1aa';
+const COULEUR_MATCHING = '#d40f16';
+const COULEUR_PAIEMENT = '#067647';
+
+/** EF-GEO-03 : les 3 états sont indépendants — priorité d'affichage paiement > matching > visibilité. */
+function couleurPourAxe(axe: Axe): string {
+  if (axe.paiementActif) {
+    return COULEUR_PAIEMENT;
+  }
+  if (axe.matchingActif) {
+    return COULEUR_MATCHING;
+  }
+  return COULEUR_VISIBILITE;
+}
+
+function libelleEtatsAxe(axe: Axe): string {
+  const etats: string[] = [];
+  if (axe.visibiliteActive) etats.push('Visible');
+  if (axe.matchingActif) etats.push('Matching actif');
+  if (axe.paiementActif) etats.push('Paiement actif');
+  return etats.length > 0 ? etats.join(', ') : 'Aucun état actif';
+}
 
 /**
  * Carte géospatiale réelle (Leaflet/OpenStreetMap) du corridor CEMAC, centrée
@@ -105,7 +122,7 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
         continue;
       }
 
-      const couleur = COULEUR_PAR_ETAT[axe.etatActivation] ?? COULEUR_PAR_ETAT['VISIBILITE'];
+      const couleur = couleurPourAxe(axe);
       const ligne = L.polyline([origine, destination], {
         color: couleur,
         weight: 3,
@@ -114,7 +131,7 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
       });
       ligne.bindPopup(
         `<strong>${this.echapper(axe.origine)} → ${this.echapper(axe.destination)}</strong><br/>` +
-          `${axe.distanceKm} km — ${this.echapper(axe.etatActivation)}`
+          `${axe.distanceKm} km — ${this.echapper(libelleEtatsAxe(axe))}`
       );
       this.layers.addLayer(ligne);
       bounds.push(origine, destination);

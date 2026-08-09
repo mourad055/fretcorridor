@@ -3,13 +3,17 @@ import {
   StatusBadgeComponent,
   dossierStatusVariant,
   kycStatusVariant,
-  axeStatusVariant,
+  axeVisibiliteVariant,
+  axeMatchingVariant,
+  axePaiementVariant,
   ecritureStatusVariant,
   missionStatusVariant,
   capaciteStatusVariant,
   libelleDossierStatut,
   libelleKycStatut,
-  libelleAxeEtat,
+  libelleAxeVisibilite,
+  libelleAxeMatching,
+  libelleAxePaiement,
   libelleEcritureStatut,
   libelleMissionStatut,
   libelleModeCollecte,
@@ -63,10 +67,13 @@ describe('mapping statut → variante', () => {
     expect(kycStatusVariant('EN_ATTENTE')).toBe('warning');
   });
 
-  it("mappe les états d'axe", () => {
-    expect(axeStatusVariant('PAIEMENT')).toBe('success');
-    expect(axeStatusVariant('MATCHING')).toBe('primary');
-    expect(axeStatusVariant('VISIBILITE')).toBe('neutral');
+  it("mappe les états d'axe (3 booléens indépendants, EF-GEO-03)", () => {
+    expect(axeVisibiliteVariant(true)).toBe('neutral');
+    expect(axeVisibiliteVariant(false)).toBe('danger');
+    expect(axeMatchingVariant(true)).toBe('primary');
+    expect(axeMatchingVariant(false)).toBe('danger');
+    expect(axePaiementVariant(true)).toBe('success');
+    expect(axePaiementVariant(false)).toBe('danger');
   });
 
   it('mappe les statuts d\'écriture', () => {
@@ -103,9 +110,12 @@ describe('libellés FR des enums (Sprint 15)', () => {
   });
 
   it("traduit les états d'axe", () => {
-    expect(libelleAxeEtat('VISIBILITE')).toBe('Visibilité');
-    expect(libelleAxeEtat('MATCHING')).toBe('Matching');
-    expect(libelleAxeEtat('PAIEMENT')).toBe('Paiement');
+    expect(libelleAxeVisibilite(true)).toBe('Visible');
+    expect(libelleAxeVisibilite(false)).toBe('Masqué');
+    expect(libelleAxeMatching(true)).toBe('Matching actif');
+    expect(libelleAxeMatching(false)).toBe('Matching inactif');
+    expect(libelleAxePaiement(true)).toBe('Paiement actif');
+    expect(libelleAxePaiement(false)).toBe('Paiement inactif');
   });
 
   it("traduit les statuts d'écriture", () => {
