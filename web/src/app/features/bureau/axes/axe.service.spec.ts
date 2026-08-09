@@ -24,7 +24,7 @@ describe('AxeService', () => {
 
     const req = httpMock.expectOne(`${environment.apiBaseUrl}/bureau/axes`);
     expect(req.request.method).toBe('GET');
-    req.flush([{ id: 'axe-1', origine: 'Douala', destination: 'Yaoundé', distanceKm: 300, etatActivation: 'PAIEMENT' }]);
+    req.flush([{ id: 'axe-1', origine: 'Douala', destination: 'Yaoundé', distanceKm: 300, visibiliteActive: true, matchingActif: true, paiementActif: true }]);
 
     expect(result).toHaveLength(1);
   });

@@ -11,7 +11,7 @@ import { Axe } from './axe.models';
  */
 describe('CorridorMapComponent', () => {
   const AXES: Axe[] = [
-    { id: 'axe-1', origine: 'Douala', destination: 'Yaoundé', distanceKm: 300, etatActivation: 'PAIEMENT' },
+    { id: 'axe-1', origine: 'Douala', destination: 'Yaoundé', distanceKm: 300, visibiliteActive: true, matchingActif: true, paiementActif: true },
   ];
 
   beforeEach(async () => {
@@ -31,7 +31,7 @@ describe('CorridorMapComponent', () => {
   it('ignores axes referencing an unknown city without throwing', () => {
     const fixture = TestBed.createComponent(CorridorMapComponent);
     fixture.componentInstance.axes = [
-      { id: 'axe-x', origine: 'Ville Inconnue', destination: 'Douala', distanceKm: 10, etatActivation: 'VISIBILITE' },
+      { id: 'axe-x', origine: 'Ville Inconnue', destination: 'Douala', distanceKm: 10, visibiliteActive: true, matchingActif: false, paiementActif: false },
     ];
 
     expect(() => fixture.detectChanges()).not.toThrow();
