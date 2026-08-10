@@ -2,22 +2,28 @@ package com.fretcorridor.gateway.infrastructure.geo;
 
 import com.fretcorridor.gateway.domain.geo.Axe;
 import com.fretcorridor.gateway.domain.geo.GeoPort;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
 
 /**
- * Reste l'implementation ACTIVE PAR DEFAUT (voir RealGeoAdapter, profil
- * "real-geo" requis pour l'activer) : service-geo reel existe mais ne filtre
- * pas encore par tenant (Phase 1, un seul tenant reel - BGFT), et
- * RealGeoAdapter compense en collant le tenantId du JWT sur des donnees non
- * filtrees plutot que de filtrer reellement - casse ENF-MUL-01 des qu'un
- * deuxieme tenant existe (cf. docs/ANALYSE_backend-stevetelecom.md §2).
- * A retirer une fois la decision d'equipe prise et RealGeoAdapter fiabilise.
+ * Fixture de test uniquement — vit dans src/test/java, jamais sur le
+ * classpath de production (même mécanisme que
+ * ServiceIdaAuthenticationAdapter/MockIdaAuthenticationAdapter, cf.
+ * docs/ROADMAP_INTEGRATION_gateway.md). @Primary suffit à lever
+ * l'ambiguïté avec RealGeoAdapter pendant les tests, puisque cette classe
+ * n'existe tout simplement pas dans le jar déployé.
+ *
+ * Garde 2 tenants de démonstration (contrairement à service-geo réel, qui
+ * n'en porte qu'un en Phase 1 — cf. docs/adr, décision mono-tenant GEO) :
+ * ce test vérifie le CONTRAT du port GeoPort (« ne jamais restituer les
+ * axes d'un autre tenant »), pas le comportement de RealGeoAdapter, qui ne
+ * le tient pas lui-même en Phase 1 (cf. AxeControllerIsolationTest).
  */
 @Component
-@org.springframework.context.annotation.Profile("!real-geo")
+@Primary
 public class MockGeoAdapter implements GeoPort {
 
     private final List<Axe> axes = List.of(
