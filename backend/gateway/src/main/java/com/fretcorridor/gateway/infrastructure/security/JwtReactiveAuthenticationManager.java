@@ -37,7 +37,7 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
         Claims c = claims.get();
         Role role = Role.valueOf(c.get("role", String.class));
         var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-        var principal = new AuthenticatedActor(c.getSubject(), role, c.get("tenantId", String.class));
+        var principal = new AuthenticatedActor(c.getSubject(), role, c.get("tenantId", String.class), JwtService.delegationTokenOf(c));
         var authenticated = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         return Mono.just(authenticated);
     }

@@ -28,7 +28,7 @@ class AuthControllerTest {
     @Test
     void login_with_valid_credentials_returns_a_token_and_the_role() {
         when(authenticationPort.authenticate("+237600000001", "123456"))
-                .thenReturn(Mono.just(new Actor("actor-1", "+237600000001", Role.BUREAU, "tenant-bgft-douala")));
+                .thenReturn(Mono.just(new Actor("actor-1", "+237600000001", Role.BUREAU, "tenant-bgft-douala", "ida-token")));
 
         webTestClient.post().uri("/api/v1/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)

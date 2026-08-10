@@ -10,7 +10,7 @@ Pour l'historique de l'analyse de fusion (conflits Git, divergence des deux bran
 
 ## Constat
 
-8 adaptateurs `Mock*` existent dans `backend/gateway`. Après exploration détaillée du code réel de `origin/dev` (pas seulement de ses contrats OpenAPI), **2 sont désormais réellement branchés** : l'authentification (`service-ida`) et les axes Bureau (`service-geo`, décision mono-tenant Phase 1 assumée — cf. Phase 1bis). Les 6 autres restent bloqués par une absence réelle côté service cible — pas par un problème côté gateway.
+8 adaptateurs `Mock*` existent dans `backend/gateway`. Après exploration détaillée du code réel de `origin/dev` (pas seulement de ses contrats OpenAPI), **2 sont désormais réellement branchés** : l'authentification (`service-ida`) et les axes Bureau (`service-geo`, décision mono-tenant Phase 1 assumée — cf. Phase 1bis). Le blocage transverse n°6 (double autorité JWT) est réglé (Phase 1ter), ce qui débloque partiellement #3 et #5. Les autres restent bloqués par une absence réelle côté service cible — pas par un problème côté gateway.
 
 ## Phase 1 — Fait : authentification réelle (`service-ida`)
 
@@ -39,17 +39,29 @@ Détails :
 
 Vérification : suite gateway complète — 95/95 verts (94 précédents + `RealGeoAdapterTest`).
 
-## Phase 2 — Suivi des 6 mocks restants
+## Phase 1ter — Fait : mécanisme de retransmission du token service-ida (débloque le point n°6)
+
+Décision d'équipe le 2026-08-10 (cf. [ADR 0012](adr/0012-delegation-token-service-ida.md)) : le gateway retransmet le JWT brut de `service-ida` plutôt que d'aligner les secrets entre le gateway et Mobile (option qui aurait exigé une coordination cross-équipe sur le secret ET la forme des claims).
+
+Détails :
+- `Actor` porte désormais un champ `delegationToken` (le `accessToken` de `service-ida`) ; `ServiceIdaAuthenticationAdapter` le renseigne, `MockIdaAuthenticationAdapter` (fixture de test) porte une valeur factice.
+- `JwtService.issue` l'embarque dans le JWT du gateway (claim privée `idaToken`, jamais régénérée) ; `JwtReactiveAuthenticationManager` l'extrait à chaque requête et le porte sur `AuthenticatedActor.delegationToken()`, disponible à tout contrôleur/adaptateur via `@AuthenticationPrincipal`.
+- Usage prévu pour les futurs `RealExeAdapter`/`RealNotAdapter` (non construits ici — items n°3/n°5 encore bloqués par ailleurs, cf. tableau) : `Authorization: Bearer <actor.delegationToken()>` vers ces services, jamais le JWT du gateway.
+- Tests dédiés : round-trip complet couvert à chaque étage (`ServiceIdaAuthenticationAdapterTest`, `JwtServiceTest`, nouveau `JwtReactiveAuthenticationManagerTest`).
+
+Vérification : suite gateway complète — 100/100 verts (95 précédents + 5 nouveaux tests).
+
+## Phase 2 — Suivi des 5 mocks restants
 
 Statut tenu à jour au fil des sprints. Chaque ligne : constat exact sur `dev`, ce qu'il faut construire, porteur, priorité.
 
 | # | Mock gateway | Statut | Constat sur `dev` | Ce qu'il faut construire | Porteur | Priorité |
 |---|---|---|---|---|---|---|
 | 2 | `MockOptAdapter` (missions appariées, incl. filtre/détail/export EF-BUR-02) | 🔴 Bloqué | `service-opt` n'expose que `GET /api/opt/affectations/{missionId}` (lookup unitaire, sans auth), documenté "jamais appelé par Mobile/Web — flux Kafka". | Endpoint de liste tenant-scopée, ou modèle de lecture alimenté par les événements Kafka déjà publiés (`proposition-emise`/`affectation-confirmee`) — architecture à trancher en équipe. | Moteur | **Haute** — cœur métier du Bureau |
-| 3 | `MockExeAdapter` (chronologie mission, missions transporteur) | 🔴 Bloqué | `service-exe` n'a qu'un lookup par `demandeId` (pas `missionId`, pas de liste par tenant/transporteur). | Endpoint de liste tenant-scopée + liste par transporteur ; dépend aussi du point n°6. | Mobile | Moyenne |
+| 3 | `MockExeAdapter` (chronologie mission, missions transporteur) | 🟡 Partiellement débloqué | `service-exe` n'a qu'un lookup par `demandeId` (pas `missionId`, pas de liste par tenant/transporteur). Le mécanisme JWT (point n°6, ex-bloquant) est réglé — le seul obstacle restant est l'absence d'endpoint de liste. | Endpoint de liste tenant-scopée + liste par transporteur. | Mobile | Moyenne |
 | 4 | `MockTrkAdapter` (positions) | 🔴 Bloqué | `service-trk` n'a **aucune API REST** — tout événementiel (Kafka `position-eta`/`alerte-ecart`). | Nouvel endpoint REST, ou consommation Kafka directe côté gateway/service-bur (changement d'architecture). | Moteur | Moyenne |
-| 5 | `MockNotAdapter` (notifications Bureau) | 🔴 Bloqué | `GET /api/notifications` scope "mes notifications" (acteur du JWT), pas tenant-wide. | Endpoint tenant-wide ; dépend aussi du point n°6. | Mobile | Basse |
-| 6 | *(transverse, bloque #3 et #5)* Double autorité JWT | 🟡 À trancher | `service-exe`/`service-not`/`service-mkt` valident les JWT signés par `service-ida` (secret propre) ; le gateway signe les siens avec son propre secret. Un token gateway ne validera jamais sur ces services tels quels. | Décision d'équipe : alignement de secret/JWKS, ou le gateway retransmet le token brut `service-ida` obtenu à la connexion en plus du sien. | Équipe (Mobile + Web) | **À trancher avant #3/#5** |
+| 5 | `MockNotAdapter` (notifications Bureau) | 🟡 Partiellement débloqué | `GET /api/notifications` scope "mes notifications" (acteur du JWT), pas tenant-wide. Le mécanisme JWT (point n°6, ex-bloquant) est réglé — le seul obstacle restant est la forme de l'endpoint. | Endpoint tenant-wide. | Mobile | Basse |
+| 6 | *(transverse)* Double autorité JWT | ✅ Réglé (2026-08-10) | `service-exe`/`service-not`/`service-mkt` valident les JWT signés par `service-ida` ; le gateway signe les siens avec son propre secret. | Fait : le gateway retransmet le JWT brut de `service-ida` (`Actor.delegationToken` → claim `idaToken` → `AuthenticatedActor.delegationToken()`) — cf. [ADR 0012](adr/0012-delegation-token-service-ida.md). | Web | — |
 | 7 | `MockIdaKycAdapter` (décisions KYC admin) | 🔴 Bloqué | `service-ida` n'a aucun endpoint de décision KYC admin — auto-complétion de profil seulement, `NIVEAU_2` explicitement hors périmètre actuel. | Endpoint `POST` de décision KYC réservé à un rôle admin, idempotent (le gateway l'exige déjà). | Mobile | Basse |
 | 8 | `MockCapAdapter` (capacités transporteur) | 🔴 Bloqué (mieux qu'avant) | `service-cap` a désormais un vrai code (`backend-stevetelecom`, intégré 2026-08-09) : entité, décrément atomique, endpoint REST — mais **aucun test**, et pas de sécurité (pas de JWT). | Ajouter au moins un test sur le décrément concurrent avant de brancher le gateway dessus ; confirmer que l'absence d'auth est un choix Phase 1 assumé. | Mobile | Basse (le service progresse, la connexion gateway reste à faire) |
 

@@ -36,11 +36,17 @@ public class JwtService {
 
     public String issue(Actor actor) {
         Instant now = Instant.now();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(actor.actorId())
                 .claim("phone", actor.phone())
                 .claim("role", actor.role().name())
-                .claim("tenantId", actor.tenantId())
+                .claim("tenantId", actor.tenantId());
+        // Retransmis tel quel, jamais régénéré : seul service-ida sait ce qui doit
+        // s'y trouver pour que service-exe/service-not/service-mkt le valident.
+        if (actor.delegationToken() != null) {
+            builder.claim("idaToken", actor.delegationToken());
+        }
+        return builder
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plus(validity)))
                 .signWith(signingKey)
@@ -63,5 +69,10 @@ public class JwtService {
 
     public static Role roleOf(Claims claims) {
         return Role.valueOf(claims.get("role", String.class));
+    }
+
+    /** Token service-ida retransmis, ou null si l'acteur ne s'est pas authentifié via service-ida. */
+    public static String delegationTokenOf(Claims claims) {
+        return claims.get("idaToken", String.class);
     }
 }
