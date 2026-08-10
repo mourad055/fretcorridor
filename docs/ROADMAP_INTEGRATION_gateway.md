@@ -10,7 +10,7 @@ Pour l'historique de l'analyse de fusion (conflits Git, divergence des deux bran
 
 ## Constat
 
-8 adaptateurs `Mock*` existent dans `backend/gateway`. Après exploration détaillée du code réel de `origin/dev` (pas seulement de ses contrats OpenAPI), **3 sont désormais réellement branchés** : l'authentification (`service-ida`), les axes Bureau (`service-geo`, décision mono-tenant Phase 1 assumée — cf. Phase 1bis) et les missions appariées (`service-bur`, consommation Kafka de `AffectationConfirmee` — cf. Phase 1quater). Le blocage transverse n°6 (double autorité JWT) est réglé (Phase 1ter), ce qui débloque partiellement #3 et #5. Les autres restent bloqués par une absence réelle côté service cible — pas par un problème côté gateway.
+8 adaptateurs `Mock*` existent dans `backend/gateway`. Après exploration détaillée du code réel de `origin/dev` (pas seulement de ses contrats OpenAPI), **4 sont désormais réellement branchés** : l'authentification (`service-ida`), les axes Bureau (`service-geo`, décision mono-tenant Phase 1 assumée — cf. Phase 1bis), les missions appariées (`service-bur`, consommation Kafka de `AffectationConfirmee` — cf. Phase 1quater) et les positions véhicules (`service-bur`, consommation Kafka de `position-eta` — cf. Phase 1quinquies). Le blocage transverse n°6 (double autorité JWT) est réglé (Phase 1ter), ce qui débloque partiellement #3 et #5. Les autres restent bloqués par une absence réelle côté service cible — pas par un problème côté gateway.
 
 ## Phase 1 — Fait : authentification réelle (`service-ida`)
 
@@ -63,7 +63,20 @@ Détails :
 
 Vérification : suite `service-bur` — 18/18 verts (nouveau, premier test `@SpringBootTest` de ce service à cohabiter avec `@EnableKafka` — confirmé sans bloquer le démarrage du contexte même sans broker Kafka joignable). Suite gateway complète — 102/102 verts.
 
-## Phase 2 — Suivi des 4 mocks restants
+## Phase 1quinquies — Fait : positions véhicules (`service-bur`), consommation Kafka (`position-eta`)
+
+Décision d'équipe le 2026-08-10 (cf. [ADR 0014](adr/0014-bur-consomme-position-eta.md)) : `service-trk` n'expose **aucune API REST** — le patron Kafka de la Phase 1quater (OPT) s'applique tel quel, sans dépendre de Moteur.
+
+Détails :
+- **Nouveau côté `service-bur`** : `PositionEtaListener` (Kafka, 2ᵉ `ConsumerFactory`/`ListenerContainerFactory` ajoutée à `KafkaConsumerConfig`) matérialise un modèle de lecture (`PositionVehicule`), exposé via `GET /api/v1/bur/positions?tenantId=`.
+- **Persistance différente de la Phase 1quater, volontairement** : `PositionRepositoryAdapter.enregistrerSiPlusRecente` fait un **upsert conditionnel** (une position par `missionId`, remplacée seulement si le nouvel horodatage est strictement postérieur), pas un append-only comme `MissionAppparieeEntity`. Une mission n'a qu'une seule position "courante" ; sans cette garde, un message Kafka en retard ou rejoué pourrait afficher une position obsolète comme si elle était actuelle (RG-043). Testé explicitement (`PositionRepositoryAdapterIntegrationTest.ignores_a_position_older_than_the_one_already_stored_late_kafka_message`).
+- **Côté gateway** : `MockTrkAdapter` remplacé par `ServiceBurPositionAdapter`, qui appelle `service-bur` (jamais `service-trk`) — `MockTrkAdapter` déplacé en fixture de test (`src/test/java`, `@Primary`, même mécanisme que GEO/OPT/auth).
+- **Limite acceptée et documentée** (Javadoc + ADR 0014) : `vehiculeLabel` affiche l'id brut (`vehiculeId`, l'événement ne porte pas de libellé — résoudre exigerait un appel à un référentiel véhicules, hors périmètre ici).
+- Tenant stampé par configuration (`fretcorridor.bur.tenant-id-phase1`, réutilisée telle quelle), même raisonnement mono-tenant Phase 1 que GEO/OPT.
+
+Vérification : suite `service-bur` — 26/26 verts (18 précédents + 8 nouveaux : `PositionServiceTest`, `PositionEtaListenerTest`, `PositionControllerTest` ×2, `PositionRepositoryAdapterIntegrationTest` ×4). Suite gateway complète — 104/104 verts (102 précédents + `ServiceBurPositionAdapterTest` ×2).
+
+## Phase 2 — Suivi des mocks restants
 
 Statut tenu à jour au fil des sprints. Chaque ligne : constat exact sur `dev`, ce qu'il faut construire, porteur, priorité.
 
@@ -71,13 +84,13 @@ Statut tenu à jour au fil des sprints. Chaque ligne : constat exact sur `dev`, 
 |---|---|---|---|---|---|---|
 | 2 | `MockOptAdapter` (missions appariées, incl. filtre/détail/export EF-BUR-02) | 🟢 Branché (limité) | `ServiceBurMissionAppparieeAdapter` (Phase 1quater) consomme `AffectationConfirmee` via `service-bur`. Fonctionne pour les cas nominaux, mais `transporteurNom` = id brut, et `statut` toujours `CONFIRMEE` (aucun événement de transition n'existe encore). | Un événement de transition de statut côté `service-exe` (EN_COURS/CLOTUREE), et une résolution du nom transporteur (appel `service-ida` ou événement enrichi). | Mobile (événements), Web (consommation) | Moyenne — le nominal fonctionne, l'enrichissement reste à faire |
 | 3 | `MockExeAdapter` (chronologie mission, missions transporteur) | 🟡 Partiellement débloqué | `service-exe` n'a qu'un lookup par `demandeId` (pas `missionId`, pas de liste par tenant/transporteur). Le mécanisme JWT (point n°6, ex-bloquant) est réglé — le seul obstacle restant est l'absence d'endpoint de liste. | Endpoint de liste tenant-scopée + liste par transporteur. | Mobile | Moyenne |
-| 4 | `MockTrkAdapter` (positions) | 🔴 Bloqué | `service-trk` n'a **aucune API REST** — tout événementiel (Kafka `position-eta`/`alerte-ecart`). | Un consommateur Kafka côté `service-bur`, même schéma que la Phase 1quater pour OPT (`position-eta`/`alerte-ecart` existent déjà comme contrats). | Web (consommation, comme OPT) | Moyenne |
+| 4 | `MockTrkAdapter` (positions) | 🟢 Branché (limité) | `ServiceBurPositionAdapter` (Phase 1quinquies) consomme `position-eta` via `service-bur`. Fonctionne pour le cas nominal (latitude/longitude/horodatage réels), mais `vehiculeLabel` = id brut. | Une résolution du libellé véhicule (appel à un référentiel véhicules ou événement enrichi). `alerte-ecart` reste non consommé (hors périmètre de cette passe). | Web (consommation), Moteur (si événement enrichi) | Basse — le nominal fonctionne, l'enrichissement reste à faire |
 | 5 | `MockNotAdapter` (notifications Bureau) | 🟡 Partiellement débloqué | `GET /api/notifications` scope "mes notifications" (acteur du JWT), pas tenant-wide. Le mécanisme JWT (point n°6, ex-bloquant) est réglé — le seul obstacle restant est la forme de l'endpoint. | Endpoint tenant-wide. | Mobile | Basse |
 | 6 | *(transverse)* Double autorité JWT | ✅ Réglé (2026-08-10) | `service-exe`/`service-not`/`service-mkt` valident les JWT signés par `service-ida` ; le gateway signe les siens avec son propre secret. | Fait : le gateway retransmet le JWT brut de `service-ida` (`Actor.delegationToken` → claim `idaToken` → `AuthenticatedActor.delegationToken()`) — cf. [ADR 0012](adr/0012-delegation-token-service-ida.md). | Web | — |
 | 7 | `MockIdaKycAdapter` (décisions KYC admin) | 🔴 Bloqué | `service-ida` n'a aucun endpoint de décision KYC admin — auto-complétion de profil seulement, `NIVEAU_2` explicitement hors périmètre actuel. | Endpoint `POST` de décision KYC réservé à un rôle admin, idempotent (le gateway l'exige déjà). | Mobile | Basse |
 | 8 | `MockCapAdapter` (capacités transporteur) | 🔴 Bloqué (mieux qu'avant) | `service-cap` a désormais un vrai code (`backend-stevetelecom`, intégré 2026-08-09) : entité, décrément atomique, endpoint REST — mais **aucun test**, et pas de sécurité (pas de JWT). | Ajouter au moins un test sur le décrément concurrent avant de brancher le gateway dessus ; confirmer que l'absence d'auth est un choix Phase 1 assumé. | Mobile | Basse (le service progresse, la connexion gateway reste à faire) |
 
-**Constat transverse (item #4/TRK)** : la Phase 1quater (OPT→BUR) est un patron réutilisable — `service-trk` publie déjà `position-eta`/`alerte-ecart` (contrats existants dans `shared-contracts/asyncapi/events/`), donc le même schéma (listener Kafka + modèle de lecture + endpoint REST dans `service-bur`) s'applique probablement sans dépendre de Moteur non plus. Non fait ici, faute de temps — bon candidat pour la prochaine itération.
+**Constat transverse** : `service-trk` publie aussi `alerte-ecart` (contrat existant dans `shared-contracts/asyncapi/events/`), non consommé ici — les positions (`position-eta`) couvraient le besoin immédiat de supervision (carte Bureau). Un futur écran d'alertes suivrait le même patron (nouveau listener + modèle de lecture + endpoint dans `service-bur`), bon candidat pour une prochaine itération.
 
 **Suivi Phase 3 (à ne pas perdre)** : quand `service-geo` accueillera un second tenant institutionnel, `RealGeoAdapterTest` (nouveau) est conçu pour casser — c'est le signal explicite qu'il faut exiger un vrai filtre serveur côté `service-geo` et migrer `AxeControllerIsolationTest` pour vérifier `RealGeoAdapter` directement (cf. [ADR 0011](adr/0011-geo-mono-tenant-phase-1.md)).
 
