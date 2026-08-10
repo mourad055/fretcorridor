@@ -21,5 +21,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fretcorridor
       SPRING_DATASOURCE_USERNAME: fretcorridor
       SPRING_DATASOURCE_PASSWORD: fretcorridor
+      # Consomme AffectationConfirmee (service-opt, Moteur) pour matérialiser
+      # la vue Bureau des missions appariées — cf. AffectationConfirmeeListener.
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     ports:
       - "8083:8083"

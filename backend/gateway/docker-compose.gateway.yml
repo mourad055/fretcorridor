@@ -33,5 +33,9 @@ services:
       # implemente - resout par nom de conteneur si son propre fichier
       # compose fait partie de la commande.
       FRETCORRIDOR_SERVICE_GEO_URL: http://service-geo:8084
+      # service-bur (Web) matérialise les missions appariées depuis Kafka —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande.
+      FRETCORRIDOR_SERVICE_BUR_URL: http://service-bur:8083
     ports:
       - "8082:8082"
