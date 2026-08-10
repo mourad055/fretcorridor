@@ -4,6 +4,8 @@ import com.fretcorridor.bur.domain.AgregationMissionsService;
 import com.fretcorridor.bur.domain.MissionAppparieeRepositoryPort;
 import com.fretcorridor.bur.domain.MissionAppparieeService;
 import com.fretcorridor.bur.domain.MissionRepositoryPort;
+import com.fretcorridor.bur.domain.PositionRepositoryPort;
+import com.fretcorridor.bur.domain.PositionService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,5 +25,10 @@ public class DomainConfig {
     @Bean
     public MissionAppparieeService missionAppparieeService(MissionAppparieeRepositoryPort repository) {
         return new MissionAppparieeService(repository);
+    }
+
+    @Bean
+    public PositionService positionService(PositionRepositoryPort repository) {
+        return new PositionService(repository);
     }
 }
