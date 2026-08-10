@@ -14,12 +14,18 @@ spring:
       # versionnées (Flyway/Liquibase) sont attendues avant la mise en production.
       ddl-auto: update
     open-in-view: false
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 fretcorridor:
   bur:
     # EF-BUR-04 (anticipé) : seuil minimal d'effectif avant restitution d'une
     # statistique agrégée. Valeur de développement volontairement basse.
     seuil-agregation: ${FRETCORRIDOR_BUR_SEUIL_AGREGATION:3}
+    # Phase 1 mono-tenant assumé (même raisonnement que l'ADR 0011, GEO) :
+    # AffectationConfirmee ne porte pas de tenant, on le stampe ici à
+    # l'ingestion. À remplacer par une vraie résolution axe->tenant en Phase 3.
+    tenant-id-phase1: ${FRETCORRIDOR_BUR_TENANT_ID_PHASE1:tenant-bgft-douala}
 
 management:
   endpoints:

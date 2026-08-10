@@ -33,6 +33,11 @@ fretcorridor:
     # service-geo (Moteur, Sprint 3, @stevetelecom) est réellement implémenté
     # depuis ce jour — RealGeoAdapter remplace MockGeoAdapter.
     base-url: ${FRETCORRIDOR_SERVICE_GEO_URL:http://localhost:8084}
+  service-bur:
+    # service-bur (Web) matérialise les missions appariées depuis Kafka —
+    # ServiceBurMissionAppparieeAdapter remplace MockOptAdapter (jamais
+    # d'appel direct à service-opt, cf. docs/ROADMAP_INTEGRATION_gateway.md).
+    base-url: ${FRETCORRIDOR_SERVICE_BUR_URL:http://localhost:8083}
 
 management:
   endpoints:

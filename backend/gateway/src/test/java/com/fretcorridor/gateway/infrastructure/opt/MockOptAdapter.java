@@ -3,6 +3,7 @@ package com.fretcorridor.gateway.infrastructure.opt;
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
 import com.fretcorridor.gateway.domain.opt.OptPort;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -11,12 +12,17 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
- * TODO(moteur): remplacer par l'appel réel à service-opt une fois ce service
- * livré (Sprint 5 Moteur, @stevetelecom, issue #21). Deux tenants distincts sont
- * amorcés pour rester cohérent avec l'isolation déjà prouvée sur les axes
- * (Sprint 3, ENF-MUL-01).
+ * Fixture de test uniquement — vit dans src/test/java, jamais sur le
+ * classpath de production (même mécanisme que RealGeoAdapter/MockGeoAdapter
+ * et ServiceIdaAuthenticationAdapter/MockIdaAuthenticationAdapter, cf.
+ * docs/ROADMAP_INTEGRATION_gateway.md). Remplacée en production par
+ * ServiceBurMissionAppparieeAdapter, qui ne connaît qu'un seul statut
+ * (CONFIRMEE) — ce mock garde les 3 statuts et 2 tenants historiques pour
+ * que les suites de test existantes (filtre par statut, isolation) n'aient
+ * rien à changer.
  */
 @Component
+@Primary
 public class MockOptAdapter implements OptPort {
 
     private final List<MissionAppariee> missions = List.of(
