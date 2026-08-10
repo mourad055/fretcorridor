@@ -6,8 +6,9 @@ info:
     FE-TRK-04 / RG-043 (Sprint 6) : un Bureau voit les positions de son propre
     tenant, toujours accompagnées de leur âge en secondes — jamais une position
     sans âge exploitable. Le tenantId est résolu exclusivement depuis le JWT
-    (ENF-MUL-01). Consomme aujourd'hui un adaptateur mock côté gateway, en
-    attendant service-trk (Moteur) — TODO(moteur).
+    (ENF-MUL-01). Côté gateway, alimenté par service-bur (jamais directement
+    service-trk, qui n'expose aucune API REST) — service-bur consomme
+    l'événement Kafka position-eta et matérialise cette vue (cf. ADR 0014).
 servers:
   - url: http://localhost:8082
 
