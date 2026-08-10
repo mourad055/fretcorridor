@@ -49,7 +49,7 @@ class ServiceIdaAuthenticationAdapterTest {
                         """));
 
         StepVerifier.create(adapter.authenticate("+237600000001", "1234"))
-                .expectNext(new Actor("11111111-1111-1111-1111-111111111111", "+237600000001", Role.BUREAU, "tenant-bgft-douala"))
+                .expectNext(new Actor("11111111-1111-1111-1111-111111111111", "+237600000001", Role.BUREAU, "tenant-bgft-douala", "t"))
                 .verifyComplete();
     }
 

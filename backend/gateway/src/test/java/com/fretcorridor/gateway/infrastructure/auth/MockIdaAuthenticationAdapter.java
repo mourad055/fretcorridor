@@ -25,14 +25,17 @@ public class MockIdaAuthenticationAdapter implements AuthenticationPort {
 
     private static final String DEV_CODE = "123456";
 
+    /** Jeton de délégation factice — non vérifié par les tests gateway, juste présent pour exercer le passe-plat JwtService. */
+    private static final String JETON_IDA_FACTICE = "mock-ida-delegation-token";
+
     private final Map<String, Actor> actorsByPhone = Map.of(
-            "+237600000001", new Actor("actor-bureau-1", "+237600000001", Role.BUREAU, "tenant-bgft-douala"),
-            "+237600000002", new Actor("actor-transporteur-1", "+237600000002", Role.TRANSPORTEUR, "tenant-bgft-douala"),
-            "+237600000003", new Actor("actor-admin-1", "+237600000003", Role.ADMIN, "tenant-flysoft"),
+            "+237600000001", new Actor("actor-bureau-1", "+237600000001", Role.BUREAU, "tenant-bgft-douala", JETON_IDA_FACTICE),
+            "+237600000002", new Actor("actor-transporteur-1", "+237600000002", Role.TRANSPORTEUR, "tenant-bgft-douala", JETON_IDA_FACTICE),
+            "+237600000003", new Actor("actor-admin-1", "+237600000003", Role.ADMIN, "tenant-flysoft", JETON_IDA_FACTICE),
             // Second tenant Bureau, pour les tests et démonstrations d'isolation multi-tenant (ENF-MUL-01).
-            "+235600000004", new Actor("actor-bureau-2", "+235600000004", Role.BUREAU, "tenant-bnft-ndjamena"),
+            "+235600000004", new Actor("actor-bureau-2", "+235600000004", Role.BUREAU, "tenant-bnft-ndjamena", JETON_IDA_FACTICE),
             // Second Transporteur du même tenant, pour les tests d'isolation par acteur (PRD §5.3).
-            "+237600000005", new Actor("actor-transporteur-2", "+237600000005", Role.TRANSPORTEUR, "tenant-bgft-douala")
+            "+237600000005", new Actor("actor-transporteur-2", "+237600000005", Role.TRANSPORTEUR, "tenant-bgft-douala", JETON_IDA_FACTICE)
     );
 
     @Override

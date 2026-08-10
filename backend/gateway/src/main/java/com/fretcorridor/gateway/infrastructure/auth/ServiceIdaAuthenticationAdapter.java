@@ -20,10 +20,14 @@ import java.util.Optional;
 
 /**
  * Appelle service-ida (Mobile, port 8081) pour valider les identifiants.
- * service-ida signe son propre JWT avec son propre secret — jamais utilisé
- * ici : la gateway ne s'en sert que pour authentifier, puis émet son propre
- * JWT via JwtService, exactement comme avec le mock qu'il remplace (cf.
- * AuthController, inchangé).
+ * service-ida signe son propre JWT avec son propre secret — la gateway ne
+ * l'utilise jamais pour ses propres routes (elle émet le sien via
+ * JwtService, exactement comme avec le mock qu'il remplace, cf.
+ * AuthController, inchangé), mais le RETRANSMET dans son propre JWT (claim
+ * "idaToken", cf. Actor.delegationToken/JwtService) : c'est le seul moyen
+ * pour le gateway d'appeler pour le compte de l'acteur un service Mobile
+ * qui valide les JWT service-ida (service-exe/service-not/service-mkt) —
+ * double autorité JWT, cf. docs/adr et ROADMAP_INTEGRATION_gateway.md.
  *
  * service-ida expose téléphone + code PIN, pas téléphone + code à usage
  * unique (OTP) comme le voudrait EF-IDA-01 du CDC — écart connu, documenté
@@ -79,7 +83,7 @@ public class ServiceIdaAuthenticationAdapter implements AuthenticationPort {
                 .filter(ROLES_GATEWAY_CONNUS::contains)
                 .findFirst()
                 .map(this::mapperRole)
-                .map(role -> new Actor(response.acteurId(), phone, role, response.tenantId()));
+                .map(role -> new Actor(response.acteurId(), phone, role, response.tenantId(), response.accessToken()));
     }
 
     private Role mapperRole(String role) {
