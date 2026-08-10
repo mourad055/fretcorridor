@@ -131,5 +131,5 @@ class DemandeNotifier extends StateNotifier<DemandeState> {
 }
 
 final demandeProvider = StateNotifierProvider<DemandeNotifier, DemandeState>((ref) {
-  return DemandeNotifier(ref.watch(dioProvider));
+  return DemandeNotifier(ref.watch(mktDioProvider));
 });

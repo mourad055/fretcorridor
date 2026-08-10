@@ -2,18 +2,39 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// Passe par la gateway (port 8088), pas directement service-ida (8081) —
-// c'est la gateway qui routera vers le bon microservice à mesure que
-// l'app consomme d'autres services (CAP, MKT, etc.)
-const String baseUrl = String.fromEnvironment(
-  'API_BASE',
-  defaultValue: 'http://localhost:8088/api',
+// Il n'existe pas (encore) de gateway unifiée pour l'app Client — celle de
+// backend/gateway ne sert que les rôles Web (BUREAU/TRANSPORTEUR/ADMIN) et
+// n'a aucune route pour le chargeur. Chaque écran appelle donc directement
+// le microservice qui porte réellement son contrat (mêmes DTO, vérifiés) :
+// service-ida (auth, KYC), service-mkt (catalogue, demandes, propositions),
+// service-not (notifications), service-exe (chronologie), service-flt
+// (dernière position). Un --dart-define par service permet de les faire
+// pointer ailleurs qu'en local (cf. scripts/run_dev.sh).
+const String _apiBaseIda = String.fromEnvironment(
+  'API_BASE_IDA',
+  defaultValue: 'http://localhost:8081/api',
+);
+const String _apiBaseMkt = String.fromEnvironment(
+  'API_BASE_MKT',
+  defaultValue: 'http://localhost:8089/api',
+);
+const String _apiBaseNot = String.fromEnvironment(
+  'API_BASE_NOT',
+  defaultValue: 'http://localhost:8094/api',
+);
+const String _apiBaseExe = String.fromEnvironment(
+  'API_BASE_EXE',
+  defaultValue: 'http://localhost:8093/api',
+);
+const String _apiBaseFlt = String.fromEnvironment(
+  'API_BASE_FLT',
+  defaultValue: 'http://localhost:8092/api',
 );
 
 const String keyAccessToken = 'access_token';
 const String keyRefreshToken = 'refresh_token';
 
-final dioProvider = Provider<Dio>((ref) {
+Dio _creerClient(String baseUrl) {
   const storage = FlutterSecureStorage();
   final dio = Dio(BaseOptions(
     baseUrl: baseUrl,
@@ -43,13 +64,15 @@ final dioProvider = Provider<Dio>((ref) {
   ));
 
   return dio;
-});
+}
 
+// Le rafraîchissement de token passe toujours par service-ida (seul
+// émetteur de tokens), jamais par le service qui a renvoyé le 401.
 Future<bool> _refreshToken(FlutterSecureStorage storage) async {
   try {
     final refreshToken = await storage.read(key: keyRefreshToken);
     if (refreshToken == null) return false;
-    final dioRefresh = Dio(BaseOptions(baseUrl: baseUrl));
+    final dioRefresh = Dio(BaseOptions(baseUrl: _apiBaseIda));
     final response = await dioRefresh.post('/auth/refresh', data: {
       'refreshToken': refreshToken,
     });
@@ -62,3 +85,18 @@ Future<bool> _refreshToken(FlutterSecureStorage storage) async {
     return false;
   }
 }
+
+/// service-ida (8081) — auth, KYC.
+final idaDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseIda));
+
+/// service-mkt (8089 hôte / 8082 conteneur) — catalogue, demandes, propositions.
+final mktDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseMkt));
+
+/// service-not (8094) — notifications.
+final notDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseNot));
+
+/// service-exe (8093) — chronologie de mission.
+final exeDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseExe));
+
+/// service-flt (8092 hôte / 8083 conteneur) — dernière position connue.
+final fltDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseFlt));
