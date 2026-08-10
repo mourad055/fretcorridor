@@ -125,5 +125,5 @@ class KycNotifier extends StateNotifier<KycState> {
 }
 
 final kycProvider = StateNotifierProvider<KycNotifier, KycState>((ref) {
-  return KycNotifier(ref.watch(dioProvider));
+  return KycNotifier(ref.watch(idaDioProvider));
 });
