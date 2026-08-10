@@ -11,6 +11,16 @@ import java.util.Map;
 /**
  * ENF-MUL-01 : un Bureau A ne doit jamais voir les axes du tenant du Bureau B.
  * Critère de sortie explicite du Sprint 3 (PRD §9).
+ *
+ * Vérifie le CONTRAT du port GeoPort via la fixture de test MockGeoAdapter
+ * (@Primary, src/test/java) — pas RealGeoAdapter, l'implémentation
+ * effectivement active en production. RealGeoAdapter ne tient pas encore
+ * cette garantie lui-même en Phase 1 : décision d'équipe assumée (GEO
+ * mono-tenant, un seul axe réel — Feuille de route §1.1), documentée dans
+ * docs/adr et caractérisée explicitement par RealGeoAdapterTest. Ce test-ci
+ * reste la garde-fou du jour où GEO passera multi-tenant (Phase 3) : il
+ * doit continuer à passer contre la fixture, et RealGeoAdapterTest devra
+ * alors être mis à jour pour prouver que RealGeoAdapter filtre pour de vrai.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient

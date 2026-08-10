@@ -3,7 +3,6 @@ package com.fretcorridor.gateway.infrastructure.geo;
 import com.fretcorridor.gateway.domain.geo.Axe;
 import com.fretcorridor.gateway.domain.geo.GeoPort;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -12,20 +11,21 @@ import reactor.core.publisher.Flux;
  * Appelle le service reel service-geo (Moteur, Sprint 3 livre par
  * @stevetelecom, issue #21). Meme pattern que ServicePayWebClientAdapter.
  *
- * NON ACTIF PAR DEFAUT (profil "real-geo" explicite requis) : service-geo
- * n'a pas encore de notion de tenant active en Phase 1 (colonne tenant_id
- * ajoutee, cf migration V4, mais un seul tenant reel existe - BGFT). Cet
- * adaptateur COLLE le tenantId du JWT sur chaque axe retourne par service-geo
- * (qui n'en filtre aucun), ce qui casse la garantie ENF-MUL-01 que
- * AxeControllerIsolationTest verifie dès qu'un deuxieme tenant existe. Tant
- * que l'equipe n'a pas tranche entre "axes mono-tenant assumes en Phase 1"
- * et "isolation reelle exigee des maintenant" (cf.
- * docs/ANALYSE_backend-stevetelecom.md §2), MockGeoAdapter reste
- * l'implementation active par defaut. Activer avec
- * -Dspring.profiles.active=real-geo une fois la decision prise.
+ * Implementation active par defaut (production/dev) — decision d'equipe
+ * 2026-08-10 (docs/adr, ADR mono-tenant GEO) : la Feuille de route V4
+ * §1.1 scope la Phase 1 a un seul axe/tenant reel (BGFT), donc l'absence
+ * de filtrage serveur cote service-geo n'a pas de consequence en
+ * production tant que ce perimetre tient. Cet adaptateur COLLE le
+ * tenantId du JWT sur chaque axe retourne par service-geo (qui n'en
+ * filtre aucun lui-meme) : ce n'est PAS une garantie d'isolation
+ * ENF-MUL-01 reelle, seulement une absence de risque tant qu'un seul
+ * tenant existe. Des qu'un deuxieme tenant institutionnel rejoint GEO
+ * (Phase 3, Plan d'Execution S18), service-geo doit exposer un vrai
+ * filtre serveur (ex. GET /api/geo/axes?tenantId=) avant que ce
+ * comportement ne redevienne sûr — cf. AxeControllerIsolationTest pour le
+ * detail de cette limite et son suivi.
  */
 @Component
-@Profile("real-geo")
 public class RealGeoAdapter implements GeoPort {
 
     private final WebClient webClient;
