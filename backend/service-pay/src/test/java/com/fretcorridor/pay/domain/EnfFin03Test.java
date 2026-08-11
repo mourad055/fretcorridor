@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EnfFin03Test {
 
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
-    private final GrandLivreService grandLivreService = new GrandLivreService(grandLivrePort);
+    private final GrandLivreService grandLivreService = new GrandLivreService(grandLivrePort, new FakeGarantiePort());
 
     @Test
     void raises_no_alert_when_the_provider_statement_matches_the_local_ledger() {

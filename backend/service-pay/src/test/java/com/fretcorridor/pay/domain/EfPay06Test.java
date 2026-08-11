@@ -14,7 +14,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EfPay06Test {
 
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
-    private final GrandLivreService service = new GrandLivreService(grandLivrePort);
+    private final FakeGarantiePort garantiePort = new FakeGarantiePort();
+    private final GrandLivreService service = new GrandLivreService(grandLivrePort, garantiePort);
 
     @Test
     void records_the_mode_de_paiement_chosen_for_an_encaissement() {
@@ -32,5 +33,42 @@ class EfPay06Test {
                 "tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("90"), "ref-rev");
 
         assertThat(reversement.modePaiement()).isNull();
+    }
+
+    /**
+     * EF-PAY-06 (terme contractuel), CDC §7.6 UC-PAY-01 A1 : une garantie
+     * tierce active couvre le même rôle qu'un encaissement réel pour RG-075
+     * — le transporteur est reversé sans attendre l'encaissement réel, le
+     * risque de crédit restant porté par le garant.
+     */
+    @Test
+    void a_reversement_is_allowed_against_an_active_garantie_with_no_real_encaissement_at_all() {
+        garantiePort.enregistrer(new Garantie("g-1", "tenant-1", "mission-1", "garant-bnp", new BigDecimal("100"), "ref-garantie-1", java.time.Instant.now()));
+
+        EcritureMiroir reversement = service.enregistrerReversement(
+                "tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("100"), "ref-rev");
+
+        assertThat(reversement.nature()).isEqualTo(NatureEcriture.REVERSEMENT);
+        assertThat(reversement.montant()).isEqualByComparingTo("100");
+    }
+
+    @Test
+    void refuses_a_reversement_exceeding_the_garantie_when_no_encaissement_backs_the_rest() {
+        garantiePort.enregistrer(new Garantie("g-1", "tenant-1", "mission-1", "garant-bnp", new BigDecimal("100"), "ref-garantie-1", java.time.Instant.now()));
+
+        assertThat(org.assertj.core.api.Assertions.catchThrowable(() ->
+                        service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("150"), "ref-rev")))
+                .isInstanceOf(ReversementSansEncaissementException.class);
+    }
+
+    @Test
+    void a_real_encaissement_and_a_garantie_pool_together_as_available_funds() {
+        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("50"), "ref-enc", ModePaiement.VIREMENT);
+        garantiePort.enregistrer(new Garantie("g-1", "tenant-1", "mission-1", "garant-bnp", new BigDecimal("50"), "ref-garantie-1", java.time.Instant.now()));
+
+        EcritureMiroir reversement = service.enregistrerReversement(
+                "tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("100"), "ref-rev");
+
+        assertThat(reversement.montant()).isEqualByComparingTo("100");
     }
 }
