@@ -73,11 +73,25 @@ class ServiceIdaAuthenticationAdapterTest {
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
                 .setBody("""
-                        {"accessToken":"t","refreshToken":"r","acteurId":"id-1","roles":["CHAUFFEUR","TRANSPORTEUR"],"tenantId":"tenant-bgft-douala"}
+                        {"accessToken":"t","refreshToken":"r","acteurId":"id-1","roles":["ROLE_INCONNU","TRANSPORTEUR"],"tenantId":"tenant-bgft-douala"}
                         """));
 
         StepVerifier.create(adapter.authenticate("+237600000002", "1234"))
                 .expectNextMatches(actor -> actor.role() == Role.TRANSPORTEUR)
+                .verifyComplete();
+    }
+
+    @Test
+    void maps_a_chauffeur_role_to_the_gateway_chauffeur_role() {
+        serviceIda.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {"accessToken":"t","refreshToken":"r","acteurId":"id-1","roles":["CHAUFFEUR"],"tenantId":"tenant-bgft-douala"}
+                        """));
+
+        StepVerifier.create(adapter.authenticate("+237600000009", "1234"))
+                .expectNextMatches(actor -> actor.role() == Role.CHAUFFEUR)
                 .verifyComplete();
     }
 
@@ -87,10 +101,10 @@ class ServiceIdaAuthenticationAdapterTest {
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
                 .setBody("""
-                        {"accessToken":"t","refreshToken":"r","acteurId":"id-1","roles":["CHAUFFEUR"],"tenantId":"tenant-bgft-douala"}
+                        {"accessToken":"t","refreshToken":"r","acteurId":"id-1","roles":["ROLE_INCONNU"],"tenantId":"tenant-bgft-douala"}
                         """));
 
-        StepVerifier.create(adapter.authenticate("+237600000009", "1234"))
+        StepVerifier.create(adapter.authenticate("+237600000010", "1234"))
                 .expectError(InvalidCredentialsException.class)
                 .verify();
     }
