@@ -17,7 +17,7 @@ class EnfFin03Test {
 
     @Test
     void raises_no_alert_when_the_provider_statement_matches_the_local_ledger() {
-        grandLivreService.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        grandLivreService.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
         var prestataire = fakePrestataire("mission-1", new BigDecimal("100"));
         var reconciliation = new ReconciliationService(grandLivrePort, prestataire);
 
@@ -29,7 +29,7 @@ class EnfFin03Test {
 
     @Test
     void raises_a_blocking_alert_and_isolates_the_entries_when_an_ecart_is_injected() {
-        grandLivreService.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        grandLivreService.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
         // Écart injecté : le prestataire annonce un montant différent du grand livre local.
         var prestataire = fakePrestataire("mission-1", new BigDecimal("85"));
         var reconciliation = new ReconciliationService(grandLivrePort, prestataire);

@@ -36,7 +36,7 @@ class GrandLivrePersistenceIntegrationTest {
     void an_encaissement_is_persisted_and_readable_back() {
         String missionId = "mission-test-" + System.nanoTime();
 
-        grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("500"), "ref-prestataire-1");
+        grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("500"), "ref-prestataire-1", ModePaiement.VIREMENT);
 
         EcritureMiroir reversement = grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("450"), "ref-prestataire-2");
 
@@ -45,9 +45,21 @@ class GrandLivrePersistenceIntegrationTest {
     }
 
     @Test
+    void le_mode_de_paiement_de_l_encaissement_survit_a_un_aller_retour_base_reelle() {
+        String missionId = "mission-test-" + System.nanoTime();
+
+        grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("500"), "ref-prestataire-1", ModePaiement.MONNAIE_ELECTRONIQUE);
+
+        EcritureMiroir encaissement = grandLivreService.ecrituresDuTenant("tenant-1").stream()
+                .filter(e -> e.missionId().equals(missionId))
+                .findFirst().orElseThrow();
+        assertThat(encaissement.modePaiement()).isEqualTo(ModePaiement.MONNAIE_ELECTRONIQUE);
+    }
+
+    @Test
     void enf_fin_02_holds_across_a_real_database_round_trip() {
         String missionId = "mission-test-" + System.nanoTime();
-        grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("100"), "ref-1");
+        grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("100"), "ref-1", ModePaiement.VIREMENT);
 
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                         grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("200"), "ref-2"))

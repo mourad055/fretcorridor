@@ -39,7 +39,7 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1"}
+                                {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT"}
                                 """.formatted(tenantId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nature").value("ENCAISSEMENT"));
@@ -57,7 +57,7 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tenantId": "tenant-1", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1"}
+                                {"tenantId": "tenant-1", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT"}
                                 """))
                 .andExpect(status().isConflict());
     }
@@ -70,7 +70,7 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionA));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionA)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-A\", \"montant\": 100, \"referencePrestataire\": \"ref-a\"}"));
+                .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-A\", \"montant\": 100, \"referencePrestataire\": \"ref-a\", \"modePaiement\": \"VIREMENT\"}"));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionA)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-A\", \"montant\": 90, \"referencePrestataire\": \"ref-a-rev\"}"))
@@ -79,7 +79,7 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionB));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionB)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-B\", \"montant\": 200, \"referencePrestataire\": \"ref-b\"}"));
+                .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-B\", \"montant\": 200, \"referencePrestataire\": \"ref-b\", \"modePaiement\": \"MONNAIE_ELECTRONIQUE\"}"));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionB)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-B\", \"montant\": 180, \"referencePrestataire\": \"ref-b-rev\"}"))

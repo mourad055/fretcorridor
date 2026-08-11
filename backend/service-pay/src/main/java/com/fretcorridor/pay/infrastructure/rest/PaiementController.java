@@ -48,7 +48,7 @@ public class PaiementController {
     @PostMapping("/missions/{missionId}/cloture")
     public ResponseEntity<EcritureResponse> cloture(@PathVariable String missionId, @Valid @RequestBody ClotureMissionRequest request) {
         EcritureMiroir encaissement = grandLivreService.enregistrerEncaissement(
-                request.tenantId(), missionId, request.montant(), request.referencePrestataire());
+                request.tenantId(), missionId, request.montant(), request.referencePrestataire(), request.modePaiement());
         prestataire.confirmer(missionId, request.montant());
         sequestreService.liberer(missionId);
         return ResponseEntity.ok(EcritureResponse.from(encaissement));
