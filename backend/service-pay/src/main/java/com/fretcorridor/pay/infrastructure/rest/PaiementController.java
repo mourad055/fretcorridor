@@ -4,7 +4,9 @@ import com.fretcorridor.pay.domain.*;
 import com.fretcorridor.pay.infrastructure.prestataire.MockPrestatairePaiementAdapter;
 import com.fretcorridor.pay.infrastructure.rest.dto.ClotureMissionRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.EcritureResponse;
+import com.fretcorridor.pay.infrastructure.rest.dto.GarantieResponse;
 import com.fretcorridor.pay.infrastructure.rest.dto.ReversementRequest;
+import com.fretcorridor.pay.infrastructure.rest.dto.SouscrireGarantieRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,17 +26,20 @@ public class PaiementController {
 
     private final GrandLivreService grandLivreService;
     private final SequestreService sequestreService;
+    private final GarantieService garantieService;
     private final ReconciliationService reconciliationService;
     private final MockPrestatairePaiementAdapter prestataire;
 
     public PaiementController(
             GrandLivreService grandLivreService,
             SequestreService sequestreService,
+            GarantieService garantieService,
             ReconciliationService reconciliationService,
             MockPrestatairePaiementAdapter prestataire
     ) {
         this.grandLivreService = grandLivreService;
         this.sequestreService = sequestreService;
+        this.garantieService = garantieService;
         this.reconciliationService = reconciliationService;
         this.prestataire = prestataire;
     }
@@ -52,6 +57,13 @@ public class PaiementController {
         prestataire.confirmer(missionId, request.montant());
         sequestreService.liberer(missionId);
         return ResponseEntity.ok(EcritureResponse.from(encaissement));
+    }
+
+    /** EF-PAY-06 (terme contractuel) : souscrit la garantie tierce qui autorise la mission à être confirmée sans encaissement préalable. */
+    @PostMapping("/missions/{missionId}/garantie")
+    public ResponseEntity<GarantieResponse> souscrireGarantie(@PathVariable String missionId, @Valid @RequestBody SouscrireGarantieRequest request) {
+        Garantie garantie = garantieService.souscrire(request.tenantId(), missionId, request.garantId(), request.montant(), request.referenceGarantie());
+        return ResponseEntity.status(201).body(GarantieResponse.from(garantie));
     }
 
     @PostMapping("/missions/{missionId}/reversement")

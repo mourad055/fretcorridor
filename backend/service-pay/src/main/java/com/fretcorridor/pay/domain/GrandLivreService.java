@@ -12,9 +12,11 @@ import java.util.UUID;
 public class GrandLivreService {
 
     private final GrandLivrePort grandLivrePort;
+    private final GarantiePort garantiePort;
 
-    public GrandLivreService(GrandLivrePort grandLivrePort) {
+    public GrandLivreService(GrandLivrePort grandLivrePort, GarantiePort garantiePort) {
         this.grandLivrePort = grandLivrePort;
+        this.garantiePort = garantiePort;
     }
 
     public EcritureMiroir enregistrerEncaissement(String tenantId, String missionId, BigDecimal montant, String referencePrestataire, ModePaiement modePaiement) {
@@ -27,12 +29,19 @@ public class GrandLivreService {
         return ecriture;
     }
 
-    /** ENF-FIN-02 : refuse tout reversement dont le montant cumulé dépasse l'encaissement validé de la mission. */
+    /**
+     * ENF-FIN-02 : refuse tout reversement dont le montant cumulé dépasse
+     * l'encaissement validé de la mission. EF-PAY-06 (terme contractuel) :
+     * une garantie tierce active couvre le même rôle qu'un encaissement réel
+     * pour cette vérification — RG-075 reste vérifié par construction, le
+     * risque de crédit restant porté par le garant (jamais FretCorridor).
+     */
     public EcritureMiroir enregistrerReversement(String tenantId, String missionId, String transporteurId, BigDecimal montant, String referencePrestataire) {
         BigDecimal totalEncaisse = totalParNature(missionId, NatureEcriture.ENCAISSEMENT);
+        BigDecimal totalGaranti = garantiePort.parMission(missionId).map(Garantie::montant).orElse(BigDecimal.ZERO);
         BigDecimal totalDejaReverse = totalParNature(missionId, NatureEcriture.REVERSEMENT);
 
-        if (totalEncaisse.subtract(totalDejaReverse).compareTo(montant) < 0) {
+        if (totalEncaisse.add(totalGaranti).subtract(totalDejaReverse).compareTo(montant) < 0) {
             throw new ReversementSansEncaissementException(missionId);
         }
 

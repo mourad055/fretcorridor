@@ -1,5 +1,6 @@
 package com.fretcorridor.pay.infrastructure.rest;
 
+import com.fretcorridor.pay.domain.GarantieInvalideException;
 import com.fretcorridor.pay.domain.ReversementSansEncaissementException;
 import com.fretcorridor.pay.domain.SequestreInvalideException;
 import com.fretcorridor.pay.domain.SignatureInvalideException;
@@ -23,6 +24,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleSequestreInvalide(SequestreInvalideException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Transition de séquestre invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(GarantieInvalideException.class)
+    public ProblemDetail handleGarantieInvalide(GarantieInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Souscription de garantie invalide");
         return problem;
     }
 

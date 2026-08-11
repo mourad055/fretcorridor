@@ -32,6 +32,9 @@ class GrandLivrePersistenceIntegrationTest {
     @Autowired
     private SequestreService sequestreService;
 
+    @Autowired
+    private GarantieService garantieService;
+
     @Test
     void an_encaissement_is_persisted_and_readable_back() {
         String missionId = "mission-test-" + System.nanoTime();
@@ -74,5 +77,16 @@ class GrandLivrePersistenceIntegrationTest {
         Sequestre libere = sequestreService.liberer(missionId);
 
         assertThat(libere.etat()).isEqualTo(SequestreEtat.LIBERE);
+    }
+
+    /** EF-PAY-06 (terme contractuel) : le reversement sur garantie tient à travers une vraie base, sans encaissement. */
+    @Test
+    void a_reversement_against_a_persisted_garantie_holds_across_the_real_database() {
+        String missionId = "mission-test-" + System.nanoTime();
+
+        garantieService.souscrire("tenant-1", missionId, "garant-bnp", new BigDecimal("300"), "ref-garantie-1");
+        EcritureMiroir reversement = grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("300"), "ref-rev-terme");
+
+        assertThat(reversement.nature()).isEqualTo(NatureEcriture.REVERSEMENT);
     }
 }

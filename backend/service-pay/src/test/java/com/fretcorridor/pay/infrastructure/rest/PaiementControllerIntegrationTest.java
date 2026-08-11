@@ -90,4 +90,42 @@ class PaiementControllerIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].montant").value(90));
     }
+
+    /** EF-PAY-06 (terme contractuel), CDC UC-PAY-01 A1 : reversement sur garantie, sans aucun encaissement réel. */
+    @Test
+    void a_transporteur_is_reversed_against_a_garantie_with_no_prior_encaissement() throws Exception {
+        String missionId = "mission-terme-" + System.nanoTime();
+        String tenantId = "tenant-terme-" + System.nanoTime();
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/garantie", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "garantId": "garant-bnp", "montant": 300, "referenceGarantie": "ref-garantie-1"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.garantId").value("garant-bnp"));
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 300, "referencePrestataire": "ref-rev-terme"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nature").value("REVERSEMENT"));
+    }
+
+    @Test
+    void souscribing_a_second_garantie_for_the_same_mission_is_rejected() throws Exception {
+        String missionId = "mission-terme-" + System.nanoTime();
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/garantie", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tenantId\": \"tenant-1\", \"garantId\": \"garant-bnp\", \"montant\": 300, \"referenceGarantie\": \"ref-garantie-1\"}"))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/garantie", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"tenantId\": \"tenant-1\", \"garantId\": \"garant-bnp\", \"montant\": 300, \"referenceGarantie\": \"ref-garantie-2\"}"))
+                .andExpect(status().isConflict());
+    }
 }

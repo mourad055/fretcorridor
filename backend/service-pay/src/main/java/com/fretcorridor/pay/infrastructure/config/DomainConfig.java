@@ -8,13 +8,18 @@ import org.springframework.context.annotation.Configuration;
 public class DomainConfig {
 
     @Bean
-    public GrandLivreService grandLivreService(GrandLivrePort grandLivrePort) {
-        return new GrandLivreService(grandLivrePort);
+    public GrandLivreService grandLivreService(GrandLivrePort grandLivrePort, GarantiePort garantiePort) {
+        return new GrandLivreService(grandLivrePort, garantiePort);
     }
 
     @Bean
     public SequestreService sequestreService(SequestrePort sequestrePort) {
         return new SequestreService(sequestrePort);
+    }
+
+    @Bean
+    public GarantieService garantieService(GarantiePort garantiePort) {
+        return new GarantieService(garantiePort);
     }
 
     @Bean
