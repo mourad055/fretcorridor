@@ -38,7 +38,13 @@ import java.util.Optional;
 public class ServiceIdaAuthenticationAdapter implements AuthenticationPort {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(3);
-    private static final List<String> ROLES_GATEWAY_CONNUS = List.of("BUREAU", "TRANSPORTEUR", "ADMINISTRATION");
+    // Doit couvrir tous les RoleActeur de service-ida (cf.
+    // backend/service-ida/.../entity/RoleActeur.java) — un rôle métier valide
+    // absent de cette liste est silencieusement traité comme des identifiants
+    // invalides (cf. versActeur), ce qui bloque le login de l'acteur concerné.
+    private static final List<String> ROLES_GATEWAY_CONNUS = List.of(
+            "BUREAU", "TRANSPORTEUR", "ADMINISTRATION",
+            "CHAUFFEUR", "CHAUFFEUR_PROPRIETAIRE", "AGENT", "CHARGEUR");
 
     private final WebClient webClient;
 
