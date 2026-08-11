@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
+import 'kyc_screen.dart';
 import 'login_screen.dart';
 
 // Preuve que le login fonctionne de bout en bout (gateway -> service-ida) :
@@ -19,6 +20,16 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('FretCorridor'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.badge_outlined, color: AppColors.texteMuet),
+            tooltip: 'Mon profil',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const KycScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout, color: AppColors.texteMuet),
             onPressed: () async {
