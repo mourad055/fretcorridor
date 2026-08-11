@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
+import 'kyc_screen.dart';
 
 // FE-WEB-01/S1 : écran de connexion unique, aucune indication de rôle avant
 // authentification réussie — le rôle (CHAUFFEUR/TRANSPORTEUR/AGENT/
@@ -37,7 +37,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (succes && mounted) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+        MaterialPageRoute(builder: (_) => const KycScreen()),
       );
     }
   }
