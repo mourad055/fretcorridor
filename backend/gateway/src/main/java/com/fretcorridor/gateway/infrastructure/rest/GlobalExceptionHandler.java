@@ -2,6 +2,8 @@ package com.fretcorridor.gateway.infrastructure.rest;
 
 import com.fretcorridor.gateway.domain.AuthenticationServiceUnavailableException;
 import com.fretcorridor.gateway.domain.InvalidCredentialsException;
+import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
+import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
 import com.fretcorridor.gateway.domain.kyc.KycDossierIntrouvableException;
 import com.fretcorridor.gateway.infrastructure.rest.kyc.KycController;
@@ -61,6 +63,20 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleMissingIdempotencyKey(KycController.MissingIdempotencyKeyException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle("En-tête manquant");
+        return problem;
+    }
+
+    @ExceptionHandler(ProfilCompletionRefuseeException.class)
+    public ProblemDetail handleProfilCompletionRefusee(ProfilCompletionRefuseeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Complétion de profil refusée");
+        return problem;
+    }
+
+    @ExceptionHandler(ProfilServiceIndisponibleException.class)
+    public ProblemDetail handleProfilServiceIndisponible(ProfilServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service d'identité indisponible");
         return problem;
     }
 }
