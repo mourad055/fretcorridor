@@ -12,7 +12,24 @@ Nécessite le correctif gateway ajoutant les rôles `CHAUFFEUR`/`TRANSPORTEUR`/
 et `ServiceIdaAuthenticationAdapter`), sans quoi le gateway rejette ces rôles.
 
 Pas encore fait : choix de rôle/mode Agent à l'écran de connexion (UC-IDA-03),
-KYC, capacité, missions, GPS, notifications — sprints suivants.
+capacité, missions, GPS, notifications — sprints suivants.
+
+## État (S2)
+
+KYC gradué niveau 1 (particulier ou entreprise) fonctionnel de bout en bout —
+voir `lib/providers/kyc_provider.dart` et `lib/screens/kyc_screen.dart`.
+Affiché automatiquement après connexion, ré-accessible depuis l'écran
+d'accueil (icône profil).
+
+Nécessite le nouveau relais gateway `GET/PUT /api/v1/kyc/profil/**` →
+service-ida (`backend/gateway/.../infrastructure/rest/ida/ProfilController.java`
++ `RealIdaProfilAdapter`) — cette route n'existait pas avant ce sprint, seule
+la route admin (`/api/v1/admin/kyc/**`) était câblée.
+
+Pas encore fait, faute de contrat backend (écart documenté, pas un oubli) :
+- **Niveau 2** (pièces justificatives, upload MinIO) : `service-ida` marque
+  explicitement ce niveau hors périmètre actuel.
+- **Mode Agent** (enrôlement terrain) : aucun endpoint côté `service-ida`.
 
 ## Lancer en local
 
