@@ -17,10 +17,10 @@ public class GrandLivreService {
         this.grandLivrePort = grandLivrePort;
     }
 
-    public EcritureMiroir enregistrerEncaissement(String tenantId, String missionId, BigDecimal montant, String referencePrestataire) {
+    public EcritureMiroir enregistrerEncaissement(String tenantId, String missionId, BigDecimal montant, String referencePrestataire, ModePaiement modePaiement) {
         EcritureMiroir ecriture = new EcritureMiroir(
                 UUID.randomUUID().toString(), tenantId, missionId, TypeCompte.COMPTE_SEQUESTRE_PRESTATAIRE, null,
-                SensEcriture.CREDIT, NatureEcriture.ENCAISSEMENT, montant, referencePrestataire,
+                SensEcriture.CREDIT, NatureEcriture.ENCAISSEMENT, modePaiement, montant, referencePrestataire,
                 Instant.now(), StatutEcriture.VALIDE
         );
         grandLivrePort.enregistrer(ecriture);
@@ -38,7 +38,7 @@ public class GrandLivreService {
 
         EcritureMiroir ecriture = new EcritureMiroir(
                 UUID.randomUUID().toString(), tenantId, missionId, TypeCompte.COMPTE_TRANSPORTEUR, transporteurId,
-                SensEcriture.DEBIT, NatureEcriture.REVERSEMENT, montant, referencePrestataire,
+                SensEcriture.DEBIT, NatureEcriture.REVERSEMENT, null, montant, referencePrestataire,
                 Instant.now(), StatutEcriture.VALIDE
         );
         grandLivrePort.enregistrer(ecriture);

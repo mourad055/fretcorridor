@@ -25,7 +25,7 @@ class EnfFin02Test {
 
     @Test
     void refuses_a_reversement_exceeding_the_recorded_encaissement() {
-        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
 
         assertThatThrownBy(() -> service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("150"), "ref-rev"))
                 .isInstanceOf(ReversementSansEncaissementException.class);
@@ -33,7 +33,7 @@ class EnfFin02Test {
 
     @Test
     void allows_a_reversement_covered_by_a_prior_encaissement() {
-        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
 
         EcritureMiroir reversement = service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("90"), "ref-rev");
 
@@ -44,7 +44,7 @@ class EnfFin02Test {
 
     @Test
     void refuses_a_second_reversement_once_the_encaissement_is_fully_consumed() {
-        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
         service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("100"), "ref-rev-1");
 
         assertThatThrownBy(() -> service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("1"), "ref-rev-2"))
@@ -53,7 +53,7 @@ class EnfFin02Test {
 
     @Test
     void an_encaissement_never_targets_a_fretcorridor_account_but_the_provider_escrow() {
-        EcritureMiroir encaissement = service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        EcritureMiroir encaissement = service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
 
         assertThat(encaissement.typeCompte()).isEqualTo(TypeCompte.COMPTE_SEQUESTRE_PRESTATAIRE);
         assertThat(encaissement.beneficiaireId()).isNull();
