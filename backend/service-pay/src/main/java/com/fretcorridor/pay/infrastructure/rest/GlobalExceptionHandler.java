@@ -1,5 +1,6 @@
 package com.fretcorridor.pay.infrastructure.rest;
 
+import com.fretcorridor.pay.domain.DeclarationEspecesInvalideException;
 import com.fretcorridor.pay.domain.GarantieInvalideException;
 import com.fretcorridor.pay.domain.ReversementSansEncaissementException;
 import com.fretcorridor.pay.domain.SequestreInvalideException;
@@ -31,6 +32,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleGarantieInvalide(GarantieInvalideException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Souscription de garantie invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(DeclarationEspecesInvalideException.class)
+    public ProblemDetail handleDeclarationEspecesInvalide(DeclarationEspecesInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Déclaration de paiement espèces invalide");
         return problem;
     }
 

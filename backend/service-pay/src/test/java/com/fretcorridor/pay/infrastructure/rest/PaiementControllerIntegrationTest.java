@@ -128,4 +128,44 @@ class PaiementControllerIntegrationTest {
                         .content("{\"tenantId\": \"tenant-1\", \"garantId\": \"garant-bnp\", \"montant\": 300, \"referenceGarantie\": \"ref-garantie-2\"}"))
                 .andExpect(status().isConflict());
     }
+
+    /** EF-PAY-07 (S) : la déclaration espèces signale explicitement l'absence de protection. */
+    @Test
+    void a_cash_payment_declaration_explicitly_signals_no_protection() throws Exception {
+        String missionId = "mission-especes-" + System.nanoTime();
+        String tenantId = "tenant-especes-" + System.nanoTime();
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/paiement-especes", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "montant": 150}
+                                """.formatted(tenantId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.protectionAssuree").value(false));
+
+        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/paiements-especes", tenantId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].protectionAssuree").value(false));
+    }
+
+    @Test
+    void a_cash_payment_never_unlocks_a_reversement_through_the_http_api() throws Exception {
+        String missionId = "mission-especes-" + System.nanoTime();
+        String tenantId = "tenant-especes-" + System.nanoTime();
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/paiement-especes", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "montant": 150}
+                                """.formatted(tenantId)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 150, "referencePrestataire": "ref-rev"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isConflict());
+    }
 }

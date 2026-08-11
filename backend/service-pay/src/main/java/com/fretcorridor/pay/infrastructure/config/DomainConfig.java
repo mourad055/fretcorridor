@@ -23,6 +23,11 @@ public class DomainConfig {
     }
 
     @Bean
+    public PaiementEspecesService paiementEspecesService(DeclarationEspecesPort declarationEspecesPort) {
+        return new PaiementEspecesService(declarationEspecesPort);
+    }
+
+    @Bean
     public ReconciliationService reconciliationService(GrandLivrePort grandLivrePort, PrestatairePaiementPort prestatairePaiementPort) {
         return new ReconciliationService(grandLivrePort, prestatairePaiementPort);
     }

@@ -35,6 +35,9 @@ class GrandLivrePersistenceIntegrationTest {
     @Autowired
     private GarantieService garantieService;
 
+    @Autowired
+    private PaiementEspecesService paiementEspecesService;
+
     @Test
     void an_encaissement_is_persisted_and_readable_back() {
         String missionId = "mission-test-" + System.nanoTime();
@@ -88,5 +91,17 @@ class GrandLivrePersistenceIntegrationTest {
         EcritureMiroir reversement = grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("300"), "ref-rev-terme");
 
         assertThat(reversement.nature()).isEqualTo(NatureEcriture.REVERSEMENT);
+    }
+
+    /** EF-PAY-07 (S) : la déclaration espèces persiste, et ne contribue jamais au pool de reversement. */
+    @Test
+    void a_cash_declaration_persists_and_never_unlocks_a_reversement() {
+        String missionId = "mission-test-" + System.nanoTime();
+
+        paiementEspecesService.declarer("tenant-1", missionId, new BigDecimal("150"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("150"), "ref-rev"))
+                .isInstanceOf(ReversementSansEncaissementException.class);
     }
 }
