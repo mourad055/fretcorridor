@@ -3,6 +3,8 @@ package com.fretcorridor.pay.infrastructure.rest;
 import com.fretcorridor.pay.domain.*;
 import com.fretcorridor.pay.infrastructure.prestataire.MockPrestatairePaiementAdapter;
 import com.fretcorridor.pay.infrastructure.rest.dto.ClotureMissionRequest;
+import com.fretcorridor.pay.infrastructure.rest.dto.DeclarationEspecesResponse;
+import com.fretcorridor.pay.infrastructure.rest.dto.DeclarerPaiementEspecesRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.EcritureResponse;
 import com.fretcorridor.pay.infrastructure.rest.dto.GarantieResponse;
 import com.fretcorridor.pay.infrastructure.rest.dto.ReversementRequest;
@@ -27,6 +29,7 @@ public class PaiementController {
     private final GrandLivreService grandLivreService;
     private final SequestreService sequestreService;
     private final GarantieService garantieService;
+    private final PaiementEspecesService paiementEspecesService;
     private final ReconciliationService reconciliationService;
     private final MockPrestatairePaiementAdapter prestataire;
 
@@ -34,12 +37,14 @@ public class PaiementController {
             GrandLivreService grandLivreService,
             SequestreService sequestreService,
             GarantieService garantieService,
+            PaiementEspecesService paiementEspecesService,
             ReconciliationService reconciliationService,
             MockPrestatairePaiementAdapter prestataire
     ) {
         this.grandLivreService = grandLivreService;
         this.sequestreService = sequestreService;
         this.garantieService = garantieService;
+        this.paiementEspecesService = paiementEspecesService;
         this.reconciliationService = reconciliationService;
         this.prestataire = prestataire;
     }
@@ -64,6 +69,18 @@ public class PaiementController {
     public ResponseEntity<GarantieResponse> souscrireGarantie(@PathVariable String missionId, @Valid @RequestBody SouscrireGarantieRequest request) {
         Garantie garantie = garantieService.souscrire(request.tenantId(), missionId, request.garantId(), request.montant(), request.referenceGarantie());
         return ResponseEntity.status(201).body(GarantieResponse.from(garantie));
+    }
+
+    /** EF-PAY-07 (S) : déclare le paiement en espèces d'une mission — mode dégradé, sans séquestre ni garantie. */
+    @PostMapping("/missions/{missionId}/paiement-especes")
+    public ResponseEntity<DeclarationEspecesResponse> declarerPaiementEspeces(@PathVariable String missionId, @Valid @RequestBody DeclarerPaiementEspecesRequest request) {
+        DeclarationEspeces declaration = paiementEspecesService.declarer(request.tenantId(), missionId, request.montant());
+        return ResponseEntity.status(201).body(DeclarationEspecesResponse.from(declaration));
+    }
+
+    @GetMapping("/tenants/{tenantId}/paiements-especes")
+    public List<DeclarationEspecesResponse> paiementsEspecesTenant(@PathVariable String tenantId) {
+        return paiementEspecesService.paiementsDuTenant(tenantId).stream().map(DeclarationEspecesResponse::from).toList();
     }
 
     @PostMapping("/missions/{missionId}/reversement")
