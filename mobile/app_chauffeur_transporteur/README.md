@@ -62,6 +62,20 @@ côté `service-ida`, point d'ancrage pour une future implémentation.
 service-geo réel derrière. Verrous (matching/paiement inactifs) affichés,
 jamais masqués (RG-012).
 
+## État (S4 — capacité)
+
+Déclaration de capacité fonctionnelle de bout en bout —
+`lib/providers/capacite_provider.dart`, `lib/screens/capacite_screen.dart`.
+`RealCapaciteDeclarationAdapter` remplace le TODO explicitement adressé à
+`@estie-glo` dans `MockCapAdapter` (gateway) — mais seulement pour l'écriture
+(`POST /api/v1/capacites`) : la vue de lecture Bureau/Transporteur
+(`CapacitePort.listerParTransporteur`) reste mockée, aucun endpoint GET
+équivalent n'existe côté `service-cap`.
+
+Le `vehiculeId` requis par `CapaciteCreationRequest` vient du registre réel
+de la flotte (S10, traité juste avant dans cette série de commits) plutôt
+que d'un identifiant généré localement sur l'appareil.
+
 ## État (S10 — console de flotte)
 
 Registre de véhicules réel — `lib/providers/vehicule_provider.dart`,
@@ -72,7 +86,7 @@ de service-flt sur "Flotte, véhicules" au Plan d'Exécution §4.1).
 
 Traité avant le S4 (capacité) dans cette série de commits : la déclaration
 de capacité a besoin d'un `vehiculeId` réel, donc le registre doit exister
-avant que l'écran capacité puisse compiler/fonctionner.
+avant que l'écran capacité puisse compiler/fonctionner (voir S4 ci-dessous).
 
 ## Lancer en local
 
