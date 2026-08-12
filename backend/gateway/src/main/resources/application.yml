@@ -38,6 +38,11 @@ fretcorridor:
     # ServiceBurMissionAppparieeAdapter remplace MockOptAdapter (jamais
     # d'appel direct à service-opt, cf. docs/ROADMAP_INTEGRATION_gateway.md).
     base-url: ${FRETCORRIDOR_SERVICE_BUR_URL:http://localhost:8083}
+  service-flt:
+    # service-flt (Mobile) : appel réel pour le registre de véhicules
+    # (Sprint 10, VehiculePort/RealVehiculeAdapter) et l'envoi de positions
+    # GPS (Sprint 6, PositionPort/RealPositionAdapter) — même service.
+    base-url: ${FRETCORRIDOR_SERVICE_FLT_URL:http://localhost:8083}
 
 management:
   endpoints:

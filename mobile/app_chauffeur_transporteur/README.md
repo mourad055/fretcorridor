@@ -62,6 +62,18 @@ côté `service-ida`, point d'ancrage pour une future implémentation.
 service-geo réel derrière. Verrous (matching/paiement inactifs) affichés,
 jamais masqués (RG-012).
 
+## État (S10 — console de flotte)
+
+Registre de véhicules réel — `lib/providers/vehicule_provider.dart`,
+`lib/screens/vehicules_screen.dart`. Nouveau `POST/GET /api/v1/vehicules`
+(gateway) → `VehiculeController` (service-flt, nouveau : ni entité ni
+endpoint Véhicule n'existait avant ce sprint, malgré l'ownership théorique
+de service-flt sur "Flotte, véhicules" au Plan d'Exécution §4.1).
+
+Traité avant le S4 (capacité) dans cette série de commits : la déclaration
+de capacité a besoin d'un `vehiculeId` réel, donc le registre doit exister
+avant que l'écran capacité puisse compiler/fonctionner.
+
 ## Lancer en local
 
 ```bash
