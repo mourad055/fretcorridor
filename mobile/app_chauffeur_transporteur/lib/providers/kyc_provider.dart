@@ -1,6 +1,21 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'dio_provider.dart';
+
+class Piece {
+  final String typeDocument;
+  final String? url;
+  final String? dateDepot;
+
+  const Piece({required this.typeDocument, this.url, this.dateDepot});
+
+  factory Piece.fromJson(Map<String, dynamic> json) => Piece(
+        typeDocument: json['typeDocument'] as String,
+        url: json['url'] as String?,
+        dateDepot: json['dateDepot'] as String?,
+      );
+}
 
 class Profil {
   final String acteurId;
@@ -9,6 +24,7 @@ class Profil {
   final String? prenom;
   final String? raisonSociale;
   final String niveauKyc; // NIVEAU_0, NIVEAU_1, NIVEAU_2
+  final List<Piece> pieces;
 
   const Profil({
     required this.acteurId,
@@ -17,7 +33,13 @@ class Profil {
     this.prenom,
     this.raisonSociale,
     required this.niveauKyc,
+    this.pieces = const [],
   });
+
+  // RG-011 : le niveau 1 exige l'identité déclarée ET au moins une pièce
+  // déposée — ces deux booléens pilotent l'affichage des deux étapes.
+  bool get identiteDeclaree => (nom != null && prenom != null) || raisonSociale != null;
+  bool get pieceDeposee => pieces.isNotEmpty;
 
   factory Profil.fromJson(Map<String, dynamic> json) => Profil(
         acteurId: json['acteurId'] as String,
@@ -26,19 +48,24 @@ class Profil {
         prenom: json['prenom'] as String?,
         raisonSociale: json['raisonSociale'] as String?,
         niveauKyc: json['niveauKyc'] as String,
+        pieces: (json['pieces'] as List<dynamic>? ?? [])
+            .map((p) => Piece.fromJson(p as Map<String, dynamic>))
+            .toList(),
       );
 }
 
 class KycState {
   final bool chargement;
+  final bool depotEnCours;
   final String? erreur;
   final Profil? profil;
 
-  const KycState({this.chargement = false, this.erreur, this.profil});
+  const KycState({this.chargement = false, this.depotEnCours = false, this.erreur, this.profil});
 
-  KycState copyWith({bool? chargement, String? erreur, Profil? profil}) {
+  KycState copyWith({bool? chargement, bool? depotEnCours, String? erreur, Profil? profil}) {
     return KycState(
       chargement: chargement ?? this.chargement,
+      depotEnCours: depotEnCours ?? this.depotEnCours,
       erreur: erreur,
       profil: profil ?? this.profil,
     );
@@ -46,9 +73,10 @@ class KycState {
 }
 
 // Contrat réel de la gateway (RG-011, Sprint 2) : GET/PUT /kyc/profil/**,
-// niveau 1 uniquement (particulier ou entreprise) — voir ProfilController
-// (backend/gateway/.../infrastructure/rest/ida/). Le niveau 2 (pièces
-// justificatives) n'existe pas encore côté service-ida.
+// POST /kyc/documents (multipart) — voir ProfilController
+// (backend/gateway/.../infrastructure/rest/ida/). Niveau 1 = identité
+// déclarée ET au moins une pièce déposée ; niveau 2 (vérification des
+// pièces) n'existe pas encore côté service-ida.
 class KycNotifier extends StateNotifier<KycState> {
   final Dio _dio;
 
@@ -91,6 +119,22 @@ class KycNotifier extends StateNotifier<KycState> {
       return true;
     } on DioException catch (e) {
       state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      return false;
+    }
+  }
+
+  Future<bool> deposerDocument(String typeDocument, File fichier) async {
+    state = state.copyWith(depotEnCours: true, erreur: null);
+    try {
+      final formData = FormData.fromMap({
+        'fichier': await MultipartFile.fromFile(fichier.path, filename: fichier.path.split('/').last),
+        'typeDocument': typeDocument,
+      });
+      final response = await _dio.post('/kyc/documents', data: formData);
+      state = state.copyWith(depotEnCours: false, profil: Profil.fromJson(response.data));
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(depotEnCours: false, erreur: _messageErreur(e));
       return false;
     }
   }
