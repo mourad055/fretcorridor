@@ -1,18 +1,12 @@
 package com.fretcorridor.gateway.infrastructure.ida;
 
 import com.fretcorridor.gateway.domain.ida.IdaProfilPort;
-import com.fretcorridor.gateway.domain.ida.Piece;
 import com.fretcorridor.gateway.domain.ida.Profil;
 import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
 import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
@@ -20,7 +14,6 @@ import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -95,27 +88,6 @@ public class RealIdaProfilAdapter implements IdaProfilPort {
                 .transform(this::gererErreurs);
     }
 
-    @Override
-    public Mono<Profil> deposerPiece(String delegationToken, String typeDocument, FilePart fichier) {
-        if (delegationToken == null) {
-            return Mono.error(new ProfilServiceIndisponibleException());
-        }
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.asyncPart("fichier", fichier.content(), DataBuffer.class)
-                .filename(fichier.filename());
-        builder.part("typeDocument", typeDocument);
-
-        return webClient.post()
-                .uri("/api/kyc/documents")
-                .headers(h -> h.setBearerAuth(delegationToken))
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(BodyInserters.fromMultipartData(builder.build()))
-                .retrieve()
-                .bodyToMono(CompletionDto.class)
-                .map(r -> r.profil().versProfil())
-                .transform(this::gererErreurs);
-    }
-
     private Mono<Profil> gererErreurs(Mono<Profil> mono) {
         return mono
                 .onErrorMap(this::estRefus, e -> new ProfilCompletionRefuseeException(messageDe(e)))
@@ -131,16 +103,9 @@ public class RealIdaProfilAdapter implements IdaProfilPort {
     }
 
     private record ProfilDto(String acteurId, String type, String nom, String prenom,
-                              String raisonSociale, String niveauKyc, List<PieceDto> pieces) {
+                              String raisonSociale, String niveauKyc) {
         Profil versProfil() {
-            List<Piece> mappedPieces = pieces == null ? List.of() : pieces.stream().map(PieceDto::versPiece).toList();
-            return new Profil(acteurId, type, nom, prenom, raisonSociale, niveauKyc, mappedPieces);
-        }
-    }
-
-    private record PieceDto(String typeDocument, String url, String dateDepot) {
-        Piece versPiece() {
-            return new Piece(typeDocument, url, dateDepot);
+            return new Profil(acteurId, type, nom, prenom, raisonSociale, niveauKyc);
         }
     }
 

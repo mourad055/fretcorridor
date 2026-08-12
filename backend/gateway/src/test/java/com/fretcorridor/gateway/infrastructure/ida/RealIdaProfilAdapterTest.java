@@ -8,20 +8,13 @@ import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.core.io.buffer.DefaultDataBufferFactory;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * RG-011 : vérifie RealIdaProfilAdapter contre un vrai serveur HTTP local,
@@ -55,7 +48,7 @@ class RealIdaProfilAdapterTest {
                         """));
 
         StepVerifier.create(adapter.profil("delegation-token-1"))
-                .expectNext(new Profil("id-1", "PARTICULIER", null, null, null, "NIVEAU_0", java.util.List.of()))
+                .expectNext(new Profil("id-1", "PARTICULIER", null, null, null, "NIVEAU_0"))
                 .verifyComplete();
 
         var requete = serviceIda.takeRequest();
@@ -73,7 +66,7 @@ class RealIdaProfilAdapterTest {
                         """));
 
         StepVerifier.create(adapter.completerParticulier("delegation-token-1", "Ngono", "Awa"))
-                .expectNext(new Profil("id-1", "PARTICULIER", "Ngono", "Awa", null, "NIVEAU_1", java.util.List.of()))
+                .expectNext(new Profil("id-1", "PARTICULIER", "Ngono", "Awa", null, "NIVEAU_1"))
                 .verifyComplete();
 
         var requete = serviceIda.takeRequest();
@@ -93,42 +86,13 @@ class RealIdaProfilAdapterTest {
                         """));
 
         StepVerifier.create(adapter.completerEntreprise("delegation-token-1", "Transco SA", null))
-                .expectNext(new Profil("id-1", "ENTREPRISE", null, null, "Transco SA", "NIVEAU_1", java.util.List.of()))
+                .expectNext(new Profil("id-1", "ENTREPRISE", null, null, "Transco SA", "NIVEAU_1"))
                 .verifyComplete();
 
         var requete = serviceIda.takeRequest();
         assertThat(requete.getBody().readUtf8())
                 .contains("\"raisonSociale\":\"Transco SA\"")
                 .doesNotContain("numeroRegistreCommerce");
-    }
-
-    @Test
-    void deposits_a_document_forwarding_it_as_multipart_with_the_delegation_token() throws InterruptedException {
-        serviceIda.enqueue(new MockResponse()
-                .setResponseCode(200)
-                .setHeader("Content-Type", "application/json")
-                .setBody("""
-                        {"accessToken":"t","refreshToken":"r","profil":{"acteurId":"id-1","type":"PARTICULIER","nom":"Ngono","prenom":"Awa","raisonSociale":null,"niveauKyc":"NIVEAU_1","pieces":[{"typeDocument":"CNI","url":"https://minio/x","dateDepot":"2026-08-11T10:00:00"}]}}
-                        """));
-
-        FilePart fichier = mock(FilePart.class);
-        when(fichier.filename()).thenReturn("cni.jpg");
-        DataBuffer buffer = new DefaultDataBufferFactory().wrap("contenu-image".getBytes(StandardCharsets.UTF_8));
-        when(fichier.content()).thenReturn(Flux.just(buffer));
-
-        StepVerifier.create(adapter.deposerPiece("delegation-token-1", "CNI", fichier))
-                .expectNextMatches(profil -> profil.niveauKyc().equals("NIVEAU_1")
-                        && profil.pieces().size() == 1
-                        && profil.pieces().get(0).typeDocument().equals("CNI"))
-                .verifyComplete();
-
-        var requete = serviceIda.takeRequest();
-        assertThat(requete.getPath()).isEqualTo("/api/kyc/documents");
-        assertThat(requete.getHeader("Authorization")).isEqualTo("Bearer delegation-token-1");
-        assertThat(requete.getBody().readUtf8())
-                .contains("name=\"fichier\"")
-                .contains("name=\"typeDocument\"")
-                .contains("contenu-image");
     }
 
     @Test
