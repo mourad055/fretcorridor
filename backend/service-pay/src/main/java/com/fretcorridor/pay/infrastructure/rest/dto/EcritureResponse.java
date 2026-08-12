@@ -14,10 +14,11 @@ public record EcritureResponse(
         String modePaiement,
         BigDecimal montant,
         Instant creeLe,
-        String statut
+        String statut,
+        boolean litigeActif
 ) {
-    public static EcritureResponse from(EcritureMiroir e) {
+    public static EcritureResponse from(EcritureMiroir e, boolean litigeActif) {
         return new EcritureResponse(e.id(), e.missionId(), e.typeCompte().name(), e.nature().name(), e.sens().name(),
-                e.modePaiement() == null ? null : e.modePaiement().name(), e.montant(), e.creeLe(), e.statut().name());
+                e.modePaiement() == null ? null : e.modePaiement().name(), e.montant(), e.creeLe(), e.statut().name(), litigeActif);
     }
 }

@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RapportFinancierAdminService } from './rapport-financier-admin.service';
 import { Ecriture } from '../../../shared/models/ecriture.models';
+import { DeclarationEspeces } from '../../../shared/models/declaration-especes.models';
 import { EcrituresTableComponent } from '../../../shared/components/ecritures-table/ecritures-table.component';
+import { EspecesTableComponent } from '../../../shared/components/especes-table/especes-table.component';
 
 /**
  * Rapport financier Admin (Sprint 8) : consultation transverse à tous les
@@ -13,13 +15,14 @@ import { EcrituresTableComponent } from '../../../shared/components/ecritures-ta
 @Component({
   selector: 'app-rapport-financier-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, EcrituresTableComponent],
+  imports: [CommonModule, FormsModule, EcrituresTableComponent, EspecesTableComponent],
   templateUrl: './rapport-financier-admin.component.html',
 })
 export class RapportFinancierAdminComponent {
   readonly tenants = ['tenant-bgft-douala', 'tenant-bnft-ndjamena', 'tenant-flysoft'];
   readonly tenantSelectionne = signal(this.tenants[0]);
   readonly ecritures = signal<Ecriture[] | null>(null);
+  readonly paiementsEspeces = signal<DeclarationEspeces[]>([]);
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
@@ -37,6 +40,11 @@ export class RapportFinancierAdminComponent {
         this.errorMessage.set('Impossible de charger le rapport financier de ce tenant.');
         this.loading.set(false);
       },
+    });
+
+    this.rapportFinancierAdminService.paiementsEspeces(this.tenantSelectionne()).subscribe({
+      next: (paiements) => this.paiementsEspeces.set(paiements),
+      error: () => this.paiementsEspeces.set([]),
     });
   }
 }

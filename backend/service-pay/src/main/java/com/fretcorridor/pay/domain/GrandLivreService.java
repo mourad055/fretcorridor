@@ -41,7 +41,7 @@ public class GrandLivreService {
      * tout reversement, quel que soit le solde disponible.
      */
     public EcritureMiroir enregistrerReversement(String tenantId, String missionId, String transporteurId, BigDecimal montant, String referencePrestataire) {
-        if (litigeMissionPort.parMission(missionId).map(LitigeMission::actif).orElse(false)) {
+        if (litigeActifPourMission(missionId)) {
             throw new ReversementSuspenduPourLitigeException(missionId);
         }
 
@@ -64,6 +64,11 @@ public class GrandLivreService {
 
     public List<EcritureMiroir> ecrituresDuTenant(String tenantId) {
         return grandLivrePort.parTenant(tenantId);
+    }
+
+    /** Exposition en lecture (rapport financier, solde Transporteur) : la mission a-t-elle un litige ouvert en ce moment ? */
+    public boolean litigeActifPourMission(String missionId) {
+        return litigeMissionPort.parMission(missionId).map(LitigeMission::actif).orElse(false);
     }
 
     /** Encaissement réel + garantie active, net des reversements déjà exécutés (utilisé par RG-075 et par l'ordonnanceur EF-PAY-08). */
