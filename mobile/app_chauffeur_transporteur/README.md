@@ -128,6 +128,17 @@ l'infrastructure ci-dessus est prête et testée. `service-opt` n'est pas
 mon périmètre (Moteur) — **à coordonner avec l'équipe Moteur avant de
 considérer ce sprint comme terminé.**
 
+## État (S8 — paiement)
+
+Solde et historique des gains — `lib/providers/paiement_provider.dart`,
+`lib/screens/paiement_screen.dart`. Lecture seule (ENF-FIN-01 : aucune
+écriture depuis le mobile), consomme `service-pay` déjà réel côté gateway
+(`PayReadPort`/`ServicePayWebClientAdapter`, construits avant ce sprint).
+
+Seul ajout nécessaire : `GET /api/v1/paiement` (gateway), miroir de
+`/api/v1/transporteur/paiement` sans la restriction au rôle TRANSPORTEUR —
+celle-ci aurait exclu un CHAUFFEUR côté mobile.
+
 ## État (S10 — console de flotte)
 
 Registre de véhicules réel — `lib/providers/vehicule_provider.dart`,
