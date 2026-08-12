@@ -53,7 +53,7 @@ class EfPay07Test {
     void a_cash_declaration_never_authorizes_a_reversement_through_the_grand_livre() {
         service.declarer("tenant-1", "mission-1", new BigDecimal("150"));
 
-        GrandLivreService grandLivreService = new GrandLivreService(new FakeGrandLivrePort(), new FakeGarantiePort());
+        GrandLivreService grandLivreService = new GrandLivreService(new FakeGrandLivrePort(), new FakeGarantiePort(), new FakeLitigeMissionPort());
 
         assertThatThrownBy(() -> grandLivreService.enregistrerReversement(
                 "tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("150"), "ref-rev"))
