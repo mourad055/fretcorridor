@@ -31,6 +31,30 @@ Pas encore fait, faute de contrat backend (écart documenté, pas un oubli) :
   explicitement ce niveau hors périmètre actuel.
 - **Mode Agent** (enrôlement terrain) : aucun endpoint côté `service-ida`.
 
+## État (S2 bis — mode Agent, UC-IDA-03/EF-IDA-06)
+
+Enrôlement assisté par agent fonctionnel de bout en bout — voir
+`lib/providers/agent_enrolement_provider.dart` et
+`lib/screens/agent_enrolement_screen.dart`. Accessible depuis l'accueil
+(bouton flottant) uniquement pour le rôle `AGENT`.
+
+- Position + horodatage capturés à l'initiation (`geolocator`).
+- File d'attente offline chiffrée (`flutter_secure_storage`) si pas de
+  réseau à l'envoi — synchronisée automatiquement au retour de connexion
+  (`connectivity_plus`) ou manuellement (icône de synchro).
+- Le code d'activation (OTP) est envoyé par SMS à la personne enrôlée, pas
+  à l'agent — c'est elle qui saisit le code et choisit son PIN à l'écran
+  suivant, jamais l'agent (RG-019).
+
+Écart volontaire par rapport à l'ancien repo v3
+(`github.com/estie-glo/fretcorridor`) : là-bas l'agent choisissait
+lui-même le PIN initial du chauffeur, ce qui viole RG-019.
+
+Pas encore fait : priorité d'agent sur la file KYC admin (nécessite
+service-adm), rémunération de l'agent conditionnée à l'activité réelle
+RG-020 (nécessite service-pay) — voir `EnrolementAgent.acteurCreeId`
+côté `service-ida`, point d'ancrage pour une future implémentation.
+
 ## Lancer en local
 
 ```bash
