@@ -5,6 +5,8 @@ import com.fretcorridor.gateway.domain.InvalidCredentialsException;
 import com.fretcorridor.gateway.domain.agent.AgentServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.agent.EnrolementIntrouvableException;
 import com.fretcorridor.gateway.domain.agent.EnrolementRefuseException;
+import com.fretcorridor.gateway.domain.flt.FltServiceIndisponibleException;
+import com.fretcorridor.gateway.domain.flt.VehiculeRefuseException;
 import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
 import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
@@ -109,6 +111,20 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleAgentServiceIndisponible(AgentServiceIndisponibleException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
         problem.setTitle("Service d'identité indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(VehiculeRefuseException.class)
+    public ProblemDetail handleVehiculeRefuse(VehiculeRefuseException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Véhicule refusé");
+        return problem;
+    }
+
+    @ExceptionHandler(FltServiceIndisponibleException.class)
+    public ProblemDetail handleFltServiceIndisponible(FltServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service de suivi indisponible");
         return problem;
     }
 }
