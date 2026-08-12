@@ -8,6 +8,9 @@ services:
     container_name: fretcorridor-service-exe
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      # Consomme AffectationConfirmee (service-opt, Moteur) pour matérialiser
+      # les missions du chauffeur — cf. AffectationConfirmeeListener.
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     ports:
       - "8093:8093"
     depends_on:
