@@ -46,5 +46,9 @@ services:
       # résout par nom de conteneur si son propre fichier compose fait
       # partie de la commande.
       FRETCORRIDOR_SERVICE_CAP_URL: http://service-cap:8096
+      # service-exe (Mobile, Sprint 7) : exécution de mission, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande. Fonctionnellement bloqué, voir README.md.
+      FRETCORRIDOR_SERVICE_EXE_URL: http://service-exe:8093
     ports:
       - "8082:8082"

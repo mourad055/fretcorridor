@@ -90,6 +90,44 @@ chauffeur côté `service-exe` (aucun champ transporteur/chauffeur sur
 remplacer par un déclenchement automatique une fois l'écran "mission en
 cours" (S7) disponible.
 
+## État (S7 — exécution de mission) — ⚠️ BLOQUÉ, PAS TERMINÉ
+
+**Ce sprint n'est PAS livrable en l'état.** L'infrastructure ci-dessous
+est écrite et testée (tests unitaires/intégration gateway et service-exe),
+mais **"Mes missions" reste vide en conditions réelles** tant qu'une
+dépendance externe (équipe Moteur, hors périmètre Mobile) n'est pas
+résolue. Ne pas considérer ce sprint comme terminé tant que ce point n'est
+pas réglé avec l'équipe Moteur.
+
+Chronologie de mission côté chauffeur —
+`lib/providers/mission_provider.dart`, `lib/screens/missions_screen.dart`,
+`lib/screens/mission_detail_screen.dart`. Le suivi GPS (S6) démarre/s'arrête
+automatiquement selon le statut (prise en charge/en transit → suivi actif,
+livraison → arrêt), plutôt que la saisie manuelle temporaire de
+`suivi_gps_screen.dart`.
+
+Backend : `service-exe` n'exposait qu'un endpoint lecture seule côté Client
+(`GET /missions/demande/{id}/chronologie`) — l'entité `Mission` n'avait
+aucun lien avec un chauffeur (*"EF-EXE-02 complet... reporté à la
+construction de l'app Chauffeur"*, commentaire du code). Ajouté :
+- `AffectationConfirmeeListener` (Kafka) : `service-exe` consomme désormais
+  `AffectationConfirmee` (même pattern que `service-bur`) pour créer la
+  mission avec son `transporteurId`.
+- `GET /missions/mes`, `GET /missions/{id}`, `POST /missions/{id}/etapes`
+  (prise en charge/en transit/livraison/incident, avec vérification de
+  propriété — un chauffeur ne peut agir que sur ses propres missions).
+
+**🚫 Dépendance bloquante (pas un bug de ce dépôt)** : `AffectationConfirmee`
+porte `transporteurId` à `null` en pratique aujourd'hui
+(`AffectationL1Service`, `service-opt`, Moteur) — et en remontant la
+chaîne, `service-cap` (`CapaciteCreationRequest`, S4) ne capture lui-même
+aucun identifiant d'acteur à la déclaration. Tant que cette chaîne
+(`service-cap` → `service-opt` → `service-exe`) n'est pas réparée,
+**"Mes missions" restera vide en conditions réelles**, même si
+l'infrastructure ci-dessus est prête et testée. `service-opt` n'est pas
+mon périmètre (Moteur) — **à coordonner avec l'équipe Moteur avant de
+considérer ce sprint comme terminé.**
+
 ## État (S10 — console de flotte)
 
 Registre de véhicules réel — `lib/providers/vehicule_provider.dart`,
