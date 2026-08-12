@@ -29,6 +29,12 @@ public class SequestreEntity {
     @Column(name = "libere_le")
     private Instant libereLe;
 
+    @Column(name = "tenant_id")
+    private String tenantId;
+
+    @Column(name = "transporteur_id")
+    private String transporteurId;
+
     protected SequestreEntity() {
         // JPA
     }
@@ -39,10 +45,12 @@ public class SequestreEntity {
         entity.etat = sequestre.etat();
         entity.declencheLe = sequestre.declencheLe();
         entity.libereLe = sequestre.libereLe();
+        entity.tenantId = sequestre.tenantId();
+        entity.transporteurId = sequestre.transporteurId();
         return entity;
     }
 
     Sequestre toDomain() {
-        return new Sequestre(missionId, etat, declencheLe, libereLe);
+        return new Sequestre(missionId, etat, declencheLe, libereLe, tenantId, transporteurId);
     }
 }

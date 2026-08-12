@@ -13,14 +13,23 @@ class SequestreServiceTest {
     @Test
     void declenching_then_liberating_follows_the_expected_lifecycle() {
         service.declencher("mission-1");
-        Sequestre libere = service.liberer("mission-1");
+        Sequestre libere = service.liberer("mission-1", "tenant-1", "actor-transporteur-1");
 
         assertThat(libere.etat()).isEqualTo(SequestreEtat.LIBERE);
     }
 
     @Test
+    void liberating_stamps_the_tenant_and_transporteur_known_only_at_cloture() {
+        service.declencher("mission-1");
+        Sequestre libere = service.liberer("mission-1", "tenant-1", "actor-transporteur-1");
+
+        assertThat(libere.tenantId()).isEqualTo("tenant-1");
+        assertThat(libere.transporteurId()).isEqualTo("actor-transporteur-1");
+    }
+
+    @Test
     void refuses_to_liberate_a_sequestre_that_was_never_declenched() {
-        assertThatThrownBy(() -> service.liberer("mission-jamais-declenchee"))
+        assertThatThrownBy(() -> service.liberer("mission-jamais-declenchee", "tenant-1", "actor-transporteur-1"))
                 .isInstanceOf(SequestreInvalideException.class);
     }
 
@@ -35,11 +44,11 @@ class SequestreServiceTest {
     @Test
     void refuses_to_reopen_a_liberated_sequestre() {
         service.declencher("mission-1");
-        service.liberer("mission-1");
+        service.liberer("mission-1", "tenant-1", "actor-transporteur-1");
 
         assertThatThrownBy(() -> service.declencher("mission-1"))
                 .isInstanceOf(SequestreInvalideException.class);
-        assertThatThrownBy(() -> service.liberer("mission-1"))
+        assertThatThrownBy(() -> service.liberer("mission-1", "tenant-1", "actor-transporteur-1"))
                 .isInstanceOf(SequestreInvalideException.class);
     }
 }

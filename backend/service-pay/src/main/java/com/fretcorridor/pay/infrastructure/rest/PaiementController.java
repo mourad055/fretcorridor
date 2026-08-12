@@ -60,7 +60,7 @@ public class PaiementController {
         EcritureMiroir encaissement = grandLivreService.enregistrerEncaissement(
                 request.tenantId(), missionId, request.montant(), request.referencePrestataire(), request.modePaiement());
         prestataire.confirmer(missionId, request.montant());
-        sequestreService.liberer(missionId);
+        sequestreService.liberer(missionId, request.tenantId(), request.transporteurId());
         return ResponseEntity.ok(EcritureResponse.from(encaissement));
     }
 

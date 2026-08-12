@@ -1,8 +1,11 @@
 package com.fretcorridor.pay.infrastructure.config;
 
 import com.fretcorridor.pay.domain.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.time.Duration;
 
 @Configuration
 public class DomainConfig {
@@ -20,6 +23,15 @@ public class DomainConfig {
     @Bean
     public GarantieService garantieService(GarantiePort garantiePort) {
         return new GarantieService(garantiePort);
+    }
+
+    @Bean
+    public ReversementAutomatiqueService reversementAutomatiqueService(
+            SequestrePort sequestrePort,
+            GrandLivreService grandLivreService,
+            @Value("${fretcorridor.pay.ordonnanceur-reversement.delai-contestation-heures}") long delaiContestationHeures
+    ) {
+        return new ReversementAutomatiqueService(sequestrePort, grandLivreService, Duration.ofHours(delaiContestationHeures));
     }
 
     @Bean
