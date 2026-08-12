@@ -56,6 +56,10 @@ fretcorridor:
     # voir README.md section S7 (transporteurId à null en pratique côté
     # service-opt, hors périmètre Mobile).
     base-url: ${FRETCORRIDOR_SERVICE_EXE_URL:http://localhost:8093}
+  service-not:
+    # service-not (Mobile) : appel réel pour le centre de notifications côté
+    # chauffeur (NotificationMobilePort/RealNotificationMobileAdapter, Sprint 9).
+    base-url: ${FRETCORRIDOR_SERVICE_NOT_URL:http://localhost:8094}
 
 management:
   endpoints:
