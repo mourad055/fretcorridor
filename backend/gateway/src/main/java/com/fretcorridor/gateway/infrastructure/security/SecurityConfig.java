@@ -46,6 +46,7 @@ public class SecurityConfig {
                         .pathMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .pathMatchers("/api/v1/bureau/**").hasRole("BUREAU")
                         .pathMatchers("/api/v1/transporteur/**").hasRole("TRANSPORTEUR")
+                        .pathMatchers("/api/v1/agent/**").hasRole("AGENT")
                         .anyExchange().authenticated())
                 .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .build();
