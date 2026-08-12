@@ -110,9 +110,9 @@ class DossierControllerTest {
         ));
         when(payReadPort.rapportDuTenant("tenant-bgft-douala")).thenReturn(Flux.just(
                 new EcritureVue("e1", "mission-a", "COMPTE_SEQUESTRE_PRESTATAIRE", "ENCAISSEMENT", "CREDIT",
-                        new BigDecimal("500"), Instant.now(), "VALIDE"),
+                        new BigDecimal("500"), Instant.now(), "VALIDE", "VIREMENT", false),
                 new EcritureVue("e2", "mission-autre", "COMPTE_SEQUESTRE_PRESTATAIRE", "ENCAISSEMENT", "CREDIT",
-                        new BigDecimal("100"), Instant.now(), "VALIDE")
+                        new BigDecimal("100"), Instant.now(), "VALIDE", "VIREMENT", false)
         ));
 
         webTestClient.get().uri("/api/v1/admin/dossiers/dossier-1")

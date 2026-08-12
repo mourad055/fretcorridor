@@ -23,6 +23,7 @@ import {
   libellePrioriteDossier,
   libelleEtapeEtat,
   libelleJournalAction,
+  libelleModePaiement,
 } from './status-badge.component';
 
 describe('StatusBadgeComponent', () => {
@@ -121,6 +122,14 @@ describe('libellés FR des enums (Sprint 15)', () => {
   it("traduit les statuts d'écriture", () => {
     expect(libelleEcritureStatut('VALIDE')).toBe('Validée');
     expect(libelleEcritureStatut('SUSPENDU')).toBe('Suspendue');
+  });
+
+  it('traduit les modes de paiement et affiche un tiret sur un reversement (mode null)', () => {
+    expect(libelleModePaiement('MONNAIE_ELECTRONIQUE')).toBe('Monnaie électronique');
+    expect(libelleModePaiement('VIREMENT')).toBe('Virement');
+    expect(libelleModePaiement('TERME_CONTRACTUEL')).toBe('Terme contractuel');
+    expect(libelleModePaiement('ESPECES')).toBe('Espèces');
+    expect(libelleModePaiement(null)).toBe('—');
   });
 
   it('traduit les statuts de mission', () => {

@@ -61,7 +61,7 @@ public class PaiementController {
                 request.tenantId(), missionId, request.montant(), request.referencePrestataire(), request.modePaiement());
         prestataire.confirmer(missionId, request.montant());
         sequestreService.liberer(missionId, request.tenantId(), request.transporteurId());
-        return ResponseEntity.ok(EcritureResponse.from(encaissement));
+        return ResponseEntity.ok(EcritureResponse.from(encaissement, grandLivreService.litigeActifPourMission(missionId)));
     }
 
     /** EF-PAY-06 (terme contractuel) : souscrit la garantie tierce qui autorise la mission à être confirmée sans encaissement préalable. */
@@ -87,17 +87,21 @@ public class PaiementController {
     public ResponseEntity<EcritureResponse> reversement(@PathVariable String missionId, @Valid @RequestBody ReversementRequest request) {
         EcritureMiroir reversement = grandLivreService.enregistrerReversement(
                 request.tenantId(), missionId, request.transporteurId(), request.montant(), request.referencePrestataire());
-        return ResponseEntity.ok(EcritureResponse.from(reversement));
+        return ResponseEntity.ok(EcritureResponse.from(reversement, grandLivreService.litigeActifPourMission(missionId)));
     }
 
     @GetMapping("/transporteurs/{transporteurId}/ecritures")
     public List<EcritureResponse> ecrituresTransporteur(@PathVariable String transporteurId) {
-        return grandLivreService.ecrituresDuBeneficiaire(transporteurId).stream().map(EcritureResponse::from).toList();
+        return grandLivreService.ecrituresDuBeneficiaire(transporteurId).stream()
+                .map(e -> EcritureResponse.from(e, grandLivreService.litigeActifPourMission(e.missionId())))
+                .toList();
     }
 
     @GetMapping("/tenants/{tenantId}/rapport")
     public List<EcritureResponse> rapportTenant(@PathVariable String tenantId) {
-        return grandLivreService.ecrituresDuTenant(tenantId).stream().map(EcritureResponse::from).toList();
+        return grandLivreService.ecrituresDuTenant(tenantId).stream()
+                .map(e -> EcritureResponse.from(e, grandLivreService.litigeActifPourMission(e.missionId())))
+                .toList();
     }
 
     @PostMapping("/missions/{missionId}/reconciliation")

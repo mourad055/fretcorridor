@@ -1,5 +1,6 @@
 package com.fretcorridor.gateway.infrastructure.pay;
 
+import com.fretcorridor.gateway.domain.pay.DeclarationEspecesVue;
 import com.fretcorridor.gateway.domain.pay.EcritureVue;
 import com.fretcorridor.gateway.domain.pay.PayReadPort;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,5 +36,13 @@ public class ServicePayWebClientAdapter implements PayReadPort {
                 .uri("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
                 .retrieve()
                 .bodyToFlux(EcritureVue.class);
+    }
+
+    @Override
+    public Flux<DeclarationEspecesVue> paiementsEspecesDuTenant(String tenantId) {
+        return webClient.get()
+                .uri("/api/v1/pay/tenants/{tenantId}/paiements-especes", tenantId)
+                .retrieve()
+                .bodyToFlux(DeclarationEspecesVue.class);
     }
 }

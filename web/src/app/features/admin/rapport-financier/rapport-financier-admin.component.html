@@ -25,5 +25,10 @@
     </div>
 
     <app-ecritures-table *ngIf="!loading() && ecritures() as e" [ecritures]="e" />
+
+    <ng-container *ngIf="!loading() && ecritures()">
+      <h3 class="fc-panel__title">Paiements en espèces</h3>
+      <app-especes-table [paiements]="paiementsEspeces()" />
+    </ng-container>
   </section>
 </main>
