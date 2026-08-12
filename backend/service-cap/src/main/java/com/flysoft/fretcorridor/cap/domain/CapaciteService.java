@@ -10,8 +10,12 @@ import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -26,16 +30,29 @@ public class CapaciteService {
     private final CapaciteRepository capaciteRepository;
     private final CalculateurPoidsTaxable calculateurPoidsTaxable;
     private final CapEventPublisher eventPublisher;
+    // Isole l'INSERT d'idempotence dans SA PROPRE transaction physique
+    // (REQUIRES_NEW). Sans ca, une violation de contrainte unique sur cet
+    // INSERT marque la transaction Hibernate/JPA EN COURS comme
+    // rollback-only en interne - meme si l'exception est attrapee en Java
+    // (ce qui empeche seulement l'exception de remonter, pas cet etat
+    // interne), le commit final de la methode decrementer() echoue quand
+    // meme avec UnexpectedRollbackException. Decouvert par
+    // CapaciteServiceConcurrenceTest (4/5 appels concurrents avec la meme
+    // cle d'idempotence).
+    private final TransactionTemplate transactionTemplateIdempotence;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public CapaciteService(CapaciteRepository capaciteRepository,
                             CalculateurPoidsTaxable calculateurPoidsTaxable,
-                            CapEventPublisher eventPublisher) {
+                            CapEventPublisher eventPublisher,
+                            PlatformTransactionManager transactionManager) {
         this.capaciteRepository = capaciteRepository;
         this.calculateurPoidsTaxable = calculateurPoidsTaxable;
         this.eventPublisher = eventPublisher;
+        this.transactionTemplateIdempotence = new TransactionTemplate(transactionManager);
+        this.transactionTemplateIdempotence.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
     }
 
     @Transactional
@@ -98,18 +115,32 @@ public class CapaciteService {
         Capacite capacite = capaciteRepository.findById(capaciteId)
                 .orElseThrow(() -> new IllegalArgumentException("Capacite introuvable : " + capaciteId));
 
-        try {
-            // INSERT immediat plutot qu'un SELECT prealable : la contrainte
-            // unique fait le travail d'exclusion mutuelle, evite une fenetre
-            // de course entre "verifier" et "inserer".
-            entityManager.createNativeQuery(
-                            "INSERT INTO cap.decrement_log (capacite_id, cle_idempotence, montant_kg) "
-                                    + "VALUES (?1, ?2, ?3)")
-                    .setParameter(1, capaciteId)
-                    .setParameter(2, cleIdempotence)
-                    .setParameter(3, montantKg)
-                    .executeUpdate();
-        } catch (DataIntegrityViolationException doublon) {
+        // INSERT immediat plutot qu'un SELECT prealable : la contrainte unique
+        // fait le travail d'exclusion mutuelle, evite une fenetre de course
+        // entre "verifier" et "inserer". Isole dans REQUIRES_NEW (cf champ
+        // transactionTemplateIdempotence) pour qu'un echec ici ne marque
+        // jamais la transaction principale comme rollback-only.
+        boolean dejaApplique = Boolean.FALSE.equals(transactionTemplateIdempotence.execute(status -> {
+            try {
+                entityManager.createNativeQuery(
+                                "INSERT INTO cap.decrement_log (capacite_id, cle_idempotence, montant_kg) "
+                                        + "VALUES (?1, ?2, ?3)")
+                        .setParameter(1, capaciteId)
+                        .setParameter(2, cleIdempotence)
+                        .setParameter(3, montantKg)
+                        .executeUpdate();
+                return Boolean.TRUE; // insertion reussie, premiere fois
+            // DataIntegrityViolationException seule ne suffit pas ici : sur un
+            // EntityManager direct (pas un Repository Spring Data), les
+            // exceptions Hibernate brutes ne sont pas traduites - il faut
+            // aussi attraper org.hibernate.exception.ConstraintViolationException.
+            } catch (DataIntegrityViolationException | ConstraintViolationException doublon) {
+                status.setRollbackOnly(); // annule PROPREMENT cette sous-transaction isolee
+                return Boolean.FALSE; // deja applique par un appel concurrent/precedent
+            }
+        }));
+
+        if (dejaApplique) {
             log.info("Decrement deja applique (idempotence) - capacite={}, cle={}",
                     capaciteId, cleIdempotence);
             return capacite; // deja decremente lors du premier appel, aucun changement
