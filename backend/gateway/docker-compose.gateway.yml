@@ -42,5 +42,9 @@ services:
       # fait partie de la commande. Port interne 8083 (le 8092 du tableau
       # de ports est le mapping HÔTE, cf. docker-compose.service-flt.yml).
       FRETCORRIDOR_SERVICE_FLT_URL: http://service-flt:8083
+      # service-cap (Mobile, Sprint 4) : déclaration de capacité, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande.
+      FRETCORRIDOR_SERVICE_CAP_URL: http://service-cap:8096
     ports:
       - "8082:8082"

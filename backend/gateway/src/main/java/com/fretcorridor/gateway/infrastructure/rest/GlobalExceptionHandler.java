@@ -5,6 +5,8 @@ import com.fretcorridor.gateway.domain.InvalidCredentialsException;
 import com.fretcorridor.gateway.domain.agent.AgentServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.agent.EnrolementIntrouvableException;
 import com.fretcorridor.gateway.domain.agent.EnrolementRefuseException;
+import com.fretcorridor.gateway.domain.cap.CapServiceIndisponibleException;
+import com.fretcorridor.gateway.domain.cap.CapaciteRefuseeException;
 import com.fretcorridor.gateway.domain.flt.FltServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.flt.VehiculeRefuseException;
 import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
@@ -125,6 +127,20 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleFltServiceIndisponible(FltServiceIndisponibleException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
         problem.setTitle("Service de suivi indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(CapaciteRefuseeException.class)
+    public ProblemDetail handleCapaciteRefusee(CapaciteRefuseeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Déclaration de capacité refusée");
+        return problem;
+    }
+
+    @ExceptionHandler(CapServiceIndisponibleException.class)
+    public ProblemDetail handleCapServiceIndisponible(CapServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service de capacité indisponible");
         return problem;
     }
 }
