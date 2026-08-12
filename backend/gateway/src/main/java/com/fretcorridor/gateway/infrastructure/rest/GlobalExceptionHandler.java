@@ -16,6 +16,7 @@ import com.fretcorridor.gateway.domain.flt.VehiculeRefuseException;
 import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
 import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
+import com.fretcorridor.gateway.domain.not.NotServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.KycDossierIntrouvableException;
 import com.fretcorridor.gateway.infrastructure.rest.ida.ProfilController;
 import com.fretcorridor.gateway.infrastructure.rest.kyc.KycController;
@@ -173,6 +174,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleCapServiceIndisponible(CapServiceIndisponibleException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
         problem.setTitle("Service de capacité indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(NotServiceIndisponibleException.class)
+    public ProblemDetail handleNotServiceIndisponible(NotServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service de notifications indisponible");
         return problem;
     }
 }

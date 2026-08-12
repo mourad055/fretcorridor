@@ -50,5 +50,9 @@ services:
       # résout par nom de conteneur si son propre fichier compose fait
       # partie de la commande. Fonctionnellement bloqué, voir README.md.
       FRETCORRIDOR_SERVICE_EXE_URL: http://service-exe:8093
+      # service-not (Mobile, Sprint 9) : centre de notifications, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande.
+      FRETCORRIDOR_SERVICE_NOT_URL: http://service-not:8094
     ports:
       - "8082:8082"

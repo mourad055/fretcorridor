@@ -139,6 +139,20 @@ Seul ajout nécessaire : `GET /api/v1/paiement` (gateway), miroir de
 `/api/v1/transporteur/paiement` sans la restriction au rôle TRANSPORTEUR —
 celle-ci aurait exclu un CHAUFFEUR côté mobile.
 
+## État (S9 — notifications)
+
+Centre de notifications (liste, badge non lues, marquer comme lue) —
+`lib/providers/notification_provider.dart`, `lib/screens/notifications_screen.dart`.
+Nouvelle route gateway `GET/PATCH /api/v1/notifications/mes/**`
+(`NotificationMobileController`) vers `service-not` réel.
+
+**Écart assumé** : réception "tirée" uniquement (l'app va chercher ses
+notifications) — pas de push FCM effectif (réception hors application,
+notification système). Aucun projet Firebase (google-services.json /
+GoogleService-Info.plist) n'est disponible pour ce dépôt ; `service-not`
+a bien une entité `FcmToken` prête côté backend, mais rien ne peut envoyer
+un vrai push sans ces identifiants.
+
 ## État (S10 — console de flotte)
 
 Registre de véhicules réel — `lib/providers/vehicule_provider.dart`,
