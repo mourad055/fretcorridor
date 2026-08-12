@@ -7,6 +7,9 @@ import com.fretcorridor.gateway.domain.agent.EnrolementIntrouvableException;
 import com.fretcorridor.gateway.domain.agent.EnrolementRefuseException;
 import com.fretcorridor.gateway.domain.cap.CapServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.cap.CapaciteRefuseeException;
+import com.fretcorridor.gateway.domain.exe.EtapeRefuseeException;
+import com.fretcorridor.gateway.domain.exe.ExeServiceIndisponibleException;
+import com.fretcorridor.gateway.domain.exe.MissionIntrouvableException;
 import com.fretcorridor.gateway.domain.flt.FltServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.flt.PositionRefuseeException;
 import com.fretcorridor.gateway.domain.flt.VehiculeRefuseException;
@@ -135,6 +138,27 @@ public class GlobalExceptionHandler {
     public ProblemDetail handlePositionRefusee(PositionRefuseeException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle("Position refusée");
+        return problem;
+    }
+
+    @ExceptionHandler(MissionIntrouvableException.class)
+    public ProblemDetail handleMissionIntrouvable(MissionIntrouvableException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Mission introuvable");
+        return problem;
+    }
+
+    @ExceptionHandler(EtapeRefuseeException.class)
+    public ProblemDetail handleEtapeRefusee(EtapeRefuseeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Étape refusée");
+        return problem;
+    }
+
+    @ExceptionHandler(ExeServiceIndisponibleException.class)
+    public ProblemDetail handleExeServiceIndisponible(ExeServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service d'exécution indisponible");
         return problem;
     }
 
