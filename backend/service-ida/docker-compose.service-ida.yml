@@ -8,12 +8,8 @@ services:
     container_name: fretcorridor-service-ida
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "8081:8081"
     depends_on:
       postgres:
-        condition: service_healthy
-      minio:
         condition: service_healthy
