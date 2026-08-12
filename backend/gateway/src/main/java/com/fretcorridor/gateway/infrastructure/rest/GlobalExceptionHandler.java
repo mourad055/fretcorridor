@@ -2,6 +2,9 @@ package com.fretcorridor.gateway.infrastructure.rest;
 
 import com.fretcorridor.gateway.domain.AuthenticationServiceUnavailableException;
 import com.fretcorridor.gateway.domain.InvalidCredentialsException;
+import com.fretcorridor.gateway.domain.agent.AgentServiceIndisponibleException;
+import com.fretcorridor.gateway.domain.agent.EnrolementIntrouvableException;
+import com.fretcorridor.gateway.domain.agent.EnrolementRefuseException;
 import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
 import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
@@ -85,6 +88,27 @@ public class GlobalExceptionHandler {
     public ProblemDetail handlePieceManquante(ProfilController.PieceManquanteException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle("Requête invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(EnrolementRefuseException.class)
+    public ProblemDetail handleEnrolementRefuse(EnrolementRefuseException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Enrôlement refusé");
+        return problem;
+    }
+
+    @ExceptionHandler(EnrolementIntrouvableException.class)
+    public ProblemDetail handleEnrolementIntrouvable(EnrolementIntrouvableException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Enrôlement introuvable");
+        return problem;
+    }
+
+    @ExceptionHandler(AgentServiceIndisponibleException.class)
+    public ProblemDetail handleAgentServiceIndisponible(AgentServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service d'identité indisponible");
         return problem;
     }
 }
