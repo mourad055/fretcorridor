@@ -6,6 +6,7 @@ import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
 import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
 import com.fretcorridor.gateway.domain.kyc.KycDossierIntrouvableException;
+import com.fretcorridor.gateway.infrastructure.rest.ida.ProfilController;
 import com.fretcorridor.gateway.infrastructure.rest.kyc.KycController;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -77,6 +78,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleProfilServiceIndisponible(ProfilServiceIndisponibleException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
         problem.setTitle("Service d'identité indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(ProfilController.PieceManquanteException.class)
+    public ProblemDetail handlePieceManquante(ProfilController.PieceManquanteException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Requête invalide");
         return problem;
     }
 }

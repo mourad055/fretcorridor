@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.UUID;
 
 @RestController
@@ -49,6 +50,20 @@ public class KycController {
         try {
             UUID acteurId = jwtService.extraireActeurId(authHeader.substring(7));
             return ResponseEntity.ok(kycService.getProfil(acteurId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // ── POST /api/kyc/documents — Dépôt d'une pièce (EF-IDA-03) ─
+    @PostMapping("/documents")
+    public ResponseEntity<?> deposerDocument(
+            @RequestParam("fichier") MultipartFile fichier,
+            @RequestParam("typeDocument") String typeDocument,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            UUID acteurId = jwtService.extraireActeurId(authHeader.substring(7));
+            return ResponseEntity.ok(kycService.deposerPiece(acteurId, typeDocument, fichier));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
