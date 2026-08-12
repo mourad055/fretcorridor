@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class EnfFin02Test {
 
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
-    private final GrandLivreService service = new GrandLivreService(grandLivrePort, new FakeGarantiePort());
+    private final GrandLivreService service = new GrandLivreService(grandLivrePort, new FakeGarantiePort(), new FakeLitigeMissionPort());
 
     @Test
     void refuses_a_reversement_when_no_encaissement_was_ever_recorded() {

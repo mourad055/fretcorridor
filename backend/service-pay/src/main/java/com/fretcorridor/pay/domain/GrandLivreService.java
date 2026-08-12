@@ -13,10 +13,12 @@ public class GrandLivreService {
 
     private final GrandLivrePort grandLivrePort;
     private final GarantiePort garantiePort;
+    private final LitigeMissionPort litigeMissionPort;
 
-    public GrandLivreService(GrandLivrePort grandLivrePort, GarantiePort garantiePort) {
+    public GrandLivreService(GrandLivrePort grandLivrePort, GarantiePort garantiePort, LitigeMissionPort litigeMissionPort) {
         this.grandLivrePort = grandLivrePort;
         this.garantiePort = garantiePort;
+        this.litigeMissionPort = litigeMissionPort;
     }
 
     public EcritureMiroir enregistrerEncaissement(String tenantId, String missionId, BigDecimal montant, String referencePrestataire, ModePaiement modePaiement) {
@@ -35,8 +37,14 @@ public class GrandLivreService {
      * une garantie tierce active couvre le même rôle qu'un encaissement réel
      * pour cette vérification — RG-075 reste vérifié par construction, le
      * risque de crédit restant porté par le garant (jamais FretCorridor).
+     * EF-PAY-08, CDC UC-PAY-02 A1 : un litige actif sur la mission suspend
+     * tout reversement, quel que soit le solde disponible.
      */
     public EcritureMiroir enregistrerReversement(String tenantId, String missionId, String transporteurId, BigDecimal montant, String referencePrestataire) {
+        if (litigeMissionPort.parMission(missionId).map(LitigeMission::actif).orElse(false)) {
+            throw new ReversementSuspenduPourLitigeException(missionId);
+        }
+
         BigDecimal totalEncaisse = totalParNature(missionId, NatureEcriture.ENCAISSEMENT);
         BigDecimal totalGaranti = garantiePort.parMission(missionId).map(Garantie::montant).orElse(BigDecimal.ZERO);
         BigDecimal totalDejaReverse = totalParNature(missionId, NatureEcriture.REVERSEMENT);

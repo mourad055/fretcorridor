@@ -10,6 +10,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -37,6 +38,9 @@ class GrandLivrePersistenceIntegrationTest {
 
     @Autowired
     private PaiementEspecesService paiementEspecesService;
+
+    @Autowired
+    private LitigeMissionPort litigeMissionPort;
 
     @Test
     void an_encaissement_is_persisted_and_readable_back() {
@@ -103,5 +107,17 @@ class GrandLivrePersistenceIntegrationTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                         grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("150"), "ref-rev"))
                 .isInstanceOf(ReversementSansEncaissementException.class);
+    }
+
+    /** EF-PAY-08 : un litige actif persisté suspend le reversement à travers une vraie base. */
+    @Test
+    void a_persisted_active_litige_suspends_the_reversement_across_the_real_database() {
+        String missionId = "mission-test-" + System.nanoTime();
+        grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("100"), "ref-1", ModePaiement.VIREMENT);
+        litigeMissionPort.enregistrerSiPlusRecent(new LitigeMission(missionId, "tenant-1", true, Instant.now()));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() ->
+                        grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("100"), "ref-rev"))
+                .isInstanceOf(ReversementSuspenduPourLitigeException.class);
     }
 }

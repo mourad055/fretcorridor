@@ -15,7 +15,7 @@ class EfPay06Test {
 
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
     private final FakeGarantiePort garantiePort = new FakeGarantiePort();
-    private final GrandLivreService service = new GrandLivreService(grandLivrePort, garantiePort);
+    private final GrandLivreService service = new GrandLivreService(grandLivrePort, garantiePort, new FakeLitigeMissionPort());
 
     @Test
     void records_the_mode_de_paiement_chosen_for_an_encaissement() {
