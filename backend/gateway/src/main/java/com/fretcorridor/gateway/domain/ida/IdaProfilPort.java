@@ -1,5 +1,6 @@
 package com.fretcorridor.gateway.domain.ida;
 
+import org.springframework.http.codec.multipart.FilePart;
 import reactor.core.publisher.Mono;
 
 /**
@@ -14,4 +15,6 @@ public interface IdaProfilPort {
     Mono<Profil> completerParticulier(String delegationToken, String nom, String prenom);
 
     Mono<Profil> completerEntreprise(String delegationToken, String raisonSociale, String numeroRegistreCommerce);
+
+    Mono<Profil> deposerPiece(String delegationToken, String typeDocument, FilePart fichier);
 }
