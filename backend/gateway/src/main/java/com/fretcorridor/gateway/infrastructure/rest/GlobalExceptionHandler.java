@@ -8,6 +8,7 @@ import com.fretcorridor.gateway.domain.agent.EnrolementRefuseException;
 import com.fretcorridor.gateway.domain.cap.CapServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.cap.CapaciteRefuseeException;
 import com.fretcorridor.gateway.domain.flt.FltServiceIndisponibleException;
+import com.fretcorridor.gateway.domain.flt.PositionRefuseeException;
 import com.fretcorridor.gateway.domain.flt.VehiculeRefuseException;
 import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
 import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
@@ -127,6 +128,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleFltServiceIndisponible(FltServiceIndisponibleException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
         problem.setTitle("Service de suivi indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(PositionRefuseeException.class)
+    public ProblemDetail handlePositionRefusee(PositionRefuseeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Position refusée");
         return problem;
     }
 

@@ -76,6 +76,20 @@ Le `vehiculeId` requis par `CapaciteCreationRequest` vient du registre réel
 de la flotte (S10, traité juste avant dans cette série de commits) plutôt
 que d'un identifiant généré localement sur l'appareil.
 
+## État (S6 — suivi GPS)
+
+Envoi périodique de positions fonctionnel — `lib/providers/position_provider.dart`,
+`lib/screens/suivi_gps_screen.dart`, relayé par `EnvoiPositionController`
+(gateway, `/api/v1/positions`) vers `service-flt` (`POST /api/positions`,
+déjà prévu côté service-flt : *"Sera appelée par l'app Chauffeur/Transporteur"*).
+
+**Écart temporaire, dépendance connue sur le S7** : `service-flt` exige un
+`missionId` valide, mais rien ne relie aujourd'hui une mission à son
+chauffeur côté `service-exe` (aucun champ transporteur/chauffeur sur
+`Mission`). L'écran demande donc l'identifiant de mission manuellement — à
+remplacer par un déclenchement automatique une fois l'écran "mission en
+cours" (S7) disponible.
+
 ## État (S10 — console de flotte)
 
 Registre de véhicules réel — `lib/providers/vehicule_provider.dart`,
