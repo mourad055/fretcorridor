@@ -55,6 +55,13 @@ service-adm), rémunération de l'agent conditionnée à l'activité réelle
 RG-020 (nécessite service-pay) — voir `EnrolementAgent.acteurCreeId`
 côté `service-ida`, point d'ancrage pour une future implémentation.
 
+## État (S3 — axes)
+
+`GET /axes` (`lib/providers/axes_provider.dart`, `lib/screens/axes_screen.dart`)
+— nouvelle route gateway mobile (`/api/v1/axes`, tout acteur authentifié),
+service-geo réel derrière. Verrous (matching/paiement inactifs) affichés,
+jamais masqués (RG-012).
+
 ## Lancer en local
 
 ```bash
