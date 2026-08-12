@@ -1,10 +1,8 @@
-# "../backend/service-pay", PAS "backend/service-pay" : Docker Compose
-# résout les chemins relatifs de build par rapport au répertoire du PREMIER
-# fichier -f de la commande (infra/docker-compose.yml, toujours empilé en
-# premier), jamais par rapport à l'emplacement de CE fichier. NE PAS passer
-# --project-directory : ça casserait cette résolution (vérifié empiriquement,
-# cf. ADR 0006). Toujours combiné avec infra/docker-compose.yml (dépend de
-# son service `postgres`).
+# Toujours exécuté depuis la racine du repo (le contexte de build est
+# relatif à backend/service-pay/). Toujours combiné avec
+# infra/docker-compose.yml (dépend de son service `postgres`).
+# est indispensable : sinon Docker Compose résout le contexte de build
+# relatif au répertoire du premier -f (infra/), pas à ce fichier.
 #   docker compose -f infra/docker-compose.yml -f backend/service-pay/docker-compose.service-pay.yml up -d
 # Ne jamais fusionner ce bloc dans infra/docker-compose.yml — voir
 # docs/adr/0006, addendum Sprint 13.
@@ -22,4 +20,4 @@ services:
       SPRING_DATASOURCE_USERNAME: fretcorridor
       SPRING_DATASOURCE_PASSWORD: fretcorridor
     ports:
-      - "8088:8084"
+      - "8088:8088"
