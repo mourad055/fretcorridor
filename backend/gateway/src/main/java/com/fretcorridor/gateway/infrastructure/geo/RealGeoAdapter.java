@@ -11,10 +11,19 @@ import reactor.core.publisher.Flux;
 /**
  * Appelle le service reel service-geo (Moteur, Sprint 3, @stevetelecom).
  *
- * ENF-MUL-01 : correction du 2026-08-09 (audit gateway) - le tenantId n'est
- * plus fabrique a posteriori sur chaque axe retourne. service-geo filtre
- * desormais reellement en base (GET /api/geo/axes?tenantId=...), ce gateway
- * ne fait que relayer le tenant du JWT en query param.
+ * Implementation active par defaut (production/dev) — decision d'equipe
+ * 2026-08-10 (docs/adr, ADR mono-tenant GEO) : la Feuille de route V4
+ * §1.1 scope la Phase 1 a un seul axe/tenant reel (BGFT), donc l'absence
+ * de filtrage serveur cote service-geo n'a pas de consequence en
+ * production tant que ce perimetre tient. Cet adaptateur COLLE le
+ * tenantId du JWT sur chaque axe retourne par service-geo (qui n'en
+ * filtre aucun lui-meme) : ce n'est PAS une garantie d'isolation
+ * ENF-MUL-01 reelle, seulement une absence de risque tant qu'un seul
+ * tenant existe. Des qu'un deuxieme tenant institutionnel rejoint GEO
+ * (Phase 3, Plan d'Execution S18), service-geo doit exposer un vrai
+ * filtre serveur (ex. GET /api/geo/axes?tenantId=) avant que ce
+ * comportement ne redevienne sûr — cf. AxeControllerIsolationTest pour le
+ * detail de cette limite et son suivi.
  */
 @Component
 @Profile("!mock-geo")
