@@ -14,10 +14,12 @@ public class FileTravailService {
 
     private final DossierPort dossierPort;
     private final JournalAuditPort journalAuditPort;
+    private final DossierEventPort dossierEventPort;
 
-    public FileTravailService(DossierPort dossierPort, JournalAuditPort journalAuditPort) {
+    public FileTravailService(DossierPort dossierPort, JournalAuditPort journalAuditPort, DossierEventPort dossierEventPort) {
         this.dossierPort = dossierPort;
         this.journalAuditPort = journalAuditPort;
+        this.dossierEventPort = dossierEventPort;
     }
 
     public Dossier ouvrir(String tenantId, TypeDossier type, PrioriteDossier priorite, String missionId,
@@ -27,6 +29,9 @@ public class FileTravailService {
         dossierPort.sauvegarder(dossier);
         journalAuditPort.enregistrer(new EntreeJournalAudit(UUID.randomUUID().toString(), tenantId, "system",
                 "DOSSIER_OUVERT", "dossier:" + dossier.id(), Instant.now()));
+        if (type == TypeDossier.LITIGE && missionId != null) {
+            dossierEventPort.publier(dossier);
+        }
         return dossier;
     }
 

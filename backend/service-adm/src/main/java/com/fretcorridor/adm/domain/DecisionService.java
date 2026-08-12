@@ -11,10 +11,12 @@ public class DecisionService {
 
     private final DossierPort dossierPort;
     private final JournalAuditPort journalAuditPort;
+    private final DossierEventPort dossierEventPort;
 
-    public DecisionService(DossierPort dossierPort, JournalAuditPort journalAuditPort) {
+    public DecisionService(DossierPort dossierPort, JournalAuditPort journalAuditPort, DossierEventPort dossierEventPort) {
         this.dossierPort = dossierPort;
         this.journalAuditPort = journalAuditPort;
+        this.dossierEventPort = dossierEventPort;
     }
 
     public Dossier trancher(String dossierId, String decision, String motif, String acteurId) {
@@ -23,6 +25,9 @@ public class DecisionService {
         dossierPort.sauvegarder(tranche);
         journalAuditPort.enregistrer(new EntreeJournalAudit(UUID.randomUUID().toString(), dossier.tenantId(),
                 acteurId, "DOSSIER_DECISION_" + decision, "dossier:" + dossierId, Instant.now()));
+        if (tranche.type() == TypeDossier.LITIGE && tranche.missionId() != null) {
+            dossierEventPort.publier(tranche);
+        }
         return tranche;
     }
 }

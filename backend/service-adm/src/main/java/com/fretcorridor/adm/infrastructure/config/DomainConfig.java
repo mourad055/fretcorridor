@@ -3,6 +3,7 @@ package com.fretcorridor.adm.infrastructure.config;
 import com.fretcorridor.adm.domain.ConfigurationPort;
 import com.fretcorridor.adm.domain.ConfigurationService;
 import com.fretcorridor.adm.domain.DecisionService;
+import com.fretcorridor.adm.domain.DossierEventPort;
 import com.fretcorridor.adm.domain.DossierPort;
 import com.fretcorridor.adm.domain.EscaladeService;
 import com.fretcorridor.adm.domain.FileTravailService;
@@ -18,13 +19,13 @@ import org.springframework.context.annotation.Configuration;
 public class DomainConfig {
 
     @Bean
-    public FileTravailService fileTravailService(DossierPort dossierPort, JournalAuditPort journalAuditPort) {
-        return new FileTravailService(dossierPort, journalAuditPort);
+    public FileTravailService fileTravailService(DossierPort dossierPort, JournalAuditPort journalAuditPort, DossierEventPort dossierEventPort) {
+        return new FileTravailService(dossierPort, journalAuditPort, dossierEventPort);
     }
 
     @Bean
-    public DecisionService decisionService(DossierPort dossierPort, JournalAuditPort journalAuditPort) {
-        return new DecisionService(dossierPort, journalAuditPort);
+    public DecisionService decisionService(DossierPort dossierPort, JournalAuditPort journalAuditPort, DossierEventPort dossierEventPort) {
+        return new DecisionService(dossierPort, journalAuditPort, dossierEventPort);
     }
 
     @Bean
