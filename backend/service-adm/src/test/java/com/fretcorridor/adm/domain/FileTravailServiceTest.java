@@ -13,7 +13,8 @@ class FileTravailServiceTest {
 
     private final InMemoryDossierPort dossierPort = new InMemoryDossierPort();
     private final InMemoryJournalAuditPort journalAuditPort = new InMemoryJournalAuditPort();
-    private final FileTravailService service = new FileTravailService(dossierPort, journalAuditPort);
+    private final InMemoryDossierEventPort dossierEventPort = new InMemoryDossierEventPort();
+    private final FileTravailService service = new FileTravailService(dossierPort, journalAuditPort, dossierEventPort);
 
     @Test
     void ouvrir_un_dossier_le_place_en_statut_ouvert_et_journalise() {
@@ -23,6 +24,25 @@ class FileTravailServiceTest {
         assertThat(dossier.statut()).isEqualTo(StatutDossier.OUVERT);
         assertThat(journalAuditPort.lister("tenant-bgft-douala"))
                 .anyMatch(e -> e.action().equals("DOSSIER_OUVERT"));
+    }
+
+    @Test
+    void ouvrir_un_dossier_litige_avec_mission_le_publie_pour_service_pay() {
+        service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
+                "mission-a", List.of(), List.of(), Instant.now().plus(2, ChronoUnit.DAYS));
+
+        assertThat(dossierEventPort.publies()).hasSize(1);
+        assertThat(dossierEventPort.publies().get(0).missionId()).isEqualTo("mission-a");
+    }
+
+    @Test
+    void ouvrir_un_dossier_moderation_ou_sans_mission_n_est_jamais_publie() {
+        service.ouvrir("tenant-bgft-douala", TypeDossier.MODERATION, PrioriteDossier.NORMALE,
+                null, List.of(), List.of(), Instant.now().plus(2, ChronoUnit.DAYS));
+        service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
+                null, List.of(), List.of(), Instant.now().plus(2, ChronoUnit.DAYS));
+
+        assertThat(dossierEventPort.publies()).isEmpty();
     }
 
     @Test

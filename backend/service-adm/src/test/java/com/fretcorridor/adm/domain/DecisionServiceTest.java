@@ -13,8 +13,9 @@ class DecisionServiceTest {
 
     private final InMemoryDossierPort dossierPort = new InMemoryDossierPort();
     private final InMemoryJournalAuditPort journalAuditPort = new InMemoryJournalAuditPort();
-    private final FileTravailService fileTravailService = new FileTravailService(dossierPort, journalAuditPort);
-    private final DecisionService decisionService = new DecisionService(dossierPort, journalAuditPort);
+    private final InMemoryDossierEventPort dossierEventPort = new InMemoryDossierEventPort();
+    private final FileTravailService fileTravailService = new FileTravailService(dossierPort, journalAuditPort, dossierEventPort);
+    private final DecisionService decisionService = new DecisionService(dossierPort, journalAuditPort, dossierEventPort);
 
     @Test
     void trancher_un_dossier_le_clot_et_journalise_la_decision() {
@@ -29,6 +30,10 @@ class DecisionServiceTest {
         assertThat(tranche.decidePar()).isEqualTo("actor-admin-1");
         assertThat(journalAuditPort.lister("tenant-bgft-douala"))
                 .anyMatch(e -> e.action().equals("DOSSIER_DECISION_RESOLU_EN_FAVEUR_TRANSPORTEUR"));
+        assertThat(dossierEventPort.publies())
+                .as("l'ouverture ET la clôture du litige doivent avoir été publiées")
+                .hasSize(2);
+        assertThat(dossierEventPort.publies().get(1).statut()).isEqualTo(StatutDossier.CLOS);
     }
 
     @Test
