@@ -45,11 +45,7 @@ public class GrandLivreService {
             throw new ReversementSuspenduPourLitigeException(missionId);
         }
 
-        BigDecimal totalEncaisse = totalParNature(missionId, NatureEcriture.ENCAISSEMENT);
-        BigDecimal totalGaranti = garantiePort.parMission(missionId).map(Garantie::montant).orElse(BigDecimal.ZERO);
-        BigDecimal totalDejaReverse = totalParNature(missionId, NatureEcriture.REVERSEMENT);
-
-        if (totalEncaisse.add(totalGaranti).subtract(totalDejaReverse).compareTo(montant) < 0) {
+        if (soldeDisponiblePourReversement(missionId).compareTo(montant) < 0) {
             throw new ReversementSansEncaissementException(missionId);
         }
 
@@ -68,6 +64,14 @@ public class GrandLivreService {
 
     public List<EcritureMiroir> ecrituresDuTenant(String tenantId) {
         return grandLivrePort.parTenant(tenantId);
+    }
+
+    /** Encaissement réel + garantie active, net des reversements déjà exécutés (utilisé par RG-075 et par l'ordonnanceur EF-PAY-08). */
+    public BigDecimal soldeDisponiblePourReversement(String missionId) {
+        BigDecimal totalEncaisse = totalParNature(missionId, NatureEcriture.ENCAISSEMENT);
+        BigDecimal totalGaranti = garantiePort.parMission(missionId).map(Garantie::montant).orElse(BigDecimal.ZERO);
+        BigDecimal totalDejaReverse = totalParNature(missionId, NatureEcriture.REVERSEMENT);
+        return totalEncaisse.add(totalGaranti).subtract(totalDejaReverse);
     }
 
     private BigDecimal totalParNature(String missionId, NatureEcriture nature) {

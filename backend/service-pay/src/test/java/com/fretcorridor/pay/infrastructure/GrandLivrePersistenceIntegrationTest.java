@@ -42,6 +42,12 @@ class GrandLivrePersistenceIntegrationTest {
     @Autowired
     private LitigeMissionPort litigeMissionPort;
 
+    @Autowired
+    private SequestrePort sequestrePort;
+
+    @Autowired
+    private ReversementAutomatiqueService reversementAutomatiqueService;
+
     @Test
     void an_encaissement_is_persisted_and_readable_back() {
         String missionId = "mission-test-" + System.nanoTime();
@@ -81,7 +87,7 @@ class GrandLivrePersistenceIntegrationTest {
         String missionId = "mission-test-" + System.nanoTime();
 
         sequestreService.declencher(missionId);
-        Sequestre libere = sequestreService.liberer(missionId);
+        Sequestre libere = sequestreService.liberer(missionId, "tenant-1", "actor-transporteur-1");
 
         assertThat(libere.etat()).isEqualTo(SequestreEtat.LIBERE);
     }
@@ -119,5 +125,21 @@ class GrandLivrePersistenceIntegrationTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() ->
                         grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("100"), "ref-rev"))
                 .isInstanceOf(ReversementSuspenduPourLitigeException.class);
+    }
+
+    /** EF-PAY-08 : l'ordonnanceur reverse réellement une mission éligible, à travers une vraie base (config par défaut : 48h). */
+    @Test
+    void the_ordonnanceur_reverses_an_eligible_mission_across_the_real_database() {
+        String missionId = "mission-test-" + System.nanoTime();
+        Instant maintenant = Instant.now();
+        grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("100"), "ref-1", ModePaiement.VIREMENT);
+        sequestrePort.sauvegarder(new Sequestre(missionId, SequestreEtat.LIBERE,
+                maintenant.minus(50, java.time.temporal.ChronoUnit.HOURS), maintenant.minus(49, java.time.temporal.ChronoUnit.HOURS),
+                "tenant-1", "actor-transporteur-1"));
+
+        var reversements = reversementAutomatiqueService.detecterEtReverser(maintenant);
+
+        assertThat(reversements).anyMatch(e -> e.missionId().equals(missionId));
+        assertThat(grandLivreService.soldeDisponiblePourReversement(missionId)).isEqualByComparingTo("0");
     }
 }
