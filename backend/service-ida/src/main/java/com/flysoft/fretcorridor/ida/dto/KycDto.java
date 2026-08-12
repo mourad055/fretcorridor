@@ -3,6 +3,7 @@ package com.flysoft.fretcorridor.ida.dto;
 import com.flysoft.fretcorridor.ida.entity.Acteur;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,8 +32,10 @@ public class KycDto {
         private String prenom;
         private String raisonSociale;
         private String niveauKyc;
+        @Builder.Default
+        private List<PieceResponse> pieces = List.of();
 
-        public static ProfilResponse fromEntity(Acteur a) {
+        public static ProfilResponse fromEntity(Acteur a, List<PieceResponse> pieces) {
             boolean estEntreprise = a.getOrganisation() != null;
             return ProfilResponse.builder()
                     .acteurId(a.getId())
@@ -41,8 +44,20 @@ public class KycDto {
                     .prenom(a.getPrenom())
                     .raisonSociale(estEntreprise ? a.getOrganisation().getRaisonSociale() : null)
                     .niveauKyc(a.getNiveauKyc().name())
+                    .pieces(pieces)
                     .build();
         }
+    }
+
+    // ── Pièce justificative déposée (EF-IDA-03) ───────────────
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class PieceResponse {
+        private String typeDocument;
+        private String url; // présignée, à durée limitée — jamais persistée telle quelle
+        private LocalDateTime dateDepot;
     }
 
     // Renvoyé après complétion — nouveaux tokens avec le niveauKyc à jour
