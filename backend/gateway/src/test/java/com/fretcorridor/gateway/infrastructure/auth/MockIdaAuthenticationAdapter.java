@@ -35,7 +35,9 @@ public class MockIdaAuthenticationAdapter implements AuthenticationPort {
             // Second tenant Bureau, pour les tests et démonstrations d'isolation multi-tenant (ENF-MUL-01).
             "+235600000004", new Actor("actor-bureau-2", "+235600000004", Role.BUREAU, "tenant-bnft-ndjamena", JETON_IDA_FACTICE),
             // Second Transporteur du même tenant, pour les tests d'isolation par acteur (PRD §5.3).
-            "+237600000005", new Actor("actor-transporteur-2", "+237600000005", Role.TRANSPORTEUR, "tenant-bgft-douala", JETON_IDA_FACTICE)
+            "+237600000005", new Actor("actor-transporteur-2", "+237600000005", Role.TRANSPORTEUR, "tenant-bgft-douala", JETON_IDA_FACTICE),
+            // Agent de terrain, pour les tests d'enrôlement (UC-IDA-03).
+            "+237600000006", new Actor("actor-agent-1", "+237600000006", Role.AGENT, "tenant-bgft-douala", JETON_IDA_FACTICE)
     );
 
     @Override

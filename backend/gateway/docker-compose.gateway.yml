@@ -33,5 +33,26 @@ services:
       # implemente - resout par nom de conteneur si son propre fichier
       # compose fait partie de la commande.
       FRETCORRIDOR_SERVICE_GEO_URL: http://service-geo:8084
+      # service-bur (Web) matérialise les missions appariées depuis Kafka —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande.
+      FRETCORRIDOR_SERVICE_BUR_URL: http://service-bur:8083
+      # service-flt (Mobile, Sprint 10 véhicules + Sprint 6 GPS) : appel
+      # réel — résout par nom de conteneur si son propre fichier compose
+      # fait partie de la commande. Port interne 8083 (le 8092 du tableau
+      # de ports est le mapping HÔTE, cf. docker-compose.service-flt.yml).
+      FRETCORRIDOR_SERVICE_FLT_URL: http://service-flt:8083
+      # service-cap (Mobile, Sprint 4) : déclaration de capacité, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande.
+      FRETCORRIDOR_SERVICE_CAP_URL: http://service-cap:8096
+      # service-exe (Mobile, Sprint 7) : exécution de mission, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande. Fonctionnellement bloqué, voir README.md.
+      FRETCORRIDOR_SERVICE_EXE_URL: http://service-exe:8093
+      # service-not (Mobile, Sprint 9) : centre de notifications, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande.
+      FRETCORRIDOR_SERVICE_NOT_URL: http://service-not:8094
     ports:
       - "8082:8082"
