@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>FretCorridor a besoin de la caméra pour photographier votre pièce d'identité (dépôt KYC).</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>FretCorridor a besoin de votre position pour horodater et géolocaliser les enrôlements que vous réalisez en tant qu'agent.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

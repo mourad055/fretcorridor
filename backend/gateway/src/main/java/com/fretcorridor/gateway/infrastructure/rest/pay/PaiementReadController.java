@@ -32,6 +32,21 @@ public class PaiementReadController {
 
     @GetMapping("/api/v1/transporteur/paiement")
     public Mono<SoldeTransporteurResponse> soldeTransporteur(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return soldeDe(actor);
+    }
+
+    /**
+     * S8 (app Chauffeur/Transporteur, EF-PAY) : même lecture que ci-dessus,
+     * mais ouverte à tout acteur authentifié — /api/v1/transporteur/** est
+     * réservé au rôle TRANSPORTEUR (portail Web), ce qui exclurait un
+     * CHAUFFEUR ou un CHAUFFEUR_PROPRIETAIRE côté mobile.
+     */
+    @GetMapping("/api/v1/paiement")
+    public Mono<SoldeTransporteurResponse> monSolde(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return soldeDe(actor);
+    }
+
+    private Mono<SoldeTransporteurResponse> soldeDe(AuthenticatedActor actor) {
         return payReadPort.ecrituresDuTransporteur(actor.actorId())
                 .map(EcritureVueResponse::from)
                 .collectList()
