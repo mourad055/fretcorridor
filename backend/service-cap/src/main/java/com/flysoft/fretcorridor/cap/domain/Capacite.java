@@ -25,6 +25,13 @@ public class Capacite {
     @Column(name = "axe_id", nullable = false)
     private UUID axeId;
 
+    // Resolu via ServiceFltClient au moment de la declaration (best-effort,
+    // ferme le bug S7 - transporteurId toujours null cote OPT). Nullable :
+    // service-flt injoignable ou vehicule non enregistre ne bloque jamais
+    // la declaration (ENF-DIS-04).
+    @Column(name = "transporteur_id")
+    private UUID transporteurId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "mode_declaration", nullable = false, length = 30)
     private ModeDeclaration modeDeclaration;
@@ -96,7 +103,7 @@ public class Capacite {
         // requis par JPA
     }
 
-    public Capacite(UUID vehiculeId, UUID axeId, ModeDeclaration modeDeclaration,
+    public Capacite(UUID vehiculeId, UUID axeId, UUID transporteurId, ModeDeclaration modeDeclaration,
                      BigDecimal poidsKg, BigDecimal volumeM3, BigDecimal longueurPlancherM,
                      BigDecimal poidsTaxableKg, double origineLatitude, double origineLongitude,
                      String typeVehicule, BigDecimal profilHauteurM, BigDecimal profilLargeurM,
@@ -105,6 +112,7 @@ public class Capacite {
                      boolean profilMatieresDangereuses, Instant dateDepart) {
         this.vehiculeId = vehiculeId;
         this.axeId = axeId;
+        this.transporteurId = transporteurId;
         this.modeDeclaration = modeDeclaration;
         this.poidsKg = poidsKg;
         this.volumeM3 = volumeM3;
@@ -150,6 +158,7 @@ public class Capacite {
     public UUID getId() { return id; }
     public UUID getVehiculeId() { return vehiculeId; }
     public UUID getAxeId() { return axeId; }
+    public UUID getTransporteurId() { return transporteurId; }
     public ModeDeclaration getModeDeclaration() { return modeDeclaration; }
     public BigDecimal getPoidsKg() { return poidsKg; }
     public BigDecimal getVolumeM3() { return volumeM3; }

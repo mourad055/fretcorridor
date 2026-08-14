@@ -1,5 +1,6 @@
 package com.flysoft.fretcorridor.cap.domain;
 
+import com.flysoft.fretcorridor.cap.client.ServiceFltClient;
 import com.flysoft.fretcorridor.cap.messaging.CapEventPublisher;
 import com.flysoft.fretcorridor.cap.messaging.CapaciteDeclareeEvent;
 import com.flysoft.fretcorridor.cap.messaging.PointGeoDto;
@@ -30,6 +31,7 @@ public class CapaciteService {
     private final CapaciteRepository capaciteRepository;
     private final CalculateurPoidsTaxable calculateurPoidsTaxable;
     private final CapEventPublisher eventPublisher;
+    private final ServiceFltClient serviceFltClient;
     // Isole l'INSERT d'idempotence dans SA PROPRE transaction physique
     // (REQUIRES_NEW). Sans ca, une violation de contrainte unique sur cet
     // INSERT marque la transaction Hibernate/JPA EN COURS comme
@@ -47,10 +49,12 @@ public class CapaciteService {
     public CapaciteService(CapaciteRepository capaciteRepository,
                             CalculateurPoidsTaxable calculateurPoidsTaxable,
                             CapEventPublisher eventPublisher,
+                            ServiceFltClient serviceFltClient,
                             PlatformTransactionManager transactionManager) {
         this.capaciteRepository = capaciteRepository;
         this.calculateurPoidsTaxable = calculateurPoidsTaxable;
         this.eventPublisher = eventPublisher;
+        this.serviceFltClient = serviceFltClient;
         this.transactionTemplateIdempotence = new TransactionTemplate(transactionManager);
         this.transactionTemplateIdempotence.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
     }
@@ -59,8 +63,12 @@ public class CapaciteService {
     public Capacite declarer(CapaciteCreationRequest requete) {
         BigDecimal poidsTaxable = calculateurPoidsTaxable.calculer(requete.poidsKg(), requete.volumeM3());
 
+        // Resolution best-effort du transporteur (ferme le bug S7) - jamais
+        // bloquant, cf javadoc ServiceFltClient (ENF-DIS-04).
+        UUID transporteurId = serviceFltClient.resoudreProprietaire(requete.vehiculeId()).orElse(null);
+
         Capacite capacite = new Capacite(
-                requete.vehiculeId(), requete.axeId(), requete.modeDeclaration(),
+                requete.vehiculeId(), requete.axeId(), transporteurId, requete.modeDeclaration(),
                 requete.poidsKg(), requete.volumeM3(), requete.longueurPlancherM(),
                 poidsTaxable, requete.origineLatitude(), requete.origineLongitude(),
                 requete.typeVehicule(),
@@ -96,7 +104,8 @@ public class CapaciteService {
                 capacite.isProfilMatieresDangereuses());
 
         CapaciteDeclareeEvent event = new CapaciteDeclareeEvent(
-                UUID.randomUUID(), capacite.getId(), capacite.getAxeId(), valeursCriteres,
+                UUID.randomUUID(), capacite.getId(), capacite.getAxeId(),
+                capacite.getTransporteurId(), capacite.getVehiculeId(), valeursCriteres,
                 new PointGeoDto(capacite.getOrigineLatitude(), capacite.getOrigineLongitude()),
                 profil, capacite.getTypeVehicule());
 

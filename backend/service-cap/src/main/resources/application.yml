@@ -17,6 +17,13 @@ spring:
     enabled: true
     schemas: cap
     default-schema: cap
+  client:
+    service-flt:
+      base-url: http://localhost:8092
+      # Best-effort (ENF-DIS-04) : timeout serre, service-cap ne doit jamais
+      # rester bloque pour resoudre un transporteur.
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
   kafka:
     bootstrap-servers: localhost:9092
     producer:
