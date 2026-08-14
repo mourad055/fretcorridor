@@ -3,3 +3,6 @@ spring:
     url: jdbc:postgresql://postgres:5432/fretcorridor
   kafka:
     bootstrap-servers: kafka:29092
+  client:
+    service-flt:
+      base-url: http://service-flt:8092

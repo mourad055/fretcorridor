@@ -27,6 +27,11 @@ public class VehiculeDto {
     @Builder
     public static class VehiculeResponse {
         private UUID id;
+        // AJOUT : necessaire a service-cap (ServiceFltClient) pour resoudre
+        // le transporteur au moment de la declaration de capacite - ferme le
+        // bug S7 (AffectationConfirmeeEvent.transporteurId toujours null
+        // cote OPT).
+        private UUID proprietaireActeurId;
         private String typeVehicule;
         private String immatriculation;
         private Double profilHauteurMetres;
@@ -41,6 +46,7 @@ public class VehiculeDto {
         public static VehiculeResponse fromEntity(Vehicule v) {
             return VehiculeResponse.builder()
                     .id(v.getId())
+                    .proprietaireActeurId(v.getProprietaireActeurId())
                     .typeVehicule(v.getTypeVehicule())
                     .immatriculation(v.getImmatriculation())
                     .profilHauteurMetres(v.getProfilHauteurMetres())

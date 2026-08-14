@@ -20,9 +20,9 @@ import java.util.UUID;
  * Capacite en attente d'un cycle de matching (EF-MAT-01, "par cycles a
  * fenetre"). Voir MatchingCycleService pour la consommation du lot.
  *
- * Colonnes a plat (pas de type embarque) pour position/profil : coherent
- * avec opt.affectation (V4) qui fait le meme choix, evite d'ajouter
- * hibernate-spatial pour un simple point.
+ * transporteurId/vehiculeId : nullable, cf CapaciteDeclareeEvent - fix du bug
+ * S7 remonte par Personne 1 (Mobile), en attente de la publication reelle
+ * cote service-cap.
  */
 @Entity
 @Table(name = "capacite_en_attente", schema = "opt")
@@ -37,6 +37,12 @@ public class CapaciteEnAttente {
 
     @Column(name = "axe_id", nullable = false)
     private UUID axeId;
+
+    @Column(name = "transporteur_id")
+    private UUID transporteurId;
+
+    @Column(name = "vehicule_id")
+    private UUID vehiculeId;
 
     @Column(name = "event_id", nullable = false, unique = true)
     private UUID eventId;
@@ -85,10 +91,13 @@ public class CapaciteEnAttente {
         // requis par JPA
     }
 
-    public CapaciteEnAttente(UUID capaciteId, UUID axeId, UUID eventId, Map<String, Double> valeursCriteres,
+    public CapaciteEnAttente(UUID capaciteId, UUID axeId, UUID transporteurId, UUID vehiculeId,
+                              UUID eventId, Map<String, Double> valeursCriteres,
                               PointGeoDto position, ProfilCamionDto profilCamion, String typeVehicule) {
         this.capaciteId = capaciteId;
         this.axeId = axeId;
+        this.transporteurId = transporteurId;
+        this.vehiculeId = vehiculeId;
         this.eventId = eventId;
         this.valeursCriteres = valeursCriteres;
         if (position != null) {
@@ -115,6 +124,8 @@ public class CapaciteEnAttente {
     public UUID getId() { return id; }
     public UUID getCapaciteId() { return capaciteId; }
     public UUID getAxeId() { return axeId; }
+    public UUID getTransporteurId() { return transporteurId; }
+    public UUID getVehiculeId() { return vehiculeId; }
     public Map<String, Double> getValeursCriteres() { return valeursCriteres; }
     public boolean isTraitee() { return traitee; }
     public void marquerTraitee() { this.traitee = true; }
