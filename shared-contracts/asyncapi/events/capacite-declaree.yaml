@@ -30,7 +30,28 @@ components:
         - capaciteId
         - axeId
         - valeursCriteres
+        - capaciteResiduelleKg
       properties:
+        capaciteResiduelleKg:
+          type: number
+          description: >
+            Poids residuel disponible dans cette capacite (EF-CAP-07, apres
+            application de la regle du maximum EF-CAP-02). Indispensable au
+            sequencement L2 (Phase 2, CDC S8.6.1 point 3 - "capacite
+            dynamique") : sans cette valeur, OPT ne peut verifier ni la
+            capacite disponible pour une consolidation LTL, ni son evolution
+            le long d'une tournee multi-arrets. Non nullable : contrairement
+            a position/profilCamion (degradent seulement le calcul aval),
+            une capacite sans grandeur connue n'a pas de sens fonctionnel a
+            proposer au matching.
+        volumeResiduelM3:
+          type: number
+          nullable: true
+          description: >
+            Volume residuel disponible (EF-CAP-01, "poids, volume... 
+            simultanement"). Nullable en Phase 1 (le L1 actuel n'utilise que
+            le poids) - devient utile en Phase 2 pour la faisabilite de
+            chargement (EF-MAT-05).
         eventId:
           type: string
           format: uuid

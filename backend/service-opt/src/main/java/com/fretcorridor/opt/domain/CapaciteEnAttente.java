@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -81,6 +82,16 @@ public class CapaciteEnAttente {
     @Column(name = "type_vehicule")
     private String typeVehicule;
 
+    // EF-CAP-07 / CDC S8.6.1 point 3 (capacite dynamique) - grandeur
+    // reellement disponible, distincte de profilPoidsMaxT (plafond
+    // vehicule). Non nullable en base : coherent avec le caractere
+    // requis du champ dans capacite-declaree.yaml.
+    @Column(name = "capacite_residuelle_kg", nullable = false, precision = 12, scale = 2)
+    private BigDecimal capaciteResiduelleKg;
+
+    @Column(name = "volume_residuel_m3", precision = 12, scale = 3)
+    private BigDecimal volumeResiduelM3;
+
     @Column(nullable = false)
     private boolean traitee = false;
 
@@ -93,7 +104,8 @@ public class CapaciteEnAttente {
 
     public CapaciteEnAttente(UUID capaciteId, UUID axeId, UUID transporteurId, UUID vehiculeId,
                               UUID eventId, Map<String, Double> valeursCriteres,
-                              PointGeoDto position, ProfilCamionDto profilCamion, String typeVehicule) {
+                              PointGeoDto position, ProfilCamionDto profilCamion, String typeVehicule,
+                              BigDecimal capaciteResiduelleKg, BigDecimal volumeResiduelM3) {
         this.capaciteId = capaciteId;
         this.axeId = axeId;
         this.transporteurId = transporteurId;
@@ -114,6 +126,8 @@ public class CapaciteEnAttente {
             this.profilMatieresDangereuses = profilCamion.matieresDangereuses();
         }
         this.typeVehicule = typeVehicule;
+        this.capaciteResiduelleKg = capaciteResiduelleKg;
+        this.volumeResiduelM3 = volumeResiduelM3;
     }
 
     @PrePersist
@@ -146,4 +160,6 @@ public class CapaciteEnAttente {
     }
 
     public String getTypeVehicule() { return typeVehicule; }
+    public BigDecimal getCapaciteResiduelleKg() { return capaciteResiduelleKg; }
+    public BigDecimal getVolumeResiduelM3() { return volumeResiduelM3; }
 }
