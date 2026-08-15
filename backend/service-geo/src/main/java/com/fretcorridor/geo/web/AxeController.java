@@ -4,7 +4,10 @@ import com.fretcorridor.geo.domain.Axe;
 import com.fretcorridor.geo.domain.AxeRepository;
 import com.fretcorridor.geo.domain.Hub;
 import com.fretcorridor.geo.domain.HubRepository;
+import com.fretcorridor.geo.domain.JournalAuditRisque;
+import com.fretcorridor.geo.domain.JournalAuditRisqueRepository;
 import com.fretcorridor.geo.web.dto.AxeCreationRequest;
+import com.fretcorridor.geo.web.dto.RisqueSecuritaireRequest;
 import com.fretcorridor.geo.web.dto.AxeResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -37,10 +41,13 @@ public class AxeController {
 
     private final AxeRepository axeRepository;
     private final HubRepository hubRepository;
+    private final JournalAuditRisqueRepository journalAuditRisqueRepository;
 
-    public AxeController(AxeRepository axeRepository, HubRepository hubRepository) {
+    public AxeController(AxeRepository axeRepository, HubRepository hubRepository,
+                          JournalAuditRisqueRepository journalAuditRisqueRepository) {
         this.axeRepository = axeRepository;
         this.hubRepository = hubRepository;
+        this.journalAuditRisqueRepository = journalAuditRisqueRepository;
     }
 
     @PostMapping
@@ -122,6 +129,43 @@ public class AxeController {
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "etat inconnu : " + etat + " (attendu : visibilite, matching ou paiement)");
         }
+
+        return AxeResponse.from(axeRepository.save(axe));
+    }
+
+    /**
+     * G3 (CDC S4.5) / EF-GEO-04 (S9.9) : renseigne le niveau de risque
+     * securitaire de l'axe, avec decision explicite tracee (JournalAuditRisque,
+     * append-only). C'est CETTE ecriture qui constitue le "renseignement a
+     * jour et decision explicite tracee" exige par G3 - sans elle, l'axe reste
+     * GELE par defaut pour tout niveau autre que NORMAL (cf isOperationnel ci-dessous).
+     *
+     * @Transactional implicite via Spring Data - axe.save() et le nouvel
+     * enregistrement d'audit doivent reussir ensemble ou pas du tout (jamais
+     * un axe deverrouille sans trace, ni une trace sans effet reel sur l'axe).
+     */
+    @PatchMapping("/{id}/risque-securitaire")
+    public AxeResponse renseignerRisqueSecuritaire(@PathVariable UUID id,
+                                                     @Valid @RequestBody RisqueSecuritaireRequest requete) {
+        Axe axe = axeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "axe introuvable : " + id));
+
+        Map<String, Object> parametres = new java.util.HashMap<>(axe.getParametres());
+        Object risqueExistant = parametres.get("risqueSecuritaire");
+        String niveauAvant = (risqueExistant instanceof Map<?, ?> m && m.get("niveauRisque") != null)
+                ? m.get("niveauRisque").toString() : null;
+
+        Map<String, Object> risque = new java.util.HashMap<>();
+        risque.put("niveauRisque", requete.niveauRisque());
+        risque.put("renseigneParActeurId", requete.acteurId().toString());
+        risque.put("dateRenseignement", java.time.Instant.now().toString());
+        risque.put("motif", requete.motif());
+        parametres.put("risqueSecuritaire", risque);
+        axe.setParametres(parametres);
+
+        journalAuditRisqueRepository.save(new JournalAuditRisque(
+                id, requete.acteurId(), niveauAvant, requete.niveauRisque(), requete.motif()));
 
         return AxeResponse.from(axeRepository.save(axe));
     }

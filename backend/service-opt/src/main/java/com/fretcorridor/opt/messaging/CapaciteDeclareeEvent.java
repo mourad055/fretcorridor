@@ -28,6 +28,11 @@ public record CapaciteDeclareeEvent(
         Map<String, Double> valeursCriteres,
         PointGeoDto position,
         ProfilCamionDto profilCamion,
-        String typeVehicule
+        String typeVehicule,
+        // EF-CAP-07 / CDC S8.6.1 (capacite dynamique) - grandeur reellement
+        // disponible, distincte du plafond du vehicule (ProfilCamionDto.
+        // poidsMaxTonnes). Indispensable au sequencement L2 (Phase 2).
+        java.math.BigDecimal capaciteResiduelleKg,
+        java.math.BigDecimal volumeResiduelM3
 ) {
 }
