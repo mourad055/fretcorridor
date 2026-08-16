@@ -165,6 +165,21 @@ Traité avant le S4 (capacité) dans cette série de commits : la déclaration
 de capacité a besoin d'un `vehiculeId` réel, donc le registre doit exister
 avant que l'écran capacité puisse compiler/fonctionner (voir S4 ci-dessous).
 
+## État (S12 — retour à vide & replanification) — ⚠️ MOCK, pas de backend réel
+
+Phase 2, Sprint 12. Proposition de mission retour (trajet à vide proposé
+après une livraison) affichée dans le centre de notifications
+(`lib/screens/notifications_screen.dart`), avec acceptation/refus par le
+chauffeur — `lib/providers/proposition_retour_provider.dart`.
+
+**🧪 Entièrement mocké** : le Moteur (service-opt) ne publie pas encore de
+proposition de mission retour — aucun topic Kafka `proposition-retour` (ou
+équivalent) n'existe côté Moteur. Le mock simule la réception d'une
+proposition à l'ouverture de l'écran, avec accepter/refuser purement
+locaux (aucun appel réseau). Le flux de notifications réel (S9,
+`notification_provider.dart`) n'est pas modifié, seulement affiché côte à
+côte dans le même écran.
+
 ## Lancer en local
 
 ```bash
