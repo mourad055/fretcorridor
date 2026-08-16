@@ -165,6 +165,59 @@ Traité avant le S4 (capacité) dans cette série de commits : la déclaration
 de capacité a besoin d'un `vehiculeId` réel, donc le registre doit exister
 avant que l'écran capacité puisse compiler/fonctionner (voir S4 ci-dessous).
 
+## État (S11 — tournée multi-étapes) — ⚠️ MOCK, pas de backend réel
+
+Phase 2, Sprint 11 ("Consolidation LTL, moteur V1") : écran de démonstration
+d'une tournée à étapes multiples (plusieurs enlèvements et/ou livraisons
+consécutifs, ex. groupage) — `lib/providers/mission_multi_etapes_provider.dart`,
+`lib/screens/mission_multi_etapes_screen.dart`. Accessible depuis l'accueil
+(icône dédiée « Tournée groupée (démo) »), séparé du flux S7 existant
+(`mission_provider.dart`/`missions_screen.dart`/`mission_detail_screen.dart`)
+qui n'est pas modifié.
+
+N'affiche qu'**une seule action à la fois** (l'étape en cours), avec la
+chronologie des étapes déjà terminées en dessous — même principe que
+l'écran S7, généralisé à N étapes au lieu d'un statut linéaire fixe.
+
+**🧪 Entièrement mocké, aucun appel réseau** : `service-opt` (Moteur)
+n'expose pas encore le multi-étapes côté serveur. Le topic Kafka
+`EtapeExecutee` est en cours de spec côté Moteur pour le S12
+(`missionId` = celui d'`AffectationConfirmeeEvent`, confirmé) — à
+brancher sur le vrai backend dès qu'il sera disponible, même contrat que
+`MissionExecutionController` (S7) généralisé à N étapes. Le mock est
+isolé dans `MissionMultiEtapesNotifier` (commentaire explicite en tête
+du fichier).
+
+## État (S12 — retour à vide & replanification) — ⚠️ MOCK, pas de backend réel
+
+Phase 2, Sprint 12. Proposition de mission retour (trajet à vide proposé
+après une livraison) affichée dans le centre de notifications
+(`lib/screens/notifications_screen.dart`), avec acceptation/refus par le
+chauffeur — `lib/providers/proposition_retour_provider.dart`.
+
+**🧪 Entièrement mocké** : le Moteur (service-opt) ne publie pas encore de
+proposition de mission retour — aucun topic Kafka `proposition-retour` (ou
+équivalent) n'existe côté Moteur. Le mock simule la réception d'une
+proposition à l'ouverture de l'écran, avec accepter/refuser purement
+locaux (aucun appel réseau). Le flux de notifications réel (S9,
+`notification_provider.dart`) n'est pas modifié, seulement affiché côte à
+côte dans le même écran.
+
+## État (S14 — affichage du mode de règlement) — ⚠️ MOCK, pas de backend réel
+
+Phase 2, Sprint 14 ("Paiements Mobile Money étendus"), Volet Chauffeur.
+Sur l'écran solde et gains (`lib/screens/paiement_screen.dart`), chaque
+encaissement affiche désormais le moyen de règlement utilisé par le client
+(MTN MoMo / Orange Money / Espèces) — lecture seule.
+
+**🧪 Entièrement mocké** : `Ecriture` (grand livre miroir de service-pay,
+S8) ne porte aujourd'hui aucun champ "moyen de règlement" — service-pay
+(Web) ne l'expose pas encore par écriture. Le mock est isolé dans
+`lib/mock/moyen_reglement_mock.dart`, dérivé du `missionId` déjà connu,
+aucun appel réseau supplémentaire. N'affecte que les écritures de nature
+`ENCAISSEMENT` (seules pertinentes côté paiement client) ; le reste de
+l'écran (S8) est inchangé.
+
 ## Lancer en local
 
 ```bash

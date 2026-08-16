@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../mock/moyen_reglement_mock.dart';
 import '../providers/paiement_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -93,6 +94,10 @@ class _PaiementScreenState extends ConsumerState<PaiementScreen> {
 
   Widget _carteEcriture(Ecriture e) {
     final positif = e.sens == 'CREDIT';
+    // S14 — MOCK (moyen_reglement_mock.dart) : service-pay n'expose pas
+    // encore le moyen de règlement par écriture, uniquement pertinent pour
+    // les encaissements (côté client), pas pour les reversements/commissions.
+    final moyen = e.nature == 'ENCAISSEMENT' ? moyenReglementMock(e.missionId) : null;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
@@ -110,6 +115,15 @@ class _PaiementScreenState extends ConsumerState<PaiementScreen> {
             children: [
               Text(_libellesNature[e.nature] ?? e.nature, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               Text(e.statut, style: const TextStyle(color: AppColors.texteMuet, fontSize: 11)),
+              if (moyen != null) ...[
+                const SizedBox(height: 2),
+                Row(children: [
+                  const Icon(Icons.payments_outlined, color: AppColors.texteMuet, size: 12),
+                  const SizedBox(width: 4),
+                  Text('Réglé via ${libellesMoyenReglement[moyen]}',
+                      style: const TextStyle(color: AppColors.texteMuet, fontSize: 11)),
+                ]),
+              ],
             ],
           ),
         ),

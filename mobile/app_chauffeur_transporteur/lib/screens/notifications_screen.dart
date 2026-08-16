@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/notification_provider.dart';
+import '../providers/proposition_retour_provider.dart';
 import '../theme/app_theme.dart';
 
 const _iconesType = {
@@ -22,33 +23,105 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(notificationProvider.notifier).charger());
+    Future.microtask(() {
+      ref.read(notificationProvider.notifier).charger();
+      // S12 — MOCK, voir proposition_retour_provider.dart.
+      ref.read(propositionRetourProvider.notifier).simulerReception();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(notificationProvider);
+    final propositionsEnAttente = ref.watch(propositionRetourProvider).enAttente;
 
     return Scaffold(
       backgroundColor: AppColors.fond,
       appBar: AppBar(title: const Text('Notifications')),
       body: RefreshIndicator(
         onRefresh: () => ref.read(notificationProvider.notifier).charger(),
-        child: state.chargement && state.notifications.isEmpty
+        child: state.chargement && state.notifications.isEmpty && propositionsEnAttente.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : state.erreur != null
                 ? _erreur(state.erreur!)
-                : state.notifications.isEmpty
+                : state.notifications.isEmpty && propositionsEnAttente.isEmpty
                     ? ListView(children: const [
                         SizedBox(height: 80),
                         Center(child: Text('Aucune notification.', style: TextStyle(color: AppColors.texteMuet))),
                       ])
-                    : ListView.separated(
+                    : ListView(
                         padding: const EdgeInsets.all(16),
-                        itemCount: state.notifications.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, i) => _carteNotification(state.notifications[i]),
+                        children: [
+                          for (final p in propositionsEnAttente) ...[
+                            _cartePropositionRetour(p),
+                            const SizedBox(height: 8),
+                          ],
+                          for (final n in state.notifications) ...[
+                            _carteNotification(n),
+                            const SizedBox(height: 8),
+                          ],
+                        ],
                       ),
+      ),
+    );
+  }
+
+  // S12 — MOCK (proposition_retour_provider.dart) : proposition de mission
+  // retour après une livraison, avec acceptation/refus par le chauffeur.
+  // Aucun flux Kafka réel côté Moteur pour l'instant — simulé localement.
+  Widget _cartePropositionRetour(PropositionRetour p) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceClaire,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            const Icon(Icons.sync_alt, color: AppColors.accent),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Proposition de mission retour (démo)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  const SizedBox(height: 2),
+                  Text('${p.trajetLibelle} — ${p.distanceKm.round()} km',
+                      style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                ],
+              ),
+            ),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => ref.read(propositionRetourProvider.notifier).refuser(p.id),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.erreur),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Refuser', style: TextStyle(color: AppColors.erreur)),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => ref.read(propositionRetourProvider.notifier).accepter(p.id),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Accepter', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+              ),
+            ),
+          ]),
+        ],
       ),
     );
   }
