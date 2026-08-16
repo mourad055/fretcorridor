@@ -188,6 +188,21 @@ brancher sur le vrai backend dès qu'il sera disponible, même contrat que
 isolé dans `MissionMultiEtapesNotifier` (commentaire explicite en tête
 du fichier).
 
+## État (S12 — retour à vide & replanification) — ⚠️ MOCK, pas de backend réel
+
+Phase 2, Sprint 12. Proposition de mission retour (trajet à vide proposé
+après une livraison) affichée dans le centre de notifications
+(`lib/screens/notifications_screen.dart`), avec acceptation/refus par le
+chauffeur — `lib/providers/proposition_retour_provider.dart`.
+
+**🧪 Entièrement mocké** : le Moteur (service-opt) ne publie pas encore de
+proposition de mission retour — aucun topic Kafka `proposition-retour` (ou
+équivalent) n'existe côté Moteur. Le mock simule la réception d'une
+proposition à l'ouverture de l'écran, avec accepter/refuser purement
+locaux (aucun appel réseau). Le flux de notifications réel (S9,
+`notification_provider.dart`) n'est pas modifié, seulement affiché côte à
+côte dans le même écran.
+
 ## Lancer en local
 
 ```bash
