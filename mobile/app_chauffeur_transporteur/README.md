@@ -165,6 +165,21 @@ Traité avant le S4 (capacité) dans cette série de commits : la déclaration
 de capacité a besoin d'un `vehiculeId` réel, donc le registre doit exister
 avant que l'écran capacité puisse compiler/fonctionner (voir S4 ci-dessous).
 
+## État (S14 — affichage du mode de règlement) — ⚠️ MOCK, pas de backend réel
+
+Phase 2, Sprint 14 ("Paiements Mobile Money étendus"), Volet Chauffeur.
+Sur l'écran solde et gains (`lib/screens/paiement_screen.dart`), chaque
+encaissement affiche désormais le moyen de règlement utilisé par le client
+(MTN MoMo / Orange Money / Espèces) — lecture seule.
+
+**🧪 Entièrement mocké** : `Ecriture` (grand livre miroir de service-pay,
+S8) ne porte aujourd'hui aucun champ "moyen de règlement" — service-pay
+(Web) ne l'expose pas encore par écriture. Le mock est isolé dans
+`lib/mock/moyen_reglement_mock.dart`, dérivé du `missionId` déjà connu,
+aucun appel réseau supplémentaire. N'affecte que les écritures de nature
+`ENCAISSEMENT` (seules pertinentes côté paiement client) ; le reste de
+l'écran (S8) est inchangé.
+
 ## Lancer en local
 
 ```bash
