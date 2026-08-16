@@ -5,4 +5,4 @@ spring:
     bootstrap-servers: kafka:29092
   client:
     service-flt:
-      base-url: http://service-flt:8092
+      base-url: http://service-flt:8083
