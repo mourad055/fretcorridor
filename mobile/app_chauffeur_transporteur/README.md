@@ -165,6 +165,29 @@ Traité avant le S4 (capacité) dans cette série de commits : la déclaration
 de capacité a besoin d'un `vehiculeId` réel, donc le registre doit exister
 avant que l'écran capacité puisse compiler/fonctionner (voir S4 ci-dessous).
 
+## État (S11 — tournée multi-étapes) — ⚠️ MOCK, pas de backend réel
+
+Phase 2, Sprint 11 ("Consolidation LTL, moteur V1") : écran de démonstration
+d'une tournée à étapes multiples (plusieurs enlèvements et/ou livraisons
+consécutifs, ex. groupage) — `lib/providers/mission_multi_etapes_provider.dart`,
+`lib/screens/mission_multi_etapes_screen.dart`. Accessible depuis l'accueil
+(icône dédiée « Tournée groupée (démo) »), séparé du flux S7 existant
+(`mission_provider.dart`/`missions_screen.dart`/`mission_detail_screen.dart`)
+qui n'est pas modifié.
+
+N'affiche qu'**une seule action à la fois** (l'étape en cours), avec la
+chronologie des étapes déjà terminées en dessous — même principe que
+l'écran S7, généralisé à N étapes au lieu d'un statut linéaire fixe.
+
+**🧪 Entièrement mocké, aucun appel réseau** : `service-opt` (Moteur)
+n'expose pas encore le multi-étapes côté serveur. Le topic Kafka
+`EtapeExecutee` est en cours de spec côté Moteur pour le S12
+(`missionId` = celui d'`AffectationConfirmeeEvent`, confirmé) — à
+brancher sur le vrai backend dès qu'il sera disponible, même contrat que
+`MissionExecutionController` (S7) généralisé à N étapes. Le mock est
+isolé dans `MissionMultiEtapesNotifier` (commentaire explicite en tête
+du fichier).
+
 ## Lancer en local
 
 ```bash
