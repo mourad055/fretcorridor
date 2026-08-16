@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/demande_provider.dart';
 import '../models/catalogue_emballage_model.dart';
+import '../mock/axe_mock.dart';
 import '../theme/app_theme.dart';
 
 class PublierDemandeScreen extends ConsumerStatefulWidget {
@@ -20,6 +21,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   final _destinataireTelCtrl = TextEditingController();
 
   CatalogueEmballageModel? _emballageSelectionne;
+  String? _axeSelectionneId;
   bool _fragile = false, _perissable = false, _dangereuse = false, _grandeValeur = false;
   String _typeDisponibilite = 'DES_QUE_POSSIBLE';
   String _modeCollecte = 'DOMICILE';
@@ -104,6 +106,36 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
             children: [
               // ── Où ──────────────────────────────────────
               Text('Où', style: Theme.of(context).textTheme.titleMedium),
+              // S15 — MOCK (axe_mock.dart) : sélecteur d'axe, remplit les
+              // villes ci-dessous mais reste facultatif — la saisie libre
+              // fonctionne toujours (ex. axe non couvert par la démo).
+              if (axesMockDisponibles.length > 1) ...[
+                _label('AXE (FACULTATIF)'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: axesMockDisponibles.map((axe) {
+                    final selectionne = _axeSelectionneId == axe.id;
+                    return GestureDetector(
+                      onTap: () => setState(() {
+                        _axeSelectionneId = axe.id;
+                        _villeDepartCtrl.text = axe.origine;
+                        _villeArriveeCtrl.text = axe.destination;
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: selectionne ? AppColors.accent : AppColors.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: selectionne ? AppColors.accent : AppColors.bordure),
+                        ),
+                        child: Text('${axe.origine} → ${axe.destination}',
+                            style: TextStyle(color: selectionne ? Colors.white : AppColors.texte, fontSize: 13)),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
               _label('VILLE DE DÉPART'),
               TextFormField(
                 controller: _villeDepartCtrl,
