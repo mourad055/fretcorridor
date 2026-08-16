@@ -31,3 +31,18 @@ encore intégré côté service-pay (Web). La sélection et la confirmation
 restent entièrement locales, aucun appel réseau. À remplacer par une
 vraie initiation de paiement dès que service-pay l'exposera — voir
 commentaire en tête de `choix_paiement_provider.dart`.
+
+## État (S15 — sélecteur d'axe) — ⚠️ MOCK, pas de backend réel
+
+Phase 2, Sprint 15 ("Second axe & sécurité"), Volet Client. Sur l'écran
+de publication de demande (`lib/screens/publier_demande_screen.dart`), un
+sélecteur d'axe facultatif permet de préremplir les villes de départ et
+d'arrivée — `lib/mock/axe_mock.dart`. La saisie libre des villes reste
+disponible et fonctionne toujours (ex. axe non couvert par la démo).
+
+**🧪 Entièrement mocké** : aucun endpoint `/axes` n'est exposé côté app
+Client aujourd'hui (service-geo n'est branché que côté app
+Chauffeur/Transporteur, S3) et aucun écran/provider "axe" n'existait ici
+avant ce sprint. La liste d'axes est isolée dans `lib/mock/axe_mock.dart`,
+aucun appel réseau. À remplacer par un vrai fetch dès que service-geo
+exposera les axes pour ce module.
