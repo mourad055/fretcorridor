@@ -36,14 +36,16 @@ class AxesState {
   final bool chargement;
   final String? erreur;
   final List<Axe> axes;
+  final String? axeSelectionneId;
 
-  const AxesState({this.chargement = false, this.erreur, this.axes = const []});
+  const AxesState({this.chargement = false, this.erreur, this.axes = const [], this.axeSelectionneId});
 
-  AxesState copyWith({bool? chargement, String? erreur, List<Axe>? axes}) {
+  AxesState copyWith({bool? chargement, String? erreur, List<Axe>? axes, String? axeSelectionneId}) {
     return AxesState(
       chargement: chargement ?? this.chargement,
       erreur: erreur,
       axes: axes ?? this.axes,
+      axeSelectionneId: axeSelectionneId ?? this.axeSelectionneId,
     );
   }
 }
@@ -67,6 +69,13 @@ class AxesNotifier extends StateNotifier<AxesState> {
     } on DioException {
       state = state.copyWith(chargement: false, erreur: 'Erreur de connexion. Vérifiez votre réseau.');
     }
+  }
+
+  // S15 (EF-GEO, "Second axe") : sélection de l'axe actif du chauffeur parmi
+  // les axes disponibles. Purement local — aucune écriture serveur associée
+  // (aucun contrat backend pour "l'axe actif d'un chauffeur" aujourd'hui).
+  void selectionner(String axeId) {
+    state = state.copyWith(axeSelectionneId: axeId);
   }
 }
 
