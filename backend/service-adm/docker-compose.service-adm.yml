@@ -19,5 +19,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fretcorridor
       SPRING_DATASOURCE_USERNAME: fretcorridor
       SPRING_DATASOURCE_PASSWORD: fretcorridor
+      # Port interne aligné sur le port hôte — évite la collision avec le
+      # port interne par défaut de service-opt (8085 aussi).
+      SERVER_PORT: "8095"
     ports:
-      - "8095:8085"
+      - "8095:8095"

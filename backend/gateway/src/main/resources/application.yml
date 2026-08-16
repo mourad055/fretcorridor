@@ -24,7 +24,8 @@ fretcorridor:
     base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://localhost:8088}
   service-adm:
     # service-adm est réellement implémenté (Sprint 10) — appel HTTP réel.
-    base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8085}
+    # 8095 (pas 8085 : collision avec le port interne par défaut de service-opt).
+    base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8095}
   service-ida:
     # service-ida (Mobile) est réellement implémenté — appel HTTP réel pour
     # l'authentification (cf. docs/ROADMAP_INTEGRATION_gateway.md, Phase 1).
