@@ -218,6 +218,21 @@ aucun appel réseau supplémentaire. N'affecte que les écritures de nature
 `ENCAISSEMENT` (seules pertinentes côté paiement client) ; le reste de
 l'écran (S8) est inchangé.
 
+## État (S15 — sélecteur d'axe) — ⚠️ Second axe MOCK, pas de backend réel
+
+Phase 2, Sprint 15 ("Second axe & sécurité"), Volet Chauffeur. L'écran
+Axes (S3) permet désormais de sélectionner un axe actif (appui pour
+sélectionner) — `lib/providers/axes_provider.dart` (`selectionner`),
+`lib/screens/axes_screen.dart`. Sélection purement locale, aucun contrat
+backend pour "l'axe actif d'un chauffeur" aujourd'hui.
+
+**🧪 Second axe mocké** : `service-geo` (Moteur) n'expose aujourd'hui
+qu'un seul axe réel par tenant (`GET /axes`, S3, inchangé). Un second axe
+fictif (`lib/mock/axe_mock.dart`, badge "Démonstration" visible à l'écran)
+est ajouté à la liste réelle pour permettre de construire et valider le
+sélecteur multi-axes dès maintenant — à retirer dès que `/axes` renverra
+plusieurs axes en conditions réelles.
+
 ## Lancer en local
 
 ```bash
