@@ -102,12 +102,38 @@ public class AxeController {
                         "axe introuvable : " + id));
     }
 
-    /** Axes actifs pour le matching (EF-GEO-03) — consomme par OPT. */
+    /**
+     * Axes actifs pour le matching (EF-GEO-03) — consomme par OPT.
+     *
+     * G3 (CDC S4.5) / EF-GEO-04 (S9.9) : meme verrou d'entree que
+     * matchingActif (G2) - un axe GELE n'est JAMAIS retourne ici, quel que
+     * soit son etat matchingActif. C'est ce filtre qui garantit l'indicateur
+     * "operations en zone gelee = 0" : OPT ne voit jamais ces axes, donc ne
+     * peut structurellement jamais y declencher de cycle.
+     */
     @GetMapping("/actifs-matching")
     public List<AxeResponse> listerAxesActifsPourMatching() {
         return axeRepository.findByMatchingActifTrue().stream()
+                .filter(this::estOperationnelPourMatching)
                 .map(AxeResponse::from)
                 .toList();
+    }
+
+    /**
+     * Cle "risqueSecuritaire" absente = pas de restriction (meme principe
+     * permissif que rayonAppariementKm/detourMaxDistanceKm : jamais un
+     * defaut invente). niveauRisque=GELE = exclusion stricte, sans exception -
+     * NORMAL et SURVEILLE restent operationnels (la surveillance renforce la
+     * gouvernance des donnees, cf ENF-ZS cote TRK, mais ne bloque pas
+     * l'operation elle-meme).
+     */
+    private boolean estOperationnelPourMatching(Axe axe) {
+        Object risque = axe.getParametres().get("risqueSecuritaire");
+        if (!(risque instanceof Map<?, ?> risqueMap)) {
+            return true;
+        }
+        Object niveau = risqueMap.get("niveauRisque");
+        return !"GELE".equals(niveau);
     }
 
     /**

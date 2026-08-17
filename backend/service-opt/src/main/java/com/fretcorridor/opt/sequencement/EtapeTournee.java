@@ -74,10 +74,17 @@ public class EtapeTournee {
         this.dateCreation = Instant.now();
     }
 
-    /** EF-MAT-09 : figeage - une etape executee ne doit plus jamais etre recalculee/deplacee. */
-    public void marquerExecutee() {
+    /**
+     * EF-MAT-09 : figeage - une etape executee ne doit plus jamais etre
+     * recalculee/deplacee.
+     *
+     * @return true si cette execution vient de faire passer la Tournee
+     *         parente a TERMINEE (cf Tournee.marquerEnExecutionSiNecessaire) -
+     *         propage tel quel, jamais recalcule ici.
+     */
+    public boolean marquerExecutee() {
         this.etat = Etat.EXECUTEE;
-        this.tournee.marquerEnExecutionSiNecessaire();
+        return this.tournee.marquerEnExecutionSiNecessaire();
     }
 
     /** RG-056/RG-108/EF-MAT-10 : detour subi par la demande de cette etape, une fois calcule. */

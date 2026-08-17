@@ -50,12 +50,6 @@ public class Affectation {
     @Column(name = "poids_taxable_kg", precision = 12, scale = 3)
     private BigDecimal poidsTaxableKg;
 
-    // EF-MAT-05/07 (Sprint 11, capacite dynamique) - indispensable au
-    // sequencement L2, absent avant V12. Nullable : une affectation deja
-    // creee avant ce correctif n'a pas cette donnee retroactivement.
-    @Column(name = "poids_taxable_kg", precision = 12, scale = 3)
-    private BigDecimal poidsTaxableKg;
-
     @Column(name = "origine_latitude", nullable = false)
     private double origineLatitude;
 
@@ -137,7 +131,6 @@ public class Affectation {
     // Kuhn-Munkres - jamais construit ailleurs.
     public Affectation(UUID demandeId, UUID capaciteId, UUID cycleMatchingId, UUID axeId,
                         BigDecimal poidsTaxableKg,
-                        BigDecimal poidsTaxableKg,
                         double origineLatitude, double origineLongitude,
                         double destinationLatitude, double destinationLongitude,
                         Double distanceMetres, Double dureeSecondes,
@@ -153,7 +146,6 @@ public class Affectation {
         this.capaciteId = capaciteId;
         this.cycleMatchingId = cycleMatchingId;
         this.axeId = axeId;
-        this.poidsTaxableKg = poidsTaxableKg;
         this.poidsTaxableKg = poidsTaxableKg;
         this.origineLatitude = origineLatitude;
         this.origineLongitude = origineLongitude;
@@ -189,7 +181,6 @@ public class Affectation {
     public UUID getCapaciteId() { return capaciteId; }
     public UUID getCycleMatchingId() { return cycleMatchingId; }
     public UUID getAxeId() { return axeId; }
-    public BigDecimal getPoidsTaxableKg() { return poidsTaxableKg; }
     public BigDecimal getPoidsTaxableKg() { return poidsTaxableKg; }
     public double getOrigineLatitude() { return origineLatitude; }
     public double getOrigineLongitude() { return origineLongitude; }
