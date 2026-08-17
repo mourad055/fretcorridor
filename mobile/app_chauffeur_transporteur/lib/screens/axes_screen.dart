@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../mock/axe_mock.dart';
 import '../providers/axes_provider.dart';
 import '../theme/app_theme.dart';
 
 // S3 : écran axes disponibles, verrous visibles (RG-012 — la consultation
 // n'est jamais bloquée, même si matching/paiement sont encore inactifs).
+//
+// S15 (Sprint 15, "Second axe & sécurité") : sélecteur d'axe actif —
+// permet au chauffeur de choisir parmi plusieurs axes. Un second axe
+// ⚠️ MOCK (axe_mock.dart) est ajouté à la liste réelle car service-geo
+// n'expose aujourd'hui qu'un seul axe par tenant.
 class AxesScreen extends ConsumerStatefulWidget {
   const AxesScreen({super.key});
 
@@ -22,6 +28,8 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(axesProvider);
+    // S15 — MOCK : second axe fictif ajouté à la liste réelle, voir axe_mock.dart.
+    final axesAffiches = [...state.axes, axeMockSecondaire];
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -32,15 +40,12 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
             ? const Center(child: CircularProgressIndicator())
             : state.erreur != null
                 ? _erreur(state.erreur!)
-                : state.axes.isEmpty
-                    ? const Center(child: Text('Aucun axe disponible pour le moment.',
-                        style: TextStyle(color: AppColors.texteMuet)))
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: state.axes.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, i) => _carteAxe(state.axes[i]),
-                      ),
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: axesAffiches.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, i) => _carteAxe(axesAffiches[i], state.axeSelectionneId),
+                  ),
       ),
     );
   }
@@ -54,33 +59,41 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
     ]);
   }
 
-  Widget _carteAxe(Axe axe) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bordure),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(children: [
-            const Icon(Icons.route, color: AppColors.accent, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text('${axe.origine} → ${axe.destination}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            ),
-            Text('${axe.distanceKm.round()} km', style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
-          ]),
-          const SizedBox(height: 12),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            _badge('Visible', axe.visibiliteActive),
-            _badge('Matching', axe.matchingActif),
-            _badge('Paiement', axe.paiementActif),
-          ]),
-        ],
+  Widget _carteAxe(Axe axe, String? axeSelectionneId) {
+    final selectionne = axe.id == axeSelectionneId;
+    final estMock = axe.id == axeMockSecondaire.id;
+    return InkWell(
+      onTap: () => ref.read(axesProvider.notifier).selectionner(axe.id),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: selectionne ? AppColors.surfaceClaire : AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: selectionne ? AppColors.accent : AppColors.bordure, width: selectionne ? 1.5 : 1),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(selectionne ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  color: selectionne ? AppColors.accent : AppColors.texteMuet, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('${axe.origine} → ${axe.destination}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              ),
+              Text('${axe.distanceKm.round()} km', style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+            ]),
+            const SizedBox(height: 12),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              _badge('Visible', axe.visibiliteActive),
+              _badge('Matching', axe.matchingActif),
+              _badge('Paiement', axe.paiementActif),
+              if (estMock) _badge('Démonstration', true),
+            ]),
+          ],
+        ),
       ),
     );
   }
