@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -19,9 +20,14 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Preuve que la file de travail et les décisions persistent réellement en Postgres. */
+/**
+ * Preuve que la file de travail et les décisions persistent réellement en Postgres.
+ * {@code max.block.ms} raccourci : aucun broker Kafka réel ici (cf.
+ * DossierControllerIntegrationTest pour l'explication complète).
+ */
 @SpringBootTest
 @Testcontainers
+@TestPropertySource(properties = "spring.kafka.producer.properties.max.block.ms=2000")
 class DossierPersistenceIntegrationTest {
 
     @Container
