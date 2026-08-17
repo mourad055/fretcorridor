@@ -22,8 +22,11 @@ class SuiviState {
 }
 
 class SuiviNotifier extends StateNotifier<SuiviState> {
-  final Dio _dio;
-  SuiviNotifier(this._dio) : super(const SuiviState());
+  // La chronologie (service-exe) et la dernière position (service-flt) sont
+  // deux microservices distincts, chacun avec son propre client.
+  final Dio _dioExe;
+  final Dio _dioFlt;
+  SuiviNotifier(this._dioExe, this._dioFlt) : super(const SuiviState());
 
   // S7 puis S6 : la chronologie donne le missionId, nécessaire pour la position.
   // Tant qu'aucune mission n'existe encore pour cette demande (matching pas
@@ -31,7 +34,7 @@ class SuiviNotifier extends StateNotifier<SuiviState> {
   Future<void> charger(String demandeId) async {
     state = state.copyWith(chargement: true, erreur: null);
     try {
-      final response = await _dio.get('/missions/demande/$demandeId/chronologie');
+      final response = await _dioExe.get('/missions/demande/$demandeId/chronologie');
       if (response.statusCode == 204 || response.data == null) {
         state = state.copyWith(chargement: false, chronologie: null, position: null);
         return;
@@ -50,7 +53,7 @@ class SuiviNotifier extends StateNotifier<SuiviState> {
 
   Future<void> _chargerPosition(String missionId) async {
     try {
-      final response = await _dio.get('/positions/mission/$missionId/derniere');
+      final response = await _dioFlt.get('/positions/mission/$missionId/derniere');
       if (response.statusCode == 200 && response.data != null) {
         state = state.copyWith(position: PositionModel.fromJson(response.data));
       }
@@ -61,5 +64,5 @@ class SuiviNotifier extends StateNotifier<SuiviState> {
 }
 
 final suiviProvider = StateNotifierProvider<SuiviNotifier, SuiviState>((ref) {
-  return SuiviNotifier(ref.watch(dioProvider));
+  return SuiviNotifier(ref.watch(exeDioProvider), ref.watch(fltDioProvider));
 });
