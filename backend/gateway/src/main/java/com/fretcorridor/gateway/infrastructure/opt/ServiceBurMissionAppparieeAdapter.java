@@ -1,5 +1,7 @@
 package com.fretcorridor.gateway.infrastructure.opt;
 
+import com.fretcorridor.gateway.domain.opt.AlerteSeuilVue;
+import com.fretcorridor.gateway.domain.opt.EtatAlerteVue;
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
 import com.fretcorridor.gateway.domain.opt.ObservatoireAxeVue;
 import com.fretcorridor.gateway.domain.opt.OptPort;
@@ -10,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
@@ -70,6 +73,44 @@ public class ServiceBurMissionAppparieeAdapter implements OptPort {
                         .build())
                 .retrieve()
                 .bodyToMono(ObservatoireAxeVue.class);
+    }
+
+    @Override
+    public Mono<AlerteSeuilVue> configurerAlerte(String tenantId, String axeId, String indicateur, String comparateur,
+                                                  BigDecimal seuil, String acteurId) {
+        return webClient.post()
+                .uri("/api/v1/bur/alertes")
+                .bodyValue(new ConfigurerAlerteBurRequest(tenantId, axeId, indicateur, comparateur, seuil, acteurId))
+                .retrieve()
+                .bodyToMono(AlerteSeuilVue.class);
+    }
+
+    @Override
+    public Flux<AlerteSeuilVue> listerAlertes(String tenantId) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/alertes").queryParam("tenantId", tenantId).build())
+                .retrieve()
+                .bodyToFlux(AlerteSeuilVue.class);
+    }
+
+    @Override
+    public Flux<EtatAlerteVue> etatAlertes(String tenantId) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/alertes/etat").queryParam("tenantId", tenantId).build())
+                .retrieve()
+                .bodyToFlux(EtatAlerteVue.class);
+    }
+
+    @Override
+    public Mono<Void> supprimerAlerte(String id, String tenantId) {
+        return webClient.delete()
+                .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/alertes/{id}").queryParam("tenantId", tenantId).build(id))
+                .retrieve()
+                .bodyToMono(Void.class);
+    }
+
+    private record ConfigurerAlerteBurRequest(String tenantId, String axeId, String indicateur, String comparateur,
+                                               BigDecimal seuil, String acteurId) {
     }
 
     /** Miroir minimal du contrat MissionAppparieeResponse de service-bur. */

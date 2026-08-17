@@ -1,6 +1,8 @@
 package com.fretcorridor.bur.infrastructure.config;
 
 import com.fretcorridor.bur.domain.AgregationMissionsService;
+import com.fretcorridor.bur.domain.AlerteSeuilPort;
+import com.fretcorridor.bur.domain.AlerteSeuilService;
 import com.fretcorridor.bur.domain.MissionAppparieeRepositoryPort;
 import com.fretcorridor.bur.domain.MissionAppparieeService;
 import com.fretcorridor.bur.domain.MissionRepositoryPort;
@@ -39,5 +41,10 @@ public class DomainConfig {
     @Bean
     public PositionService positionService(PositionRepositoryPort repository) {
         return new PositionService(repository);
+    }
+
+    @Bean
+    public AlerteSeuilService alerteSeuilService(AlerteSeuilPort alerteSeuilPort, ObservatoireService observatoireService) {
+        return new AlerteSeuilService(alerteSeuilPort, observatoireService);
     }
 }
