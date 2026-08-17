@@ -21,7 +21,8 @@ public record DossierResponse(
         String motifDecision,
         String decidePar,
         Instant decideLe,
-        Integer grilleVersionAppliquee
+        Integer grilleVersionAppliquee,
+        String recoursDeDossierId
 ) {
     public static DossierResponse from(Dossier dossier) {
         return new DossierResponse(
@@ -40,7 +41,8 @@ public record DossierResponse(
                 dossier.motifDecision(),
                 dossier.decidePar(),
                 dossier.decideLe(),
-                dossier.grilleVersionAppliquee()
+                dossier.grilleVersionAppliquee(),
+                dossier.recoursDeDossierId()
         );
     }
 }

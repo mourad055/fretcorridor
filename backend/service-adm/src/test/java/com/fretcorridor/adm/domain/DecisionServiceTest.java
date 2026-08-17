@@ -79,4 +79,18 @@ class DecisionServiceTest {
 
         assertThat(tranche.grilleVersionAppliquee()).isEqualTo(2);
     }
+
+    /** RG-098, garde en profondeur : même sans prise en charge préalable, trancher() refuse le même opérateur. */
+    @Test
+    void trancher_un_recours_par_le_meme_operateur_que_le_premier_decideur_est_refuse_meme_sans_prise_en_charge() {
+        definirGrille("tenant-bgft-douala");
+        FileTravailService fileTravailServiceLocal = new FileTravailService(dossierPort, journalAuditPort, dossierEventPort);
+        Dossier original = fileTravailServiceLocal.ouvrir("tenant-bgft-douala", TypeDossier.MODERATION, PrioriteDossier.NORMALE,
+                null, List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+        Dossier tranche = decisionService.trancher(original.id(), "CLOS_SANS_SUITE", "motif", "actor-admin-1");
+        Dossier recours = fileTravailServiceLocal.ouvrirRecours(tranche.id(), PrioriteDossier.HAUTE, Instant.now().plus(1, ChronoUnit.DAYS));
+
+        assertThatThrownBy(() -> decisionService.trancher(recours.id(), "CLOS_SANS_SUITE", "motif", "actor-admin-1"))
+                .isInstanceOf(RecoursMemeOperateurException.class);
+    }
 }

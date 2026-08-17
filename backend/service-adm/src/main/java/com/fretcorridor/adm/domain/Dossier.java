@@ -25,7 +25,8 @@ public record Dossier(
         String motifDecision,
         String decidePar,
         Instant decideLe,
-        Integer grilleVersionAppliquee
+        Integer grilleVersionAppliquee,
+        String recoursDeDossierId
 ) {
     public Dossier priseEnCharge(String acteurId) {
         if (statut == StatutDossier.CLOS) {
@@ -33,7 +34,7 @@ public record Dossier(
         }
         return new Dossier(id, tenantId, type, priorite, StatutDossier.EN_COURS, missionId, parties,
                 preuvesReferences, ouvertLe, delaiTraitement, acteurId, decision, motifDecision, decidePar, decideLe,
-                grilleVersionAppliquee);
+                grilleVersionAppliquee, recoursDeDossierId);
     }
 
     /** RG-096 : {@code grilleVersion} est la version de la grille de décision appliquée, enregistrée avec la décision. */
@@ -43,13 +44,13 @@ public record Dossier(
         }
         return new Dossier(id, tenantId, type, priorite, StatutDossier.CLOS, missionId, parties,
                 preuvesReferences, ouvertLe, delaiTraitement, priseEnChargeParActeurId, decisionPrise, motif,
-                acteurId, maintenant, grilleVersion);
+                acteurId, maintenant, grilleVersion, recoursDeDossierId);
     }
 
     public Dossier escalader() {
         return new Dossier(id, tenantId, type, PrioriteDossier.HAUTE, StatutDossier.ESCALADE, missionId, parties,
                 preuvesReferences, ouvertLe, delaiTraitement, priseEnChargeParActeurId, decision, motifDecision,
-                decidePar, decideLe, grilleVersionAppliquee);
+                decidePar, decideLe, grilleVersionAppliquee, recoursDeDossierId);
     }
 
     public boolean delaiDepasse(Instant maintenant) {
