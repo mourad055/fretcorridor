@@ -18,6 +18,10 @@ public interface OptPort {
     /** EF-BUR-03 : indicateurs de marché d'un axe — appelle en réalité service-bur, pas service-opt (cf. ServiceBurMissionAppparieeAdapter). */
     Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId);
 
+    /** EF-BUR-05, RG-087 : estimation déclarative du volume mensuel réel du marché d'un axe, saisie par un agent Bureau. */
+    Mono<Void> definirEstimationMarche(String tenantId, String axeId, BigDecimal volumeMensuelEstime, String source,
+                                        String acteurId);
+
     /** EF-BUR-07 (S) : configuration d'alertes sur seuils par l'agent — appelle service-bur. */
     Mono<AlerteSeuilVue> configurerAlerte(String tenantId, String axeId, String indicateur, String comparateur,
                                            BigDecimal seuil, String acteurId);

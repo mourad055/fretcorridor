@@ -48,7 +48,7 @@ public class AlerteSeuilService {
     }
 
     private EtatAlerte evaluerUne(AlerteSeuil alerte) {
-        ObservatoireAxe observatoire = observatoireService.indicateursPourAxe(alerte.tenantId(), alerte.axeId());
+        ObservatoireAxe observatoire = observatoireService.indicateursPourAxe(alerte.tenantId(), alerte.axeId(), Instant.now());
         if (!observatoire.seuilAtteint()) {
             return new EtatAlerte(alerte, false, false, null);
         }

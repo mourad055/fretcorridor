@@ -4,16 +4,20 @@ import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
 import com.fretcorridor.gateway.domain.opt.OptPort;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
+import com.fretcorridor.gateway.infrastructure.rest.opt.dto.DefinirEstimationMarcheRequest;
 import com.fretcorridor.gateway.infrastructure.rest.opt.dto.MissionAppparieeCsvExporter;
 import com.fretcorridor.gateway.infrastructure.rest.opt.dto.MissionAppparieeResponse;
 import com.fretcorridor.gateway.infrastructure.rest.opt.dto.ObservatoireAxeResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
@@ -62,6 +66,17 @@ public class MissionAppparieeController {
             @AuthenticationPrincipal AuthenticatedActor actor,
             @PathVariable String axeId) {
         return optPort.observatoirePourAxe(actor.tenantId(), axeId).map(ObservatoireAxeResponse::from);
+    }
+
+    /** EF-BUR-05, RG-087 : un agent Bureau déclare l'estimation de marché d'un axe — acteurId/tenantId toujours du JWT (ENF-MUL-01). */
+    @PutMapping("/api/v1/bureau/observatoire/{axeId}/estimation-marche")
+    public Mono<ResponseEntity<Void>> definirEstimationMarche(
+            @AuthenticationPrincipal AuthenticatedActor actor,
+            @PathVariable String axeId,
+            @Valid @RequestBody DefinirEstimationMarcheRequest request) {
+        return optPort.definirEstimationMarche(actor.tenantId(), axeId, request.volumeMensuelEstime(),
+                        request.source(), actor.actorId())
+                .thenReturn(ResponseEntity.noContent().<Void>build());
     }
 
     @GetMapping("/api/v1/bureau/missions-appariees/export")

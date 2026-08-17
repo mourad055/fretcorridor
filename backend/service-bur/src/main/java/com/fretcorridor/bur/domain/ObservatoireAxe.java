@@ -1,6 +1,7 @@
 package com.fretcorridor.bur.domain;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,6 +17,10 @@ import java.util.UUID;
  * parcours et variabilité, taux de retour à vide, taux d'appariement et
  * délai moyen jusqu'à appariement, saisonnalité, segmentation par nature de
  * marchandise ou type de véhicule.
+ *
+ * EF-BUR-05, RG-087 : {@code couverturePourcentage} est absent tant qu'aucune
+ * {@link EstimationMarcheAxe} n'a été déclarée pour l'axe — jamais déduit
+ * silencieusement, l'absence d'estimation doit rester visible pour l'analyste.
  */
 public record ObservatoireAxe(
         UUID axeId,
@@ -24,17 +29,21 @@ public record ObservatoireAxe(
         Optional<BigDecimal> prixMediane,
         Optional<BigDecimal> prixDispersion,
         Optional<String> devise,
-        Optional<Double> tauxDesequilibreDirectionnel
+        Optional<Double> tauxDesequilibreDirectionnel,
+        Optional<BigDecimal> couverturePourcentage,
+        Optional<Instant> estimationDefinieLe
 ) {
     public static ObservatoireAxe sousLeSeuil(UUID axeId, long seuil) {
         return new ObservatoireAxe(axeId, seuil, Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public static ObservatoireAxe calcule(UUID axeId, long seuil, long nombreMissions, BigDecimal prixMediane,
-                                           BigDecimal prixDispersion, String devise, double tauxDesequilibreDirectionnel) {
+                                           BigDecimal prixDispersion, String devise, double tauxDesequilibreDirectionnel,
+                                           BigDecimal couverturePourcentage, Instant estimationDefinieLe) {
         return new ObservatoireAxe(axeId, seuil, Optional.of(nombreMissions), Optional.of(prixMediane),
-                Optional.of(prixDispersion), Optional.of(devise), Optional.of(tauxDesequilibreDirectionnel));
+                Optional.of(prixDispersion), Optional.of(devise), Optional.of(tauxDesequilibreDirectionnel),
+                Optional.ofNullable(couverturePourcentage), Optional.ofNullable(estimationDefinieLe));
     }
 
     public boolean seuilAtteint() {

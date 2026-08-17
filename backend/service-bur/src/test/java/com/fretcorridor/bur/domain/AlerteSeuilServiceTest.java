@@ -46,10 +46,23 @@ class AlerteSeuilServiceTest {
         }
     }
 
+    private static class FakeEstimationMarcheAxePort implements EstimationMarcheAxePort {
+        @Override
+        public void definir(EstimationMarcheAxe estimation) {
+            // non utilisé par ces tests
+        }
+
+        @Override
+        public java.util.Optional<EstimationMarcheAxe> pour(String tenantId, UUID axeId) {
+            return java.util.Optional.empty();
+        }
+    }
+
     private static final String TENANT = "tenant-bgft-douala";
     private final FakeAlerteSeuilPort alerteSeuilPort = new FakeAlerteSeuilPort();
     private final FakeMissionRepository missionRepository = new FakeMissionRepository();
-    private final ObservatoireService observatoireService = new ObservatoireService(missionRepository, 3);
+    private final ObservatoireService observatoireService =
+            new ObservatoireService(missionRepository, new FakeEstimationMarcheAxePort(), 3);
     private final AlerteSeuilService service = new AlerteSeuilService(alerteSeuilPort, observatoireService);
 
     @Test
