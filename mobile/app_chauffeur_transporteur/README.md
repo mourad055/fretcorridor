@@ -231,6 +231,22 @@ par tenant (`GET /axes`, S3, filtré en base — ENF-MUL-01) : le second axe
 fictif qui complétait la liste a été retiré, `charger()` affiche
 directement ce que renvoie le backend.
 
+## État (S16 — plan de chargement) — ⚠️ MOCK, pas de backend réel
+
+Phase 3, Sprint 16 ("Oracle de chargement 3D"), Chauffeur uniquement.
+Nouvel écran `lib/screens/plan_chargement_screen.dart` — restitution
+visuelle en lecture seule d'un plan de chargement (positions des colis
+dans le véhicule, orientations, répartition des charges par essieu),
+accessible depuis une mission simple (S7, `mission_detail_screen.dart`)
+ou depuis l'étape courante d'une tournée (S11,
+`mission_multi_etapes_screen.dart`).
+
+**🧪 Entièrement mocké** : `service-opt` V2 (Moteur, oracle de chargement
+3D) n'expose aucun contrat backend à ce jour. Le plan est isolé dans
+`lib/providers/plan_chargement_provider.dart`, aucun appel réseau. C'est
+le Moteur qui calculera le plan réel — l'app ne fait qu'afficher, jamais
+d'édition.
+
 ## État (S18 — sélection de tenant) — ⚠️ MOCK, pas de backend réel
 
 Phase 3, Sprint 18 ("Second tenant institutionnel"), Chauffeur uniquement.
