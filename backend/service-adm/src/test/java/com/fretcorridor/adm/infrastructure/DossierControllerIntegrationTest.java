@@ -6,6 +6,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -19,10 +20,17 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** DoD PRD §9 S10 : un admin traite un dossier de bout en bout, décision journalisée. */
+/**
+ * DoD PRD §9 S10 : un admin traite un dossier de bout en bout, décision journalisée.
+ * {@code max.block.ms} raccourci : aucun broker Kafka réel ici, sans quoi
+ * chaque dossier LITIGE publié via {@code KafkaDossierEventPublisher} bloque
+ * jusqu'à 60s (comportement de dégradation gracieuse inchangé — toujours
+ * catché, jamais propagé, cf. ENF-DIS-04).
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
+@TestPropertySource(properties = "spring.kafka.producer.properties.max.block.ms=2000")
 class DossierControllerIntegrationTest {
 
     @Container
