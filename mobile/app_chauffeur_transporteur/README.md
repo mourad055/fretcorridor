@@ -218,20 +218,67 @@ aucun appel réseau supplémentaire. N'affecte que les écritures de nature
 `ENCAISSEMENT` (seules pertinentes côté paiement client) ; le reste de
 l'écran (S8) est inchangé.
 
-## État (S15 — sélecteur d'axe) — ⚠️ Second axe MOCK, pas de backend réel
+## État (S15 — sélecteur d'axe) — branché sur le backend réel
 
 Phase 2, Sprint 15 ("Second axe & sécurité"), Volet Chauffeur. L'écran
-Axes (S3) permet désormais de sélectionner un axe actif (appui pour
-sélectionner) — `lib/providers/axes_provider.dart` (`selectionner`),
+Axes (S3) permet de sélectionner un axe actif (appui pour sélectionner) —
+`lib/providers/axes_provider.dart` (`selectionner`),
 `lib/screens/axes_screen.dart`. Sélection purement locale, aucun contrat
 backend pour "l'axe actif d'un chauffeur" aujourd'hui.
 
-**🧪 Second axe mocké** : `service-geo` (Moteur) n'expose aujourd'hui
-qu'un seul axe réel par tenant (`GET /axes`, S3, inchangé). Un second axe
-fictif (`lib/mock/axe_mock.dart`, badge "Démonstration" visible à l'écran)
-est ajouté à la liste réelle pour permettre de construire et valider le
-sélecteur multi-axes dès maintenant — à retirer dès que `/axes` renverra
-plusieurs axes en conditions réelles.
+`service-geo` (Moteur) expose désormais réellement plusieurs axes actifs
+par tenant (`GET /axes`, S3, filtré en base — ENF-MUL-01) : le second axe
+fictif qui complétait la liste a été retiré, `charger()` affiche
+directement ce que renvoie le backend.
+
+## État (S16 — plan de chargement) — ⚠️ MOCK, pas de backend réel
+
+Phase 3, Sprint 16 ("Oracle de chargement 3D"), Chauffeur uniquement.
+Nouvel écran `lib/screens/plan_chargement_screen.dart` — restitution
+visuelle en lecture seule d'un plan de chargement (positions des colis
+dans le véhicule, orientations, répartition des charges par essieu),
+accessible depuis une mission simple (S7, `mission_detail_screen.dart`)
+ou depuis l'étape courante d'une tournée (S11,
+`mission_multi_etapes_screen.dart`).
+
+**🧪 Entièrement mocké** : `service-opt` V2 (Moteur, oracle de chargement
+3D) n'expose aucun contrat backend à ce jour. Le plan est isolé dans
+`lib/providers/plan_chargement_provider.dart`, aucun appel réseau. C'est
+le Moteur qui calculera le plan réel — l'app ne fait qu'afficher, jamais
+d'édition.
+
+## État (S18 — sélection de tenant) — ⚠️ MOCK, pas de backend réel
+
+Phase 3, Sprint 18 ("Second tenant institutionnel"), Chauffeur uniquement.
+Après authentification réussie et avant l'accès à l'app,
+`lib/screens/tenant_selection_screen.dart` propose un choix de bureau si
+le compte est rattaché à plusieurs tenants — s'appuie sur `login_screen.dart`
+sans le modifier pour le cas mono-tenant (comportement identique
+à aujourd'hui, écran sauté automatiquement).
+
+**🧪 Entièrement mocké** : `service-ida`/gateway ne renvoient qu'un seul
+`tenantId` par compte (`LoginResponse`) — aucun contrat multi-tenant par
+acteur à ce jour. Un seul numéro de téléphone de démonstration (arbitraire,
+voir `_telephoneDemoMultiTenant` dans `lib/providers/tenant_selection_provider.dart`)
+déclenche l'affichage de 2 tenants simulés ; tout autre compte reste
+mono-tenant. À remplacer par un vrai endpoint une fois service-ida/gateway
+prêts côté Web.
+
+## État (S19 Volet A — incident enrichi) — ⚠️ Partiellement MOCK
+
+Phase 3, Sprint 19 ("Back-office avancé, litiges"), Volet Chauffeur.
+Le bouton "Signaler un incident" (`mission_detail_screen.dart`, déjà
+existant depuis S7) ouvre désormais un formulaire (`_FormulaireIncident`)
+— catégorie, description libre, photo optionnelle (réutilise le pattern
+`image_picker` déjà en place pour le dépôt de pièces KYC).
+
+Le changement de statut `INCIDENT` passe toujours par le vrai endpoint
+(`POST /missions/{id}/etapes`, S7 réel) — seule la catégorie/description
+est composée côté app et glissée dans le `libellé` envoyé. **La photo
+reste purement locale (aperçu, jamais envoyée)** : aucun endpoint
+d'upload d'incident n'existe côté `service-adm` à ce jour (grille de
+décision, recours par opérateur différent) — à remplacer une fois ce
+contrat exposé.
 
 ## Lancer en local
 

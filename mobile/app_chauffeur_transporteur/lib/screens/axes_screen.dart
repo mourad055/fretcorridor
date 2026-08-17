@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../mock/axe_mock.dart';
 import '../providers/axes_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -8,9 +7,9 @@ import '../theme/app_theme.dart';
 // n'est jamais bloquée, même si matching/paiement sont encore inactifs).
 //
 // S15 (Sprint 15, "Second axe & sécurité") : sélecteur d'axe actif —
-// permet au chauffeur de choisir parmi plusieurs axes. Un second axe
-// ⚠️ MOCK (axe_mock.dart) est ajouté à la liste réelle car service-geo
-// n'expose aujourd'hui qu'un seul axe par tenant.
+// permet au chauffeur de choisir parmi plusieurs axes. service-geo expose
+// désormais réellement plusieurs axes par tenant (GET /axes) — plus besoin
+// de second axe fictif.
 class AxesScreen extends ConsumerStatefulWidget {
   const AxesScreen({super.key});
 
@@ -28,8 +27,6 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(axesProvider);
-    // S15 — MOCK : second axe fictif ajouté à la liste réelle, voir axe_mock.dart.
-    final axesAffiches = [...state.axes, axeMockSecondaire];
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -42,9 +39,9 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
                 ? _erreur(state.erreur!)
                 : ListView.separated(
                     padding: const EdgeInsets.all(16),
-                    itemCount: axesAffiches.length,
+                    itemCount: state.axes.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) => _carteAxe(axesAffiches[i], state.axeSelectionneId),
+                    itemBuilder: (context, i) => _carteAxe(state.axes[i], state.axeSelectionneId),
                   ),
       ),
     );
@@ -61,7 +58,6 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
 
   Widget _carteAxe(Axe axe, String? axeSelectionneId) {
     final selectionne = axe.id == axeSelectionneId;
-    final estMock = axe.id == axeMockSecondaire.id;
     return InkWell(
       onTap: () => ref.read(axesProvider.notifier).selectionner(axe.id),
       borderRadius: BorderRadius.circular(12),
@@ -90,7 +86,6 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
               _badge('Visible', axe.visibiliteActive),
               _badge('Matching', axe.matchingActif),
               _badge('Paiement', axe.paiementActif),
-              if (estMock) _badge('Démonstration', true),
             ]),
           ],
         ),
