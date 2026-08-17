@@ -2,7 +2,9 @@ package com.fretcorridor.adm.infrastructure.rest;
 
 import com.fretcorridor.adm.domain.DossierDejaTrancheException;
 import com.fretcorridor.adm.domain.DossierIntrouvableException;
+import com.fretcorridor.adm.domain.DossierNonTrancheException;
 import com.fretcorridor.adm.domain.GrilleDecisionAbsenteException;
+import com.fretcorridor.adm.domain.RecoursMemeOperateurException;
 import com.fretcorridor.adm.domain.TenantDejaExistantException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -31,6 +33,20 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleGrilleDecisionAbsente(GrilleDecisionAbsenteException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Grille de décision absente");
+        return problem;
+    }
+
+    @ExceptionHandler(DossierNonTrancheException.class)
+    public ProblemDetail handleDossierNonTranche(DossierNonTrancheException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Dossier pas encore tranché");
+        return problem;
+    }
+
+    @ExceptionHandler(RecoursMemeOperateurException.class)
+    public ProblemDetail handleRecoursMemeOperateur(RecoursMemeOperateurException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Opérateur identique au premier décideur");
         return problem;
     }
 

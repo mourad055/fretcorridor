@@ -78,4 +78,61 @@ class FileTravailServiceTest {
         assertThatThrownBy(() -> service.prendreEnCharge("dossier-inconnu", "actor-admin-1"))
                 .isInstanceOf(DossierIntrouvableException.class);
     }
+
+    private Dossier ouvrirEtTrancher(String tenantId, String decideur) {
+        InMemoryConfigurationPort configurationPort = new InMemoryConfigurationPort();
+        configurationPort.sauvegarder(new ConfigurationVersionnee("g-1", DecisionService.CLE_GRILLE_DECISION,
+                tenantId, "grille v1", "actor-admin-1", 1, Instant.now()));
+        DecisionService decisionService = new DecisionService(dossierPort, journalAuditPort, dossierEventPort, configurationPort);
+        Dossier dossier = service.ouvrir(tenantId, TypeDossier.LITIGE, PrioriteDossier.NORMALE, "mission-a",
+                List.of("acteur-transporteur-1"), List.of("preuve-1"), Instant.now().plus(1, ChronoUnit.DAYS));
+        return decisionService.trancher(dossier.id(), "RESOLU_EN_FAVEUR_TRANSPORTEUR", "motif", decideur);
+    }
+
+    /** UC-ADM-01 A2 : un recours ouvre un second Dossier lié à l'original, jamais une réouverture. */
+    @Test
+    void ouvrir_un_recours_cree_un_second_dossier_avec_le_meme_contexte() {
+        Dossier original = ouvrirEtTrancher("tenant-bgft-douala", "actor-admin-1");
+
+        Dossier recours = service.ouvrirRecours(original.id(), PrioriteDossier.HAUTE, Instant.now().plus(1, ChronoUnit.DAYS));
+
+        assertThat(recours.id()).isNotEqualTo(original.id());
+        assertThat(recours.statut()).isEqualTo(StatutDossier.OUVERT);
+        assertThat(recours.recoursDeDossierId()).isEqualTo(original.id());
+        assertThat(recours.missionId()).isEqualTo(original.missionId());
+        assertThat(recours.parties()).isEqualTo(original.parties());
+        assertThat(recours.preuvesReferences()).isEqualTo(original.preuvesReferences());
+        assertThat(original.statut())
+                .as("l'original reste clos, jamais rouvert")
+                .isEqualTo(StatutDossier.CLOS);
+    }
+
+    @Test
+    void ouvrir_un_recours_sur_un_dossier_pas_encore_tranche_est_refuse() {
+        Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
+                null, List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+
+        assertThatThrownBy(() -> service.ouvrirRecours(dossier.id(), PrioriteDossier.HAUTE, Instant.now().plus(1, ChronoUnit.DAYS)))
+                .isInstanceOf(DossierNonTrancheException.class);
+    }
+
+    /** RG-098 : l'opérateur ayant décidé en premier ressort n'instruit pas le recours. */
+    @Test
+    void prendre_en_charge_un_recours_par_le_meme_operateur_que_le_premier_decideur_est_refuse() {
+        Dossier original = ouvrirEtTrancher("tenant-bgft-douala", "actor-admin-1");
+        Dossier recours = service.ouvrirRecours(original.id(), PrioriteDossier.HAUTE, Instant.now().plus(1, ChronoUnit.DAYS));
+
+        assertThatThrownBy(() -> service.prendreEnCharge(recours.id(), "actor-admin-1"))
+                .isInstanceOf(RecoursMemeOperateurException.class);
+    }
+
+    @Test
+    void prendre_en_charge_un_recours_par_un_operateur_different_est_autorise() {
+        Dossier original = ouvrirEtTrancher("tenant-bgft-douala", "actor-admin-1");
+        Dossier recours = service.ouvrirRecours(original.id(), PrioriteDossier.HAUTE, Instant.now().plus(1, ChronoUnit.DAYS));
+
+        Dossier misAJour = service.prendreEnCharge(recours.id(), "actor-admin-2");
+
+        assertThat(misAJour.statut()).isEqualTo(StatutDossier.EN_COURS);
+    }
 }

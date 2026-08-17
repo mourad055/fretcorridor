@@ -41,7 +41,7 @@ public class DossierRepositoryAdapter implements DossierPort {
                 dossier.statut(), dossier.missionId(), dossier.parties(), dossier.preuvesReferences(),
                 dossier.ouvertLe(), dossier.delaiTraitement(), dossier.priseEnChargeParActeurId(),
                 dossier.decision(), dossier.motifDecision(), dossier.decidePar(), dossier.decideLe(),
-                dossier.grilleVersionAppliquee());
+                dossier.grilleVersionAppliquee(), dossier.recoursDeDossierId());
     }
 
     private Dossier versDomaine(DossierEntity entity) {
@@ -49,6 +49,6 @@ public class DossierRepositoryAdapter implements DossierPort {
                 entity.getStatut(), entity.getMissionId(), entity.getParties(), entity.getPreuvesReferences(),
                 entity.getOuvertLe(), entity.getDelaiTraitement(), entity.getPriseEnChargeParActeurId(),
                 entity.getDecision(), entity.getMotifDecision(), entity.getDecidePar(), entity.getDecideLe(),
-                entity.getGrilleVersionAppliquee());
+                entity.getGrilleVersionAppliquee(), entity.getRecoursDeDossierId());
     }
 }

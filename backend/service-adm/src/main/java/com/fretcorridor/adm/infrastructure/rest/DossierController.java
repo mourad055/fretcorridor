@@ -7,6 +7,7 @@ import com.fretcorridor.adm.domain.FileTravailService;
 import com.fretcorridor.adm.infrastructure.rest.dto.DecisionRequest;
 import com.fretcorridor.adm.infrastructure.rest.dto.DossierResponse;
 import com.fretcorridor.adm.infrastructure.rest.dto.OuvrirDossierRequest;
+import com.fretcorridor.adm.infrastructure.rest.dto.OuvrirRecoursRequest;
 import com.fretcorridor.adm.infrastructure.rest.dto.PriseEnChargeRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -65,6 +66,14 @@ public class DossierController {
     public DossierResponse decider(@PathVariable String dossierId, @Valid @RequestBody DecisionRequest request) {
         return DossierResponse.from(
                 decisionService.trancher(dossierId, request.decision(), request.motif(), request.acteurId()));
+    }
+
+    /** EF-ADM-04/RG-098 : ouvre un recours contre une décision rendue, second Dossier lié à l'original. */
+    @PostMapping("/{dossierId}/recours")
+    public ResponseEntity<DossierResponse> ouvrirRecours(@PathVariable String dossierId,
+                                                           @Valid @RequestBody OuvrirRecoursRequest request) {
+        Dossier recours = fileTravailService.ouvrirRecours(dossierId, request.priorite(), request.delaiTraitement());
+        return ResponseEntity.status(201).body(DossierResponse.from(recours));
     }
 
     @PostMapping("/escalade")

@@ -30,6 +30,7 @@ public class DecisionService {
 
     public Dossier trancher(String dossierId, String decision, String motif, String acteurId) {
         Dossier dossier = dossierPort.parId(dossierId).orElseThrow(() -> new DossierIntrouvableException(dossierId));
+        verifierOperateurDifferentDuPremierDecideur(dossier, acteurId);
         ConfigurationVersionnee grille = configurationPort.versionCourante(CLE_GRILLE_DECISION, dossier.tenantId())
                 .orElseThrow(() -> new GrilleDecisionAbsenteException(dossier.tenantId()));
         Dossier tranche = dossier.trancher(decision, motif, acteurId, Instant.now(), grille.version());
@@ -40,5 +41,17 @@ public class DecisionService {
             dossierEventPort.publier(tranche);
         }
         return tranche;
+    }
+
+    /** RG-098 : l'opérateur ayant décidé en premier ressort n'instruit pas le recours (garde redondante avec FileTravailService.prendreEnCharge, en profondeur). */
+    private void verifierOperateurDifferentDuPremierDecideur(Dossier dossier, String acteurId) {
+        if (dossier.recoursDeDossierId() == null) {
+            return;
+        }
+        Dossier original = dossierPort.parId(dossier.recoursDeDossierId())
+                .orElseThrow(() -> new DossierIntrouvableException(dossier.recoursDeDossierId()));
+        if (acteurId.equals(original.decidePar())) {
+            throw new RecoursMemeOperateurException(dossier.id(), acteurId);
+        }
     }
 }

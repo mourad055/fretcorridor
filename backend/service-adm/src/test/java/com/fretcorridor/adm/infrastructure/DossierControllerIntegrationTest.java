@@ -147,6 +147,72 @@ class DossierControllerIntegrationTest {
                 .andExpect(status().isConflict());
     }
 
+    /** EF-ADM-04/RG-098 : un recours ouvre un second Dossier, refusé au même opérateur que le premier décideur. */
+    @Test
+    void un_recours_ouvre_un_second_dossier_refuse_au_premier_decideur() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
+        definirGrille(tenantId);
+
+        String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
+                                """.formatted(tenantId, delai)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\", \"acteurId\": \"actor-admin-1\"}"))
+                .andExpect(status().isOk());
+
+        String reponseRecours = mockMvc.perform(post("/api/v1/dossiers/{id}/recours", dossierId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"priorite": "HAUTE", "delaiTraitement": "%s"}
+                                """.formatted(delai)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.recoursDeDossierId").value(dossierId))
+                .andExpect(jsonPath("$.statut").value("OUVERT"))
+                .andReturn().getResponse().getContentAsString();
+        String recoursId = reponseRecours.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", recoursId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"acteurId\": \"actor-admin-1\"}"))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", recoursId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"acteurId\": \"actor-admin-2\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statut").value("EN_COURS"));
+    }
+
+    @Test
+    void un_recours_sur_un_dossier_pas_encore_tranche_est_rejete_avec_un_conflit() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
+
+        String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
+                                """.formatted(tenantId, delai)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/recours", dossierId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"priorite": "HAUTE", "delaiTraitement": "%s"}
+                                """.formatted(delai)))
+                .andExpect(status().isConflict());
+    }
+
     private void definirGrille(String tenantId) throws Exception {
         mockMvc.perform(put("/api/v1/configurations/{cle}", "grille-decision")
                         .contentType(MediaType.APPLICATION_JSON)
