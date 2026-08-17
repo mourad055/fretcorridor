@@ -4,9 +4,19 @@ info:
   version: 1.0.0
   description: |
     EF-MAT-08 / RG-058 (CDC S8.6, Sprint 12). Publie par OPT (Moteur) quand
-    une Tournee passe a TERMINEE (toutes les etapes EXECUTEE) - jamais avant,
-    conformement a RG-058 : "aucune mission de retour n'est confirmee avant
-    la livraison effective de l'aller."
+    une mission de fret se termine - jamais avant, conformement a RG-058 :
+    "aucune mission de retour n'est confirmee avant la livraison effective
+    de l'aller."
+
+    Deux cas d'emission, MUTUELLEMENT EXCLUSIFS (jamais les deux presents,
+    jamais les deux absents) :
+      - tourneeId rempli, affectationId absent : Tournee consolidee (LTL,
+        Sprint 11+) passee a TERMINEE (toutes les etapes EXECUTEE).
+      - affectationId rempli, tourneeId absent : Affectation FTL simple
+        (cas majoritaire en Phase 1, jamais sequencee en Tournee) dont la
+        livraison vient d'etre executee.
+    Le consommateur doit tester lequel des deux champs est present, jamais
+    supposer tourneeId toujours renseigne.
 
     Porteur : Personne 3 (Moteur). Consommateur : Mobile (app
     Chauffeur/Transporteur, ecran "notification de mission retour,
@@ -25,7 +35,6 @@ components:
         type: object
         required:
           - eventId
-          - tourneeId
           - capaciteId
           - pointDepartLatitude
           - pointDepartLongitude
@@ -37,6 +46,13 @@ components:
           tourneeId:
             type: string
             format: uuid
+            nullable: true
+            description: Rempli uniquement si emis depuis une Tournee consolidee (LTL). Mutuellement exclusif avec affectationId.
+          affectationId:
+            type: string
+            format: uuid
+            nullable: true
+            description: Rempli uniquement si emis depuis une Affectation FTL simple (jamais sequencee en Tournee). Mutuellement exclusif avec tourneeId.
           capaciteId:
             type: string
             format: uuid

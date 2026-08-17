@@ -206,6 +206,7 @@ public class ReplanificationService {
         PropositionRetourAVideEvent event = new PropositionRetourAVideEvent(
                 UUID.randomUUID(),
                 tourneeId,
+                null,
                 tournee.getCapaciteId(),
                 tournee.getAxeId(),
                 derniereAffectation.getDestinationLatitude(),
@@ -216,5 +217,28 @@ public class ReplanificationService {
         log.info("Retour a vide propose (EF-MAT-08) - tournee={}, capacite={}, point depart=({}, {})",
                 tourneeId, tournee.getCapaciteId(),
                 derniereAffectation.getDestinationLatitude(), derniereAffectation.getDestinationLongitude());
+    }
+
+    /**
+     * EF-MAT-08 / RG-058 - variante pour une Affectation FTL simple, jamais
+     * sequencee en Tournee (cf SequencementDeclencheur).
+     */
+    @Transactional
+    public void proposerRetourAVide(Affectation affectationTerminee) {
+        PropositionRetourAVideEvent event = new PropositionRetourAVideEvent(
+                UUID.randomUUID(),
+                null,
+                affectationTerminee.getId(),
+                affectationTerminee.getCapaciteId(),
+                affectationTerminee.getAxeId(),
+                affectationTerminee.getDestinationLatitude(),
+                affectationTerminee.getDestinationLongitude(),
+                java.time.Instant.now());
+
+        eventPublisher.publierPropositionRetourAVide(event);
+        log.info("Retour a vide propose (EF-MAT-08, affectation FTL simple) - affectation={}, capacite={}, "
+                        + "point depart=({}, {})",
+                affectationTerminee.getId(), affectationTerminee.getCapaciteId(),
+                affectationTerminee.getDestinationLatitude(), affectationTerminee.getDestinationLongitude());
     }
 }
