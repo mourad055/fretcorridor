@@ -76,6 +76,16 @@ public class ServiceBurMissionAppparieeAdapter implements OptPort {
     }
 
     @Override
+    public Mono<Void> definirEstimationMarche(String tenantId, String axeId, BigDecimal volumeMensuelEstime,
+                                               String source, String acteurId) {
+        return webClient.put()
+                .uri("/api/v1/bur/estimation-marche")
+                .bodyValue(new DefinirEstimationMarcheBurRequest(tenantId, axeId, volumeMensuelEstime, source, acteurId))
+                .retrieve()
+                .bodyToMono(Void.class);
+    }
+
+    @Override
     public Mono<AlerteSeuilVue> configurerAlerte(String tenantId, String axeId, String indicateur, String comparateur,
                                                   BigDecimal seuil, String acteurId) {
         return webClient.post()
@@ -111,6 +121,10 @@ public class ServiceBurMissionAppparieeAdapter implements OptPort {
 
     private record ConfigurerAlerteBurRequest(String tenantId, String axeId, String indicateur, String comparateur,
                                                BigDecimal seuil, String acteurId) {
+    }
+
+    private record DefinirEstimationMarcheBurRequest(String tenantId, String axeId, BigDecimal volumeMensuelEstime,
+                                                       String source, String acteurId) {
     }
 
     /** Miroir minimal du contrat MissionAppparieeResponse de service-bur. */

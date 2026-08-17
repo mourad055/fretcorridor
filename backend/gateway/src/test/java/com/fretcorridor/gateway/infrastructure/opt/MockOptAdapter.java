@@ -50,7 +50,16 @@ public class MockOptAdapter implements OptPort {
 
     @Override
     public Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId) {
-        return Mono.just(new ObservatoireAxeVue(axeId, 3, false, null, null, null, null, null));
+        return Mono.just(new ObservatoireAxeVue(axeId, 3, false, null, null, null, null, null, null, null));
+    }
+
+    private final java.util.Map<String, BigDecimal> estimationsMarche = new java.util.HashMap<>();
+
+    @Override
+    public Mono<Void> definirEstimationMarche(String tenantId, String axeId, BigDecimal volumeMensuelEstime,
+                                               String source, String acteurId) {
+        estimationsMarche.put(tenantId + ":" + axeId, volumeMensuelEstime);
+        return Mono.empty();
     }
 
     private final List<AlerteSeuilVue> alertes = new ArrayList<>();

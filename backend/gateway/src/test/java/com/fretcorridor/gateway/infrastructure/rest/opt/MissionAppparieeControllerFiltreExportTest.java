@@ -154,4 +154,41 @@ class MissionAppparieeControllerFiltreExportTest {
                 .exchange()
                 .expectStatus().isForbidden();
     }
+
+    /** EF-BUR-05, RG-087 : un agent Bureau déclare l'estimation de marché d'un axe. */
+    @Test
+    void a_bureau_agent_can_declare_a_market_estimation_for_an_axe() {
+        String token = tokenFor("+237600000001");
+
+        webTestClient.put().uri("/api/v1/bureau/observatoire/axe-1/estimation-marche")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("volumeMensuelEstime", 350, "source", "enquête terrain Q1 2026"))
+                .exchange()
+                .expectStatus().isNoContent();
+    }
+
+    @Test
+    void rejects_a_non_positive_market_estimation() {
+        String token = tokenFor("+237600000001");
+
+        webTestClient.put().uri("/api/v1/bureau/observatoire/axe-1/estimation-marche")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("volumeMensuelEstime", 0, "source", "enquête terrain Q1 2026"))
+                .exchange()
+                .expectStatus().isBadRequest();
+    }
+
+    @Test
+    void a_transporteur_cannot_declare_a_market_estimation() {
+        String token = tokenFor("+237600000002");
+
+        webTestClient.put().uri("/api/v1/bureau/observatoire/axe-1/estimation-marche")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("volumeMensuelEstime", 350, "source", "enquête terrain Q1 2026"))
+                .exchange()
+                .expectStatus().isForbidden();
+    }
 }
