@@ -2,6 +2,7 @@ package com.fretcorridor.adm.infrastructure.rest;
 
 import com.fretcorridor.adm.domain.DossierDejaTrancheException;
 import com.fretcorridor.adm.domain.DossierIntrouvableException;
+import com.fretcorridor.adm.domain.GrilleDecisionAbsenteException;
 import com.fretcorridor.adm.domain.TenantDejaExistantException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -23,6 +24,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleDossierDejaTranche(DossierDejaTrancheException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Dossier déjà clos");
+        return problem;
+    }
+
+    @ExceptionHandler(GrilleDecisionAbsenteException.class)
+    public ProblemDetail handleGrilleDecisionAbsente(GrilleDecisionAbsenteException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Grille de décision absente");
         return problem;
     }
 

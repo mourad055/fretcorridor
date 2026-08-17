@@ -20,7 +20,8 @@ public record DossierResponse(
         String decision,
         String motifDecision,
         String decidePar,
-        Instant decideLe
+        Instant decideLe,
+        Integer grilleVersionAppliquee
 ) {
     public static DossierResponse from(Dossier dossier) {
         return new DossierResponse(
@@ -38,7 +39,8 @@ public record DossierResponse(
                 dossier.decision(),
                 dossier.motifDecision(),
                 dossier.decidePar(),
-                dossier.decideLe()
+                dossier.decideLe(),
+                dossier.grilleVersionAppliquee()
         );
     }
 }

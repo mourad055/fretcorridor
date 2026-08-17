@@ -17,6 +17,7 @@ import java.time.temporal.ChronoUnit;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -56,6 +57,7 @@ class DossierControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+        definirGrille(tenantId);
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", dossierId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -90,6 +92,7 @@ class DossierControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+        definirGrille(tenantId);
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -121,5 +124,35 @@ class DossierControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].statut").value("ESCALADE"))
                 .andExpect(jsonPath("$[0].priorite").value("HAUTE"));
+    }
+
+    /** RG-096 (CDC) : un opérateur ne doit jamais avoir à trancher sans grille. */
+    @Test
+    void decider_sans_grille_de_decision_definie_est_rejete_avec_un_conflit() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
+
+        String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
+                                """.formatted(tenantId, delai)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\", \"acteurId\": \"actor-admin-1\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    private void definirGrille(String tenantId) throws Exception {
+        mockMvc.perform(put("/api/v1/configurations/{cle}", "grille-decision")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"perimetre": "%s", "valeur": "grille v1", "auteur": "actor-admin-1"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isOk());
     }
 }

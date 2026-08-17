@@ -25,7 +25,7 @@ public class FileTravailService {
     public Dossier ouvrir(String tenantId, TypeDossier type, PrioriteDossier priorite, String missionId,
                            List<String> parties, List<String> preuvesReferences, Instant delaiTraitement) {
         Dossier dossier = new Dossier(UUID.randomUUID().toString(), tenantId, type, priorite, StatutDossier.OUVERT,
-                missionId, parties, preuvesReferences, Instant.now(), delaiTraitement, null, null, null, null, null);
+                missionId, parties, preuvesReferences, Instant.now(), delaiTraitement, null, null, null, null, null, null);
         dossierPort.sauvegarder(dossier);
         journalAuditPort.enregistrer(new EntreeJournalAudit(UUID.randomUUID().toString(), tenantId, "system",
                 "DOSSIER_OUVERT", "dossier:" + dossier.id(), Instant.now()));
