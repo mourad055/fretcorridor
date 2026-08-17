@@ -46,7 +46,10 @@ class EscaladeServiceTest {
         Instant maintenant = Instant.now();
         Dossier dossier = fileTravailService.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.BASSE,
                 null, List.of(), List.of(), maintenant.minus(1, ChronoUnit.HOURS));
-        DecisionService decisionService = new DecisionService(dossierPort, journalAuditPort, dossierEventPort);
+        InMemoryConfigurationPort configurationPort = new InMemoryConfigurationPort();
+        configurationPort.sauvegarder(new ConfigurationVersionnee("g-1", DecisionService.CLE_GRILLE_DECISION,
+                "tenant-bgft-douala", "grille v1", "actor-admin-1", 1, Instant.now()));
+        DecisionService decisionService = new DecisionService(dossierPort, journalAuditPort, dossierEventPort, configurationPort);
         decisionService.trancher(dossier.id(), "CLOS_SANS_SUITE", "motif", "actor-admin-1");
 
         assertThat(escaladeService.detecterEtEscalader(maintenant)).isEmpty();

@@ -24,8 +24,9 @@ public class DomainConfig {
     }
 
     @Bean
-    public DecisionService decisionService(DossierPort dossierPort, JournalAuditPort journalAuditPort, DossierEventPort dossierEventPort) {
-        return new DecisionService(dossierPort, journalAuditPort, dossierEventPort);
+    public DecisionService decisionService(DossierPort dossierPort, JournalAuditPort journalAuditPort,
+                                            DossierEventPort dossierEventPort, ConfigurationPort configurationPort) {
+        return new DecisionService(dossierPort, journalAuditPort, dossierEventPort, configurationPort);
     }
 
     @Bean

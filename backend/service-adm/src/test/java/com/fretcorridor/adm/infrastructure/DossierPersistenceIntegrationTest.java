@@ -1,5 +1,6 @@
 package com.fretcorridor.adm.infrastructure;
 
+import com.fretcorridor.adm.domain.ConfigurationService;
 import com.fretcorridor.adm.domain.DecisionService;
 import com.fretcorridor.adm.domain.Dossier;
 import com.fretcorridor.adm.domain.FileTravailService;
@@ -40,6 +41,9 @@ class DossierPersistenceIntegrationTest {
     @Autowired
     private DecisionService decisionService;
 
+    @Autowired
+    private ConfigurationService configurationService;
+
     @Test
     void un_dossier_ouvert_avec_ses_parties_et_preuves_est_relu_depuis_postgres() {
         String tenantId = "tenant-test-" + System.nanoTime();
@@ -61,11 +65,13 @@ class DossierPersistenceIntegrationTest {
         String tenantId = "tenant-test-" + System.nanoTime();
         Dossier dossier = fileTravailService.ouvrir(tenantId, TypeDossier.INCIDENT, PrioriteDossier.NORMALE, null,
                 List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+        configurationService.definir(DecisionService.CLE_GRILLE_DECISION, tenantId, "grille v1", "actor-admin-1");
 
         decisionService.trancher(dossier.id(), "CLOS_SANS_SUITE", "Incident résolu", "actor-admin-1");
 
         List<Dossier> file = fileTravailService.lister(tenantId);
         assertThat(file.get(0).decision()).isEqualTo("CLOS_SANS_SUITE");
         assertThat(file.get(0).decidePar()).isEqualTo("actor-admin-1");
+        assertThat(file.get(0).grilleVersionAppliquee()).isEqualTo(1);
     }
 }

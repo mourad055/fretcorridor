@@ -24,29 +24,32 @@ public record Dossier(
         String decision,
         String motifDecision,
         String decidePar,
-        Instant decideLe
+        Instant decideLe,
+        Integer grilleVersionAppliquee
 ) {
     public Dossier priseEnCharge(String acteurId) {
         if (statut == StatutDossier.CLOS) {
             throw new DossierDejaTrancheException(id);
         }
         return new Dossier(id, tenantId, type, priorite, StatutDossier.EN_COURS, missionId, parties,
-                preuvesReferences, ouvertLe, delaiTraitement, acteurId, decision, motifDecision, decidePar, decideLe);
+                preuvesReferences, ouvertLe, delaiTraitement, acteurId, decision, motifDecision, decidePar, decideLe,
+                grilleVersionAppliquee);
     }
 
-    public Dossier trancher(String decisionPrise, String motif, String acteurId, Instant maintenant) {
+    /** RG-096 : {@code grilleVersion} est la version de la grille de décision appliquée, enregistrée avec la décision. */
+    public Dossier trancher(String decisionPrise, String motif, String acteurId, Instant maintenant, int grilleVersion) {
         if (statut == StatutDossier.CLOS) {
             throw new DossierDejaTrancheException(id);
         }
         return new Dossier(id, tenantId, type, priorite, StatutDossier.CLOS, missionId, parties,
                 preuvesReferences, ouvertLe, delaiTraitement, priseEnChargeParActeurId, decisionPrise, motif,
-                acteurId, maintenant);
+                acteurId, maintenant, grilleVersion);
     }
 
     public Dossier escalader() {
         return new Dossier(id, tenantId, type, PrioriteDossier.HAUTE, StatutDossier.ESCALADE, missionId, parties,
                 preuvesReferences, ouvertLe, delaiTraitement, priseEnChargeParActeurId, decision, motifDecision,
-                decidePar, decideLe);
+                decidePar, decideLe, grilleVersionAppliquee);
     }
 
     public boolean delaiDepasse(Instant maintenant) {
