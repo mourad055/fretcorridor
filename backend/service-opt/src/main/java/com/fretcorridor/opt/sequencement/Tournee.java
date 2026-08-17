@@ -62,13 +62,20 @@ public class Tournee {
      * entierement, seules les etapes PLANIFIEE restent modifiables
      * (verifie par le solveur, pas ici).
      */
-    public void marquerEnExecutionSiNecessaire() {
+    /**
+     * @return true si CET appel vient de faire passer la tournee a
+     *         TERMINEE (jamais true si elle etait deja TERMINEE avant) -
+     *         signal utilise par EtapeExecuteeListener pour declencher la
+     *         proposition de retour a vide (EF-MAT-08) exactement une fois,
+     *         au bon moment.
+     */
+    public boolean marquerEnExecutionSiNecessaire() {
         boolean auMoinsUneEtapeExecutee = etapes.stream()
                 .anyMatch(e -> e.getEtat() == EtapeTournee.Etat.EXECUTEE);
         if (auMoinsUneEtapeExecutee && statut == Statut.CONFIRMEE) {
             this.statut = Statut.EN_EXECUTION;
         }
-        marquerTermineeSiToutesEtapesExecutees();
+        return marquerTermineeSiToutesEtapesExecutees();
     }
 
     /**
@@ -80,15 +87,17 @@ public class Tournee {
      * ne peut jamais devenir TERMINEE par cette voie - garde explicite,
      * cf etapes.isEmpty() ci-dessous.
      */
-    private void marquerTermineeSiToutesEtapesExecutees() {
+    private boolean marquerTermineeSiToutesEtapesExecutees() {
         if (statut != Statut.EN_EXECUTION) {
-            return;
+            return false;
         }
         boolean toutesExecutees = !etapes.isEmpty()
                 && etapes.stream().allMatch(e -> e.getEtat() == EtapeTournee.Etat.EXECUTEE);
         if (toutesExecutees) {
             this.statut = Statut.TERMINEE;
+            return true;
         }
+        return false;
     }
 
     public void confirmer() {

@@ -19,18 +19,13 @@ import java.util.stream.Collectors;
 /**
  * Declencheur du sequencement L2 (Sprint 11, CDC S8.6) - meme principe que
  * MatchingCycleService pour L1 : cycle periodique, jamais un declenchement
- * immediat par affectation individuelle (coherent avec "par cycles a
- * fenetre", meme si EF-MAT-01 vise formellement le L1, l'esprit
- * "regrouper avant d'agir" s'applique aussi ici pour permettre a l'ALNS de
- * consolider plusieurs Affectation a la fois plutot que d'en sequencer une
- * seule a chaque tour).
+ * immediat par affectation individuelle.
  *
- * Repere les Affectation confirmees (L1) qui n'appartiennent encore a
- * aucune Tournee, les regroupe par capacite, et ne declenche l'ALNS que
- * pour les capacites ayant au moins 2 Affectation non sequencees - une
- * seule affectation seule n'a rien a consolider (une Tournee a une seule
- * etape n'a pas de sens fonctionnel pour ce sprint, cf CDC S8.6 : la
- * consolidation LTL suppose plusieurs demandes).
+ * Sprint 12 (EF-MAT-09) : avant de creer une nouvelle Tournee, verifie
+ * qu'aucune Tournee CONFIRMEE/EN_EXECUTION n'existe deja pour cette
+ * capacite - sinon delegue a ReplanificationService pour inserer dans le
+ * residuel plutot que de creer une seconde tournee en parallele (bug
+ * latent corrige ce sprint, cf TourneeRepository.findByCapaciteIdAndStatutIn).
  */
 @Service
 public class SequencementDeclencheur {
@@ -42,17 +37,23 @@ public class SequencementDeclencheur {
     private final TourneeRepository tourneeRepository;
     private final AlnsSolver alnsSolver;
     private final CapaciteEnAttenteRepository capaciteEnAttenteRepository;
+    private final ReplanificationService replanificationService;
+
+    private static final List<Tournee.Statut> STATUTS_NON_TERMINES =
+            List.of(Tournee.Statut.CONFIRMEE, Tournee.Statut.EN_EXECUTION);
 
     public SequencementDeclencheur(AffectationRepository affectationRepository,
                                     EtapeTourneeRepository etapeTourneeRepository,
                                     TourneeRepository tourneeRepository,
                                     AlnsSolver alnsSolver,
-                                    CapaciteEnAttenteRepository capaciteEnAttenteRepository) {
+                                    CapaciteEnAttenteRepository capaciteEnAttenteRepository,
+                                    ReplanificationService replanificationService) {
         this.affectationRepository = affectationRepository;
         this.etapeTourneeRepository = etapeTourneeRepository;
         this.tourneeRepository = tourneeRepository;
         this.alnsSolver = alnsSolver;
         this.capaciteEnAttenteRepository = capaciteEnAttenteRepository;
+        this.replanificationService = replanificationService;
     }
 
     @Scheduled(fixedDelayString = "${spring.sequencement.cycle-interval-ms:30000}")
@@ -71,25 +72,30 @@ public class SequencementDeclencheur {
             UUID capaciteId = entree.getKey();
             List<Affectation> affectationsCapacite = entree.getValue();
 
+            List<Tournee> tourneesActives = tourneeRepository
+                    .findByCapaciteIdAndStatutIn(capaciteId, STATUTS_NON_TERMINES);
+
+            if (!tourneesActives.isEmpty()) {
+                // EF-MAT-09 : une tournee est deja en cours sur cette
+                // capacite - replanification du residuel, jamais une
+                // seconde tournee en parallele. tourneesActives.get(0) :
+                // au plus une tournee active par capacite en pratique
+                // (invariant du domaine, pas verifie par contrainte DB ce
+                // sprint).
+                replanificationService.replanifierResiduel(tourneesActives.get(0), affectationsCapacite);
+                continue;
+            }
+
             if (affectationsCapacite.size() < 2) {
-                // Une seule affectation sur cette capacite : rien a consolider
-                // ce tour, reste en attente qu'une deuxieme arrive.
+                // Une seule affectation sur cette capacite, aucune tournee
+                // active : rien a consolider ce tour, reste en attente
+                // qu'une deuxieme arrive.
                 continue;
             }
 
             log.info("Sequencement L2 declenche - capacite={}, {} affectation(s) a consolider",
                     capaciteId, affectationsCapacite.size());
 
-            // EF-MAT-07 (CDC S8.6.1 point 3, capacite dynamique) : capacite
-            // reelle lue depuis la CapaciteEnAttente correspondante (deja
-            // traitee=true a ce stade par MatchingCycleService, cf
-            // CapaciteEnAttenteRepository.findFirstByCapaciteIdOrderByDateReceptionDesc).
-            // Optional vide en theorie impossible (une Affectation n'existe
-            // que parce qu'une CapaciteEnAttente a ete consommee par L1) -
-            // gere explicitement quand meme : null reste le comportement
-            // permissif documente (EtatSolution : pas de borne appliquee),
-            // jamais une exception qui romprait le cycle pour les autres
-            // capacites du meme tour (ENF-DIS-04).
             java.math.BigDecimal capaciteMaxKg = capaciteEnAttenteRepository
                     .findFirstByCapaciteIdOrderByDateReceptionDesc(capaciteId)
                     .map(CapaciteEnAttente::getCapaciteResiduelleKg)
@@ -101,7 +107,7 @@ public class SequencementDeclencheur {
                     });
 
             AlnsSolver.ResultatSequencement resultat = alnsSolver.resoudre(
-                    affectationsCapacite, capaciteMaxKg, Map.of());
+                    affectationsCapacite, capaciteMaxKg, java.math.BigDecimal.ZERO, Map.of());
 
             if (resultat.affectationsInserees().isEmpty()) {
                 log.debug("Aucune affectation inseree pour la capacite {} ce tour.", capaciteId);

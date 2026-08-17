@@ -2,6 +2,7 @@ package com.fretcorridor.opt.messaging;
 
 import com.fretcorridor.opt.sequencement.EtapeTournee;
 import com.fretcorridor.opt.sequencement.EtapeTourneeRepository;
+import com.fretcorridor.opt.sequencement.ReplanificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -28,9 +29,12 @@ public class EtapeExecuteeListener {
     private static final Logger log = LoggerFactory.getLogger(EtapeExecuteeListener.class);
 
     private final EtapeTourneeRepository etapeTourneeRepository;
+    private final ReplanificationService replanificationService;
 
-    public EtapeExecuteeListener(EtapeTourneeRepository etapeTourneeRepository) {
+    public EtapeExecuteeListener(EtapeTourneeRepository etapeTourneeRepository,
+                                  ReplanificationService replanificationService) {
         this.etapeTourneeRepository = etapeTourneeRepository;
+        this.replanificationService = replanificationService;
     }
 
     @KafkaListener(topics = "etape-executee", containerFactory = "etapeExecuteeKafkaListenerContainerFactory")
@@ -52,7 +56,16 @@ public class EtapeExecuteeListener {
             return;
         }
 
-        etapeOpt.get().marquerExecutee();
+        EtapeTournee etape = etapeOpt.get();
+        boolean tourneeVientDeTerminer = etape.marquerExecutee();
         log.info("Etape figee (EF-MAT-09) - mission={}, typeEtape={}", event.missionId(), event.typeEtape());
+
+        // EF-MAT-08/RG-058 : uniquement quand CETTE execution vient de faire
+        // passer la tournee a TERMINEE (jamais avant, jamais une deuxieme
+        // fois sur un evenement redelivre - marquerExecutee() ne renvoie
+        // true qu'une seule fois, au moment exact de la transition).
+        if (tourneeVientDeTerminer) {
+            replanificationService.proposerRetourAVide(etape.getTournee().getId());
+        }
     }
 }

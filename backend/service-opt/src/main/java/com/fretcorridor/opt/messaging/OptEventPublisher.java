@@ -11,6 +11,7 @@ public class OptEventPublisher {
     private static final Logger log = LoggerFactory.getLogger(OptEventPublisher.class);
     private static final String TOPIC_PROPOSITION_EMISE = "proposition-emise";
     private static final String TOPIC_AFFECTATION_CONFIRMEE = "affectation-confirmee";
+    private static final String TOPIC_PROPOSITION_RETOUR_A_VIDE = "proposition-retour-a-vide";
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public OptEventPublisher(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -65,6 +66,26 @@ public class OptEventPublisher {
             log.error("Echec publication AffectationConfirmee (send() bloquant, ex. metadonnees "
                     + "topic indisponibles) - mission={} - cycle L1 non interrompu (ENF-DIS-04)",
                     event.missionId(), exceptionBlocante);
+        }
+    }
+
+    /** EF-MAT-08 (Sprint 12) : meme pattern de degradation gracieuse que ci-dessus. */
+    public void publierPropositionRetourAVide(PropositionRetourAVideEvent event) {
+        try {
+            String cle = event.tourneeId().toString();
+            kafkaTemplate.send(TOPIC_PROPOSITION_RETOUR_A_VIDE, cle, event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("PropositionRetourAVide publiee - tournee={}, offset={}",
+                                    event.tourneeId(), result.getRecordMetadata().offset());
+                        } else {
+                            log.error("Echec publication PropositionRetourAVide (callback async) - tournee={}",
+                                    event.tourneeId(), ex);
+                        }
+                    });
+        } catch (Exception exceptionBlocante) {
+            log.error("Echec publication PropositionRetourAVide (send() bloquant) - tournee={} "
+                    + "- non bloquant (ENF-DIS-04)", event.tourneeId(), exceptionBlocante);
         }
     }
 }

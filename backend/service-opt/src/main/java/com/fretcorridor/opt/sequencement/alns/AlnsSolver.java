@@ -53,8 +53,14 @@ public class AlnsSolver {
      * @param parametresAxe  Axe.parametres (EF-GEO-02) - detourMaxDistanceKm,
      *                       coefficients RG-107
      */
+    /**
+     * @param chargeInitialeKg poids deja a bord au demarrage de cette
+     *        recherche (Sprint 12, EF-MAT-09) - BigDecimal.ZERO pour une
+     *        construction initiale, > 0 pour une replanification en cours
+     *        de tournee (cf ReplanificationService).
+     */
     public ResultatSequencement resoudre(List<Affectation> affectations, BigDecimal capaciteMaxKg,
-                                          Map<String, Object> parametresAxe) {
+                                          BigDecimal chargeInitialeKg, Map<String, Object> parametresAxe) {
 
         Map<UUID, PointGeoDto[]> positionsAffectations = affectations.stream()
                 .collect(Collectors.toMap(Affectation::getId,
@@ -63,7 +69,7 @@ public class AlnsSolver {
                                 new PointGeoDto(a.getDestinationLatitude(), a.getDestinationLongitude())
                         }));
 
-        EtatSolution solution = new EtatSolution(capaciteMaxKg);
+        EtatSolution solution = new EtatSolution(capaciteMaxKg, chargeInitialeKg);
         java.util.List<Affectation> inserees = new java.util.ArrayList<>();
         java.util.List<Affectation> nonInserees = new java.util.ArrayList<>();
 

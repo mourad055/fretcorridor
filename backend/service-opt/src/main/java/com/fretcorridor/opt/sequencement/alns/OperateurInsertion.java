@@ -5,6 +5,7 @@ import com.fretcorridor.opt.domain.Affectation;
 import com.fretcorridor.util.HaversineUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.UUID;
  * realisables. Aucune position realisable = l'affectation reste non
  * inseree ce cycle (jamais forcee dans une solution infaisable).
  */
+@Component
 public class OperateurInsertion {
 
     private static final Logger log = LoggerFactory.getLogger(OperateurInsertion.class);
