@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/mission_multi_etapes_provider.dart';
 import '../theme/app_theme.dart';
+import 'plan_chargement_screen.dart';
 
 const _libellesType = {
   TypeEtapeTournee.enlevement: 'Enlèvement',
@@ -116,6 +117,32 @@ class _MissionMultiEtapesScreenState extends ConsumerState<MissionMultiEtapesScr
               ),
               child: Text(estEnlevement ? 'Confirmer l\'enlèvement' : 'Confirmer la livraison',
                   style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                final tournee = ref.read(missionMultiEtapesProvider).tournee!;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlanChargementScreen(
+                      missionId: tournee.missionId,
+                      etapeLibelle: '${_libellesType[etape.type]} — ${etape.lieuNom}',
+                    ),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.view_in_ar_outlined, size: 16),
+              label: const Text('Voir le plan de chargement', style: TextStyle(fontSize: 13)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.texte,
+                side: const BorderSide(color: AppColors.bordure),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
             ),
           ),
         ],
