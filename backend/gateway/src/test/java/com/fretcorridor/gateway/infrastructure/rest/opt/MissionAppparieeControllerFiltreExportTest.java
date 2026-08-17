@@ -1,14 +1,19 @@
 package com.fretcorridor.gateway.infrastructure.rest.opt;
 
+import com.fretcorridor.gateway.domain.adm.AdmPort;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 /**
  * EF-BUR-02 : filtrage, détail et export des flux supervisés par le Bureau.
@@ -20,6 +25,10 @@ class MissionAppparieeControllerFiltreExportTest {
 
     @Autowired
     private WebTestClient webTestClient;
+
+    /** EF-BUR-06 : le détail d'une mission journalise sa consultation via AdmPort — pas de service-adm réel ici. */
+    @MockBean
+    private AdmPort admPort;
 
     private String tokenFor(String phone) {
         return webTestClient.post().uri("/api/v1/auth/login")
@@ -62,6 +71,7 @@ class MissionAppparieeControllerFiltreExportTest {
 
     @Test
     void returns_detail_of_a_mission_in_the_actor_tenant() {
+        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
         String token = tokenFor("+237600000001");
 
         webTestClient.get().uri("/api/v1/bureau/missions-appariees/mission-1")
@@ -71,10 +81,14 @@ class MissionAppparieeControllerFiltreExportTest {
                 .expectBody()
                 .jsonPath("$.id").isEqualTo("mission-1")
                 .jsonPath("$.transporteurNom").isEqualTo("Transport Étoile SARL");
+
+        org.mockito.Mockito.verify(admPort)
+                .enregistrerAudit("tenant-bgft-douala", "actor-bureau-1", "CONSULTATION_MISSION_DETAIL", "mission:mission-1");
     }
 
     @Test
     void returns_404_for_a_mission_that_does_not_exist() {
+        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
         String token = tokenFor("+237600000001");
 
         webTestClient.get().uri("/api/v1/bureau/missions-appariees/mission-inconnue")
@@ -85,6 +99,7 @@ class MissionAppparieeControllerFiltreExportTest {
 
     @Test
     void returns_404_rather_than_leaking_a_mission_from_another_tenant() {
+        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
         String token = tokenFor("+237600000001");
 
         // mission-3 appartient à tenant-bnft-ndjamena, pas au tenant du token ci-dessus.

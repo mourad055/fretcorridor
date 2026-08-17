@@ -1,5 +1,6 @@
 package com.fretcorridor.gateway.infrastructure.rest.opt;
 
+import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
 import com.fretcorridor.gateway.domain.opt.OptPort;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
@@ -26,9 +27,11 @@ import reactor.core.publisher.Mono;
 public class MissionAppparieeController {
 
     private final OptPort optPort;
+    private final AdmPort admPort;
 
-    public MissionAppparieeController(OptPort optPort) {
+    public MissionAppparieeController(OptPort optPort, AdmPort admPort) {
         this.optPort = optPort;
+        this.admPort = admPort;
     }
 
     @GetMapping("/api/v1/bureau/missions-appariees")
@@ -39,15 +42,17 @@ public class MissionAppparieeController {
         return missionsFiltrees(actor, statut, axeId).map(MissionAppparieeResponse::from);
     }
 
+    /** EF-BUR-06 : consultation du détail d'une mission (donnée individuelle, CDC UC-BUR-01 étape 4) journalisée. */
     @GetMapping("/api/v1/bureau/missions-appariees/{missionId}")
     public Mono<ResponseEntity<MissionAppparieeResponse>> detail(
             @AuthenticationPrincipal AuthenticatedActor actor,
             @PathVariable String missionId) {
-        return optPort.listerMissionsParTenant(actor.tenantId())
-                .filter(mission -> mission.id().equals(missionId))
-                .next()
-                .map(mission -> ResponseEntity.ok(MissionAppparieeResponse.from(mission)))
-                .defaultIfEmpty(ResponseEntity.notFound().build());
+        return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_MISSION_DETAIL", "mission:" + missionId)
+                .then(optPort.listerMissionsParTenant(actor.tenantId())
+                        .filter(mission -> mission.id().equals(missionId))
+                        .next()
+                        .map(mission -> ResponseEntity.ok(MissionAppparieeResponse.from(mission)))
+                        .defaultIfEmpty(ResponseEntity.notFound().build()));
     }
 
     @GetMapping("/api/v1/bureau/missions-appariees/export")
