@@ -6,6 +6,27 @@
 
 ---
 
+## Prérequis avant toute intégration réelle (S11 à S19)
+
+**Tout sprint mobile de S11 à S19 (Phase 2 + Phase 3) reste en mode
+mocké** tant que les deux conditions suivantes ne sont pas remplies :
+
+1. Le test bout-en-bout Docker du fix S7 a été fait (en pause au 17 août
+   — réseau Starlink instable côté utilisateur, DNS qui refuse les
+   requêtes par intermittence) ;
+2. **ET** le backend réel visé est confirmé prêt côté Moteur/Web pour le
+   sprint concerné.
+
+**Exception déjà actée** : S15 (sélecteur d'axe, Chauffeur + Client) est
+sorti du mode mock — `service-geo` était confirmé prêt par le Moteur
+(2 axes réels en base, `GET /api/geo/axes?tenantId=` filtré réellement)
+et le câblage a été fait avec accord explicite de l'utilisateur. Ce n'est
+pas un modèle à reproduire automatiquement pour les autres sprints — ne
+sortir un sprint du mock que sur demande explicite, après confirmation
+du backend concerné.
+
+---
+
 ## Règle absolue (Git) — à respecter dans toute session
 
 **INTERDICTION FORMELLE de `git merge`, `git push origin dev`, ou toute
