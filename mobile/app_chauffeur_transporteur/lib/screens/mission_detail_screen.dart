@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../providers/mission_provider.dart';
 import '../providers/position_provider.dart';
 import '../theme/app_theme.dart';
+import 'plan_chargement_screen.dart';
 
 const _categoriesIncident = [
   'Retard',
@@ -129,6 +130,22 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                   const SizedBox(height: 20),
 
                   if (detail != null) _actions(detail, state.chargement),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 44,
+                    child: OutlinedButton.icon(
+                      onPressed: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => PlanChargementScreen(missionId: widget.mission.missionId))),
+                      icon: const Icon(Icons.view_in_ar_outlined, size: 18),
+                      label: const Text('Voir le plan de chargement'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.texte,
+                        side: const BorderSide(color: AppColors.bordure),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   Text('Chronologie', style: Theme.of(context).textTheme.titleMedium),
