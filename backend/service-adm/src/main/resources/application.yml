@@ -18,6 +18,14 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
+fretcorridor:
+  adm:
+    ordonnanceur-escalade:
+      # EF-ADM-05 : fréquence d'exécution de l'ordonnanceur d'escalade
+      # automatique (délai plafond porté par chaque Dossier.delaiTraitement,
+      # pas de valeur globale à configurer ici).
+      intervalle-ms: ${FRETCORRIDOR_ADM_ORDONNANCEUR_INTERVALLE_MS:900000}
+
 management:
   endpoints:
     web:
