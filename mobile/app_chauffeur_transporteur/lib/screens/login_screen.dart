@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../providers/tenant_selection_provider.dart';
 import '../theme/app_theme.dart';
 import 'kyc_screen.dart';
+import 'tenant_selection_screen.dart';
 
 // FE-WEB-01/S1 : écran de connexion unique, aucune indication de rôle avant
 // authentification réussie — le rôle (CHAUFFEUR/TRANSPORTEUR/AGENT/
@@ -34,12 +36,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _telCtrl.text.trim(),
       _codeCtrl.text.trim(),
     );
-    if (succes && mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const KycScreen()),
-      );
-    }
+    if (!succes || !mounted) return;
+
+    // S18 — sélection de tenant seulement si le compte en a plusieurs
+    // (MOCK) ; sinon comportement inchangé, on va directement au KYC.
+    final tenantIdReel = ref.read(authProvider).tenantId ?? '';
+    final besoinSelectionTenant =
+        ref.read(tenantSelectionProvider.notifier).resoudrePourCompte(_telCtrl.text.trim(), tenantIdReel);
+    if (!mounted) return;
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => besoinSelectionTenant ? const TenantSelectionScreen() : const KycScreen()),
+    );
   }
 
   @override

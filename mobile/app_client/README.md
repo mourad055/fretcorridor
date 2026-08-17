@@ -32,17 +32,30 @@ restent entièrement locales, aucun appel réseau. À remplacer par une
 vraie initiation de paiement dès que service-pay l'exposera — voir
 commentaire en tête de `choix_paiement_provider.dart`.
 
-## État (S15 — sélecteur d'axe) — ⚠️ MOCK, pas de backend réel
+## État (S15 — sélecteur d'axe) — branché sur le backend réel
 
 Phase 2, Sprint 15 ("Second axe & sécurité"), Volet Client. Sur l'écran
 de publication de demande (`lib/screens/publier_demande_screen.dart`), un
 sélecteur d'axe facultatif permet de préremplir les villes de départ et
-d'arrivée — `lib/mock/axe_mock.dart`. La saisie libre des villes reste
-disponible et fonctionne toujours (ex. axe non couvert par la démo).
+d'arrivée — `lib/providers/axes_provider.dart`. La saisie libre des villes
+reste disponible et fonctionne toujours (ex. axe non couvert par les axes
+existants).
 
-**🧪 Entièrement mocké** : aucun endpoint `/axes` n'est exposé côté app
-Client aujourd'hui (service-geo n'est branché que côté app
-Chauffeur/Transporteur, S3) et aucun écran/provider "axe" n'existait ici
-avant ce sprint. La liste d'axes est isolée dans `lib/mock/axe_mock.dart`,
-aucun appel réseau. À remplacer par un vrai fetch dès que service-geo
-exposera les axes pour ce module.
+Appel direct à `service-geo` (`GET /api/geo/axes?tenantId=...`, confirmé
+filtré réellement par tenant en base — ENF-MUL-01) via `geoDioProvider`
+(`lib/providers/dio_provider.dart`) — pas de route gateway pour le rôle
+Chargeur aujourd'hui, donc pas d'intermédiaire. `tenantId` vient de la
+session (`authProvider`).
+
+## État (S19 — signalement de litige) — ⚠️ MOCK, pas de backend réel
+
+Phase 3, Sprint 19 ("Back-office avancé, litiges"), Volet Client. Depuis
+l'écran de suivi (`lib/screens/suivi_screen.dart`, visible uniquement une
+fois une mission apparue), un bouton "Signaler un litige" ouvre
+`lib/screens/litige_screen.dart` — motif, description, référence mission
+affichée en contexte.
+
+**🧪 Entièrement mocké** : `service-adm` (Web) n'expose aucun contrat de
+signalement de litige à ce jour. L'envoi est simulé (délai court, message
+de confirmation) — isolé dans `lib/providers/litige_provider.dart`, aucun
+appel réseau. À remplacer par un vrai POST une fois ce contrat exposé.
