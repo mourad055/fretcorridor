@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../mock/consolidation_mock.dart';
 import '../providers/suivi_provider.dart';
 import '../theme/app_theme.dart';
+import 'litige_screen.dart';
 
 // S6 (position/ETA) + S7 (chronologie) réunis dans un seul écran "Suivi" —
 // plus naturel côté client qu'une navigation séparée pour deux vues
@@ -172,6 +173,28 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                               ],
                             ),
                           )),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LitigeScreen(
+                              demandeId: widget.demandeId,
+                              missionId: suivi.chronologie!.missionId,
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.flag_outlined, size: 18, color: AppColors.erreur),
+                        label: const Text('Signaler un litige', style: TextStyle(color: AppColors.erreur)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.erreur),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
     );
