@@ -231,6 +231,22 @@ par tenant (`GET /axes`, S3, filtré en base — ENF-MUL-01) : le second axe
 fictif qui complétait la liste a été retiré, `charger()` affiche
 directement ce que renvoie le backend.
 
+## État (S19 Volet A — incident enrichi) — ⚠️ Partiellement MOCK
+
+Phase 3, Sprint 19 ("Back-office avancé, litiges"), Volet Chauffeur.
+Le bouton "Signaler un incident" (`mission_detail_screen.dart`, déjà
+existant depuis S7) ouvre désormais un formulaire (`_FormulaireIncident`)
+— catégorie, description libre, photo optionnelle (réutilise le pattern
+`image_picker` déjà en place pour le dépôt de pièces KYC).
+
+Le changement de statut `INCIDENT` passe toujours par le vrai endpoint
+(`POST /missions/{id}/etapes`, S7 réel) — seule la catégorie/description
+est composée côté app et glissée dans le `libellé` envoyé. **La photo
+reste purement locale (aperçu, jamais envoyée)** : aucun endpoint
+d'upload d'incident n'existe côté `service-adm` à ce jour (grille de
+décision, recours par opérateur différent) — à remplacer une fois ce
+contrat exposé.
+
 ## Lancer en local
 
 ```bash
