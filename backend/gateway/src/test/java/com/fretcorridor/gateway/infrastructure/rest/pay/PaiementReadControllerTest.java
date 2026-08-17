@@ -86,6 +86,7 @@ class PaiementReadControllerTest {
         when(payReadPort.rapportDuTenant("tenant-bgft-douala")).thenReturn(Flux.just(
                 new EcritureVue("e1", "mission-1", "COMPTE_SEQUESTRE_PRESTATAIRE", "ENCAISSEMENT", "CREDIT", new BigDecimal("500"), Instant.now(), "VALIDE", "VIREMENT", true)
         ));
+        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/bureau/rapport-financier")
                 .header("Authorization", "Bearer " + token)
@@ -95,6 +96,9 @@ class PaiementReadControllerTest {
                 .jsonPath("$.length()").isEqualTo(1)
                 .jsonPath("$[0].modePaiement").isEqualTo("VIREMENT")
                 .jsonPath("$[0].litigeActif").isEqualTo(true);
+
+        verify(admPort).enregistrerAudit(eq("tenant-bgft-douala"), any(), eq("CONSULTATION_RAPPORT_FINANCIER"),
+                eq("tenant:tenant-bgft-douala"));
     }
 
     @Test
@@ -129,6 +133,7 @@ class PaiementReadControllerTest {
         when(payReadPort.paiementsEspecesDuTenant("tenant-bgft-douala")).thenReturn(Flux.just(
                 new DeclarationEspecesVue("d1", "mission-especes-1", new BigDecimal("150"), Instant.now(), false)
         ));
+        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/bureau/paiements-especes")
                 .header("Authorization", "Bearer " + token)
@@ -138,6 +143,9 @@ class PaiementReadControllerTest {
                 .jsonPath("$.length()").isEqualTo(1)
                 .jsonPath("$[0].missionId").isEqualTo("mission-especes-1")
                 .jsonPath("$[0].protectionAssuree").isEqualTo(false);
+
+        verify(admPort).enregistrerAudit(eq("tenant-bgft-douala"), any(), eq("CONSULTATION_PAIEMENTS_ESPECES"),
+                eq("tenant:tenant-bgft-douala"));
     }
 
     @Test

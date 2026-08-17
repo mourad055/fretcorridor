@@ -42,9 +42,11 @@ public class PaiementReadController {
                 ));
     }
 
+    /** EF-BUR-06 : consultation de données individuelles (écritures nominatives) journalisée. */
     @GetMapping("/api/v1/bureau/rapport-financier")
     public Mono<java.util.List<EcritureVueResponse>> rapportFinancierBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return payReadPort.rapportDuTenant(actor.tenantId()).map(EcritureVueResponse::from).collectList();
+        return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + actor.tenantId())
+                .then(payReadPort.rapportDuTenant(actor.tenantId()).map(EcritureVueResponse::from).collectList());
     }
 
     @GetMapping("/api/v1/admin/rapport-financier/{tenantId}")
@@ -57,10 +59,11 @@ public class PaiementReadController {
                 .then(payReadPort.rapportDuTenant(tenantId).map(EcritureVueResponse::from).collectList());
     }
 
-    /** EF-PAY-07 (S) : missions payées en espèces (mode dégradé, sans protection) du territoire du Bureau. */
+    /** EF-PAY-07 (S) : missions payées en espèces (mode dégradé, sans protection) du territoire du Bureau. EF-BUR-06 : consultation journalisée. */
     @GetMapping("/api/v1/bureau/paiements-especes")
     public Mono<java.util.List<DeclarationEspecesVueResponse>> paiementsEspecesBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return payReadPort.paiementsEspecesDuTenant(actor.tenantId()).map(DeclarationEspecesVueResponse::from).collectList();
+        return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + actor.tenantId())
+                .then(payReadPort.paiementsEspecesDuTenant(actor.tenantId()).map(DeclarationEspecesVueResponse::from).collectList());
     }
 
     @GetMapping("/api/v1/admin/paiements-especes/{tenantId}")
