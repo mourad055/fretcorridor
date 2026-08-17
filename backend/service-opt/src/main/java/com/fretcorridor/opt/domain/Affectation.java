@@ -122,6 +122,13 @@ public class Affectation {
     @Column(name = "date_creation", nullable = false, updatable = false)
     private Instant dateCreation;
 
+    // EF-MAT-08/09, ENF-SEC-03 (idempotence) - null tant que la livraison
+    // n'a pas ete executee. Utilise uniquement pour les affectations FTL
+    // simples (jamais sequencees en Tournee) : le cas consolide a deja son
+    // propre marqueur d'etat via EtapeTournee.Etat.EXECUTEE.
+    @Column(name = "livraison_executee_le")
+    private Instant livraisonExecuteeLe;
+
     protected Affectation() {
         // Requis par JPA.
     }
@@ -205,4 +212,24 @@ public class Affectation {
     public BigDecimal getMontantVerseTransporteur() { return montantVerseTransporteur; }
     public boolean isTarificationModeDegrade() { return tarificationModeDegrade; }
     public Instant getDateCreation() { return dateCreation; }
+
+    public Instant getLivraisonExecuteeLe() { return livraisonExecuteeLe; }
+
+    /**
+     * EF-MAT-08/09 - transition idempotente, meme principe que
+     * EtapeTournee.marquerExecutee() : ne renvoie true qu'au moment exact de
+     * la premiere execution, jamais sur une redelivrance Kafka du meme
+     * evenement (ENF-SEC-03).
+     *
+     * @return true si CETTE invocation vient de marquer la livraison
+     *         (premiere fois) ; false si elle etait deja marquee (evenement
+     *         redelivre, aucun effet de bord a declencher a nouveau).
+     */
+    public boolean marquerLivraisonExecuteeSiNecessaire() {
+        if (livraisonExecuteeLe != null) {
+            return false;
+        }
+        this.livraisonExecuteeLe = Instant.now();
+        return true;
+    }
 }

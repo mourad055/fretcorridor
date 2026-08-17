@@ -71,21 +71,31 @@ public class OptEventPublisher {
 
     /** EF-MAT-08 (Sprint 12) : meme pattern de degradation gracieuse que ci-dessus. */
     public void publierPropositionRetourAVide(PropositionRetourAVideEvent event) {
+        // tourneeId et affectationId sont mutuellement exclusifs (cf javadoc du
+        // record) - la cle Kafka de partitionnement doit suivre celui des deux
+        // qui est reellement renseigne, jamais supposer tourneeId toujours
+        // present (regression corrigee suite a test manuel du 2026-08-17 :
+        // NPE sur tourneeId() null pour le cas FTL simple).
+        String cle = event.tourneeId() != null
+                ? event.tourneeId().toString()
+                : event.affectationId().toString();
+        String identifiantLog = event.tourneeId() != null
+                ? "tournee=" + event.tourneeId()
+                : "affectation=" + event.affectationId();
         try {
-            String cle = event.tourneeId().toString();
             kafkaTemplate.send(TOPIC_PROPOSITION_RETOUR_A_VIDE, cle, event)
                     .whenComplete((result, ex) -> {
                         if (ex == null) {
-                            log.info("PropositionRetourAVide publiee - tournee={}, offset={}",
-                                    event.tourneeId(), result.getRecordMetadata().offset());
+                            log.info("PropositionRetourAVide publiee - {}, offset={}",
+                                    identifiantLog, result.getRecordMetadata().offset());
                         } else {
-                            log.error("Echec publication PropositionRetourAVide (callback async) - tournee={}",
-                                    event.tourneeId(), ex);
+                            log.error("Echec publication PropositionRetourAVide (callback async) - {}",
+                                    identifiantLog, ex);
                         }
                     });
         } catch (Exception exceptionBlocante) {
-            log.error("Echec publication PropositionRetourAVide (send() bloquant) - tournee={} "
-                    + "- non bloquant (ENF-DIS-04)", event.tourneeId(), exceptionBlocante);
+            log.error("Echec publication PropositionRetourAVide (send() bloquant) - {} "
+                    + "- non bloquant (ENF-DIS-04)", identifiantLog, exceptionBlocante);
         }
     }
 }

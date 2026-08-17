@@ -1,5 +1,7 @@
 package com.fretcorridor.opt.messaging;
 
+import com.fretcorridor.opt.domain.Affectation;
+import com.fretcorridor.opt.domain.AffectationRepository;
 import com.fretcorridor.opt.sequencement.EtapeTournee;
 import com.fretcorridor.opt.sequencement.EtapeTourneeRepository;
 import com.fretcorridor.opt.sequencement.ReplanificationService;
@@ -13,15 +15,8 @@ import java.util.Optional;
 
 /**
  * Consomme EtapeExecutee (service-exe, Mobile) et fige l'etape correspondante
- * (EF-MAT-09) - declenche en cascade Tournee.marquerEnExecutionSiNecessaire(),
- * qui elle-meme transitionne vers TERMINEE si c'etait la derniere etape
- * (EF-MAT-08/RG-058, cf Tournee.java).
- *
- * Idempotence NON geree par une table dediee ici (contrairement a
- * CapaciteDeclareeListener/DataIntegrityViolationException) : marquerExecutee()
- * est naturellement idempotent (Etat.EXECUTEE applique deux fois reste
- * Etat.EXECUTEE, aucun effet de bord observable) - pas besoin d'un
- * mecanisme d'exclusion supplementaire.
+ * (EF-MAT-09). Deux chemins selon que la mission a ete sequencee en Tournee
+ * ou non (cf SequencementDeclencheur).
  */
 @Component
 public class EtapeExecuteeListener {
@@ -29,11 +24,14 @@ public class EtapeExecuteeListener {
     private static final Logger log = LoggerFactory.getLogger(EtapeExecuteeListener.class);
 
     private final EtapeTourneeRepository etapeTourneeRepository;
+    private final AffectationRepository affectationRepository;
     private final ReplanificationService replanificationService;
 
     public EtapeExecuteeListener(EtapeTourneeRepository etapeTourneeRepository,
+                                  AffectationRepository affectationRepository,
                                   ReplanificationService replanificationService) {
         this.etapeTourneeRepository = etapeTourneeRepository;
+        this.affectationRepository = affectationRepository;
         this.replanificationService = replanificationService;
     }
 
@@ -45,27 +43,40 @@ public class EtapeExecuteeListener {
         Optional<EtapeTournee> etapeOpt = etapeTourneeRepository
                 .findByAffectationIdAndTypeEtape(event.missionId(), typeEtape);
 
-        if (etapeOpt.isEmpty()) {
-            // Pas une erreur bloquante (ENF-DIS-04) : l'affectation existe
-            // peut-etre mais n'a pas encore ete sequencee en Tournee
-            // (Sprint 11 pas encore passe sur ce cycle), ou l'evenement est
-            // arrive avant sa contrepartie L1/L2. Loggue pour investigation,
-            // jamais rejete en erreur Kafka (pas de retry infini a prevoir).
-            log.warn("EtapeExecutee recue pour une mission/type non sequence en Tournee - "
-                    + "mission={}, typeEtape={}, ignore.", event.missionId(), event.typeEtape());
+        if (etapeOpt.isPresent()) {
+            EtapeTournee etape = etapeOpt.get();
+            boolean tourneeVientDeTerminer = etape.marquerExecutee();
+            log.info("Etape figee (EF-MAT-09) - mission={}, typeEtape={}", event.missionId(), event.typeEtape());
+
+            if (tourneeVientDeTerminer) {
+                replanificationService.proposerRetourAVide(etape.getTournee().getId());
+            }
             return;
         }
 
-        EtapeTournee etape = etapeOpt.get();
-        boolean tourneeVientDeTerminer = etape.marquerExecutee();
-        log.info("Etape figee (EF-MAT-09) - mission={}, typeEtape={}", event.missionId(), event.typeEtape());
+        if (typeEtape != EtapeTournee.TypeEtape.LIVRAISON) {
+            log.debug("EtapeExecutee (ENLEVEMENT) recue sans Tournee associee - mission={}, ignore.",
+                    event.missionId());
+            return;
+        }
 
-        // EF-MAT-08/RG-058 : uniquement quand CETTE execution vient de faire
-        // passer la tournee a TERMINEE (jamais avant, jamais une deuxieme
-        // fois sur un evenement redelivre - marquerExecutee() ne renvoie
-        // true qu'une seule fois, au moment exact de la transition).
-        if (tourneeVientDeTerminer) {
-            replanificationService.proposerRetourAVide(etape.getTournee().getId());
+        Optional<Affectation> affectationOpt = affectationRepository.findById(event.missionId());
+        if (affectationOpt.isEmpty()) {
+            log.warn("EtapeExecutee (LIVRAISON) recue pour un missionId introuvable (ni Tournee, "
+                    + "ni Affectation) - mission={}, ignore.", event.missionId());
+            return;
+        }
+
+        Affectation affectation = affectationOpt.get();
+        boolean vientDetreMarquee = affectation.marquerLivraisonExecuteeSiNecessaire();
+        affectationRepository.save(affectation);
+
+        if (vientDetreMarquee) {
+            log.info("Livraison figee (EF-MAT-09, affectation FTL simple) - affectation={}", affectation.getId());
+            replanificationService.proposerRetourAVide(affectation);
+        } else {
+            log.debug("EtapeExecutee (LIVRAISON) redelivree pour une affectation deja marquee - "
+                    + "affectation={}, ignoree (idempotence, ENF-SEC-03).", affectation.getId());
         }
     }
 }
