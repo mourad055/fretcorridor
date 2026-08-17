@@ -231,6 +231,23 @@ par tenant (`GET /axes`, S3, filtré en base — ENF-MUL-01) : le second axe
 fictif qui complétait la liste a été retiré, `charger()` affiche
 directement ce que renvoie le backend.
 
+## État (S18 — sélection de tenant) — ⚠️ MOCK, pas de backend réel
+
+Phase 3, Sprint 18 ("Second tenant institutionnel"), Chauffeur uniquement.
+Après authentification réussie et avant l'accès à l'app,
+`lib/screens/tenant_selection_screen.dart` propose un choix de bureau si
+le compte est rattaché à plusieurs tenants — s'appuie sur `login_screen.dart`
+sans le modifier pour le cas mono-tenant (comportement identique
+à aujourd'hui, écran sauté automatiquement).
+
+**🧪 Entièrement mocké** : `service-ida`/gateway ne renvoient qu'un seul
+`tenantId` par compte (`LoginResponse`) — aucun contrat multi-tenant par
+acteur à ce jour. Un seul numéro de téléphone de démonstration (arbitraire,
+voir `_telephoneDemoMultiTenant` dans `lib/providers/tenant_selection_provider.dart`)
+déclenche l'affichage de 2 tenants simulés ; tout autre compte reste
+mono-tenant. À remplacer par un vrai endpoint une fois service-ida/gateway
+prêts côté Web.
+
 ## Lancer en local
 
 ```bash
