@@ -1,12 +1,14 @@
 package com.fretcorridor.gateway.infrastructure.opt;
 
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
+import com.fretcorridor.gateway.domain.opt.ObservatoireAxeVue;
 import com.fretcorridor.gateway.domain.opt.OptPort;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 
@@ -57,6 +59,17 @@ public class ServiceBurMissionAppparieeAdapter implements OptPort {
                         dto.confirmeeLe(),
                         StatutMission.CONFIRMEE // seul statut connaissable depuis cet événement
                 ));
+    }
+
+    @Override
+    public Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId) {
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/observatoire")
+                        .queryParam("tenantId", tenantId)
+                        .queryParam("axeId", axeId)
+                        .build())
+                .retrieve()
+                .bodyToMono(ObservatoireAxeVue.class);
     }
 
     /** Miroir minimal du contrat MissionAppparieeResponse de service-bur. */

@@ -128,4 +128,30 @@ class MissionAppparieeControllerFiltreExportTest {
                 .contains("mission-1,axe-1,Transport Étoile SARL,Douala,Yaoundé")
                 .doesNotContain("mission-3");
     }
+
+    /** EF-BUR-03 : indicateurs de marché d'un axe — agrégat, jamais journalisé (RG-086). */
+    @Test
+    void returns_observatoire_indicators_for_an_axe() {
+        String token = tokenFor("+237600000001");
+
+        webTestClient.get().uri("/api/v1/bureau/observatoire/axe-1")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.axeId").isEqualTo("axe-1")
+                .jsonPath("$.seuilAtteint").isEqualTo(false);
+
+        org.mockito.Mockito.verifyNoInteractions(admPort);
+    }
+
+    @Test
+    void a_transporteur_cannot_reach_the_bureau_observatoire_endpoint() {
+        String token = tokenFor("+237600000002");
+
+        webTestClient.get().uri("/api/v1/bureau/observatoire/axe-1")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isForbidden();
+    }
 }

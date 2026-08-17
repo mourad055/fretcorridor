@@ -4,6 +4,7 @@ import com.fretcorridor.bur.domain.AgregationMissionsService;
 import com.fretcorridor.bur.domain.MissionAppparieeRepositoryPort;
 import com.fretcorridor.bur.domain.MissionAppparieeService;
 import com.fretcorridor.bur.domain.MissionRepositoryPort;
+import com.fretcorridor.bur.domain.ObservatoireService;
 import com.fretcorridor.bur.domain.PositionRepositoryPort;
 import com.fretcorridor.bur.domain.PositionService;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,14 @@ public class DomainConfig {
     @Bean
     public MissionAppparieeService missionAppparieeService(MissionAppparieeRepositoryPort repository) {
         return new MissionAppparieeService(repository);
+    }
+
+    @Bean
+    public ObservatoireService observatoireService(
+            MissionAppparieeRepositoryPort repository,
+            @Value("${fretcorridor.bur.seuil-agregation:3}") long seuilAgregation
+    ) {
+        return new ObservatoireService(repository, seuilAgregation);
     }
 
     @Bean

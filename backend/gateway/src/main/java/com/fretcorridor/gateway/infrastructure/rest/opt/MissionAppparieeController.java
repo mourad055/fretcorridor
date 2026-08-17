@@ -6,6 +6,7 @@ import com.fretcorridor.gateway.domain.opt.OptPort;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
 import com.fretcorridor.gateway.infrastructure.rest.opt.dto.MissionAppparieeCsvExporter;
 import com.fretcorridor.gateway.infrastructure.rest.opt.dto.MissionAppparieeResponse;
+import com.fretcorridor.gateway.infrastructure.rest.opt.dto.ObservatoireAxeResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -53,6 +54,14 @@ public class MissionAppparieeController {
                         .next()
                         .map(mission -> ResponseEntity.ok(MissionAppparieeResponse.from(mission)))
                         .defaultIfEmpty(ResponseEntity.notFound().build()));
+    }
+
+    /** EF-BUR-03, UC-BUR-02 : indicateurs de marché d'un axe — agrégat anonymisé, pas de journalisation EF-BUR-06 (RG-086). */
+    @GetMapping("/api/v1/bureau/observatoire/{axeId}")
+    public Mono<ObservatoireAxeResponse> observatoire(
+            @AuthenticationPrincipal AuthenticatedActor actor,
+            @PathVariable String axeId) {
+        return optPort.observatoirePourAxe(actor.tenantId(), axeId).map(ObservatoireAxeResponse::from);
     }
 
     @GetMapping("/api/v1/bureau/missions-appariees/export")

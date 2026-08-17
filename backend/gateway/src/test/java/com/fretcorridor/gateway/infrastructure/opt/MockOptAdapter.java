@@ -1,11 +1,13 @@
 package com.fretcorridor.gateway.infrastructure.opt;
 
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
+import com.fretcorridor.gateway.domain.opt.ObservatoireAxeVue;
 import com.fretcorridor.gateway.domain.opt.OptPort;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -39,5 +41,10 @@ public class MockOptAdapter implements OptPort {
     @Override
     public Flux<MissionAppariee> listerMissionsParTenant(String tenantId) {
         return Flux.fromIterable(missions).filter(m -> m.tenantId().equals(tenantId));
+    }
+
+    @Override
+    public Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId) {
+        return Mono.just(new ObservatoireAxeVue(axeId, 3, false, null, null, null, null, null));
     }
 }
