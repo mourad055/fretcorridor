@@ -2,6 +2,40 @@
   <section class="configurations fc-panel">
     <h2 class="fc-panel__title">Configuration versionnée</h2>
 
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+    <h3>Catalogue des paramètres configurés</h3>
+    <div class="fc-skeleton" *ngIf="catalogueLoading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!catalogueLoading() && catalogue().length === 0">Aucun paramètre métier configuré pour l'instant.</div>
+    <table class="fc-table" *ngIf="!catalogueLoading() && catalogue().length > 0">
+      <thead>
+        <tr>
+          <th>Clé</th>
+          <th>Valeur courante</th>
+          <th>Version</th>
+          <th>Auteur</th>
+          <th>Dernière modification</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let configuration of catalogue()">
+          <td>{{ configuration.cle }}</td>
+          <td>{{ configuration.valeur }}</td>
+          <td>{{ configuration.version }}</td>
+          <td>{{ configuration.auteur }}</td>
+          <td>{{ configuration.creeLe | date: 'short' }}</td>
+          <td>
+            <button type="button" class="fc-btn" (click)="selectionner(configuration.cle)">Voir l'historique</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Historique et modification</h3>
     <div class="fc-filters">
       <div class="fc-filters__field">
         <label class="fc-filters__label" for="configuration-cle">Clé</label>
@@ -10,7 +44,6 @@
       <button type="button" class="fc-btn fc-btn--primary" [disabled]="loading()" (click)="consulter()">Consulter l'historique</button>
     </div>
 
-    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
     <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
       <div class="fc-skeleton__line"></div>
       <div class="fc-skeleton__line"></div>

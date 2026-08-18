@@ -7,4 +7,6 @@ export interface Ecriture {
   montant: number;
   creeLe: string;
   statut: string;
+  modePaiement: string | null;
+  litigeActif: boolean;
 }

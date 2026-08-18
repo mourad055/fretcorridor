@@ -38,7 +38,8 @@ public class NotificationPrestataireService {
         }
 
         grandLivreService.enregistrerEncaissement(
-                notification.tenantId(), notification.missionId(), notification.montant(), notification.referencePrestataire());
+                notification.tenantId(), notification.missionId(), notification.montant(),
+                notification.referencePrestataire(), notification.modePaiement());
         idempotencePort.marquerTraitee(idempotenceKey);
         return Resultat.TRAITEE;
     }

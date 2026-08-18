@@ -2,6 +2,7 @@ package com.fretcorridor.gateway.infrastructure.rest.pay;
 
 import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.domain.pay.PayReadPort;
+import com.fretcorridor.gateway.infrastructure.rest.pay.dto.DeclarationEspecesVueResponse;
 import com.fretcorridor.gateway.infrastructure.rest.pay.dto.EcritureVueResponse;
 import com.fretcorridor.gateway.infrastructure.rest.pay.dto.SoldeTransporteurResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
@@ -56,9 +57,11 @@ public class PaiementReadController {
                 ));
     }
 
+    /** EF-BUR-06 : consultation de données individuelles (écritures nominatives) journalisée. */
     @GetMapping("/api/v1/bureau/rapport-financier")
     public Mono<java.util.List<EcritureVueResponse>> rapportFinancierBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return payReadPort.rapportDuTenant(actor.tenantId()).map(EcritureVueResponse::from).collectList();
+        return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + actor.tenantId())
+                .then(payReadPort.rapportDuTenant(actor.tenantId()).map(EcritureVueResponse::from).collectList());
     }
 
     @GetMapping("/api/v1/admin/rapport-financier/{tenantId}")
@@ -69,5 +72,22 @@ public class PaiementReadController {
         // ENF-SEC-02 : consultation transverse d'un tenant par un Admin, journalisée nominativement.
         return admPort.enregistrerAudit(tenantId, actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + tenantId)
                 .then(payReadPort.rapportDuTenant(tenantId).map(EcritureVueResponse::from).collectList());
+    }
+
+    /** EF-PAY-07 (S) : missions payées en espèces (mode dégradé, sans protection) du territoire du Bureau. EF-BUR-06 : consultation journalisée. */
+    @GetMapping("/api/v1/bureau/paiements-especes")
+    public Mono<java.util.List<DeclarationEspecesVueResponse>> paiementsEspecesBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + actor.tenantId())
+                .then(payReadPort.paiementsEspecesDuTenant(actor.tenantId()).map(DeclarationEspecesVueResponse::from).collectList());
+    }
+
+    @GetMapping("/api/v1/admin/paiements-especes/{tenantId}")
+    public Mono<java.util.List<DeclarationEspecesVueResponse>> paiementsEspecesAdmin(
+            @PathVariable String tenantId,
+            @AuthenticationPrincipal AuthenticatedActor actor
+    ) {
+        // ENF-SEC-02 : consultation transverse d'un tenant par un Admin, journalisée nominativement.
+        return admPort.enregistrerAudit(tenantId, actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + tenantId)
+                .then(payReadPort.paiementsEspecesDuTenant(tenantId).map(DeclarationEspecesVueResponse::from).collectList());
     }
 }

@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Ecriture } from '../../models/ecriture.models';
-import { StatusBadgeComponent, ecritureStatusVariant, libelleEcritureStatut } from '../status-badge/status-badge.component';
+import { StatusBadgeComponent, ecritureStatusVariant, libelleEcritureStatut, libelleModePaiement } from '../status-badge/status-badge.component';
 
 @Component({
   selector: 'app-ecritures-table',
@@ -14,4 +14,5 @@ export class EcrituresTableComponent {
 
   readonly ecritureStatusVariant = ecritureStatusVariant;
   readonly libelleEcritureStatut = libelleEcritureStatut;
+  readonly libelleModePaiement = libelleModePaiement;
 }

@@ -20,6 +20,7 @@ public record EcritureMiroir(
         String beneficiaireId,
         SensEcriture sens,
         NatureEcriture nature,
+        ModePaiement modePaiement,
         BigDecimal montant,
         String referencePrestataire,
         Instant creeLe,
@@ -32,6 +33,6 @@ public record EcritureMiroir(
     }
 
     public EcritureMiroir suspendue() {
-        return new EcritureMiroir(id, tenantId, missionId, typeCompte, beneficiaireId, sens, nature, montant, referencePrestataire, creeLe, StatutEcriture.SUSPENDUE);
+        return new EcritureMiroir(id, tenantId, missionId, typeCompte, beneficiaireId, sens, nature, modePaiement, montant, referencePrestataire, creeLe, StatutEcriture.SUSPENDUE);
     }
 }

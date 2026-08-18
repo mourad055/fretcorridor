@@ -1,6 +1,10 @@
 package com.fretcorridor.pay.infrastructure.rest;
 
+import com.fretcorridor.pay.domain.DeclarationEspecesInvalideException;
+import com.fretcorridor.pay.domain.GarantieInvalideException;
 import com.fretcorridor.pay.domain.ReversementSansEncaissementException;
+import com.fretcorridor.pay.domain.ReversementSansPreuveLivraisonException;
+import com.fretcorridor.pay.domain.ReversementSuspenduPourLitigeException;
 import com.fretcorridor.pay.domain.SequestreInvalideException;
 import com.fretcorridor.pay.domain.SignatureInvalideException;
 import org.springframework.http.HttpStatus;
@@ -19,10 +23,38 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(ReversementSansPreuveLivraisonException.class)
+    public ProblemDetail handleReversementSansPreuveLivraison(ReversementSansPreuveLivraisonException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Reversement refusé (RG-078)");
+        return problem;
+    }
+
     @ExceptionHandler(SequestreInvalideException.class)
     public ProblemDetail handleSequestreInvalide(SequestreInvalideException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Transition de séquestre invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(GarantieInvalideException.class)
+    public ProblemDetail handleGarantieInvalide(GarantieInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Souscription de garantie invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(DeclarationEspecesInvalideException.class)
+    public ProblemDetail handleDeclarationEspecesInvalide(DeclarationEspecesInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Déclaration de paiement espèces invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(ReversementSuspenduPourLitigeException.class)
+    public ProblemDetail handleReversementSuspenduPourLitige(ReversementSuspenduPourLitigeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Reversement suspendu (EF-PAY-08)");
         return problem;
     }
 

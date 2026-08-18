@@ -13,9 +13,12 @@ public record EcritureVueResponse(
         String sens,
         BigDecimal montant,
         Instant creeLe,
-        String statut
+        String statut,
+        String modePaiement,
+        boolean litigeActif
 ) {
     public static EcritureVueResponse from(EcritureVue e) {
-        return new EcritureVueResponse(e.id(), e.missionId(), e.typeCompte(), e.nature(), e.sens(), e.montant(), e.creeLe(), e.statut());
+        return new EcritureVueResponse(e.id(), e.missionId(), e.typeCompte(), e.nature(), e.sens(), e.montant(), e.creeLe(), e.statut(),
+                e.modePaiement(), e.litigeActif());
     }
 }

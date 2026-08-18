@@ -281,3 +281,19 @@ export function libelleEtapeEtat(etat?: string): string {
 export function libelleJournalAction(action?: string): string {
   return humanize(action);
 }
+
+/** EF-PAY-06/07 : moyen de paiement choisi à l'encaissement, `null` sur un reversement. */
+export function libelleModePaiement(mode?: string | null): string {
+  switch (mode) {
+    case 'MONNAIE_ELECTRONIQUE':
+      return 'Monnaie électronique';
+    case 'VIREMENT':
+      return 'Virement';
+    case 'TERME_CONTRACTUEL':
+      return 'Terme contractuel';
+    case 'ESPECES':
+      return 'Espèces';
+    default:
+      return mode ?? '—';
+  }
+}

@@ -13,4 +13,6 @@ public interface PayReadPort {
     Flux<EcritureVue> ecrituresDuTransporteur(String transporteurId);
 
     Flux<EcritureVue> rapportDuTenant(String tenantId);
+
+    Flux<DeclarationEspecesVue> paiementsEspecesDuTenant(String tenantId);
 }

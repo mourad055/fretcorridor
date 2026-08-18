@@ -17,11 +17,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class NotificationPrestataireServiceTest {
 
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
-    private final GrandLivreService grandLivreService = new GrandLivreService(grandLivrePort);
+    private final GrandLivreService grandLivreService = new GrandLivreService(grandLivrePort, new FakeGarantiePort(), new FakeLitigeMissionPort(), new FakeSequestrePort());
     private final FakeNotificationIdempotencePort idempotencePort = new FakeNotificationIdempotencePort();
 
     private final NotificationEncaissement notification =
-            new NotificationEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-prestataire-1");
+            new NotificationEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-prestataire-1", ModePaiement.MONNAIE_ELECTRONIQUE);
 
     @Test
     void refuses_a_notification_whose_signature_does_not_match() {

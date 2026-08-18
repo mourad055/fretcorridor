@@ -18,6 +18,17 @@ describe('ConfigurationsService', () => {
 
   afterEach(() => httpMock.verify());
 
+  it('gets the catalogue of already configured keys', () => {
+    let result: unknown;
+    service.catalogue().subscribe((catalogue) => (result = catalogue));
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/configurations`);
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+
+    expect(result).toEqual([]);
+  });
+
   it('gets the version history of a configuration key', () => {
     let result: unknown;
     service.historique('seuil-agregation-bur').subscribe((historique) => (result = historique));

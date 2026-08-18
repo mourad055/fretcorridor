@@ -3,8 +3,13 @@ package com.fretcorridor.pay.infrastructure.rest;
 import com.fretcorridor.pay.domain.*;
 import com.fretcorridor.pay.infrastructure.prestataire.MockPrestatairePaiementAdapter;
 import com.fretcorridor.pay.infrastructure.rest.dto.ClotureMissionRequest;
+import com.fretcorridor.pay.infrastructure.rest.dto.ConfirmationLivraisonRequest;
+import com.fretcorridor.pay.infrastructure.rest.dto.DeclarationEspecesResponse;
+import com.fretcorridor.pay.infrastructure.rest.dto.DeclarerPaiementEspecesRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.EcritureResponse;
+import com.fretcorridor.pay.infrastructure.rest.dto.GarantieResponse;
 import com.fretcorridor.pay.infrastructure.rest.dto.ReversementRequest;
+import com.fretcorridor.pay.infrastructure.rest.dto.SouscrireGarantieRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,17 +29,23 @@ public class PaiementController {
 
     private final GrandLivreService grandLivreService;
     private final SequestreService sequestreService;
+    private final GarantieService garantieService;
+    private final PaiementEspecesService paiementEspecesService;
     private final ReconciliationService reconciliationService;
     private final MockPrestatairePaiementAdapter prestataire;
 
     public PaiementController(
             GrandLivreService grandLivreService,
             SequestreService sequestreService,
+            GarantieService garantieService,
+            PaiementEspecesService paiementEspecesService,
             ReconciliationService reconciliationService,
             MockPrestatairePaiementAdapter prestataire
     ) {
         this.grandLivreService = grandLivreService;
         this.sequestreService = sequestreService;
+        this.garantieService = garantieService;
+        this.paiementEspecesService = paiementEspecesService;
         this.reconciliationService = reconciliationService;
         this.prestataire = prestataire;
     }
@@ -48,27 +59,61 @@ public class PaiementController {
     @PostMapping("/missions/{missionId}/cloture")
     public ResponseEntity<EcritureResponse> cloture(@PathVariable String missionId, @Valid @RequestBody ClotureMissionRequest request) {
         EcritureMiroir encaissement = grandLivreService.enregistrerEncaissement(
-                request.tenantId(), missionId, request.montant(), request.referencePrestataire());
+                request.tenantId(), missionId, request.montant(), request.referencePrestataire(), request.modePaiement());
         prestataire.confirmer(missionId, request.montant());
-        sequestreService.liberer(missionId);
-        return ResponseEntity.ok(EcritureResponse.from(encaissement));
+        sequestreService.liberer(missionId, request.tenantId(), request.transporteurId(), request.preuveLivraisonReference());
+        return ResponseEntity.ok(EcritureResponse.from(encaissement, grandLivreService.litigeActifPourMission(missionId)));
+    }
+
+    /**
+     * RG-078 : libère le séquestre indépendamment d'un encaissement — requis
+     * avant tout reversement adossé à une garantie tierce (EF-PAY-06 terme
+     * contractuel), où {@code cloture()} n'est jamais appelé.
+     */
+    @PostMapping("/missions/{missionId}/confirmation-livraison")
+    public ResponseEntity<Void> confirmerLivraison(@PathVariable String missionId, @Valid @RequestBody ConfirmationLivraisonRequest request) {
+        sequestreService.liberer(missionId, request.tenantId(), request.transporteurId(), request.preuveLivraisonReference());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** EF-PAY-06 (terme contractuel) : souscrit la garantie tierce qui autorise la mission à être confirmée sans encaissement préalable. */
+    @PostMapping("/missions/{missionId}/garantie")
+    public ResponseEntity<GarantieResponse> souscrireGarantie(@PathVariable String missionId, @Valid @RequestBody SouscrireGarantieRequest request) {
+        Garantie garantie = garantieService.souscrire(request.tenantId(), missionId, request.garantId(), request.montant(), request.referenceGarantie());
+        return ResponseEntity.status(201).body(GarantieResponse.from(garantie));
+    }
+
+    /** EF-PAY-07 (S) : déclare le paiement en espèces d'une mission — mode dégradé, sans séquestre ni garantie. */
+    @PostMapping("/missions/{missionId}/paiement-especes")
+    public ResponseEntity<DeclarationEspecesResponse> declarerPaiementEspeces(@PathVariable String missionId, @Valid @RequestBody DeclarerPaiementEspecesRequest request) {
+        DeclarationEspeces declaration = paiementEspecesService.declarer(request.tenantId(), missionId, request.montant());
+        return ResponseEntity.status(201).body(DeclarationEspecesResponse.from(declaration));
+    }
+
+    @GetMapping("/tenants/{tenantId}/paiements-especes")
+    public List<DeclarationEspecesResponse> paiementsEspecesTenant(@PathVariable String tenantId) {
+        return paiementEspecesService.paiementsDuTenant(tenantId).stream().map(DeclarationEspecesResponse::from).toList();
     }
 
     @PostMapping("/missions/{missionId}/reversement")
     public ResponseEntity<EcritureResponse> reversement(@PathVariable String missionId, @Valid @RequestBody ReversementRequest request) {
         EcritureMiroir reversement = grandLivreService.enregistrerReversement(
                 request.tenantId(), missionId, request.transporteurId(), request.montant(), request.referencePrestataire());
-        return ResponseEntity.ok(EcritureResponse.from(reversement));
+        return ResponseEntity.ok(EcritureResponse.from(reversement, grandLivreService.litigeActifPourMission(missionId)));
     }
 
     @GetMapping("/transporteurs/{transporteurId}/ecritures")
     public List<EcritureResponse> ecrituresTransporteur(@PathVariable String transporteurId) {
-        return grandLivreService.ecrituresDuBeneficiaire(transporteurId).stream().map(EcritureResponse::from).toList();
+        return grandLivreService.ecrituresDuBeneficiaire(transporteurId).stream()
+                .map(e -> EcritureResponse.from(e, grandLivreService.litigeActifPourMission(e.missionId())))
+                .toList();
     }
 
     @GetMapping("/tenants/{tenantId}/rapport")
     public List<EcritureResponse> rapportTenant(@PathVariable String tenantId) {
-        return grandLivreService.ecrituresDuTenant(tenantId).stream().map(EcritureResponse::from).toList();
+        return grandLivreService.ecrituresDuTenant(tenantId).stream()
+                .map(e -> EcritureResponse.from(e, grandLivreService.litigeActifPourMission(e.missionId())))
+                .toList();
     }
 
     @PostMapping("/missions/{missionId}/reconciliation")
