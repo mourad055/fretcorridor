@@ -12,6 +12,8 @@ public record EcritureVue(
         String sens,
         BigDecimal montant,
         Instant creeLe,
-        String statut
+        String statut,
+        String modePaiement,
+        boolean litigeActif
 ) {
 }

@@ -23,6 +23,12 @@ public class ConfigurationController {
         this.admPort = admPort;
     }
 
+    /** EF-ADM-06 : catalogue de tous les paramètres métier déjà configurés (pas besoin de connaître la clé à l'avance). */
+    @GetMapping
+    public Flux<ConfigurationResponse> catalogue() {
+        return admPort.catalogueConfigurations().map(ConfigurationResponse::from);
+    }
+
     @GetMapping("/{cle}")
     public Mono<ConfigurationResponse> valeurCourante(@PathVariable String cle,
                                                        @RequestParam(required = false) String perimetre) {

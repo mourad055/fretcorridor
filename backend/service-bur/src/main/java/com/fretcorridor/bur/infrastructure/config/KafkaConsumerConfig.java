@@ -1,6 +1,7 @@
 package com.fretcorridor.bur.infrastructure.config;
 
 import com.fretcorridor.bur.infrastructure.messaging.AffectationConfirmeeEvent;
+import com.fretcorridor.bur.infrastructure.messaging.PositionEtaEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,18 +28,21 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
+    private Map<String, Object> proprietesBase() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "service-bur");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        return props;
+    }
+
     @Bean
     public ConsumerFactory<String, AffectationConfirmeeEvent> affectationConfirmeeConsumerFactory() {
         JsonDeserializer<AffectationConfirmeeEvent> deserializer =
                 new JsonDeserializer<>(AffectationConfirmeeEvent.class, false);
         deserializer.setUseTypeHeaders(false);
         deserializer.addTrustedPackages("com.fretcorridor.*");
-
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "service-bur");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
+        return new DefaultKafkaConsumerFactory<>(proprietesBase(), new StringDeserializer(), deserializer);
     }
 
     @Bean
@@ -47,6 +51,24 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, AffectationConfirmeeEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(affectationConfirmeeConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, PositionEtaEvent> positionEtaConsumerFactory() {
+        JsonDeserializer<PositionEtaEvent> deserializer =
+                new JsonDeserializer<>(PositionEtaEvent.class, false);
+        deserializer.setUseTypeHeaders(false);
+        deserializer.addTrustedPackages("com.fretcorridor.*");
+        return new DefaultKafkaConsumerFactory<>(proprietesBase(), new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, PositionEtaEvent>
+            positionEtaKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, PositionEtaEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(positionEtaConsumerFactory());
         return factory;
     }
 }

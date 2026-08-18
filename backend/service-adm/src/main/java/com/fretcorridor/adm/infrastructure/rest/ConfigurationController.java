@@ -21,6 +21,12 @@ public class ConfigurationController {
         this.configurationService = configurationService;
     }
 
+    /** EF-ADM-06 : catalogue de tous les paramètres métier déjà configurés (pas besoin de connaître la clé à l'avance). */
+    @GetMapping
+    public List<ConfigurationResponse> catalogue() {
+        return configurationService.catalogue().stream().map(ConfigurationResponse::from).toList();
+    }
+
     @GetMapping("/{cle}")
     public ResponseEntity<ConfigurationResponse> valeurCourante(
             @PathVariable String cle,

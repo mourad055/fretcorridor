@@ -9,6 +9,11 @@ import { Configuration } from '../../../shared/models/configuration.models';
 export class ConfigurationsService {
   constructor(private readonly http: HttpClient) {}
 
+  /** EF-ADM-06 : catalogue de tous les paramètres métier déjà configurés (pas besoin de connaître la clé à l'avance). */
+  catalogue(): Observable<Configuration[]> {
+    return this.http.get<Configuration[]>(`${environment.apiBaseUrl}/admin/configurations`);
+  }
+
   historique(cle: string): Observable<Configuration[]> {
     return this.http.get<Configuration[]>(`${environment.apiBaseUrl}/admin/configurations/${cle}/historique`);
   }

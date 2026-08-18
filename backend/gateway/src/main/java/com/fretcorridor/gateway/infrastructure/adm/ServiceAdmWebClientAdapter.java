@@ -61,6 +61,11 @@ public class ServiceAdmWebClientAdapter implements AdmPort {
     }
 
     @Override
+    public Flux<ConfigurationVue> catalogueConfigurations() {
+        return webClient.get().uri("/api/v1/configurations").retrieve().bodyToFlux(ConfigurationVue.class);
+    }
+
+    @Override
     public Mono<ConfigurationVue> configurationCourante(String cle, String perimetre) {
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/api/v1/configurations/{cle}").queryParam("perimetre", perimetre).build(cle))

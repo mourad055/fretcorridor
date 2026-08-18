@@ -1,18 +1,26 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfigurationsService } from './configurations.service';
 import { Configuration } from '../../../shared/models/configuration.models';
 
-/** FE-ADM-03 (Sprint 10) : chaque redéfinition crée une nouvelle version, jamais une modification en place. */
+/**
+ * FE-ADM-03/EF-ADM-06 : chaque redéfinition crée une nouvelle version, jamais
+ * une modification en place. Le catalogue liste les paramètres déjà
+ * configurés (plus besoin de connaître le nom de la clé à l'avance) ;
+ * sélectionner une clé, ou en saisir une nouvelle, ouvre son historique.
+ */
 @Component({
   selector: 'app-configurations',
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './configurations.component.html',
 })
-export class ConfigurationsComponent {
-  readonly cle = signal('seuil-agregation-bur');
+export class ConfigurationsComponent implements OnInit {
+  readonly catalogue = signal<Configuration[]>([]);
+  readonly catalogueLoading = signal(false);
+
+  readonly cle = signal('');
   readonly nouvelleValeur = signal('');
   readonly historique = signal<Configuration[]>([]);
   readonly loading = signal(false);
@@ -21,7 +29,33 @@ export class ConfigurationsComponent {
 
   constructor(private readonly configurationsService: ConfigurationsService) {}
 
+  ngOnInit(): void {
+    this.chargerCatalogue();
+  }
+
+  private chargerCatalogue(): void {
+    this.catalogueLoading.set(true);
+    this.configurationsService.catalogue().subscribe({
+      next: (catalogue) => {
+        this.catalogue.set(catalogue);
+        this.catalogueLoading.set(false);
+      },
+      error: () => {
+        this.errorMessage.set('Impossible de charger le catalogue des configurations.');
+        this.catalogueLoading.set(false);
+      },
+    });
+  }
+
+  selectionner(cle: string): void {
+    this.cle.set(cle);
+    this.consulter();
+  }
+
   consulter(): void {
+    if (!this.cle().trim()) {
+      return;
+    }
     this.loading.set(true);
     this.errorMessage.set(null);
     this.configurationsService.historique(this.cle()).subscribe({
@@ -44,6 +78,7 @@ export class ConfigurationsComponent {
       next: () => {
         this.nouvelleValeur.set('');
         this.consulter();
+        this.chargerCatalogue();
       },
       error: () => {
         this.errorMessage.set('Impossible de définir cette configuration.');

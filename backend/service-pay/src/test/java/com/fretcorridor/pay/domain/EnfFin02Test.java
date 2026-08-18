@@ -3,6 +3,7 @@ package com.fretcorridor.pay.domain;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -15,7 +16,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class EnfFin02Test {
 
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
-    private final GrandLivreService service = new GrandLivreService(grandLivrePort);
+    private final FakeSequestrePort sequestrePort = new FakeSequestrePort();
+    private final GrandLivreService service = new GrandLivreService(grandLivrePort, new FakeGarantiePort(), new FakeLitigeMissionPort(), sequestrePort);
+
+    private void libererAvecPreuve(String missionId) {
+        sequestrePort.sauvegarder(new Sequestre(missionId, SequestreEtat.LIBERE, Instant.now(), Instant.now(),
+                "tenant-1", "actor-transporteur-1", "preuve-1"));
+    }
 
     @Test
     void refuses_a_reversement_when_no_encaissement_was_ever_recorded() {
@@ -25,7 +32,7 @@ class EnfFin02Test {
 
     @Test
     void refuses_a_reversement_exceeding_the_recorded_encaissement() {
-        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
 
         assertThatThrownBy(() -> service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("150"), "ref-rev"))
                 .isInstanceOf(ReversementSansEncaissementException.class);
@@ -33,7 +40,8 @@ class EnfFin02Test {
 
     @Test
     void allows_a_reversement_covered_by_a_prior_encaissement() {
-        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
+        libererAvecPreuve("mission-1");
 
         EcritureMiroir reversement = service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("90"), "ref-rev");
 
@@ -44,7 +52,8 @@ class EnfFin02Test {
 
     @Test
     void refuses_a_second_reversement_once_the_encaissement_is_fully_consumed() {
-        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
+        libererAvecPreuve("mission-1");
         service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("100"), "ref-rev-1");
 
         assertThatThrownBy(() -> service.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("1"), "ref-rev-2"))
@@ -53,7 +62,7 @@ class EnfFin02Test {
 
     @Test
     void an_encaissement_never_targets_a_fretcorridor_account_but_the_provider_escrow() {
-        EcritureMiroir encaissement = service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc");
+        EcritureMiroir encaissement = service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
 
         assertThat(encaissement.typeCompte()).isEqualTo(TypeCompte.COMPTE_SEQUESTRE_PRESTATAIRE);
         assertThat(encaissement.beneficiaireId()).isNull();

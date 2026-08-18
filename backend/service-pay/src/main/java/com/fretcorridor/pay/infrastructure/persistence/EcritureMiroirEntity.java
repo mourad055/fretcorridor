@@ -34,6 +34,10 @@ public class EcritureMiroirEntity {
     @Column(nullable = false)
     private NatureEcriture nature;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "mode_paiement")
+    private ModePaiement modePaiement;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal montant;
 
@@ -60,6 +64,7 @@ public class EcritureMiroirEntity {
         entity.beneficiaireId = ecriture.beneficiaireId();
         entity.sens = ecriture.sens();
         entity.nature = ecriture.nature();
+        entity.modePaiement = ecriture.modePaiement();
         entity.montant = ecriture.montant();
         entity.referencePrestataire = ecriture.referencePrestataire();
         entity.creeLe = ecriture.creeLe();
@@ -68,7 +73,7 @@ public class EcritureMiroirEntity {
     }
 
     EcritureMiroir toDomain() {
-        return new EcritureMiroir(id, tenantId, missionId, typeCompte, beneficiaireId, sens, nature, montant, referencePrestataire, creeLe, statut);
+        return new EcritureMiroir(id, tenantId, missionId, typeCompte, beneficiaireId, sens, nature, modePaiement, montant, referencePrestataire, creeLe, statut);
     }
 
     String getId() {
