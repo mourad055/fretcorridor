@@ -2,18 +2,21 @@ package com.fretcorridor.pay.infrastructure.rest;
 
 import com.fretcorridor.pay.domain.*;
 import com.fretcorridor.pay.infrastructure.prestataire.MockPrestatairePaiementAdapter;
+import com.fretcorridor.pay.infrastructure.rest.dto.ChoisirModePaiementRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.ClotureMissionRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.ConfirmationLivraisonRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.DeclarationEspecesResponse;
 import com.fretcorridor.pay.infrastructure.rest.dto.DeclarerPaiementEspecesRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.EcritureResponse;
 import com.fretcorridor.pay.infrastructure.rest.dto.GarantieResponse;
+import com.fretcorridor.pay.infrastructure.rest.dto.ModePaiementChoisiResponse;
 import com.fretcorridor.pay.infrastructure.rest.dto.ReversementRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.SouscrireGarantieRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -36,6 +39,7 @@ public class PaiementController {
     private final GarantieService garantieService;
     private final PaiementEspecesService paiementEspecesService;
     private final ReconciliationService reconciliationService;
+    private final ModePaiementChoisiService modePaiementChoisiService;
     private final MockPrestatairePaiementAdapter prestataire;
 
     public PaiementController(
@@ -44,12 +48,14 @@ public class PaiementController {
             GarantieService garantieService,
             PaiementEspecesService paiementEspecesService,
             ReconciliationService reconciliationService,
+            ModePaiementChoisiService modePaiementChoisiService,
             MockPrestatairePaiementAdapter prestataire
     ) {
         this.grandLivreService = grandLivreService;
         this.sequestreService = sequestreService;
         this.garantieService = garantieService;
         this.paiementEspecesService = paiementEspecesService;
+        this.modePaiementChoisiService = modePaiementChoisiService;
         this.reconciliationService = reconciliationService;
         this.prestataire = prestataire;
     }
@@ -85,6 +91,25 @@ public class PaiementController {
     public ResponseEntity<GarantieResponse> souscrireGarantie(@PathVariable String missionId, @Valid @RequestBody SouscrireGarantieRequest request) {
         Garantie garantie = garantieService.souscrire(request.tenantId(), missionId, request.garantId(), request.montant(), request.referenceGarantie());
         return ResponseEntity.status(201).body(GarantieResponse.from(garantie));
+    }
+
+    /**
+     * EF-PAY-06, Item B de docs/DEPENDANCES_MOBILE_PHASE4.md, CDC §7.6 UC-PAY-01
+     * étape 2 : le chargeur choisit son moyen de paiement, avant tout
+     * encaissement réel — distinct de {@link EcritureMiroir#modePaiement()}.
+     */
+    @PostMapping("/missions/{missionId}/moyen-paiement")
+    public ResponseEntity<ModePaiementChoisiResponse> choisirModePaiement(@PathVariable String missionId, @Valid @RequestBody ChoisirModePaiementRequest request) {
+        ModePaiementChoisi choix = modePaiementChoisiService.choisir(request.tenantId(), missionId, request.modePaiement(), Instant.now());
+        return ResponseEntity.status(201).body(ModePaiementChoisiResponse.from(choix));
+    }
+
+    /** Affichage Chauffeur (Item B) : le moyen de paiement choisi pour une mission, avant tout encaissement. */
+    @GetMapping("/missions/{missionId}/moyen-paiement")
+    public ResponseEntity<ModePaiementChoisiResponse> moyenPaiementChoisi(@PathVariable String missionId) {
+        return modePaiementChoisiService.pour(missionId)
+                .map(choix -> ResponseEntity.ok(ModePaiementChoisiResponse.from(choix)))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /** EF-PAY-07 (S) : déclare le paiement en espèces d'une mission — mode dégradé, sans séquestre ni garantie. */

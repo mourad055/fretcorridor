@@ -2,6 +2,7 @@ package com.fretcorridor.pay.infrastructure.rest;
 
 import com.fretcorridor.pay.domain.DeclarationEspecesInvalideException;
 import com.fretcorridor.pay.domain.GarantieInvalideException;
+import com.fretcorridor.pay.domain.ModePaiementDejaChoisiException;
 import com.fretcorridor.pay.domain.ReversementSansEncaissementException;
 import com.fretcorridor.pay.domain.ReversementSansPreuveLivraisonException;
 import com.fretcorridor.pay.domain.ReversementSuspenduPourLitigeException;
@@ -41,6 +42,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleGarantieInvalide(GarantieInvalideException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Souscription de garantie invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(ModePaiementDejaChoisiException.class)
+    public ProblemDetail handleModePaiementDejaChoisi(ModePaiementDejaChoisiException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Moyen de paiement déjà choisi");
         return problem;
     }
 
