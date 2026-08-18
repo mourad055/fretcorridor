@@ -3,6 +3,8 @@ package com.flysoft.fretcorridor.exe.service;
 import com.flysoft.fretcorridor.exe.dto.MissionDto;
 import com.flysoft.fretcorridor.exe.entity.EtapeMission;
 import com.flysoft.fretcorridor.exe.entity.Mission;
+import com.flysoft.fretcorridor.exe.messaging.MissionEventPublisher;
+import com.flysoft.fretcorridor.exe.messaging.MissionLivreeEvent;
 import com.flysoft.fretcorridor.exe.repository.EtapeMissionRepository;
 import com.flysoft.fretcorridor.exe.repository.MissionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +26,7 @@ class MissionServiceTest {
 
     @Mock private MissionRepository missionRepository;
     @Mock private EtapeMissionRepository etapeMissionRepository;
+    @Mock private MissionEventPublisher missionEventPublisher;
 
     private MissionService service;
     private UUID missionId;
@@ -33,11 +36,16 @@ class MissionServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new MissionService(missionRepository, etapeMissionRepository);
+        service = new MissionService(missionRepository, etapeMissionRepository, missionEventPublisher);
         missionId = UUID.randomUUID();
         transporteurId = UUID.randomUUID();
         when(etapeMissionRepository.findByMissionIdOrderByHorodatageTransmissionAsc(any())).thenReturn(List.of());
         when(missionRepository.save(any(Mission.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(etapeMissionRepository.save(any(EtapeMission.class))).thenAnswer(inv -> {
+            EtapeMission e = inv.getArgument(0);
+            if (e.getId() == null) e.setId(UUID.randomUUID());
+            return e;
+        });
     }
 
     private Mission missionDuTransporteur() {
@@ -68,6 +76,26 @@ class MissionServiceTest {
 
         assertThat(reponse.getStatut()).isEqualTo("PRISE_EN_CHARGE");
         verify(etapeMissionRepository).save(any(EtapeMission.class));
+        verify(missionEventPublisher, never()).publierMissionLivree(any());
+    }
+
+    @Test
+    void delivering_a_mission_publishes_a_mission_livree_event() {
+        when(missionRepository.findById(missionId)).thenReturn(Optional.of(missionDuTransporteur()));
+
+        var requete = new MissionDto.AjouterEtapeRequest();
+        requete.setType(EtapeMission.TypeEtape.LIVRAISON);
+        requete.setLibelle("Livraison à Yaoundé");
+
+        var reponse = service.ajouterEtape(missionId, transporteurId, TENANT, requete);
+
+        assertThat(reponse.getStatut()).isEqualTo("LIVREE");
+        ArgumentCaptor<MissionLivreeEvent> captor = ArgumentCaptor.forClass(MissionLivreeEvent.class);
+        verify(missionEventPublisher).publierMissionLivree(captor.capture());
+        assertThat(captor.getValue().missionId()).isEqualTo(missionId);
+        assertThat(captor.getValue().tenantId()).isEqualTo(TENANT);
+        assertThat(captor.getValue().transporteurId()).isEqualTo(transporteurId);
+        assertThat(captor.getValue().preuveLivraisonReference()).isNotBlank();
     }
 
     @Test

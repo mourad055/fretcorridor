@@ -1,0 +1,75 @@
+asyncapi: 2.6.0
+info:
+  title: MissionLivree
+  version: 0.1.0-draft
+  description: |
+    PROPOSITION cote Mobile (service-exe), en reponse a
+    docs/DEPENDANCES_MOBILE_PHASE4.md Item A (redige par Personne 2/Web,
+    18 aout 2026) : aucun appelant ne declenchait la liberation du sequestre
+    (RG-078) a la confirmation de livraison. Option Kafka choisie plutot
+    qu'un appel REST synchrone service-exe -> service-pay, interdit par le
+    Plan d'Execution SS4.2/4.3 ("tout echange avec un module porte par une
+    autre personne reste strictement asynchrone via le bus Kafka - aucune
+    exception").
+
+    BROUILLON : publie cote service-exe, PAS ENCORE CONSOMME cote
+    service-pay au moment de la redaction - le consommateur (equivalent de
+    POST /api/v1/pay/missions/{id}/confirmation-livraison) reste a
+    construire cote Web. A valider avec Personne 2 avant de considerer ce
+    contrat fige.
+
+    preuveLivraisonReference : reference opaque (service-pay ne valide que
+    sa presence, pas sa nature - RG-078). Ici l'id de l'EtapeMission
+    LIVRAISON elle-meme - l'entite CDC "Preuve" (photo/signature/empreinte)
+    n'est pas encore implementee cote service-exe.
+channels:
+  mission-livree:
+    publish:
+      summary: >
+        L'etape LIVRAISON d'une mission a ete confirmee par le chauffeur -
+        declenche la liberation du sequestre (RG-078) cote service-pay.
+      message:
+        $ref: '#/components/messages/MissionLivree'
+components:
+  messages:
+    MissionLivree:
+      name: MissionLivree
+      title: Mission livree
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MissionLivreePayload'
+  schemas:
+    MissionLivreePayload:
+      type: object
+      required:
+        - eventId
+        - missionId
+        - tenantId
+        - preuveLivraisonReference
+        - dateLivraison
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Cle d'idempotence.
+        missionId:
+          type: string
+          format: uuid
+          description: Meme identifiant que AffectationConfirmee.missionId.
+        tenantId:
+          type: string
+          description: >
+            Hypothese mono-tenant Phase 1 (ADR 0011), meme valeur que
+            fretcorridor.exe.tenant-id-phase1 cote service-exe.
+        transporteurId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Ne devrait jamais etre absent en pratique (condition d'acces de la mission), mais pas garanti par le schema.
+        preuveLivraisonReference:
+          type: string
+          description: Reference opaque, service-pay ne valide que sa presence (RG-078).
+        dateLivraison:
+          type: string
+          format: date-time
+          description: Horodatage de capture de l'etape LIVRAISON (pas l'horodatage de transmission).
