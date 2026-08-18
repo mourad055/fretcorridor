@@ -13,10 +13,13 @@ public class ReconciliationService {
 
     private final GrandLivrePort grandLivrePort;
     private final PrestatairePaiementPort prestatairePaiementPort;
+    private final ReconciliationEventPort reconciliationEventPort;
 
-    public ReconciliationService(GrandLivrePort grandLivrePort, PrestatairePaiementPort prestatairePaiementPort) {
+    public ReconciliationService(GrandLivrePort grandLivrePort, PrestatairePaiementPort prestatairePaiementPort,
+                                  ReconciliationEventPort reconciliationEventPort) {
         this.grandLivrePort = grandLivrePort;
         this.prestatairePaiementPort = prestatairePaiementPort;
+        this.reconciliationEventPort = reconciliationEventPort;
     }
 
     public AlerteReconciliation reconcilier(String missionId) {
@@ -29,10 +32,21 @@ public class ReconciliationService {
             ecritures.stream()
                     .filter(e -> e.statut() == StatutEcriture.VALIDE)
                     .forEach(e -> grandLivrePort.suspendre(e.id()));
-            return new AlerteReconciliation(missionId, ecart, Instant.now(), true);
+            Instant declencheeLe = Instant.now();
+            String tenantId = ecritures.isEmpty() ? null : ecritures.get(0).tenantId();
+            reconciliationEventPort.publier(missionId, tenantId, ecart, declencheeLe);
+            return new AlerteReconciliation(missionId, ecart, declencheeLe, true);
         }
 
         return new AlerteReconciliation(missionId, BigDecimal.ZERO, Instant.now(), false);
+    }
+
+    /** EF-PAY-02, RG-077 : balayage quotidien de toutes les missions ayant au moins une écriture. */
+    public List<AlerteReconciliation> reconcilierMissionsActives() {
+        return grandLivrePort.listerMissionsAvecEcritures().stream()
+                .map(this::reconcilier)
+                .filter(AlerteReconciliation::bloquante)
+                .toList();
     }
 
     private BigDecimal soldeNet(List<EcritureMiroir> ecritures) {

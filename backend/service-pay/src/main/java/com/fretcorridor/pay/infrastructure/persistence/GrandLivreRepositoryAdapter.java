@@ -43,4 +43,9 @@ public class GrandLivreRepositoryAdapter implements GrandLivrePort {
             jpaRepository.save(entity);
         });
     }
+
+    @Override
+    public List<String> listerMissionsAvecEcritures() {
+        return jpaRepository.findDistinctMissionIds();
+    }
 }

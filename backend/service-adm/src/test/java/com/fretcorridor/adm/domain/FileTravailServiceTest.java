@@ -135,4 +135,47 @@ class FileTravailServiceTest {
 
         assertThat(misAJour.statut()).isEqualTo(StatutDossier.EN_COURS);
     }
+
+    /** EF-PAY-09, ENF-FIN-03 : un écart de réconciliation ouvre un incident priorité haute. */
+    @Test
+    void ouvrir_un_incident_reconciliation_cree_un_dossier_incident_priorite_haute() {
+        var incident = service.ouvrirIncidentReconciliation("tenant-bgft-douala", "mission-a",
+                "Écart de réconciliation : 15", Instant.now().plus(2, ChronoUnit.DAYS));
+
+        assertThat(incident).isPresent();
+        assertThat(incident.get().type()).isEqualTo(TypeDossier.INCIDENT);
+        assertThat(incident.get().priorite()).isEqualTo(PrioriteDossier.HAUTE);
+        assertThat(incident.get().missionId()).isEqualTo("mission-a");
+        assertThat(incident.get().preuvesReferences()).containsExactly("Écart de réconciliation : 15");
+    }
+
+    /** Le balayage quotidien republie l'événement chaque jour tant que l'écart n'est pas résolu — pas de doublon. */
+    @Test
+    void ouvrir_un_incident_reconciliation_ne_duplique_pas_un_incident_deja_ouvert_pour_la_meme_mission() {
+        var premier = service.ouvrirIncidentReconciliation("tenant-bgft-douala", "mission-a",
+                "Écart de réconciliation : 15", Instant.now().plus(2, ChronoUnit.DAYS));
+
+        var second = service.ouvrirIncidentReconciliation("tenant-bgft-douala", "mission-a",
+                "Écart de réconciliation : 15", Instant.now().plus(2, ChronoUnit.DAYS));
+
+        assertThat(premier).isPresent();
+        assertThat(second).isEmpty();
+        assertThat(service.lister("tenant-bgft-douala")).hasSize(1);
+    }
+
+    @Test
+    void ouvrir_un_incident_reconciliation_est_de_nouveau_possible_une_fois_le_premier_clos() {
+        var premier = service.ouvrirIncidentReconciliation("tenant-bgft-douala", "mission-a",
+                "Écart de réconciliation : 15", Instant.now().plus(2, ChronoUnit.DAYS));
+        InMemoryConfigurationPort configurationPort = new InMemoryConfigurationPort();
+        configurationPort.sauvegarder(new ConfigurationVersionnee("g-1", DecisionService.CLE_GRILLE_DECISION,
+                "tenant-bgft-douala", "grille v1", "actor-admin-1", 1, Instant.now()));
+        DecisionService decisionService = new DecisionService(dossierPort, journalAuditPort, dossierEventPort, configurationPort);
+        decisionService.trancher(premier.get().id(), "ECART_RESOLU", "motif", "actor-admin-1");
+
+        var second = service.ouvrirIncidentReconciliation("tenant-bgft-douala", "mission-a",
+                "Écart de réconciliation : 15 (nouveau)", Instant.now().plus(2, ChronoUnit.DAYS));
+
+        assertThat(second).isPresent();
+    }
 }

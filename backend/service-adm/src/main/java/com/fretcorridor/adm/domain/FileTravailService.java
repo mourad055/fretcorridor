@@ -3,6 +3,7 @@ package com.fretcorridor.adm.domain;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** FE-ADM-01 : file de travail priorisée (modération, incidents, litiges). */
@@ -60,6 +61,24 @@ public class FileTravailService {
             dossierEventPort.publier(dossier);
         }
         return dossier;
+    }
+
+    /**
+     * EF-PAY-09, ENF-FIN-03 : ouvre un incident sur écart de réconciliation —
+     * pas de doublon tant qu'un incident reste ouvert pour la mission (le
+     * balayage quotidien de service-pay republie l'événement chaque jour
+     * tant que l'écart n'est pas résolu, ça ne doit pas spammer la file).
+     */
+    public Optional<Dossier> ouvrirIncidentReconciliation(String tenantId, String missionId, String description,
+                                                            Instant delaiTraitement) {
+        boolean dejaOuvert = dossierPort.lister(tenantId).stream()
+                .anyMatch(d -> d.type() == TypeDossier.INCIDENT && missionId.equals(d.missionId())
+                        && d.statut() != StatutDossier.CLOS);
+        if (dejaOuvert) {
+            return Optional.empty();
+        }
+        return Optional.of(creerEtPublier(tenantId, TypeDossier.INCIDENT, PrioriteDossier.HAUTE, missionId,
+                List.of(), List.of(description), delaiTraitement, null, "DOSSIER_INCIDENT_RECONCILIATION_OUVERT"));
     }
 
     public List<Dossier> lister(String tenantId) {

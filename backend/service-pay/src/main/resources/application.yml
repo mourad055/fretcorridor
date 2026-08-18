@@ -27,6 +27,11 @@ fretcorridor:
       delai-contestation-heures: ${FRETCORRIDOR_PAY_DELAI_CONTESTATION_HEURES:48}
       # Fréquence d'exécution de l'ordonnanceur.
       intervalle-ms: ${FRETCORRIDOR_PAY_ORDONNANCEUR_INTERVALLE_MS:900000}
+    ordonnanceur-reconciliation:
+      # EF-PAY-02, RG-077 : fréquence du rapprochement quotidien. Valeur de
+      # développement volontairement basse (comme l'ordonnanceur de
+      # reversement) pour observer le déclenchement.
+      intervalle-ms: ${FRETCORRIDOR_PAY_ORDONNANCEUR_RECONCILIATION_INTERVALLE_MS:900000}
 
 management:
   endpoints:
