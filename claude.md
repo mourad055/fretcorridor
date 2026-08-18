@@ -120,17 +120,16 @@ backend Moteur n'était pas prêt au moment du développement) :
 
 | Sprint | Chauffeur/Transporteur | Client |
 |---|---|---|
-| S11 — Consolidation LTL | ✅ mocké (tournée multi-étapes) — PR #51 | ✅ mocké (indicateur consolidation) — PR #52 |
-| S12 — Retour à vide | ✅ mocké (notification retour) — PR #53 | — (rien pour Client) |
+| S11 — Consolidation LTL | ⚠️ mocké, **bloqué** (voir ci-dessous) | ⚠️ mocké, **bloqué** |
+| S12 — Retour à vide | ✅ **branché sur le vrai backend** (PR #76, #77 — 18 août) | — (rien pour Client) |
 | S13 | — (backend/Web uniquement) | — |
-| S14 — Paiement Mobile Money | ✅ mocké (affichage règlement) — PR #54 | ✅ mocké (choix moyen paiement) — PR #55 |
+| S14 — Paiement Mobile Money | ⚠️ mocké, **bloqué** (voir ci-dessous) | ⚠️ mocké, **bloqué** |
 | S15 — Second axe | ✅ **branché sur le vrai backend** (PR #56 puis re-câblage réel PR #60) | ✅ **branché sur le vrai backend** (PR #57 puis re-câblage réel PR #61) |
 
-**S15 est le seul sprint Phase 2 sorti du mode mock à ce jour** (17 août) :
-les deux apps appellent réellement `service-geo`
-(`GET /api/geo/axes?tenantId=...`, direct côté Client — pas de route
-gateway pour le rôle Chargeur ; via `GET /axes` gateway côté
-Chauffeur/Transporteur) et affichent les 2 axes réels en base.
+**S12 et S15 sont réels. S11 et S14 sont bloqués, pas par manque de
+temps mais parce que la pièce nécessaire n'existe nulle part dans le
+dépôt** — voir §5.4/§5.5, chacun nécessite un accord avec une équipe
+externe (Moteur pour S11, Web pour S14) avant tout code Mobile.
 
 ---
 
@@ -206,22 +205,74 @@ réel (déclaration de capacité via la gateway, deux essais successifs) a
   mergé** — `capaciteResiduelleKg`/`volumeResiduelM3` ajoutés à
   `CapaciteDeclareeEvent` (service-cap), valeurs prises sur
   `Capacite.getCapaciteResiduelleKg()`/`getVolumeM3()` (PR #73, mergée).
-  Test Docker bout-en-bout de re-vérification en cours au moment de cette
-  mise à jour — voir avec l'utilisateur si confirmé depuis.
+  Revalidation Docker bout-en-bout abandonnée (réseau trop instable
+  pendant la session) — repose sur compilation + tests unitaires
+  uniquement pour l'instant.
 
-### 5.2 S12 réel (Chauffeur) — contrat prêt, rien construit côté Mobile
+### 5.2 S12 réel (Chauffeur) — FAIT (18 août)
 
-`proposition-retour-a-vide.yaml` est corrigé et mergé (§4), mais
-**aucun consommateur n'existe encore côté Mobile** — ni `service-exe`, ni
-`service-not`, ni la gateway n'écoutent ce topic. Implémenter S12 en réel
-n'est pas un simple débranchement de mock (contrairement à S15) : il faut
-d'abord construire un écouteur Kafka + exposition REST (candidat naturel :
-`service-not`, cohérent avec l'écran visé "notification de mission
-retour, acceptation/refus") avant de pouvoir câbler le Flutter dessus.
-Portée à clarifier avec l'utilisateur avant de commencer (backend seul,
-app seule en supposant le backend, ou les deux).
+`proposition-retour-a-vide.yaml` corrigé et mergé, backend construit de
+zéro (`service-not` : première consommation Kafka de ce service,
+écouteur + résolution transporteur via nouveau `GET
+/api/cap/capacites/{id}` côté `service-cap` — PR #76), câblage Flutter +
+route gateway (PR #77). **La réponse accepter/refuser reste locale à
+`service-not`** : aucun contrat n'existe pour la relayer au Moteur à ce
+jour — à revoir si besoin plus tard.
 
-### 5.3 Autres points ouverts
+### 5.3 Test Docker bout-en-bout — bloqué (réseau, pas le code)
 
-- **`etape-executee.yaml`** — toujours BROUILLON, feu vert explicite du
-  Moteur attendu avant tout code dur côté app (S11 tournées réelles).
+Tentatives répétées de reconstruire `service-cap` en Docker pour
+revalider le fix §5.1 : builds bloqués à répétition (dépendances Maven
+téléchargées from scratch dans le conteneur, pas de cache `~/.m2` de
+l'hôte — contrairement à `mvn compile`/`mvn test` en local qui
+fonctionnent instantanément). Abandonné après plusieurs tentatives sur
+plusieurs dizaines de minutes. **Pas un problème de code** — juste pas
+revalidé en conditions Docker réelles depuis.
+
+### 5.4 S11 réel (Chauffeur) — bloqué, aucune donnée de tournée exposée
+
+Pas seulement `etape-executee.yaml` (toujours BROUILLON). Vérifié dans
+`OptEventPublisher.java` : `service-opt` ne publie que 3 événements
+(`proposition-emise`, `affectation-confirmee`, `proposition-retour-a-vide`).
+`Tournee`/`EtapeTournee` (séquencement multi-étapes) sont **entièrement
+internes** à `service-opt`, jamais exposés sur Kafka —
+`AffectationConfirmeeEvent` n'a aucun `tourneeId`. Concrètement,
+`service-exe` n'a **aucun moyen** de savoir que plusieurs missions
+reçues appartiennent à la même tournée, ni dans quel ordre — pas un
+contrat pas encore validé, une donnée qui n'existe nulle part.
+
+**Message envoyé au Moteur (18 août)** : demande d'exposer `tourneeId`
+(nullable) + un moyen de connaître le rang/ordre des étapes sur
+`AffectationConfirmeeEvent` (même pattern que `proposition-retour-a-vide`).
+**En attente de sa réponse — ne rien coder côté S11 avant.**
+
+**Proposition affinée par l'utilisateur (18 août)**, vérifiée solide
+contre les documents sources (`docs/CDC_FretCorridor_v4_FSE2026004_lecture.pdf`
+§13, `docs/FretCorridor_Plan_Execution_V4_2.docx`) : plutôt qu'un
+`tourneeId` isolé, exposer directement une liste d'étapes sur
+`AffectationConfirmeeEvent` (`etapes: List<EtapeDto>` — `rang`, `type`,
+`demandeId`, point, fenêtre), conforme au modèle CDC où **Mission porte
+`n-n Demande`** et où `Étape` est l'entité de rang/point/fenêtre. Le
+Plan d'exécution confirme aussi qu'`AffectationConfirmee` *"déclenche
+la création de la mission"* — cohérent avec l'idée de porter les
+étapes sur ce même événement plutôt qu'un event séparé. **Nuance à
+faire trancher par le Moteur** : `AffectationConfirmeeEvent` porte déjà
+un `demandeId` unique au niveau racine — ambigu si une tournée groupe
+plusieurs demandes, à clarifier (gardé pour le cas FTL simple
+seulement, ou déprécié au profit de la liste).
+
+### 5.5 S14 réel (Chauffeur + Client) — bloqué, domaine financier absent
+
+`EcritureMiroir` (service-pay) n'a **aucun champ moyen de paiement**
+nulle part dans le domaine — pas un endpoint manquant, le concept
+n'existe pas. Plus bloquant côté Client : `PayReadPort`/
+`PaiementReadController` (gateway) sont **lecture seule** — le code
+documente explicitement *"ENF-FIN-01 : aucune écriture depuis le
+mobile"*, règle architecturale délibérée. `POST /missions/{id}/cloture`
+(service-pay) n'est appelé par rien dans le dépôt (ni gateway ni
+mobile) ; même `ClotureMissionRequest` n'a pas de champ `moyenPaiement`.
+
+Toucherait le domaine financier de `service-pay`, qui appartient à
+Personne 2 (Web), pas à Mobile. **Décision utilisateur (18 août) : reste
+mocké pour l'instant**, pas de message envoyé à Personne 2 — à
+reconsidérer plus tard si besoin.
