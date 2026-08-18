@@ -18,10 +18,18 @@ spring:
       hibernate:
         default_schema: service_exe
     open-in-view: false
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 fretcorridor:
   jwt:
     secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+  exe:
+    # Phase 1 mono-tenant assumé (même raisonnement que l'ADR 0011, GEO ; même
+    # valeur que service-bur) : AffectationConfirmee ne porte pas de tenant,
+    # on le stampe ici à l'ingestion. À remplacer par une vraie résolution
+    # axe->tenant en Phase 3.
+    tenant-id-phase1: ${FRETCORRIDOR_EXE_TENANT_ID_PHASE1:tenant-bgft-douala}
 
 logging:
   level:

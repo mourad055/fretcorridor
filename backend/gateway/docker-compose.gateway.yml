@@ -1,11 +1,11 @@
-# "../backend/gateway", PAS "backend/gateway" : Docker Compose résout les
-# chemins relatifs de build par rapport au répertoire du PREMIER fichier -f
-# de la commande (infra/docker-compose.yml, toujours empilé en premier),
-# jamais par rapport à l'emplacement de CE fichier ni au répertoire courant.
-# NE PAS passer --project-directory : ça changerait cette résolution et
-# casserait le chemin ci-dessous (vérifié empiriquement, cf. ADR 0006).
-# Composable avec infra/docker-compose.yml et, si besoin d'appels réels
-# service-pay/service-adm plutôt que localhost, avec leurs propres fichiers.
+# Toujours exécuté depuis la racine du repo (le contexte de build est
+# relatif à backend/gateway/). Composable avec infra/docker-compose.yml et,
+# si besoin d'appels réels service-pay/service-adm plutôt que localhost,
+# avec leurs propres fichiers. Test empirique confirme (2026-08-10) : la convention
+# context: backend/x fonctionne aussi bien avec que sans --project-directory - on
+# garde la commande simple, sans l'option :
+# sinon Docker Compose résout le contexte de build relatif au répertoire du
+# premier -f (infra/), pas à ce fichier.
 #   docker compose -f infra/docker-compose.yml \
 #     -f backend/gateway/docker-compose.gateway.yml \
 #     -f backend/service-pay/docker-compose.service-pay.yml \
@@ -23,8 +23,12 @@ services:
       # service-pay/service-adm sont inclus dans la même commande ; sinon
       # ces variables sont simplement ignorées par les endpoints qui n'y font
       # pas appel dans le scénario testé.
-      FRETCORRIDOR_SERVICE_PAY_URL: http://service-pay:8084
-      FRETCORRIDOR_SERVICE_ADM_URL: http://service-adm:8085
+      # service-pay écoute sur 8088 (interne), pas 8084 (qui est le port de
+      # service-geo) — corrigé, était une erreur de copier-coller.
+      FRETCORRIDOR_SERVICE_PAY_URL: http://service-pay:8088
+      # service-adm : 8095 (interne), aligné sur son port hôte pour éviter la
+      # collision avec le port interne par défaut de service-opt (8085 aussi).
+      FRETCORRIDOR_SERVICE_ADM_URL: http://service-adm:8095
       # service-ida vit dans infra/docker-compose.yml côté dev (pas encore
       # migré vers un docker-compose.<service>.yml dédié) : résout par nom de
       # conteneur si ce fichier partagé fait partie de la commande.
@@ -37,5 +41,22 @@ services:
       # résout par nom de conteneur si son propre fichier compose fait
       # partie de la commande.
       FRETCORRIDOR_SERVICE_BUR_URL: http://service-bur:8083
+      # service-flt (Mobile, Sprint 10 véhicules + Sprint 6 GPS) : appel
+      # réel — résout par nom de conteneur si son propre fichier compose
+      # fait partie de la commande. Port interne 8083 (le 8092 du tableau
+      # de ports est le mapping HÔTE, cf. docker-compose.service-flt.yml).
+      FRETCORRIDOR_SERVICE_FLT_URL: http://service-flt:8083
+      # service-cap (Mobile, Sprint 4) : déclaration de capacité, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande.
+      FRETCORRIDOR_SERVICE_CAP_URL: http://service-cap:8096
+      # service-exe (Mobile, Sprint 7) : exécution de mission, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande. Fonctionnellement bloqué, voir README.md.
+      FRETCORRIDOR_SERVICE_EXE_URL: http://service-exe:8093
+      # service-not (Mobile, Sprint 9) : centre de notifications, appel réel —
+      # résout par nom de conteneur si son propre fichier compose fait
+      # partie de la commande.
+      FRETCORRIDOR_SERVICE_NOT_URL: http://service-not:8094
     ports:
       - "8082:8082"

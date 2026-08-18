@@ -10,18 +10,29 @@ import java.util.UUID;
  * Payload Kafka de l'evenement CapaciteDeclaree (service-cap, Mobile -> OPT/MAT).
  * BROUILLON - contrat non encore valide avec Personne 1 (Mobile, service-cap).
  *
- * position/profilCamion/typeVehicule : ajoutes pour alimenter Valhalla et la
- * Tarification L4 en aval du cycle de matching (cf CandidatCoutDto) - tous
- * nullable, un candidat sans ces donnees degrade seulement le calcul aval,
- * ne bloque jamais le matching lui-meme (ENF-DIS-04).
+ * transporteurId/vehiculeId : ajoutes pour resoudre le bug remonte par
+ * Personne 1 (S7, "Mes missions" vide - AffectationConfirmeeEvent.transporteurId
+ * toujours null). Nullable en attendant que service-cap les publie reellement -
+ * cf shared-contracts/asyncapi/events/capacite-declaree.yaml (brouillon separe).
+ * Un candidat sans ces champs degrade seulement AffectationConfirmeeEvent
+ * (transporteurId/vehiculeId restent null dedans), ne bloque jamais le
+ * matching lui-meme (ENF-DIS-04) - coherent avec position/profilCamion deja
+ * nullable ci-dessous.
  */
 public record CapaciteDeclareeEvent(
         UUID eventId,
         UUID capaciteId,
         UUID axeId,
+        UUID transporteurId,
+        UUID vehiculeId,
         Map<String, Double> valeursCriteres,
         PointGeoDto position,
         ProfilCamionDto profilCamion,
-        String typeVehicule
+        String typeVehicule,
+        // EF-CAP-07 / CDC S8.6.1 (capacite dynamique) - grandeur reellement
+        // disponible, distincte du plafond du vehicule (ProfilCamionDto.
+        // poidsMaxTonnes). Indispensable au sequencement L2 (Phase 2).
+        java.math.BigDecimal capaciteResiduelleKg,
+        java.math.BigDecimal volumeResiduelM3
 ) {
 }

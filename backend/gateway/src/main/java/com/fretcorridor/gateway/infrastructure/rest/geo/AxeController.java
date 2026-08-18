@@ -26,4 +26,15 @@ public class AxeController {
     public Flux<AxeResponse> axes(@AuthenticationPrincipal AuthenticatedActor actor) {
         return geoPort.listerAxesParTenant(actor.tenantId()).map(AxeResponse::from);
     }
+
+    /**
+     * S3 (app Chauffeur/Transporteur, EF-GEO-03) : même source que le Bureau
+     * — les verrous (matching/paiement inactifs) restent visibles, pas
+     * masqués, pour que l'acteur comprenne pourquoi un axe est indisponible
+     * (RG-012 : ne jamais bloquer la simple consultation).
+     */
+    @GetMapping("/api/v1/axes")
+    public Flux<AxeResponse> axesMobile(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return geoPort.listerAxesParTenant(actor.tenantId()).map(AxeResponse::from);
+    }
 }

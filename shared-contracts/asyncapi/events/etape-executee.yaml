@@ -1,0 +1,66 @@
+asyncapi: '2.6.0'
+info:
+  title: EtapeExecutee
+  version: 0.1.0-draft
+  description: >
+    BROUILLON, redige cote Moteur (Personne 3) en l'absence de contrat existant
+    dans shared-contracts/. A VALIDER avec Personne 1 (Mobile, porteur de
+    service-exe, qui publiera cet evenement a chaque enlevement/livraison
+    confirme par le chauffeur) au point de synchronisation hebdomadaire des
+    contrats d'API (cf Feuille de route S5.1) avant toute implementation
+    cote EXE. Ne pas considerer ce contrat comme fige.
+
+    Ferme EF-MAT-09 (Sprint 12, "figer l'exécuté") et conditionne EF-MAT-08/
+    RG-058 (retour a vide - "aucune mission de retour n'est confirmee avant
+    la livraison effective de l'aller") : sans cet evenement, OPT n'a aucun
+    moyen de savoir qu'une etape de tournee a ete reellement executee.
+channels:
+  etape-executee:
+    publish:
+      summary: >
+        Une etape (enlevement ou livraison) d'une mission a ete confirmee
+        par le chauffeur cote app Chauffeur/Transporteur.
+      message:
+        $ref: '#/components/messages/EtapeExecutee'
+components:
+  messages:
+    EtapeExecutee:
+      name: EtapeExecutee
+      title: Etape executee
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/EtapeExecuteePayload'
+  schemas:
+    EtapeExecuteePayload:
+      type: object
+      required:
+        - eventId
+        - missionId
+        - typeEtape
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Cle d'idempotence - un doublon (retry reseau cote EXE) ne doit jamais re-figer une etape deja executee.
+        missionId:
+          type: string
+          format: uuid
+          description: >
+            = Affectation.id (cf AffectationController, "son id devient le
+            mission_id"). PROPOSITION : identifiant le plus naturel pour
+            service-exe, qui connait deja ce missionId pour tout le reste
+            du cycle de vie de la mission (AffectationConfirmeeEvent). A
+            confirmer que service-exe ne raisonne pas plutot en termes
+            d'un identifiant de mission qui lui est propre.
+        typeEtape:
+          type: string
+          enum: [ENLEVEMENT, LIVRAISON]
+          description: >
+            Distingue quelle etape d'une meme affectation vient d'etre
+            executee (une Affectation porte exactement une etape ENLEVEMENT
+            et une etape LIVRAISON dans sa Tournee, cf EtapeTournee).
+        horodatageExecution:
+          type: string
+          format: date-time
+          nullable: true
+          description: Horodatage reel de confirmation cote chauffeur. Nullable : si absent, OPT utilise l'horodatage de reception de l'evenement.

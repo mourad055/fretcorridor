@@ -24,7 +24,8 @@ fretcorridor:
     base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://localhost:8088}
   service-adm:
     # service-adm est réellement implémenté (Sprint 10) — appel HTTP réel.
-    base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8085}
+    # 8095 (pas 8085 : collision avec le port interne par défaut de service-opt).
+    base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8095}
   service-ida:
     # service-ida (Mobile) est réellement implémenté — appel HTTP réel pour
     # l'authentification (cf. docs/ROADMAP_INTEGRATION_gateway.md, Phase 1).
@@ -38,6 +39,28 @@ fretcorridor:
     # ServiceBurMissionAppparieeAdapter remplace MockOptAdapter (jamais
     # d'appel direct à service-opt, cf. docs/ROADMAP_INTEGRATION_gateway.md).
     base-url: ${FRETCORRIDOR_SERVICE_BUR_URL:http://localhost:8083}
+  service-flt:
+    # service-flt (Mobile) : appel réel pour le registre de véhicules
+    # (Sprint 10, VehiculePort/RealVehiculeAdapter) et l'envoi de positions
+    # GPS (Sprint 6, PositionPort/RealPositionAdapter) — même service.
+    base-url: ${FRETCORRIDOR_SERVICE_FLT_URL:http://localhost:8083}
+  service-cap:
+    # service-cap (Mobile) : appel réel pour la déclaration de capacité
+    # (CapaciteDeclarationPort/RealCapaciteDeclarationAdapter, Sprint 4).
+    # La vue de lecture Bureau/Transporteur (CapacitePort) reste mockée —
+    # pas d'endpoint GET équivalent côté service-cap.
+    base-url: ${FRETCORRIDOR_SERVICE_CAP_URL:http://localhost:8096}
+  service-exe:
+    # service-exe (Mobile) : appel réel pour l'exécution de mission côté
+    # chauffeur (MissionExecutionPort/RealMissionExecutionAdapter, Sprint 7).
+    # ⚠️ Infrastructure prête et testée, mais fonctionnellement bloquée :
+    # voir README.md section S7 (transporteurId à null en pratique côté
+    # service-opt, hors périmètre Mobile).
+    base-url: ${FRETCORRIDOR_SERVICE_EXE_URL:http://localhost:8093}
+  service-not:
+    # service-not (Mobile) : appel réel pour le centre de notifications côté
+    # chauffeur (NotificationMobilePort/RealNotificationMobileAdapter, Sprint 9).
+    base-url: ${FRETCORRIDOR_SERVICE_NOT_URL:http://localhost:8094}
 
 management:
   endpoints:

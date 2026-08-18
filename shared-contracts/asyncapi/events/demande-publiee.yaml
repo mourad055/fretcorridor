@@ -67,3 +67,17 @@ components:
           type: number
           nullable: true
           description: Regle du maximum deja appliquee en amont cote service-cap (EF-CAP-01/02) - transmis brut, jamais recalcule cote Moteur.
+        fenetreDebut:
+          type: string
+          format: date-time
+          nullable: true
+          description: >
+            EF-MAT-06/RG-107 (Phase 2, Sprint 11) - fenetre temporelle SOUPLE
+            (jamais dure, cf CDC S8.6.1 point 4) de collecte/livraison
+            souhaitee. Absent = pas de penalite de retard appliquee ce cycle
+            (mode permissif, meme principe que rayonAppariementKm).
+        fenetreFin:
+          type: string
+          format: date-time
+          nullable: true
+          description: Borne haute de la fenetre - voir fenetreDebut.
