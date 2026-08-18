@@ -17,11 +17,15 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * FE-PAY-01/02 : orchestration du paiement (Sprint 8). L'ingestion par appel
- * REST direct (prise-en-charge/clôture) est un point d'entrée temporaire,
- * remplacé par une consommation d'événements Kafka
- * (MissionCloturee/AffectationConfirmee) une fois le bus câblé pour ce
- * service — cf. Plan d'Exécution §4.3.
+ * FE-PAY-01/02 : orchestration du paiement (Sprint 8). {@code prise-en-charge}
+ * et {@code cloture} (encaissement inclus) restent des points d'entrée REST
+ * temporaires, faute d'événement de cycle de vie mission couvrant
+ * l'encaissement — cf. Plan d'Exécution §4.3. {@code confirmation-livraison}
+ * (libération seule, RG-078) ne l'est plus : depuis
+ * {@link com.fretcorridor.pay.infrastructure.messaging.MissionLivreeListener},
+ * service-exe déclenche la libération du séquestre via l'événement Kafka
+ * MissionLivree — cet endpoint REST reste disponible (usage manuel/ops),
+ * mais n'a plus d'appelant réel dans le flux nominal.
  */
 @RestController
 @RequestMapping("/api/v1/pay")

@@ -1,6 +1,7 @@
 package com.fretcorridor.pay.infrastructure.config;
 
 import com.fretcorridor.pay.infrastructure.messaging.DossierLitigeEvent;
+import com.fretcorridor.pay.infrastructure.messaging.MissionLivreeEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -50,6 +51,24 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, DossierLitigeEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(dossierLitigeConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, MissionLivreeEvent> missionLivreeConsumerFactory() {
+        JsonDeserializer<MissionLivreeEvent> deserializer =
+                new JsonDeserializer<>(MissionLivreeEvent.class, false);
+        deserializer.setUseTypeHeaders(false);
+        deserializer.addTrustedPackages("com.fretcorridor.*");
+        return new DefaultKafkaConsumerFactory<>(proprietesBase(), new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, MissionLivreeEvent>
+            missionLivreeKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, MissionLivreeEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(missionLivreeConsumerFactory());
         return factory;
     }
 }
