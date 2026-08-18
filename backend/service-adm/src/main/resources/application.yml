@@ -25,6 +25,11 @@ fretcorridor:
       # automatique (délai plafond porté par chaque Dossier.delaiTraitement,
       # pas de valeur globale à configurer ici).
       intervalle-ms: ${FRETCORRIDOR_ADM_ORDONNANCEUR_INTERVALLE_MS:900000}
+    incident-reconciliation:
+      # EF-PAY-09 : délai plafond appliqué aux incidents ouverts sur écart de
+      # réconciliation (service-pay) — au-delà, EscaladeScheduler (EF-ADM-05)
+      # les escalade automatiquement, même mécanisme que tout autre Dossier.
+      delai-heures: ${FRETCORRIDOR_ADM_INCIDENT_RECONCILIATION_DELAI_HEURES:48}
 
 management:
   endpoints:

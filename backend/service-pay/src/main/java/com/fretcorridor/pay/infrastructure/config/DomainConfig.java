@@ -41,8 +41,9 @@ public class DomainConfig {
     }
 
     @Bean
-    public ReconciliationService reconciliationService(GrandLivrePort grandLivrePort, PrestatairePaiementPort prestatairePaiementPort) {
-        return new ReconciliationService(grandLivrePort, prestatairePaiementPort);
+    public ReconciliationService reconciliationService(GrandLivrePort grandLivrePort, PrestatairePaiementPort prestatairePaiementPort,
+                                                         ReconciliationEventPort reconciliationEventPort) {
+        return new ReconciliationService(grandLivrePort, prestatairePaiementPort, reconciliationEventPort);
     }
 
     @Bean
