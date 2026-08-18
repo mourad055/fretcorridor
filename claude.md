@@ -1,4 +1,4 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 17 août 2026)
+# FretCorridor v4 — Transmission d'état (mise à jour 18 août 2026)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
 > la version du 7 août 2026, largement obsolète : Phase 2 entière a été
@@ -9,13 +9,12 @@
 ## Prérequis avant toute intégration réelle (S11 à S19)
 
 **Tout sprint mobile de S11 à S19 (Phase 2 + Phase 3) reste en mode
-mocké** tant que les deux conditions suivantes ne sont pas remplies :
+mocké** tant que le backend réel visé n'est pas confirmé prêt côté
+Moteur/Web pour le sprint concerné.
 
-1. Le test bout-en-bout Docker du fix S7 a été fait (en pause au 17 août
-   — réseau Starlink instable côté utilisateur, DNS qui refuse les
-   requêtes par intermittence) ;
-2. **ET** le backend réel visé est confirmé prêt côté Moteur/Web pour le
-   sprint concerné.
+Le test bout-en-bout Docker du fix S7 (condition qui figurait ici au
+17 août) **a été fait, en dehors d'une session Claude Code** — voir §5.1
+pour le résultat détaillé. Ne plus le traiter comme "en attente".
 
 **Exception déjà actée** : S15 (sélecteur d'axe, Chauffeur + Client) est
 sorti du mode mock — `service-geo` était confirmé prêt par le Moteur
@@ -89,12 +88,9 @@ Redis, MinIO. Phase 1 = Sprints 1 à 10. Phase 2 = Sprints 11, 12, 14, 15
   écran appelle directement le microservice concerné (auth/KYC →
   service-ida 8081, demandes → service-mkt 8089, notifications →
   service-not 8094, chronologie/position → service-exe 8093 / service-flt
-  8092) — voir commit `9c52f02`. ⚠️ `lib/providers/dio_provider.dart`
-  actuel sur `dev` a un seul `dioProvider` (baseUrl 8088, faux pour la
-  plupart des écrans) — le refactor en 5 clients nommés par service
-  existe dans l'historique (`9c52f02`) mais **n'est pas fusionné dans
-  `dev`**, à vérifier/réappliquer si des écrans Client ont des soucis
-  réseau.
+  8092). `lib/providers/dio_provider.dart` expose désormais 5 clients Dio
+  nommés (un par service, réapplication du correctif `9c52f02` — PR #64,
+  mergée le 17 août) — le `dioProvider` unique/mauvais port n'existe plus.
 - **App Chauffeur/Transporteur** (`mobile/app_chauffeur_transporteur/`) —
   Phase 1 (S1-S10) + Phase 2 (S11 Volet A, S12, S14 Volet A, S15 Volet A)
   intégrés dans `dev`. Passe par la gateway (port 8082, chemins
@@ -141,32 +137,79 @@ du Moteur sur le séquencement ALNS et deux nouveaux contrats :
   dur dessus côté app tant que le Moteur n'a pas donné le feu vert
   explicite** (mot du Moteur attendu, pas juste "c'est sur dev").
 - **`shared-contracts/asyncapi/events/proposition-retour-a-vide.yaml`** —
-  marqué version 1.0.0 (pas brouillon), mais **incohérent avec ce que le
-  Moteur a annoncé oralement** : il avait dit que l'événement porterait
-  soit `tourneeId` soit `affectationId` (jamais les deux) pour couvrir le
-  cas FTL simple (majoritaire en Phase 1, pas seulement les tournées LTL
-  consolidées). Le fichier réellement mergé n'a **que `tourneeId`
-  (requis)**, aucun champ `affectationId`. À clarifier avec le Moteur
-  avant d'implémenter quoi que ce soit côté S12 réel — son fix FTL n'est
-  peut-être pas encore dans ce fichier.
+  incohérence du 17 août **résolue et mergée dans `dev`** le 18 août :
+  `tourneeId` et `affectationId` sont désormais tous deux `nullable: true`
+  et mutuellement exclusifs (documenté explicitement dans le fichier),
+  couvrant bien le cas FTL simple (`affectationId` rempli, `tourneeId`
+  null) en plus du cas Tournee consolidée (LTL). Version 1.0.0, plus un
+  brouillon.
+- **Bug de sérialisation transversal (dates OPT en epoch flottant au lieu
+  d'ISO-8601)** — trouvé par le Moteur le 17 août en testant le contrat
+  ci-dessus, touchait tous les événements publiés par `service-opt`
+  (`PropositionEmise`, `AffectationConfirmee`, `PropositionRetourAVide`).
+  **Corrigé et mergé** (`backend/service-opt/.../config/KafkaProducerConfig.java`
+  — `JavaTimeModule` + `WRITE_DATES_AS_TIMESTAMPS` désactivé). Vérifié :
+  aucun impact réel n'avait eu lieu côté Mobile, `AffectationConfirmeeEvent.horodatageConfirmation`
+  n'étant utilisé nulle part dans `service-exe`.
+
+**`etape-executee.yaml` reste le seul contrat encore en BROUILLON non
+validé** — ne pas coder en dur dessus côté app tant que le Moteur n'a pas
+donné le feu vert explicite. `proposition-retour-a-vide.yaml` est
+maintenant utilisable pour une implémentation réelle côté S12 (Chauffeur)
+si demandé explicitement — voir §5.2 pour ce qui manque encore côté
+Mobile avant de pouvoir le faire (aucun consommateur n'existe à ce jour).
 
 ---
 
 ## 5. Ce qui reste ouvert
 
-1. **Test réel dans l'app Chauffeur/Transporteur** — lancer l'app pour de
-   vrai (pas juste vérifier que le code compile) et confirmer que "Mes
-   missions" affiche une mission pour un compte de test, preuve que la
-   chaîne complète (service-cap → service-opt → service-exe,
-   `transporteurId` rempli) fonctionne jusqu'à l'UI mobile. Le backend est
-   vérifié (PR #58, tests Kafka confirmés par le Moteur) mais aucune trace
-   dans le dépôt d'un lancement réel de l'app elle-même. **C'est le seul
-   point du dernier récap resté en suspens.**
-2. **S11/S12 réels** — attendre confirmation explicite du Moteur (pas
-   juste "c'est mergé dans dev") avant de sortir ces sprints du mode mock
-   côté mobile — voir §4.
-3. **`dio_provider.dart` côté Client** — vérifier si le refactor multi-
-   clients (`9c52f02`, jamais mergé dans `dev`) doit être réappliqué ; le
-   `dioProvider` unique actuel pointe sur un mauvais port par défaut pour
-   plusieurs écrans (pas un bug introduit récemment, présent depuis
-   longtemps sur `dev` — juste jamais corrigé sur cette branche).
+### 5.1 Test S7 en Docker — FAIT (18 août), résultat détaillé
+
+**Ne plus traiter ce point comme "en attente"** — le test bout-en-bout
+réel (déclaration de capacité via la gateway, deux essais successifs) a
+été effectué en dehors d'une session Claude Code. Résultat :
+
+- **Fix de port confirmé fonctionnel** (8092→8083,
+  `service-cap/application-docker.yml`) : `transporteur_id` se peuple
+  bien en base côté `service-cap` une fois le pool de connexions
+  `ServiceFltClient` chaud. Le tout premier appel à froid après un
+  `docker-compose up` échoue en timeout (dégradation gracieuse comme
+  prévu, ENF-DIS-04) — **corrigé** en allongeant les timeouts
+  (`connectTimeoutMs` 200→500, `readTimeoutMs` 300→1000,
+  `ServiceFltClientProperties`, PR #71, mergée).
+- **Nouveau bug trouvé en poussant le test jusqu'à `service-opt`** :
+  `CapaciteDeclareeEvent` a divergé entre les deux copies du contrat.
+  La copie côté `service-opt` a deux champs de plus
+  (`capaciteResiduelleKg`, `volumeResiduelM3`, ajoutés pour le
+  séquencement L2 Phase 2 / EF-CAP-07) que `service-cap` ne publie
+  jamais. Conséquence : ces champs arrivent `null` côté `service-opt`,
+  violent la contrainte `NOT NULL` en base
+  (`capacite_en_attente.capacite_residuelle_kg`, migration V10) et font
+  échouer l'insertion à **chaque** déclaration de capacité — y compris le
+  flux Phase 1 basique, pas seulement Phase 2. Vérifié dans le code :
+  `CapaciteDeclareeListener.ingerer()` (service-opt) attrape
+  `DataIntegrityViolationException` de façon trop large et logue
+  "CapaciteDeclaree deja ingeree, doublon ignore" — **la capacité est
+  donc perdue silencieusement**, sans marquage d'erreur distinct pour la
+  retrouver (le message de log est trompeur : ce n'est pas un doublon).
+  **Déjà remonté au Moteur, en attente de sa décision** (ajouter les
+  champs côté `service-cap`, ou les rendre nullable côté `service-opt` en
+  attendant) — ne rien coder dessus tant que cette décision n'est pas
+  prise.
+
+### 5.2 S12 réel (Chauffeur) — contrat prêt, rien construit côté Mobile
+
+`proposition-retour-a-vide.yaml` est corrigé et mergé (§4), mais
+**aucun consommateur n'existe encore côté Mobile** — ni `service-exe`, ni
+`service-not`, ni la gateway n'écoutent ce topic. Implémenter S12 en réel
+n'est pas un simple débranchement de mock (contrairement à S15) : il faut
+d'abord construire un écouteur Kafka + exposition REST (candidat naturel :
+`service-not`, cohérent avec l'écran visé "notification de mission
+retour, acceptation/refus") avant de pouvoir câbler le Flutter dessus.
+Portée à clarifier avec l'utilisateur avant de commencer (backend seul,
+app seule en supposant le backend, ou les deux).
+
+### 5.3 Autres points ouverts
+
+- **`etape-executee.yaml`** — toujours BROUILLON, feu vert explicite du
+  Moteur attendu avant tout code dur côté app (S11 tournées réelles).
