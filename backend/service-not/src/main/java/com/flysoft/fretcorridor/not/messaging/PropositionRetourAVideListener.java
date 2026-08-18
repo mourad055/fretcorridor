@@ -5,6 +5,7 @@ import com.flysoft.fretcorridor.not.entity.Notification;
 import com.flysoft.fretcorridor.not.service.NotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -24,17 +25,22 @@ public class PropositionRetourAVideListener {
 
     private static final Logger log = LoggerFactory.getLogger(PropositionRetourAVideListener.class);
 
-    // Même hypothèse mono-tenant que les autres consommateurs d'événements
-    // Moteur (AffectationConfirmeeListener, service-exe) — aucun tenant
-    // porté par l'événement à ce jour.
-    private static final String TENANT_ID_PHASE1 = "00000000-0000-0000-0000-000000000001";
-
     private final ServiceCapClient serviceCapClient;
     private final NotificationService notificationService;
+    // Même hypothèse mono-tenant que les autres consommateurs d'événements
+    // Moteur (AffectationConfirmeeListener, service-exe, ADR 0011) — corrigé
+    // le 18 août : hardcodait auparavant un UUID différent de
+    // fretcorridor.exe.tenant-id-phase1 (tenant-bgft-douala), ce qui aurait
+    // rendu les notifications PROPOSITION_RETOUR invisibles côté app (filtre
+    // par tenantId du JWT dans NotificationController). Même propriété que
+    // service-exe pour rester cohérent avec le reste de la chaîne S7/S12.
+    private final String tenantIdPhase1;
 
-    public PropositionRetourAVideListener(ServiceCapClient serviceCapClient, NotificationService notificationService) {
+    public PropositionRetourAVideListener(ServiceCapClient serviceCapClient, NotificationService notificationService,
+                                           @Value("${fretcorridor.not.tenant-id-phase1}") String tenantIdPhase1) {
         this.serviceCapClient = serviceCapClient;
         this.notificationService = notificationService;
+        this.tenantIdPhase1 = tenantIdPhase1;
     }
 
     @KafkaListener(topics = "proposition-retour-a-vide",
@@ -54,7 +60,7 @@ public class PropositionRetourAVideListener {
                         "Un retour à vide est proposé après votre livraison. Consultez les détails pour accepter ou refuser.",
                         Notification.TypeNotification.PROPOSITION_RETOUR,
                         referenceId,
-                        TENANT_ID_PHASE1),
+                        tenantIdPhase1),
                 () -> log.warn("PropositionRetourAVide non notifiee (transporteur non resolu) - "
                         + "capacite={}, eventId={}", event.capaciteId(), event.eventId())
         );
