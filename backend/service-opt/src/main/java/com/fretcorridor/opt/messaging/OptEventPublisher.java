@@ -12,6 +12,7 @@ public class OptEventPublisher {
     private static final String TOPIC_PROPOSITION_EMISE = "proposition-emise";
     private static final String TOPIC_AFFECTATION_CONFIRMEE = "affectation-confirmee";
     private static final String TOPIC_PROPOSITION_RETOUR_A_VIDE = "proposition-retour-a-vide";
+    private static final String TOPIC_TOURNEE_CONSTITUEE = "tournee-constituee";
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public OptEventPublisher(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -96,6 +97,26 @@ public class OptEventPublisher {
         } catch (Exception exceptionBlocante) {
             log.error("Echec publication PropositionRetourAVide (send() bloquant) - {} "
                     + "- non bloquant (ENF-DIS-04)", identifiantLog, exceptionBlocante);
+        }
+    }
+
+    /** EF-MAT-05/06 (Sprint 11) : meme pattern de degradation gracieuse que ci-dessus. */
+    public void publierTourneeConstituee(TourneeConstitueeEvent event) {
+        try {
+            String cle = event.tourneeId().toString();
+            kafkaTemplate.send(TOPIC_TOURNEE_CONSTITUEE, cle, event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("TourneeConstituee publiee - tournee={}, {} etape(s), offset={}",
+                                    event.tourneeId(), event.etapes().size(), result.getRecordMetadata().offset());
+                        } else {
+                            log.error("Echec publication TourneeConstituee (callback async) - tournee={}",
+                                    event.tourneeId(), ex);
+                        }
+                    });
+        } catch (Exception exceptionBlocante) {
+            log.error("Echec publication TourneeConstituee (send() bloquant) - tournee={} "
+                    + "- non bloquant (ENF-DIS-04)", event.tourneeId(), exceptionBlocante);
         }
     }
 }
