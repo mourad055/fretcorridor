@@ -77,10 +77,26 @@ public class RealNotificationMobileAdapter implements NotificationMobilePort {
                 .onErrorMap(e -> new NotServiceIndisponibleException());
     }
 
+    @Override
+    public Mono<Void> repondre(String delegationToken, String notificationId, boolean accepte) {
+        if (delegationToken == null) {
+            return Mono.error(new NotServiceIndisponibleException());
+        }
+        return webClient.patch()
+                .uri("/api/notifications/{id}/repondre", notificationId)
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .bodyValue(Map.of("accepte", accepte))
+                .retrieve()
+                .toBodilessEntity()
+                .then()
+                .onErrorMap(e -> new NotServiceIndisponibleException());
+    }
+
     private record NotificationDto(String id, String titre, String corps, String type, String referenceId,
-                                    Boolean lue, String dateCreation) {
+                                    Boolean lue, String dateCreation, Boolean reponseAcceptee) {
         NotificationMobile versNotification() {
-            return new NotificationMobile(id, titre, corps, type, referenceId, Boolean.TRUE.equals(lue), dateCreation);
+            return new NotificationMobile(id, titre, corps, type, referenceId, Boolean.TRUE.equals(lue),
+                    dateCreation, reponseAcceptee);
         }
     }
 }
