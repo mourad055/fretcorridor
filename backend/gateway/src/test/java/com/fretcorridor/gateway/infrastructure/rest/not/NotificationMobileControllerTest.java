@@ -45,7 +45,7 @@ class NotificationMobileControllerTest {
         String token = tokenFor("+237600000002");
         when(notificationMobilePort.mesNotifications("mock-ida-delegation-token"))
                 .thenReturn(Flux.just(new NotificationMobile("n1", "Nouvelle mission", "Une mission vous est proposée",
-                        "MISSION", "mission-1", false, "2026-08-12T10:00:00")));
+                        "MISSION", "mission-1", false, "2026-08-12T10:00:00", null)));
 
         webTestClient.get().uri("/api/v1/notifications/mes")
                 .header("Authorization", "Bearer " + token)
@@ -87,5 +87,20 @@ class NotificationMobileControllerTest {
                 .expectStatus().isNoContent();
 
         verify(notificationMobilePort).marquerLue(eq("mock-ida-delegation-token"), eq("n1"));
+    }
+
+    @Test
+    void responding_to_a_return_trip_proposal_forwards_the_delegation_token_and_answer() {
+        String token = tokenFor("+237600000002");
+        when(notificationMobilePort.repondre("mock-ida-delegation-token", "n1", true)).thenReturn(Mono.empty());
+
+        webTestClient.patch().uri("/api/v1/notifications/mes/n1/repondre")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(Map.of("accepte", true))
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isNoContent();
+
+        verify(notificationMobilePort).repondre(eq("mock-ida-delegation-token"), eq("n1"), eq(true));
     }
 }
