@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class NotificationPrestataireServiceTest {
 
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
-    private final GrandLivreService grandLivreService = new GrandLivreService(grandLivrePort, new FakeGarantiePort(), new FakeLitigeMissionPort());
+    private final GrandLivreService grandLivreService = new GrandLivreService(grandLivrePort, new FakeGarantiePort(), new FakeLitigeMissionPort(), new FakeSequestrePort());
     private final FakeNotificationIdempotencePort idempotencePort = new FakeNotificationIdempotencePort();
 
     private final NotificationEncaissement notification =

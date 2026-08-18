@@ -11,8 +11,9 @@ import java.time.Duration;
 public class DomainConfig {
 
     @Bean
-    public GrandLivreService grandLivreService(GrandLivrePort grandLivrePort, GarantiePort garantiePort, LitigeMissionPort litigeMissionPort) {
-        return new GrandLivreService(grandLivrePort, garantiePort, litigeMissionPort);
+    public GrandLivreService grandLivreService(GrandLivrePort grandLivrePort, GarantiePort garantiePort,
+                                                LitigeMissionPort litigeMissionPort, SequestrePort sequestrePort) {
+        return new GrandLivreService(grandLivrePort, garantiePort, litigeMissionPort, sequestrePort);
     }
 
     @Bean

@@ -53,6 +53,8 @@ class GrandLivrePersistenceIntegrationTest {
         String missionId = "mission-test-" + System.nanoTime();
 
         grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("500"), "ref-prestataire-1", ModePaiement.VIREMENT);
+        sequestreService.declencher(missionId);
+        sequestreService.liberer(missionId, "tenant-1", "actor-transporteur-1", "preuve-1");
 
         EcritureMiroir reversement = grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("450"), "ref-prestataire-2");
 
@@ -87,7 +89,7 @@ class GrandLivrePersistenceIntegrationTest {
         String missionId = "mission-test-" + System.nanoTime();
 
         sequestreService.declencher(missionId);
-        Sequestre libere = sequestreService.liberer(missionId, "tenant-1", "actor-transporteur-1");
+        Sequestre libere = sequestreService.liberer(missionId, "tenant-1", "actor-transporteur-1", "preuve-1");
 
         assertThat(libere.etat()).isEqualTo(SequestreEtat.LIBERE);
     }
@@ -98,6 +100,8 @@ class GrandLivrePersistenceIntegrationTest {
         String missionId = "mission-test-" + System.nanoTime();
 
         garantieService.souscrire("tenant-1", missionId, "garant-bnp", new BigDecimal("300"), "ref-garantie-1");
+        sequestreService.declencher(missionId);
+        sequestreService.liberer(missionId, "tenant-1", "actor-transporteur-1", "preuve-1");
         EcritureMiroir reversement = grandLivreService.enregistrerReversement("tenant-1", missionId, "actor-transporteur-1", new BigDecimal("300"), "ref-rev-terme");
 
         assertThat(reversement.nature()).isEqualTo(NatureEcriture.REVERSEMENT);
@@ -135,7 +139,7 @@ class GrandLivrePersistenceIntegrationTest {
         grandLivreService.enregistrerEncaissement("tenant-1", missionId, new BigDecimal("100"), "ref-1", ModePaiement.VIREMENT);
         sequestrePort.sauvegarder(new Sequestre(missionId, SequestreEtat.LIBERE,
                 maintenant.minus(50, java.time.temporal.ChronoUnit.HOURS), maintenant.minus(49, java.time.temporal.ChronoUnit.HOURS),
-                "tenant-1", "actor-transporteur-1"));
+                "tenant-1", "actor-transporteur-1", "preuve-1"));
 
         var reversements = reversementAutomatiqueService.detecterEtReverser(maintenant);
 

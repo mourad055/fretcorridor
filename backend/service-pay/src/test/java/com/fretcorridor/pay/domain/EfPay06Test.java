@@ -3,6 +3,7 @@ package com.fretcorridor.pay.domain;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,7 +16,13 @@ class EfPay06Test {
 
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
     private final FakeGarantiePort garantiePort = new FakeGarantiePort();
-    private final GrandLivreService service = new GrandLivreService(grandLivrePort, garantiePort, new FakeLitigeMissionPort());
+    private final FakeSequestrePort sequestrePort = new FakeSequestrePort();
+    private final GrandLivreService service = new GrandLivreService(grandLivrePort, garantiePort, new FakeLitigeMissionPort(), sequestrePort);
+
+    private void libererAvecPreuve(String missionId) {
+        sequestrePort.sauvegarder(new Sequestre(missionId, SequestreEtat.LIBERE, Instant.now(), Instant.now(),
+                "tenant-1", "actor-transporteur-1", "preuve-1"));
+    }
 
     @Test
     void records_the_mode_de_paiement_chosen_for_an_encaissement() {
@@ -28,6 +35,7 @@ class EfPay06Test {
     @Test
     void a_reversement_never_carries_a_mode_de_paiement_it_only_concerns_the_encaissement_side() {
         service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
+        libererAvecPreuve("mission-1");
 
         EcritureMiroir reversement = service.enregistrerReversement(
                 "tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("90"), "ref-rev");
@@ -44,6 +52,7 @@ class EfPay06Test {
     @Test
     void a_reversement_is_allowed_against_an_active_garantie_with_no_real_encaissement_at_all() {
         garantiePort.enregistrer(new Garantie("g-1", "tenant-1", "mission-1", "garant-bnp", new BigDecimal("100"), "ref-garantie-1", java.time.Instant.now()));
+        libererAvecPreuve("mission-1");
 
         EcritureMiroir reversement = service.enregistrerReversement(
                 "tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("100"), "ref-rev");
@@ -65,6 +74,7 @@ class EfPay06Test {
     void a_real_encaissement_and_a_garantie_pool_together_as_available_funds() {
         service.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("50"), "ref-enc", ModePaiement.VIREMENT);
         garantiePort.enregistrer(new Garantie("g-1", "tenant-1", "mission-1", "garant-bnp", new BigDecimal("50"), "ref-garantie-1", java.time.Instant.now()));
+        libererAvecPreuve("mission-1");
 
         EcritureMiroir reversement = service.enregistrerReversement(
                 "tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("100"), "ref-rev");
