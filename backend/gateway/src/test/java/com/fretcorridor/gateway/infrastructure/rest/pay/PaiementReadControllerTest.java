@@ -56,7 +56,7 @@ class PaiementReadControllerTest {
     @Test
     void a_transporteur_sees_its_own_solde_computed_from_its_history() {
         String token = tokenFor("+237600000002");
-        when(payReadPort.ecrituresDuTransporteur("a0000000-0000-0000-0000-000000000002")).thenReturn(Flux.just(
+        when(payReadPort.ecrituresDuTransporteur("actor-transporteur-1")).thenReturn(Flux.just(
                 new EcritureVue("e1", "mission-1", "COMPTE_TRANSPORTEUR", "REVERSEMENT", "DEBIT", new BigDecimal("90"), Instant.now(), "VALIDE", null, false),
                 new EcritureVue("e2", "mission-2", "COMPTE_TRANSPORTEUR", "REVERSEMENT", "DEBIT", new BigDecimal("60"), Instant.now(), "VALIDE", null, false)
         ));
