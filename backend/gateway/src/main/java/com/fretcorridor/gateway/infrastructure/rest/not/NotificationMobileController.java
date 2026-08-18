@@ -37,4 +37,12 @@ public class NotificationMobileController {
         return notificationMobilePort.marquerLue(actor.delegationToken(), id)
                 .then(Mono.just(ResponseEntity.noContent().<Void>build()));
     }
+
+    // S12 : acceptation/refus d'une proposition de retour à vide.
+    @PatchMapping("/{id}/repondre")
+    public Mono<ResponseEntity<Void>> repondre(@PathVariable String id, @RequestBody Map<String, Boolean> requete,
+                                                @AuthenticationPrincipal AuthenticatedActor actor) {
+        return notificationMobilePort.repondre(actor.delegationToken(), id, Boolean.TRUE.equals(requete.get("accepte")))
+                .then(Mono.just(ResponseEntity.noContent().<Void>build()));
+    }
 }

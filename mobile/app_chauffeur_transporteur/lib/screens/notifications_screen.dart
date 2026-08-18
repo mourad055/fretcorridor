@@ -25,8 +25,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     super.initState();
     Future.microtask(() {
       ref.read(notificationProvider.notifier).charger();
-      // S12 — MOCK, voir proposition_retour_provider.dart.
-      ref.read(propositionRetourProvider.notifier).simulerReception();
+      ref.read(propositionRetourProvider.notifier).charger();
     });
   }
 
@@ -39,7 +38,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       backgroundColor: AppColors.fond,
       appBar: AppBar(title: const Text('Notifications')),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(notificationProvider.notifier).charger(),
+        onRefresh: () => Future.wait([
+          ref.read(notificationProvider.notifier).charger(),
+          ref.read(propositionRetourProvider.notifier).charger(),
+        ]),
         child: state.chargement && state.notifications.isEmpty && propositionsEnAttente.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : state.erreur != null
@@ -66,9 +68,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     );
   }
 
-  // S12 — MOCK (proposition_retour_provider.dart) : proposition de mission
-  // retour après une livraison, avec acceptation/refus par le chauffeur.
-  // Aucun flux Kafka réel côté Moteur pour l'instant — simulé localement.
+  // S12 — proposition de mission retour après une livraison, avec
+  // acceptation/refus par le chauffeur (voir proposition_retour_provider.dart).
   Widget _cartePropositionRetour(PropositionRetour p) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -88,11 +89,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Proposition de mission retour (démo)',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(p.titre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(height: 2),
-                  Text('${p.trajetLibelle} — ${p.distanceKm.round()} km',
-                      style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                  Text(p.corps, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                 ],
               ),
             ),
