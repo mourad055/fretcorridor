@@ -1,8 +1,10 @@
 package com.fretcorridor.adm.domain;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class InMemoryConfigurationPort implements ConfigurationPort {
 
@@ -24,5 +26,17 @@ public class InMemoryConfigurationPort implements ConfigurationPort {
     public Optional<ConfigurationVersionnee> versionCourante(String cle, String perimetre) {
         List<ConfigurationVersionnee> historique = historique(cle, perimetre);
         return historique.isEmpty() ? Optional.empty() : Optional.of(historique.get(historique.size() - 1));
+    }
+
+    @Override
+    public List<ConfigurationVersionnee> toutesLesVersionsCourantes() {
+        return configurations.stream()
+                .collect(Collectors.toMap(
+                        c -> c.cle() + " " + c.perimetre(),
+                        c -> c,
+                        (a, b) -> a.version() >= b.version() ? a : b))
+                .values().stream()
+                .sorted(Comparator.comparing(ConfigurationVersionnee::cle).thenComparing(ConfigurationVersionnee::perimetre))
+                .toList();
     }
 }

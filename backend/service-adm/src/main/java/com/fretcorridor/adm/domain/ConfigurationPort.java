@@ -9,4 +9,7 @@ public interface ConfigurationPort {
     List<ConfigurationVersionnee> historique(String cle, String perimetre);
 
     Optional<ConfigurationVersionnee> versionCourante(String cle, String perimetre);
+
+    /** EF-ADM-06 : une entrée par (clé, périmètre) déjà configuré, valeur courante (dernière version). */
+    List<ConfigurationVersionnee> toutesLesVersionsCourantes();
 }

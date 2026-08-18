@@ -34,4 +34,9 @@ public class ConfigurationService {
     public List<ConfigurationVersionnee> historique(String cle, String perimetre) {
         return configurationPort.historique(cle, perimetre);
     }
+
+    /** EF-ADM-06 : catalogue de tous les paramètres métier déjà configurés, pour la console (pas besoin de connaître la clé à l'avance). */
+    public List<ConfigurationVersionnee> catalogue() {
+        return configurationPort.toutesLesVersionsCourantes();
+    }
 }

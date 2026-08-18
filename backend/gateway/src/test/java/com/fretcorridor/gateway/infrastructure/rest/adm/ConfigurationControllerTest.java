@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -67,5 +68,31 @@ class ConfigurationControllerTest {
                 .jsonPath("$.auteur").isEqualTo("actor-admin-1");
 
         verify(admPort).definirConfiguration("seuil-agregation-bur", "GLOBAL", "5", "actor-admin-1");
+    }
+
+    /** EF-ADM-06 : le catalogue liste les clés déjà configurées, sans avoir à connaître leur nom à l'avance. */
+    @Test
+    void returns_the_catalogue_of_already_configured_keys() {
+        String token = tokenFor("+237600000003");
+        when(admPort.catalogueConfigurations()).thenReturn(Flux.just(
+                new ConfigurationVue("grille-decision", "GLOBAL", "1", "actor-admin-1", 1, Instant.now())));
+
+        webTestClient.get().uri("/api/v1/admin/configurations")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.length()").isEqualTo(1)
+                .jsonPath("$[0].cle").isEqualTo("grille-decision");
+    }
+
+    @Test
+    void a_transporteur_cannot_reach_the_configuration_catalogue() {
+        String token = tokenFor("+237600000002");
+
+        webTestClient.get().uri("/api/v1/admin/configurations")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isForbidden();
     }
 }

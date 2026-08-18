@@ -30,4 +30,27 @@ class ConfigurationServiceTest {
 
         assertThat(journalAuditPort.lister(null)).anyMatch(e -> e.action().equals("CONFIGURATION_MODIFIEE"));
     }
+
+    /** EF-ADM-06 : le catalogue expose une entrée par clé, avec sa valeur courante — pas tout l'historique. */
+    @Test
+    void le_catalogue_expose_une_seule_entree_par_cle_avec_la_valeur_courante() {
+        service.definir("seuil-agregation-bur", ConfigurationVersionnee.PERIMETRE_GLOBAL, "3", "actor-admin-1");
+        service.definir("seuil-agregation-bur", ConfigurationVersionnee.PERIMETRE_GLOBAL, "5", "actor-admin-1");
+        service.definir("grille-decision", ConfigurationVersionnee.PERIMETRE_GLOBAL, "1", "actor-admin-2");
+
+        var catalogue = service.catalogue();
+
+        assertThat(catalogue).hasSize(2);
+        assertThat(catalogue).filteredOn(c -> c.cle().equals("seuil-agregation-bur"))
+                .singleElement()
+                .satisfies(c -> {
+                    assertThat(c.valeur()).isEqualTo("5");
+                    assertThat(c.version()).isEqualTo(2);
+                });
+    }
+
+    @Test
+    void le_catalogue_est_vide_quand_aucune_configuration_n_a_ete_definie() {
+        assertThat(service.catalogue()).isEmpty();
+    }
 }
