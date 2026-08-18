@@ -113,6 +113,12 @@ public class CapaciteService {
         eventPublisher.publierCapaciteDeclaree(event);
     }
 
+    @Transactional(readOnly = true)
+    public Capacite obtenir(UUID capaciteId) {
+        return capaciteRepository.findById(capaciteId)
+                .orElseThrow(() -> new IllegalArgumentException("Capacite introuvable : " + capaciteId));
+    }
+
     /**
      * EF-CAP-07 : decrement atomique et idempotent. Le verrou optimiste
      * (@Version sur Capacite) garantit l'atomicite contre les acces

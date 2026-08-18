@@ -55,6 +55,19 @@ public class NotificationService {
         });
     }
 
+    // S12 — réponse du chauffeur à une proposition de retour à vide.
+    // Purement locale : aucun contrat pour relayer cette réponse au Moteur
+    // à ce jour (voir Notification.reponseAcceptee).
+    @Transactional
+    public void repondre(UUID notificationId, boolean accepte) {
+        notificationRepository.findById(notificationId).ifPresent(n -> {
+            n.setReponseAcceptee(accepte);
+            n.setDateReponse(java.time.LocalDateTime.now());
+            n.setLue(true);
+            notificationRepository.save(n);
+        });
+    }
+
     // Enregistrement du token FCM — préparé, pas encore exploité (voir README)
     @Transactional
     public void enregistrerToken(UUID acteurId, String token, String tenantId) {
