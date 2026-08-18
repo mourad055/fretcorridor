@@ -40,6 +40,13 @@ public class NotificationController {
         return ResponseEntity.noContent().build();
     }
 
+    // S12 — acceptation/refus d'une proposition de retour à vide.
+    @PatchMapping("/{id}/repondre")
+    public ResponseEntity<?> repondre(@PathVariable UUID id, @RequestBody NotificationDto.RepondreRequest requete) {
+        notificationService.repondre(id, requete.isAccepte());
+        return ResponseEntity.noContent().build();
+    }
+
     // Préparé pour le vrai push — enregistrer maintenant, exploiter plus tard
     @PostMapping("/fcm-token")
     public ResponseEntity<?> enregistrerToken(
