@@ -107,7 +107,8 @@ public class CapaciteService {
                 UUID.randomUUID(), capacite.getId(), capacite.getAxeId(),
                 capacite.getTransporteurId(), capacite.getVehiculeId(), valeursCriteres,
                 new PointGeoDto(capacite.getOrigineLatitude(), capacite.getOrigineLongitude()),
-                profil, capacite.getTypeVehicule());
+                profil, capacite.getTypeVehicule(),
+                capacite.getCapaciteResiduelleKg(), capacite.getVolumeM3());
 
         eventPublisher.publierCapaciteDeclaree(event);
     }

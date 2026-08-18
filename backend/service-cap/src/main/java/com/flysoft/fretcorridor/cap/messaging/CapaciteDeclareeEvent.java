@@ -1,5 +1,6 @@
 package com.flysoft.fretcorridor.cap.messaging;
 
+import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
 
@@ -12,6 +13,13 @@ import java.util.UUID;
  * vide cote chauffeur, AffectationConfirmeeEvent.transporteurId toujours
  * null cote OPT). transporteurId resolu via ServiceFltClient au moment de
  * la declaration (best-effort, nullable - ENF-DIS-04).
+ *
+ * capaciteResiduelleKg/volumeResiduelM3 : ajoutes pour fermer le bug remonte
+ * le 18 aout (violation NOT NULL cote service-opt, capacite perdue
+ * silencieusement) - service-opt les attend depuis EF-CAP-07 (sequencement
+ * L2, Phase 2) mais service-cap ne les publiait jamais. Valeurs prises sur
+ * Capacite.getCapaciteResiduelleKg()/getVolumeM3() (meme grandeur, nom
+ * different pour volumeM3 cote service-cap).
  */
 public record CapaciteDeclareeEvent(
         UUID eventId,
@@ -22,6 +30,8 @@ public record CapaciteDeclareeEvent(
         Map<String, Double> valeursCriteres,
         PointGeoDto position,
         ProfilCamionDto profilCamion,
-        String typeVehicule
+        String typeVehicule,
+        BigDecimal capaciteResiduelleKg,
+        BigDecimal volumeResiduelM3
 ) {
 }
