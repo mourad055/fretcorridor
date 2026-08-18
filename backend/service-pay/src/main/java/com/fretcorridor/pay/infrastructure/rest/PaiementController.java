@@ -3,6 +3,7 @@ package com.fretcorridor.pay.infrastructure.rest;
 import com.fretcorridor.pay.domain.*;
 import com.fretcorridor.pay.infrastructure.prestataire.MockPrestatairePaiementAdapter;
 import com.fretcorridor.pay.infrastructure.rest.dto.ClotureMissionRequest;
+import com.fretcorridor.pay.infrastructure.rest.dto.ConfirmationLivraisonRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.DeclarationEspecesResponse;
 import com.fretcorridor.pay.infrastructure.rest.dto.DeclarerPaiementEspecesRequest;
 import com.fretcorridor.pay.infrastructure.rest.dto.EcritureResponse;
@@ -60,8 +61,19 @@ public class PaiementController {
         EcritureMiroir encaissement = grandLivreService.enregistrerEncaissement(
                 request.tenantId(), missionId, request.montant(), request.referencePrestataire(), request.modePaiement());
         prestataire.confirmer(missionId, request.montant());
-        sequestreService.liberer(missionId, request.tenantId(), request.transporteurId());
+        sequestreService.liberer(missionId, request.tenantId(), request.transporteurId(), request.preuveLivraisonReference());
         return ResponseEntity.ok(EcritureResponse.from(encaissement, grandLivreService.litigeActifPourMission(missionId)));
+    }
+
+    /**
+     * RG-078 : libère le séquestre indépendamment d'un encaissement — requis
+     * avant tout reversement adossé à une garantie tierce (EF-PAY-06 terme
+     * contractuel), où {@code cloture()} n'est jamais appelé.
+     */
+    @PostMapping("/missions/{missionId}/confirmation-livraison")
+    public ResponseEntity<Void> confirmerLivraison(@PathVariable String missionId, @Valid @RequestBody ConfirmationLivraisonRequest request) {
+        sequestreService.liberer(missionId, request.tenantId(), request.transporteurId(), request.preuveLivraisonReference());
+        return ResponseEntity.noContent().build();
     }
 
     /** EF-PAY-06 (terme contractuel) : souscrit la garantie tierce qui autorise la mission à être confirmée sans encaissement préalable. */

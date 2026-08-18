@@ -39,7 +39,7 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT"}
+                                {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT", "preuveLivraisonReference": "preuve-1"}
                                 """.formatted(tenantId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nature").value("ENCAISSEMENT"));
@@ -57,7 +57,7 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tenantId": "tenant-1", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT"}
+                                {"tenantId": "tenant-1", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT", "preuveLivraisonReference": "preuve-1"}
                                 """))
                 .andExpect(status().isConflict());
     }
@@ -70,7 +70,7 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionA));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionA)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-A\", \"montant\": 100, \"referencePrestataire\": \"ref-a\", \"modePaiement\": \"VIREMENT\"}"));
+                .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-A\", \"montant\": 100, \"referencePrestataire\": \"ref-a\", \"modePaiement\": \"VIREMENT\", \"preuveLivraisonReference\": \"preuve-a\"}"));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionA)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-A\", \"montant\": 90, \"referencePrestataire\": \"ref-a-rev\"}"))
@@ -79,7 +79,7 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionB));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionB)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-B\", \"montant\": 200, \"referencePrestataire\": \"ref-b\", \"modePaiement\": \"MONNAIE_ELECTRONIQUE\"}"));
+                .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-B\", \"montant\": 200, \"referencePrestataire\": \"ref-b\", \"modePaiement\": \"MONNAIE_ELECTRONIQUE\", \"preuveLivraisonReference\": \"preuve-b\"}"));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionB)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-B\", \"montant\": 180, \"referencePrestataire\": \"ref-b-rev\"}"))
@@ -96,6 +96,15 @@ class PaiementControllerIntegrationTest {
     void a_transporteur_is_reversed_against_a_garantie_with_no_prior_encaissement() throws Exception {
         String missionId = "mission-terme-" + System.nanoTime();
         String tenantId = "tenant-terme-" + System.nanoTime();
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionId))
+                .andExpect(status().isCreated());
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/confirmation-livraison", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "preuveLivraisonReference": "preuve-terme-1"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isNoContent());
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/garantie", missionId)
                         .contentType(MediaType.APPLICATION_JSON)

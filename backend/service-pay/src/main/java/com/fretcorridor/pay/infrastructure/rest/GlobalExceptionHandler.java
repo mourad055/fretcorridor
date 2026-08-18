@@ -3,6 +3,7 @@ package com.fretcorridor.pay.infrastructure.rest;
 import com.fretcorridor.pay.domain.DeclarationEspecesInvalideException;
 import com.fretcorridor.pay.domain.GarantieInvalideException;
 import com.fretcorridor.pay.domain.ReversementSansEncaissementException;
+import com.fretcorridor.pay.domain.ReversementSansPreuveLivraisonException;
 import com.fretcorridor.pay.domain.ReversementSuspenduPourLitigeException;
 import com.fretcorridor.pay.domain.SequestreInvalideException;
 import com.fretcorridor.pay.domain.SignatureInvalideException;
@@ -19,6 +20,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleReversementSansEncaissement(ReversementSansEncaissementException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Reversement refusé (ENF-FIN-02)");
+        return problem;
+    }
+
+    @ExceptionHandler(ReversementSansPreuveLivraisonException.class)
+    public ProblemDetail handleReversementSansPreuveLivraison(ReversementSansPreuveLivraisonException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Reversement refusé (RG-078)");
         return problem;
     }
 

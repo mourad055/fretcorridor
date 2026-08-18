@@ -23,7 +23,7 @@ class ReversementAutomatiqueServiceTest {
     private final FakeGrandLivrePort grandLivrePort = new FakeGrandLivrePort();
     private final FakeGarantiePort garantiePort = new FakeGarantiePort();
     private final FakeLitigeMissionPort litigeMissionPort = new FakeLitigeMissionPort();
-    private final GrandLivreService grandLivreService = new GrandLivreService(grandLivrePort, garantiePort, litigeMissionPort);
+    private final GrandLivreService grandLivreService = new GrandLivreService(grandLivrePort, garantiePort, litigeMissionPort, sequestrePort);
     private final ReversementAutomatiqueService service =
             new ReversementAutomatiqueService(sequestrePort, grandLivreService, DELAI_48H);
 
@@ -32,7 +32,7 @@ class ReversementAutomatiqueServiceTest {
         Instant maintenant = Instant.now();
         grandLivreService.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
         sequestrePort.sauvegarder(new Sequestre("mission-1", SequestreEtat.LIBERE,
-                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1"));
+                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1", "preuve-1"));
 
         List<EcritureMiroir> reversements = service.detecterEtReverser(maintenant);
 
@@ -46,7 +46,7 @@ class ReversementAutomatiqueServiceTest {
         Instant maintenant = Instant.now();
         grandLivreService.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
         sequestrePort.sauvegarder(new Sequestre("mission-1", SequestreEtat.LIBERE,
-                maintenant.minus(10, ChronoUnit.HOURS), maintenant.minus(1, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1"));
+                maintenant.minus(10, ChronoUnit.HOURS), maintenant.minus(1, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1", "preuve-1"));
 
         assertThat(service.detecterEtReverser(maintenant)).isEmpty();
     }
@@ -56,12 +56,12 @@ class ReversementAutomatiqueServiceTest {
         Instant maintenant = Instant.now();
         grandLivreService.enregistrerEncaissement("tenant-1", "mission-litige", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
         sequestrePort.sauvegarder(new Sequestre("mission-litige", SequestreEtat.LIBERE,
-                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1"));
+                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1", "preuve-1"));
         litigeMissionPort.enregistrerSiPlusRecent(new LitigeMission("mission-litige", "tenant-1", true, maintenant.minus(49, ChronoUnit.HOURS)));
 
         grandLivreService.enregistrerEncaissement("tenant-1", "mission-ok", new BigDecimal("200"), "ref-enc-2", ModePaiement.VIREMENT);
         sequestrePort.sauvegarder(new Sequestre("mission-ok", SequestreEtat.LIBERE,
-                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-2"));
+                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-2", "preuve-1"));
 
         List<EcritureMiroir> reversements = service.detecterEtReverser(maintenant);
 
@@ -73,9 +73,9 @@ class ReversementAutomatiqueServiceTest {
     void does_not_re_reverse_a_mission_already_fully_reversed_manually() {
         Instant maintenant = Instant.now();
         grandLivreService.enregistrerEncaissement("tenant-1", "mission-1", new BigDecimal("100"), "ref-enc", ModePaiement.VIREMENT);
-        grandLivreService.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("100"), "ref-rev-anticipe");
         sequestrePort.sauvegarder(new Sequestre("mission-1", SequestreEtat.LIBERE,
-                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1"));
+                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1", "preuve-1"));
+        grandLivreService.enregistrerReversement("tenant-1", "mission-1", "actor-transporteur-1", new BigDecimal("100"), "ref-rev-anticipe");
 
         assertThat(service.detecterEtReverser(maintenant)).isEmpty();
     }
@@ -83,7 +83,7 @@ class ReversementAutomatiqueServiceTest {
     @Test
     void ignores_a_sequestre_still_declenche() {
         Instant maintenant = Instant.now();
-        sequestrePort.sauvegarder(new Sequestre("mission-1", SequestreEtat.DECLENCHE, maintenant.minus(50, ChronoUnit.HOURS), null, null, null));
+        sequestrePort.sauvegarder(new Sequestre("mission-1", SequestreEtat.DECLENCHE, maintenant.minus(50, ChronoUnit.HOURS), null, null, null, null));
 
         assertThat(service.detecterEtReverser(maintenant)).isEmpty();
     }
@@ -93,7 +93,7 @@ class ReversementAutomatiqueServiceTest {
         Instant maintenant = Instant.now();
         garantiePort.enregistrer(new Garantie("g-1", "tenant-1", "mission-1", "garant-bnp", new BigDecimal("300"), "ref-garantie-1", maintenant.minus(60, ChronoUnit.HOURS)));
         sequestrePort.sauvegarder(new Sequestre("mission-1", SequestreEtat.LIBERE,
-                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1"));
+                maintenant.minus(50, ChronoUnit.HOURS), maintenant.minus(49, ChronoUnit.HOURS), "tenant-1", "actor-transporteur-1", "preuve-1"));
 
         List<EcritureMiroir> reversements = service.detecterEtReverser(maintenant);
 

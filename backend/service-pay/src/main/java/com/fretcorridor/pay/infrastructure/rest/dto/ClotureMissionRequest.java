@@ -12,6 +12,8 @@ public record ClotureMissionRequest(
         @NotBlank String transporteurId,
         @NotNull @Positive BigDecimal montant,
         @NotBlank String referencePrestataire,
-        @NotNull ModePaiement modePaiement
+        @NotNull ModePaiement modePaiement,
+        /** RG-078 : référence de la preuve de livraison — sa nature/authenticité appartient à Mission/EXE, hors périmètre. */
+        @NotBlank String preuveLivraisonReference
 ) {
 }
