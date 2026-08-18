@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Declencheur du cycle de matching "par fenetre", par axe actif (EF-MAT-01 -
@@ -122,11 +124,44 @@ public class MatchingCycleService {
             return; // ne marque rien comme traite : on retentera au cycle suivant (ENF-DIS-04)
         }
 
-        demandes.forEach(DemandeEnAttente::marquerTraitee);
-        demandeEnAttenteRepository.saveAll(demandes);
+        // BUG CORRIGE (2026-08-18) : le code precedent marquait TOUT le lot
+        // (demandes ET capacites) comme traite des que le resultat n'etait
+        // pas en mode degrade, sans verifier lesquelles avaient reellement
+        // ete affectees. Kuhn-Munkres etant un appariement optimal, un lot
+        // avec plus de demandes que de capacites (cas courant) laisse
+        // certaines demandes avec capaciteId()==null (cf AffectationResultat
+        // javadoc, "plus de demandes que de capacites disponibles dans le
+        // lot") - ces demandes etaient neanmoins marquees traitee=true et
+        // disparaissaient silencieusement du systeme, en violation de
+        // EF-MAT-01 (traitement par cycles a fenetre, jamais de perte) et
+        // EF-MAT-11/12 (traçabilite/reconstitution de chaque decision).
+        Set<java.util.UUID> demandesAffectees = resultat.affectations().stream()
+                .filter(a -> a.capaciteId() != null)
+                .map(AffectationResultat::demandeId)
+                .collect(Collectors.toSet());
+        Set<java.util.UUID> capacitesAffectees = resultat.affectations().stream()
+                .filter(a -> a.capaciteId() != null)
+                .map(AffectationResultat::capaciteId)
+                .collect(Collectors.toSet());
 
-        capacites.forEach(CapaciteEnAttente::marquerTraitee);
-        capaciteEnAttenteRepository.saveAll(capacites);
+        List<DemandeEnAttente> demandesTraitees = demandes.stream()
+                .filter(d -> demandesAffectees.contains(d.getDemandeId()))
+                .toList();
+        demandesTraitees.forEach(DemandeEnAttente::marquerTraitee);
+        demandeEnAttenteRepository.saveAll(demandesTraitees);
+
+        List<CapaciteEnAttente> capacitesTraitees = capacites.stream()
+                .filter(c -> capacitesAffectees.contains(c.getCapaciteId()))
+                .toList();
+        capacitesTraitees.forEach(CapaciteEnAttente::marquerTraitee);
+        capaciteEnAttenteRepository.saveAll(capacitesTraitees);
+
+        int demandesNonAffecteesCeCycle = demandes.size() - demandesTraitees.size();
+        if (demandesNonAffecteesCeCycle > 0) {
+            log.info("Cycle sur l'axe {} : {} demande(s) non affectee(s) ce tour (plus de demandes "
+                            + "que de capacites disponibles), laissee(s) en attente pour le prochain cycle.",
+                    axe.nom(), demandesNonAffecteesCeCycle);
+        }
     }
 
     /**

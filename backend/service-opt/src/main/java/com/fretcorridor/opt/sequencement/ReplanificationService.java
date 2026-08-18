@@ -153,8 +153,17 @@ public class ReplanificationService {
 
         // Seules les etapes vraiment reordonnancees sont supprimees - jamais
         // les livraisons en transit figees.
+        //
+        // flush() OBLIGATOIRE ici : Hibernate ordonne par defaut les
+        // INSERT avant les DELETE dans une meme transaction, quel que soit
+        // l'ordre d'appel en code - sans ce flush, un nouveau save() plus
+        // bas peut s'executer AVANT que ce delete soit reellement applique
+        // en base, et violer uq_etape_tournee_rang si le nouveau rang
+        // coincide avec une ancienne etape pas encore supprimee (bug
+        // observe en boucle toutes les 30s, cf SequencementDeclencheur).
         if (!etapesAReordonnancer.isEmpty()) {
             etapeTourneeRepository.deleteAll(etapesAReordonnancer);
+            etapeTourneeRepository.flush();
         }
 
         var sequence = resultat.solutionFinale().getSequence();
