@@ -4,6 +4,13 @@
 **Auteur** : Mourad (volet Web), avec assistance Claude Code
 **Contexte** : la Phase 4 (`feature/web-socle`) ferme le dernier chantier obligatoire de mon périmètre (EF-PAY, EF-ADM, EF-BUR — cf. `docs/CONTEXTE_SESSION_UI.md`). Ce document ne couvre que les points où l'avancement dépend d'une action côté Mobile (apps Chauffeur/Transporteur/Client, ou services `service-exe`/`service-ida`/`service-cap`), pour que rien ne reste implicite entre les deux équipes. Même format que `docs/ROADMAP_INTEGRATION_gateway.md`, sens inverse : là-bas c'est le gateway qui appelle Mobile, ici c'est Mobile qui doit appeler/publier vers `service-pay`.
 
+> **⚠️ Numérotation.** "Phase 4" dans ce titre est ma numérotation informelle
+> pour le reliquat CDC du périmètre Web — **pas** la Phase 4 officielle du
+> projet (§5.4 du Plan d'Exécution, exclusivement Moteur : `MAT/OPT V3` +
+> `EF-GEO-05`). Voir `docs/ROADMAP_OFFICIELLE_par_porteur.md` pour la
+> numérotation officielle partagée par les 3 porteurs (Mobile y est
+> présent en Phases 1-3, jamais en Phase 4).
+
 ---
 
 ## Constat général
