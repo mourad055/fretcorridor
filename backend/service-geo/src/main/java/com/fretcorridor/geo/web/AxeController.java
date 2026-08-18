@@ -4,32 +4,50 @@ import com.fretcorridor.geo.domain.Axe;
 import com.fretcorridor.geo.domain.AxeRepository;
 import com.fretcorridor.geo.domain.Hub;
 import com.fretcorridor.geo.domain.HubRepository;
+import com.fretcorridor.geo.domain.JournalAuditRisque;
+import com.fretcorridor.geo.domain.JournalAuditRisqueRepository;
 import com.fretcorridor.geo.web.dto.AxeCreationRequest;
+import com.fretcorridor.geo.web.dto.RisqueSecuritaireRequest;
 import com.fretcorridor.geo.web.dto.AxeResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
  * Endpoints internes du referentiel Axe (EF-GEO-01/02/03).
  * Consomme par OPT (filtre L0, synchrone interne) et par les cartes Web/Mobile
  * en lecture seule via l'API exposee ici.
+ *
+ * ENF-MUL-01 : isolation stricte par tenant, filtree ICI en base via
+ * AxeRepository.findByTenantId. Correction du 2026-08-09 suite a l'audit
+ * gateway : GET /api/geo/axes?tenantId=... filtre reellement, plus jamais
+ * relabellise a posteriori par un appelant (cf. RealGeoAdapter, gateway).
  */
 @RestController
 @RequestMapping("/api/geo/axes")
 public class AxeController {
 
+    // Tenant unique de la Phase 1 (BGFT, client-ancre) - meme UUID fixe que
+    // celui applique par la migration V4 sur les donnees existantes. Utilise
+    // comme defaut a la creation quand aucun tenantId n'est fourni, pour ne
+    // jamais laisser une ligne orpheline sans tenant.
+    private static final UUID TENANT_PHASE1_PAR_DEFAUT =
+            UUID.fromString("00000000-0000-0000-0000-000000000001");
+
     private final AxeRepository axeRepository;
     private final HubRepository hubRepository;
+    private final JournalAuditRisqueRepository journalAuditRisqueRepository;
 
-    public AxeController(AxeRepository axeRepository, HubRepository hubRepository) {
+    public AxeController(AxeRepository axeRepository, HubRepository hubRepository,
+                          JournalAuditRisqueRepository journalAuditRisqueRepository) {
         this.axeRepository = axeRepository;
         this.hubRepository = hubRepository;
+        this.journalAuditRisqueRepository = journalAuditRisqueRepository;
     }
 
     @PostMapping
@@ -43,7 +61,8 @@ public class AxeController {
                     "un axe doit relier deux hubs distincts");
         }
 
-        Axe axe = new Axe(requete.nom(), hubOrigine, hubDestination);
+        UUID tenantId = requete.tenantId() != null ? requete.tenantId() : TENANT_PHASE1_PAR_DEFAUT;
+        Axe axe = new Axe(requete.nom(), hubOrigine, hubDestination, tenantId);
         if (requete.visibiliteActive() != null) {
             axe.setVisibiliteActive(requete.visibiliteActive());
         }
@@ -60,11 +79,19 @@ public class AxeController {
         return AxeResponse.from(axeRepository.save(axe));
     }
 
+    /**
+     * ENF-MUL-01 : si tenantId est fourni, filtre reellement en base
+     * (AxeRepository.findByTenantId) - jamais un filtrage cote appelant.
+     * Sans tenantId (retro-compatibilite OPT, appel interne synchrone qui
+     * n'a pas de notion de tenant), retourne tout - comportement inchange
+     * pour ne pas casser le filtre L0 d'OPT.
+     */
     @GetMapping
-    public List<AxeResponse> listerAxes() {
-        return axeRepository.findAll().stream()
-                .map(AxeResponse::from)
-                .toList();
+    public List<AxeResponse> listerAxes(@RequestParam(required = false) UUID tenantId) {
+        List<Axe> axes = tenantId != null
+                ? axeRepository.findByTenantId(tenantId)
+                : axeRepository.findAll();
+        return axes.stream().map(AxeResponse::from).toList();
     }
 
     @GetMapping("/{id}")
@@ -75,12 +102,38 @@ public class AxeController {
                         "axe introuvable : " + id));
     }
 
-    /** Axes actifs pour le matching (EF-GEO-03) — consomme par OPT. */
+    /**
+     * Axes actifs pour le matching (EF-GEO-03) — consomme par OPT.
+     *
+     * G3 (CDC S4.5) / EF-GEO-04 (S9.9) : meme verrou d'entree que
+     * matchingActif (G2) - un axe GELE n'est JAMAIS retourne ici, quel que
+     * soit son etat matchingActif. C'est ce filtre qui garantit l'indicateur
+     * "operations en zone gelee = 0" : OPT ne voit jamais ces axes, donc ne
+     * peut structurellement jamais y declencher de cycle.
+     */
     @GetMapping("/actifs-matching")
     public List<AxeResponse> listerAxesActifsPourMatching() {
         return axeRepository.findByMatchingActifTrue().stream()
+                .filter(this::estOperationnelPourMatching)
                 .map(AxeResponse::from)
                 .toList();
+    }
+
+    /**
+     * Cle "risqueSecuritaire" absente = pas de restriction (meme principe
+     * permissif que rayonAppariementKm/detourMaxDistanceKm : jamais un
+     * defaut invente). niveauRisque=GELE = exclusion stricte, sans exception -
+     * NORMAL et SURVEILLE restent operationnels (la surveillance renforce la
+     * gouvernance des donnees, cf ENF-ZS cote TRK, mais ne bloque pas
+     * l'operation elle-meme).
+     */
+    private boolean estOperationnelPourMatching(Axe axe) {
+        Object risque = axe.getParametres().get("risqueSecuritaire");
+        if (!(risque instanceof Map<?, ?> risqueMap)) {
+            return true;
+        }
+        Object niveau = risqueMap.get("niveauRisque");
+        return !"GELE".equals(niveau);
     }
 
     /**
@@ -102,6 +155,43 @@ public class AxeController {
             default -> throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "etat inconnu : " + etat + " (attendu : visibilite, matching ou paiement)");
         }
+
+        return AxeResponse.from(axeRepository.save(axe));
+    }
+
+    /**
+     * G3 (CDC S4.5) / EF-GEO-04 (S9.9) : renseigne le niveau de risque
+     * securitaire de l'axe, avec decision explicite tracee (JournalAuditRisque,
+     * append-only). C'est CETTE ecriture qui constitue le "renseignement a
+     * jour et decision explicite tracee" exige par G3 - sans elle, l'axe reste
+     * GELE par defaut pour tout niveau autre que NORMAL (cf isOperationnel ci-dessous).
+     *
+     * @Transactional implicite via Spring Data - axe.save() et le nouvel
+     * enregistrement d'audit doivent reussir ensemble ou pas du tout (jamais
+     * un axe deverrouille sans trace, ni une trace sans effet reel sur l'axe).
+     */
+    @PatchMapping("/{id}/risque-securitaire")
+    public AxeResponse renseignerRisqueSecuritaire(@PathVariable UUID id,
+                                                     @Valid @RequestBody RisqueSecuritaireRequest requete) {
+        Axe axe = axeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "axe introuvable : " + id));
+
+        Map<String, Object> parametres = new java.util.HashMap<>(axe.getParametres());
+        Object risqueExistant = parametres.get("risqueSecuritaire");
+        String niveauAvant = (risqueExistant instanceof Map<?, ?> m && m.get("niveauRisque") != null)
+                ? m.get("niveauRisque").toString() : null;
+
+        Map<String, Object> risque = new java.util.HashMap<>();
+        risque.put("niveauRisque", requete.niveauRisque());
+        risque.put("renseigneParActeurId", requete.acteurId().toString());
+        risque.put("dateRenseignement", java.time.Instant.now().toString());
+        risque.put("motif", requete.motif());
+        parametres.put("risqueSecuritaire", risque);
+        axe.setParametres(parametres);
+
+        journalAuditRisqueRepository.save(new JournalAuditRisque(
+                id, requete.acteurId(), niveauAvant, requete.niveauRisque(), requete.motif()));
 
         return AxeResponse.from(axeRepository.save(axe));
     }

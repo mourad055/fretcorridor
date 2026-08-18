@@ -11,6 +11,7 @@ public class OptEventPublisher {
     private static final Logger log = LoggerFactory.getLogger(OptEventPublisher.class);
     private static final String TOPIC_PROPOSITION_EMISE = "proposition-emise";
     private static final String TOPIC_AFFECTATION_CONFIRMEE = "affectation-confirmee";
+    private static final String TOPIC_PROPOSITION_RETOUR_A_VIDE = "proposition-retour-a-vide";
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public OptEventPublisher(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -65,6 +66,36 @@ public class OptEventPublisher {
             log.error("Echec publication AffectationConfirmee (send() bloquant, ex. metadonnees "
                     + "topic indisponibles) - mission={} - cycle L1 non interrompu (ENF-DIS-04)",
                     event.missionId(), exceptionBlocante);
+        }
+    }
+
+    /** EF-MAT-08 (Sprint 12) : meme pattern de degradation gracieuse que ci-dessus. */
+    public void publierPropositionRetourAVide(PropositionRetourAVideEvent event) {
+        // tourneeId et affectationId sont mutuellement exclusifs (cf javadoc du
+        // record) - la cle Kafka de partitionnement doit suivre celui des deux
+        // qui est reellement renseigne, jamais supposer tourneeId toujours
+        // present (regression corrigee suite a test manuel du 2026-08-17 :
+        // NPE sur tourneeId() null pour le cas FTL simple).
+        String cle = event.tourneeId() != null
+                ? event.tourneeId().toString()
+                : event.affectationId().toString();
+        String identifiantLog = event.tourneeId() != null
+                ? "tournee=" + event.tourneeId()
+                : "affectation=" + event.affectationId();
+        try {
+            kafkaTemplate.send(TOPIC_PROPOSITION_RETOUR_A_VIDE, cle, event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("PropositionRetourAVide publiee - {}, offset={}",
+                                    identifiantLog, result.getRecordMetadata().offset());
+                        } else {
+                            log.error("Echec publication PropositionRetourAVide (callback async) - {}",
+                                    identifiantLog, ex);
+                        }
+                    });
+        } catch (Exception exceptionBlocante) {
+            log.error("Echec publication PropositionRetourAVide (send() bloquant) - {} "
+                    + "- non bloquant (ENF-DIS-04)", identifiantLog, exceptionBlocante);
         }
     }
 }

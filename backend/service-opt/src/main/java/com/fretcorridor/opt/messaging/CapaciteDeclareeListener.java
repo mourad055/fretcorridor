@@ -28,8 +28,10 @@ public class CapaciteDeclareeListener {
     public void ingerer(CapaciteDeclareeEvent event) {
         try {
             repository.save(new CapaciteEnAttente(
-                    event.capaciteId(), event.axeId(), event.eventId(), event.valeursCriteres(),
-                    event.position(), event.profilCamion(), event.typeVehicule()));
+                    event.capaciteId(), event.axeId(), event.transporteurId(), event.vehiculeId(),
+                    event.eventId(), event.valeursCriteres(),
+                    event.position(), event.profilCamion(), event.typeVehicule(),
+                    event.capaciteResiduelleKg(), event.volumeResiduelM3()));
             log.debug("Capacite mise en attente - capacite={}, axe={}, eventId={}",
                     event.capaciteId(), event.axeId(), event.eventId());
         } catch (DataIntegrityViolationException doublon) {

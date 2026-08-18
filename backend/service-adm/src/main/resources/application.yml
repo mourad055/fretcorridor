@@ -1,5 +1,9 @@
 server:
-  port: ${SERVER_PORT:8085}
+  # 8085 est déjà pris par service-opt (interne Docker) — collision fragile
+  # (sans conséquence tant que les deux tournent avec des port mappings hôte
+  # distincts, mais casse dès qu'on les lance sans compose séparé, ex. deux
+  # `java -jar` locaux). 8095 aligné sur le port hôte déjà utilisé.
+  port: ${SERVER_PORT:8095}
 
 spring:
   application:

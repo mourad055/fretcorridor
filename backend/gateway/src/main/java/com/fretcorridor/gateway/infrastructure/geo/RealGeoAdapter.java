@@ -3,13 +3,13 @@ package com.fretcorridor.gateway.infrastructure.geo;
 import com.fretcorridor.gateway.domain.geo.Axe;
 import com.fretcorridor.gateway.domain.geo.GeoPort;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
 /**
- * Appelle le service reel service-geo (Moteur, Sprint 3 livre par
- * @stevetelecom, issue #21). Meme pattern que ServicePayWebClientAdapter.
+ * Appelle le service reel service-geo (Moteur, Sprint 3, @stevetelecom).
  *
  * Implementation active par defaut (production/dev) — decision d'equipe
  * 2026-08-10 (docs/adr, ADR mono-tenant GEO) : la Feuille de route V4
@@ -26,6 +26,7 @@ import reactor.core.publisher.Flux;
  * detail de cette limite et son suivi.
  */
 @Component
+@Profile("!mock-geo")
 public class RealGeoAdapter implements GeoPort {
 
     private final WebClient webClient;
@@ -38,22 +39,24 @@ public class RealGeoAdapter implements GeoPort {
     @Override
     public Flux<Axe> listerAxesParTenant(String tenantId) {
         return webClient.get()
-                .uri("/api/geo/axes")
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/geo/axes")
+                        .queryParam("tenantId", tenantId)
+                        .build())
                 .retrieve()
                 .bodyToFlux(AxeGeoResponse.class)
                 .map(dto -> new Axe(
                         dto.id(),
-                        tenantId, // tenant impose par le JWT, pas encore porte par service-geo (Phase 1)
+                        tenantId,
                         dto.hubOrigineNom(),
                         dto.hubDestinationNom(),
-                        0.0, // distanceKm : non expose par service-geo en Phase 1, a calculer via Valhalla en Phase 2
+                        0.0,
                         dto.visibiliteActive(),
                         dto.matchingActif(),
                         dto.paiementActif()
                 ));
     }
 
-    /** Miroir minimal du contrat AxeResponse de service-geo - champs utiles au gateway uniquement. */
     private record AxeGeoResponse(
             String id,
             String hubOrigineNom,

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../mock/consolidation_mock.dart';
 import '../providers/suivi_provider.dart';
 import '../theme/app_theme.dart';
+import 'litige_screen.dart';
 
 // S6 (position/ETA) + S7 (chronologie) réunis dans un seul écran "Suivi" —
 // plus naturel côté client qu'une navigation séparée pour deux vues
@@ -75,6 +77,31 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
               : ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
+                    // S11 — indicateur "envoi consolidé" (MOCK, voir
+                    // consolidation_mock.dart). Purement informatif, aucune
+                    // action associée. N'affecte pas le rendu par défaut :
+                    // absent quand l'envoi n'est pas (mockquement) consolidé.
+                    if (estEnvoiConsolideMock(suivi.chronologie!)) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.marqueOrange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.marqueOrange.withValues(alpha: 0.4)),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.merge_type, color: AppColors.marqueOrange, size: 18),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Envoi groupé : votre colis fait partie d\'une tournée consolidée avec d\'autres envois.',
+                              style: TextStyle(color: AppColors.marqueOrange, fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ]),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     // ── Position (S6) ──────────────────────
                     if (suivi.position != null) ...[
                       Container(
@@ -146,6 +173,28 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                               ],
                             ),
                           )),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LitigeScreen(
+                              demandeId: widget.demandeId,
+                              missionId: suivi.chronologie!.missionId,
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.flag_outlined, size: 18, color: AppColors.erreur),
+                        label: const Text('Signaler un litige', style: TextStyle(color: AppColors.erreur)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.erreur),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
     );

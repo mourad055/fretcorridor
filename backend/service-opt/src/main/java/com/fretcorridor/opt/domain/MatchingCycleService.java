@@ -73,7 +73,8 @@ public class MatchingCycleService {
         }
 
         List<CandidatCoutDto> candidatsCommuns = capacites.stream()
-                .map(c -> new CandidatCoutDto(c.getCapaciteId(), c.getValeursCriteres(),
+                .map(c -> new CandidatCoutDto(c.getCapaciteId(), c.getTransporteurId(),
+                        c.getVehiculeId(), c.getValeursCriteres(),
                         c.getPosition(), c.getProfilCamion(), c.getTypeVehicule()))
                 .toList();
 

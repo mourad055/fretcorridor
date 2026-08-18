@@ -132,6 +132,7 @@ public class AffectationL1Service {
 
             Affectation affectation = new Affectation(
                     demandeId, capaciteId, cycleMatchingIds[i][indiceCapacite], demande.axeId(),
+                    demande.poidsTaxableKg(),
                     demande.origineDemande().latitude(), demande.origineDemande().longitude(),
                     demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
                     itineraire != null ? itineraire.distanceMetres() : null,
@@ -184,8 +185,8 @@ public class AffectationL1Service {
                         missionId,
                         demandeId,
                         capaciteId,
-                        null,
-                        null,
+                        candidatRetenu.vehiculeId(),
+                        candidatRetenu.transporteurId(),
                         null,
                         demande.axeId(),
                         demande.origineDemande() != null ? demande.origineDemande().latitude() : 0,

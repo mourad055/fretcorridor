@@ -34,6 +34,18 @@ const String _apiBaseFlt = String.fromEnvironment(
 const String keyAccessToken = 'access_token';
 const String keyRefreshToken = 'refresh_token';
 
+// S15 — service-geo (Moteur), axes réels. Appel direct : aucune route
+// gateway pour le rôle Chargeur, et l'endpoint GET /api/geo/axes?tenantId=...
+// n'exige pas d'authentification.
+const String _apiBaseGeo = String.fromEnvironment(
+  'API_BASE_GEO',
+  defaultValue: 'http://localhost:8084',
+);
+
+final geoDioProvider = Provider<Dio>((ref) {
+  return Dio(BaseOptions(baseUrl: _apiBaseGeo, connectTimeout: const Duration(seconds: 10)));
+});
+
 Dio _creerClient(String baseUrl) {
   const storage = FlutterSecureStorage();
   final dio = Dio(BaseOptions(

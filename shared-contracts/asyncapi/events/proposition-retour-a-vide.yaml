@@ -1,0 +1,72 @@
+asyncapi: 2.6.0
+info:
+  title: PropositionRetourAVide
+  version: 1.0.0
+  description: |
+    EF-MAT-08 / RG-058 (CDC S8.6, Sprint 12). Publie par OPT (Moteur) quand
+    une mission de fret se termine - jamais avant, conformement a RG-058 :
+    "aucune mission de retour n'est confirmee avant la livraison effective
+    de l'aller."
+
+    Deux cas d'emission, MUTUELLEMENT EXCLUSIFS (jamais les deux presents,
+    jamais les deux absents) :
+      - tourneeId rempli, affectationId absent : Tournee consolidee (LTL,
+        Sprint 11+) passee a TERMINEE (toutes les etapes EXECUTEE).
+      - affectationId rempli, tourneeId absent : Affectation FTL simple
+        (cas majoritaire en Phase 1, jamais sequencee en Tournee) dont la
+        livraison vient d'etre executee.
+    Le consommateur doit tester lequel des deux champs est present, jamais
+    supposer tourneeId toujours renseigne.
+
+    Porteur : Personne 3 (Moteur). Consommateur : Mobile (app
+    Chauffeur/Transporteur, ecran "notification de mission retour,
+    acceptation/refus" - Plan d'execution S12).
+
+channels:
+  proposition-retour-a-vide:
+    publish:
+      message:
+        $ref: '#/components/messages/PropositionRetourAVideEvent'
+
+components:
+  messages:
+    PropositionRetourAVideEvent:
+      payload:
+        type: object
+        required:
+          - eventId
+          - capaciteId
+          - pointDepartLatitude
+          - pointDepartLongitude
+          - dateGeneration
+        properties:
+          eventId:
+            type: string
+            format: uuid
+          tourneeId:
+            type: string
+            format: uuid
+            nullable: true
+            description: Rempli uniquement si emis depuis une Tournee consolidee (LTL). Mutuellement exclusif avec affectationId.
+          affectationId:
+            type: string
+            format: uuid
+            nullable: true
+            description: Rempli uniquement si emis depuis une Affectation FTL simple (jamais sequencee en Tournee). Mutuellement exclusif avec tourneeId.
+          capaciteId:
+            type: string
+            format: uuid
+          axeId:
+            type: string
+            format: uuid
+            nullable: true
+          pointDepartLatitude:
+            type: number
+            format: double
+            description: Destination de la derniere livraison de la tournee terminee - point de depart reel du vehicule.
+          pointDepartLongitude:
+            type: number
+            format: double
+          dateGeneration:
+            type: string
+            format: date-time

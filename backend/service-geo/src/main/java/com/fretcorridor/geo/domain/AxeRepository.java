@@ -9,7 +9,13 @@ public interface AxeRepository extends JpaRepository<Axe, UUID> {
 
     /**
      * Axes ou le matching est actif (EF-GEO-03) : c'est cette liste que
-     * consommera OPT (filtre L0) une fois l'appel synchrone interne en place.
+     * consomme OPT (filtre L0), en synchrone interne.
      */
     List<Axe> findByMatchingActifTrue();
+
+    /**
+     * ENF-MUL-01 : isolation stricte par tenant, filtree ICI en base -
+     * jamais fabriquee a posteriori par un appelant (gateway ou autre).
+     */
+    List<Axe> findByTenantId(UUID tenantId);
 }

@@ -18,10 +18,22 @@ spring:
       hibernate:
         default_schema: service_not
     open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:9092
+  client:
+    service-cap:
+      base-url: http://localhost:8096
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
 
 fretcorridor:
   jwt:
     secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+  not:
+    # Même hypothèse mono-tenant Phase 1 que service-exe (ADR 0011) — même
+    # valeur que fretcorridor.exe.tenant-id-phase1, pour que les notifications
+    # PROPOSITION_RETOUR restent cohérentes avec le tenantId des Mission.
+    tenant-id-phase1: ${FRETCORRIDOR_NOT_TENANT_ID_PHASE1:tenant-bgft-douala}
 
 logging:
   level:

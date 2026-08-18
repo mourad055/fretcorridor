@@ -71,6 +71,19 @@ class PaiementReadControllerTest {
     }
 
     @Test
+    void a_non_transporteur_actor_can_still_reach_the_mobile_solde_endpoint() {
+        String token = tokenFor("+237600000001"); // BUREAU — prouve l'absence de restriction de rôle sur /api/v1/paiement
+        when(payReadPort.ecrituresDuTransporteur("actor-bureau-1")).thenReturn(Flux.empty());
+
+        webTestClient.get().uri("/api/v1/paiement")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.solde").isEqualTo(0);
+    }
+
+    @Test
     void a_bureau_actor_cannot_reach_the_transporteur_paiement_endpoint() {
         String token = tokenFor("+237600000001");
 
