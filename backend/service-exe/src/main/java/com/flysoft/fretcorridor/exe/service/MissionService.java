@@ -3,12 +3,16 @@ package com.flysoft.fretcorridor.exe.service;
 import com.flysoft.fretcorridor.exe.dto.MissionDto;
 import com.flysoft.fretcorridor.exe.entity.EtapeMission;
 import com.flysoft.fretcorridor.exe.entity.Mission;
+import com.flysoft.fretcorridor.exe.messaging.MissionEventPublisher;
+import com.flysoft.fretcorridor.exe.messaging.MissionLivreeEvent;
 import com.flysoft.fretcorridor.exe.repository.EtapeMissionRepository;
 import com.flysoft.fretcorridor.exe.repository.MissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,6 +24,7 @@ public class MissionService {
 
     private final MissionRepository missionRepository;
     private final EtapeMissionRepository etapeMissionRepository;
+    private final MissionEventPublisher missionEventPublisher;
 
     // Consommé par l'app Client (S7) — absent tant qu'aucune mission n'a été
     // créée pour cette demande (le matching V0 côté Moteur est encore un stub).
@@ -59,13 +64,35 @@ public class MissionService {
                 .libelle(requete.getLibelle())
                 .horodatageCapture(requete.getHorodatageCapture() != null ? requete.getHorodatageCapture() : LocalDateTime.now())
                 .build();
-        etapeMissionRepository.save(etape);
+        etape = etapeMissionRepository.save(etape);
 
         nouveauStatutPour(requete.getType()).ifPresent(mission::setStatut);
         missionRepository.save(mission);
 
+        if (requete.getType() == EtapeMission.TypeEtape.LIVRAISON) {
+            publierMissionLivree(mission, etape);
+        }
+
         var etapes = etapeMissionRepository.findByMissionIdOrderByHorodatageTransmissionAsc(missionId);
         return MissionDto.ChronologieResponse.fromEntity(mission, etapes);
+    }
+
+    // Item A (docs/DEPENDANCES_MOBILE_PHASE4.md) : déclenche la libération
+    // du séquestre côté service-pay (RG-078) à la confirmation de livraison
+    // — asynchrone, jamais d'appel REST synchrone inter-porteurs (Plan
+    // d'exécution §4.2/4.3). mission.getTransporteurId() ne devrait jamais
+    // être null ici (condition d'accès de missionAppartenantA), mais si le
+    // chargeur n'existe déjà pas côté PAY, RG-078 dégrade sans bloquer —
+    // pas la peine de vérifier deux fois.
+    private void publierMissionLivree(Mission mission, EtapeMission etapeLivraison) {
+        missionEventPublisher.publierMissionLivree(new MissionLivreeEvent(
+                UUID.randomUUID(),
+                mission.getId(),
+                mission.getTenantId(),
+                mission.getTransporteurId(),
+                etapeLivraison.getId().toString(),
+                etapeLivraison.getHorodatageCapture().atZone(ZoneId.systemDefault()).toInstant()
+        ));
     }
 
     private Mission missionAppartenantA(UUID missionId, UUID transporteurId, String tenantId) {
