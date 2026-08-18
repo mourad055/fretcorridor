@@ -14,6 +14,11 @@ public class NotificationDto {
     }
 
     @Data
+    public static class RepondreRequest {
+        private boolean accepte;
+    }
+
+    @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
@@ -25,6 +30,7 @@ public class NotificationDto {
         private UUID referenceId;
         private Boolean lue;
         private LocalDateTime dateCreation;
+        private Boolean reponseAcceptee;
 
         public static NotificationResponse fromEntity(Notification n) {
             return NotificationResponse.builder()
@@ -35,6 +41,7 @@ public class NotificationDto {
                     .referenceId(n.getReferenceId())
                     .lue(n.getLue())
                     .dateCreation(n.getDateCreation())
+                    .reponseAcceptee(n.getReponseAcceptee())
                     .build();
         }
     }

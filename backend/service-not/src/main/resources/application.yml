@@ -18,6 +18,13 @@ spring:
       hibernate:
         default_schema: service_not
     open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:9092
+  client:
+    service-cap:
+      base-url: http://localhost:8096
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
 
 fretcorridor:
   jwt:
