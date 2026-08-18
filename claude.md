@@ -37,6 +37,15 @@ confirmation explicite et attendre une réponse contenant le mot **PULL
 REQUEST** avant toute action de merge (ouvrir la PR via `gh pr create` est
 en revanche acceptable une fois ce mot reçu).
 
+**⚠️ Pattern récurrent à surveiller (pas un incident isolé)** : le Moteur
+(`stevetelecom`) a commité directement sur `dev` sans PR **trois fois** :
+`384f168` et `ef71786` (14 août), `a640efe` (17 août — fix sérialisation
+Kafka + `proposition-retour-a-vide.yaml`). Signalé fermement par
+l'utilisateur après la 3e fois. Ne pas traiter comme un oubli ponctuel :
+si un futur changement côté Moteur apparaît dans `dev` sans commit de
+merge de PR associé, c'est probablement lui — le signaler explicitement
+à l'utilisateur plutôt que de le documenter comme un merge normal.
+
 ---
 
 ## 1. Objectif du projet
@@ -192,10 +201,13 @@ réel (déclaration de capacité via la gateway, deux essais successifs) a
   "CapaciteDeclaree deja ingeree, doublon ignore" — **la capacité est
   donc perdue silencieusement**, sans marquage d'erreur distinct pour la
   retrouver (le message de log est trompeur : ce n'est pas un doublon).
-  **Déjà remonté au Moteur, en attente de sa décision** (ajouter les
-  champs côté `service-cap`, ou les rendre nullable côté `service-opt` en
-  attendant) — ne rien coder dessus tant que cette décision n'est pas
-  prise.
+  **Décision du Moteur (18 août)** : fix côté `service-cap` (le Moteur a
+  un empêchement réseau) plutôt que nullable côté `service-opt`. **Fait et
+  mergé** — `capaciteResiduelleKg`/`volumeResiduelM3` ajoutés à
+  `CapaciteDeclareeEvent` (service-cap), valeurs prises sur
+  `Capacite.getCapaciteResiduelleKg()`/`getVolumeM3()` (PR #73, mergée).
+  Test Docker bout-en-bout de re-vérification en cours au moment de cette
+  mise à jour — voir avec l'utilisateur si confirmé depuis.
 
 ### 5.2 S12 réel (Chauffeur) — contrat prêt, rien construit côté Mobile
 
