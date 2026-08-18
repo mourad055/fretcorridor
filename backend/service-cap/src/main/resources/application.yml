@@ -20,10 +20,13 @@ spring:
   client:
     service-flt:
       base-url: http://localhost:8092
-      # Best-effort (ENF-DIS-04) : timeout serre, service-cap ne doit jamais
-      # rester bloque pour resoudre un transporteur.
-      connect-timeout-ms: 200
-      read-timeout-ms: 300
+      # Best-effort (ENF-DIS-04) : service-cap ne doit jamais rester bloque
+      # pour resoudre un transporteur. Marge allongee (etait 200/300ms) suite
+      # au test Docker reel du 18 aout : le tout premier appel apres un
+      # docker-compose up echouait systematiquement en timeout, pool de
+      # connexions pas encore chaud.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
   kafka:
     bootstrap-servers: localhost:9092
     producer:
