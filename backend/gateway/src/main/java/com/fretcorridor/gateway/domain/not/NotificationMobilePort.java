@@ -16,4 +16,7 @@ public interface NotificationMobilePort {
     Mono<Integer> nombreNonLues(String delegationToken);
 
     Mono<Void> marquerLue(String delegationToken, String notificationId);
+
+    // S12 : acceptation/refus d'une proposition de retour à vide.
+    Mono<Void> repondre(String delegationToken, String notificationId, boolean accepte);
 }
