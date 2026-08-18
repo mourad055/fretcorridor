@@ -13,10 +13,10 @@ public class ServiceFltClientProperties {
     private String baseUrl;
 
     @Positive
-    private int connectTimeoutMs = 200;
+    private int connectTimeoutMs = 500;
 
     @Positive
-    private int readTimeoutMs = 300;
+    private int readTimeoutMs = 1000;
 
     public String getBaseUrl() { return baseUrl; }
     public void setBaseUrl(String baseUrl) { this.baseUrl = baseUrl; }
