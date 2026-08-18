@@ -33,11 +33,12 @@
 
 | | |
 |---|---|
-| **Statut** | 🔴 Bloqué — pas commencé |
-| **Constat** | `ModePaiement` (`MONNAIE_ELECTRONIQUE`/`VIREMENT`/terme contractuel) n'est aujourd'hui enregistré qu'*a posteriori*, au moment de l'encaissement (`cloture`/webhook prestataire) — rien ne permet à un client de le choisir en amont, rien ne l'expose pour affichage Chauffeur avant encaissement. |
-| **Ce qu'il faut construire** | Un nouveau concept domaine ("moyen choisi/prévu" vs "moyen effectivement encaissé"), à intégrer proprement avec ENF-FIN-01/02 et RG-078. |
-| **Porteur** | Moi (conception + endpoint côté `service-pay`), après le sprint Phase 4 en cours (EF-PAY-02/09 puis EF-ADM-06) — puis Mobile pour l'intégration UI Chauffeur/Client (S14). |
-| **Priorité** | Dépend du calendrier S14 côté Mobile, pas de ma Phase 4 — documenté ici pour visibilité partagée, sera reformulé en item concret une fois conçu. |
+| **Statut** | 🟡 Endpoint livré côté `service-pay` (2026-08-18) — intégration UI Mobile restante |
+| **Constat initial** | `ModePaiement` n'était enregistré qu'*a posteriori*, au moment de l'encaissement — rien ne permettait à un client de le choisir en amont, rien ne l'exposait pour affichage Chauffeur avant encaissement. |
+| **Livré** | Nouveau concept domaine `ModePaiementChoisi`, distinct de `EcritureMiroir.modePaiement()` (CDC §7.6 UC-PAY-01 étape 2, choix du chargeur avant toute instruction d'encaissement). Un choix par mission (comme la garantie), espèces (EF-PAY-07) hors périmètre — mode dégradé décidé à l'enlèvement, pas choisi en amont. Endpoints : `POST /api/v1/pay/missions/{id}/moyen-paiement` (Client, choix), `GET /api/v1/pay/missions/{id}/moyen-paiement` (Chauffeur, lecture — 404 si rien n'a encore été choisi). |
+| **Reste à faire** | Intégration UI Mobile (Chauffeur : affichage, Client : choix) — vos apps appellent déjà les microservices directement, pas de câblage gateway prévu pour cet item. |
+| **Porteur** | Web (fait) — intégration UI : Mobile |
+| **Priorité** | Dépend du calendrier S14 côté Mobile. |
 
 ## Hors périmètre Mobile (pour éviter toute confusion)
 

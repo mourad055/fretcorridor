@@ -41,6 +41,11 @@ public class DomainConfig {
     }
 
     @Bean
+    public ModePaiementChoisiService modePaiementChoisiService(ModePaiementChoisiPort modePaiementChoisiPort) {
+        return new ModePaiementChoisiService(modePaiementChoisiPort);
+    }
+
+    @Bean
     public ReconciliationService reconciliationService(GrandLivrePort grandLivrePort, PrestatairePaiementPort prestatairePaiementPort,
                                                          ReconciliationEventPort reconciliationEventPort) {
         return new ReconciliationService(grandLivrePort, prestatairePaiementPort, reconciliationEventPort);

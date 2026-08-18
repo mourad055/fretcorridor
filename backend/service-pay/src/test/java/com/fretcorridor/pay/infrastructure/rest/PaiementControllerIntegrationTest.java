@@ -177,4 +177,49 @@ class PaiementControllerIntegrationTest {
                                 """.formatted(tenantId)))
                 .andExpect(status().isConflict());
     }
+
+    /** EF-PAY-06, Item B : le chargeur choisit son moyen de paiement avant tout encaissement (CDC UC-PAY-01 étape 2). */
+    @Test
+    void a_chargeur_chooses_a_moyen_de_paiement_and_it_is_readable_before_any_encaissement() throws Exception {
+        String missionId = "mission-choix-" + System.nanoTime();
+        String tenantId = "tenant-choix-" + System.nanoTime();
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "modePaiement": "VIREMENT"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.modePaiement").value("VIREMENT"));
+
+        mockMvc.perform(get("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.modePaiement").value("VIREMENT"));
+    }
+
+    @Test
+    void choosing_a_moyen_de_paiement_twice_for_the_same_mission_is_rejected() throws Exception {
+        String missionId = "mission-choix-" + System.nanoTime();
+        String tenantId = "tenant-choix-" + System.nanoTime();
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "modePaiement": "MONNAIE_ELECTRONIQUE"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "modePaiement": "VIREMENT"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void reading_a_moyen_de_paiement_never_chosen_returns_404() throws Exception {
+        mockMvc.perform(get("/api/v1/pay/missions/{missionId}/moyen-paiement", "mission-jamais-choisie"))
+                .andExpect(status().isNotFound());
+    }
 }
