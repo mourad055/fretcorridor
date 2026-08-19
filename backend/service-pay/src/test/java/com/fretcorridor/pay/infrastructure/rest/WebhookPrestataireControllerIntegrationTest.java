@@ -58,7 +58,8 @@ class WebhookPrestataireControllerIntegrationTest {
         mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].nature").value("ENCAISSEMENT"));
+                .andExpect(jsonPath("$[0].nature").value("ENCAISSEMENT"))
+                .andExpect(jsonPath("$[0].modePaiement").value("VIREMENT"));
     }
 
     @Test
@@ -108,7 +109,7 @@ class WebhookPrestataireControllerIntegrationTest {
 
     private static String corps(String tenantId, String missionId, String montant, String reference) {
         return """
-                {"tenantId": "%s", "missionId": "%s", "montant": %s, "referencePrestataire": "%s"}
+                {"tenantId": "%s", "missionId": "%s", "montant": %s, "referencePrestataire": "%s", "modePaiement": "VIREMENT"}
                 """.formatted(tenantId, missionId, montant, reference).strip();
     }
 

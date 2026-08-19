@@ -5,11 +5,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Escalade automatique sur dépassement de délai (Sprint 10, DoD PRD §9).
- * TODO(adm): remplacer l'appel explicite par un job planifié une fois
- * l'ordonnanceur du back-office livré (Phase 2) ; en Phase 1 ce contrôle est
- * déclenché à la demande (endpoint dédié), ce qui reste suffisant pour la
- * preuve du parcours E2E.
+ * EF-ADM-05 (Phase 3) : escalade automatique sur dépassement de délai
+ * plafond (CDC UC-ADM-01, RG-099). Domaine pur, sans dépendance à Spring —
+ * testable sans mock de framework. Déclenché périodiquement par
+ * {@code EscaladeScheduler} (infra) ; l'endpoint REST dédié
+ * (`POST /api/v1/dossiers/escalade`, Phase 1) reste disponible comme
+ * déclenchement manuel, les deux appellent la même logique.
  */
 public class EscaladeService {
 

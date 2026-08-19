@@ -20,6 +20,9 @@ public interface AdmPort {
 
     Flux<DossierVue> declencherEscalade();
 
+    /** EF-ADM-06 : catalogue de tous les paramètres métier déjà configurés, pour la console (pas besoin de connaître la clé à l'avance). */
+    Flux<ConfigurationVue> catalogueConfigurations();
+
     Mono<ConfigurationVue> configurationCourante(String cle, String perimetre);
 
     Flux<ConfigurationVue> historiqueConfiguration(String cle, String perimetre);

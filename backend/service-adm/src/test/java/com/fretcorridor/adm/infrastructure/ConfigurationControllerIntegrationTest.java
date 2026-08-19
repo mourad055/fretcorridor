@@ -53,4 +53,24 @@ class ConfigurationControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }
+
+    /** EF-ADM-06 : le catalogue liste les clés déjà configurées, sans avoir à connaître leur nom à l'avance. */
+    @Test
+    void le_catalogue_liste_les_cles_deja_configurees_avec_leur_valeur_courante() throws Exception {
+        String cle = "seuil-agregation-bur-" + System.nanoTime();
+
+        mockMvc.perform(put("/api/v1/configurations/{cle}", cle)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valeur\": \"3\", \"auteur\": \"actor-admin-1\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(put("/api/v1/configurations/{cle}", cle)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valeur\": \"5\", \"auteur\": \"actor-admin-1\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/v1/configurations"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.cle=='" + cle + "')].valeur").value("5"))
+                .andExpect(jsonPath("$[?(@.cle=='" + cle + "')].version").value(2));
+    }
 }

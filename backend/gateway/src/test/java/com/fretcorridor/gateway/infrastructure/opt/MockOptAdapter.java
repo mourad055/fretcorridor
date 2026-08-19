@@ -1,15 +1,22 @@
 package com.fretcorridor.gateway.infrastructure.opt;
 
+import com.fretcorridor.gateway.domain.opt.AlerteSeuilVue;
+import com.fretcorridor.gateway.domain.opt.EtatAlerteVue;
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
+import com.fretcorridor.gateway.domain.opt.ObservatoireAxeVue;
 import com.fretcorridor.gateway.domain.opt.OptPort;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Fixture de test uniquement — vit dans src/test/java, jamais sur le
@@ -39,5 +46,46 @@ public class MockOptAdapter implements OptPort {
     @Override
     public Flux<MissionAppariee> listerMissionsParTenant(String tenantId) {
         return Flux.fromIterable(missions).filter(m -> m.tenantId().equals(tenantId));
+    }
+
+    @Override
+    public Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId) {
+        return Mono.just(new ObservatoireAxeVue(axeId, 3, false, null, null, null, null, null, null, null));
+    }
+
+    private final java.util.Map<String, BigDecimal> estimationsMarche = new java.util.HashMap<>();
+
+    @Override
+    public Mono<Void> definirEstimationMarche(String tenantId, String axeId, BigDecimal volumeMensuelEstime,
+                                               String source, String acteurId) {
+        estimationsMarche.put(tenantId + ":" + axeId, volumeMensuelEstime);
+        return Mono.empty();
+    }
+
+    private final List<AlerteSeuilVue> alertes = new ArrayList<>();
+
+    @Override
+    public Mono<AlerteSeuilVue> configurerAlerte(String tenantId, String axeId, String indicateur, String comparateur,
+                                                  BigDecimal seuil, String acteurId) {
+        AlerteSeuilVue alerte = new AlerteSeuilVue(UUID.randomUUID().toString(), axeId, indicateur, comparateur,
+                seuil, acteurId, Instant.now());
+        alertes.add(alerte);
+        return Mono.just(alerte);
+    }
+
+    @Override
+    public Flux<AlerteSeuilVue> listerAlertes(String tenantId) {
+        return Flux.fromIterable(alertes);
+    }
+
+    @Override
+    public Flux<EtatAlerteVue> etatAlertes(String tenantId) {
+        return Flux.fromIterable(alertes).map(a -> new EtatAlerteVue(a, false, false, null));
+    }
+
+    @Override
+    public Mono<Void> supprimerAlerte(String id, String tenantId) {
+        alertes.removeIf(a -> a.id().equals(id));
+        return Mono.empty();
     }
 }

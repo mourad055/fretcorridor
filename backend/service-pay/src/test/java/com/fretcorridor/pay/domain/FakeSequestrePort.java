@@ -1,6 +1,7 @@
 package com.fretcorridor.pay.domain;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -16,5 +17,10 @@ class FakeSequestrePort implements SequestrePort {
     @Override
     public void sauvegarder(Sequestre sequestre) {
         sequestres.put(sequestre.missionId(), sequestre);
+    }
+
+    @Override
+    public List<Sequestre> listerTous() {
+        return List.copyOf(sequestres.values());
     }
 }

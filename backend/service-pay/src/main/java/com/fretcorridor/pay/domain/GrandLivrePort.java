@@ -16,4 +16,7 @@ public interface GrandLivrePort {
 
     /** ENF-FIN-03 : isole une écriture après détection d'un écart de réconciliation. */
     void suspendre(String ecritureId);
+
+    /** EF-PAY-02 : périmètre du balayage quotidien de réconciliation — toute mission ayant au moins une écriture. */
+    List<String> listerMissionsAvecEcritures();
 }

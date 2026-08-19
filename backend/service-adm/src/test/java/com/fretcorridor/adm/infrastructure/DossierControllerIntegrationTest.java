@@ -6,6 +6,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -16,13 +17,21 @@ import java.time.temporal.ChronoUnit;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** DoD PRD §9 S10 : un admin traite un dossier de bout en bout, décision journalisée. */
+/**
+ * DoD PRD §9 S10 : un admin traite un dossier de bout en bout, décision journalisée.
+ * {@code max.block.ms} raccourci : aucun broker Kafka réel ici, sans quoi
+ * chaque dossier LITIGE publié via {@code KafkaDossierEventPublisher} bloque
+ * jusqu'à 60s (comportement de dégradation gracieuse inchangé — toujours
+ * catché, jamais propagé, cf. ENF-DIS-04).
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
+@TestPropertySource(properties = "spring.kafka.producer.properties.max.block.ms=2000")
 class DossierControllerIntegrationTest {
 
     @Container
@@ -48,6 +57,7 @@ class DossierControllerIntegrationTest {
                 .andReturn().getResponse().getContentAsString();
 
         String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+        definirGrille(tenantId);
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", dossierId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,6 +92,7 @@ class DossierControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+        definirGrille(tenantId);
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -113,5 +124,101 @@ class DossierControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].statut").value("ESCALADE"))
                 .andExpect(jsonPath("$[0].priorite").value("HAUTE"));
+    }
+
+    /** RG-096 (CDC) : un opérateur ne doit jamais avoir à trancher sans grille. */
+    @Test
+    void decider_sans_grille_de_decision_definie_est_rejete_avec_un_conflit() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
+
+        String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
+                                """.formatted(tenantId, delai)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\", \"acteurId\": \"actor-admin-1\"}"))
+                .andExpect(status().isConflict());
+    }
+
+    /** EF-ADM-04/RG-098 : un recours ouvre un second Dossier, refusé au même opérateur que le premier décideur. */
+    @Test
+    void un_recours_ouvre_un_second_dossier_refuse_au_premier_decideur() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
+        definirGrille(tenantId);
+
+        String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
+                                """.formatted(tenantId, delai)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\", \"acteurId\": \"actor-admin-1\"}"))
+                .andExpect(status().isOk());
+
+        String reponseRecours = mockMvc.perform(post("/api/v1/dossiers/{id}/recours", dossierId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"priorite": "HAUTE", "delaiTraitement": "%s"}
+                                """.formatted(delai)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.recoursDeDossierId").value(dossierId))
+                .andExpect(jsonPath("$.statut").value("OUVERT"))
+                .andReturn().getResponse().getContentAsString();
+        String recoursId = reponseRecours.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", recoursId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"acteurId\": \"actor-admin-1\"}"))
+                .andExpect(status().isConflict());
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", recoursId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"acteurId\": \"actor-admin-2\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statut").value("EN_COURS"));
+    }
+
+    @Test
+    void un_recours_sur_un_dossier_pas_encore_tranche_est_rejete_avec_un_conflit() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
+
+        String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
+                                """.formatted(tenantId, delai)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(post("/api/v1/dossiers/{id}/recours", dossierId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"priorite": "HAUTE", "delaiTraitement": "%s"}
+                                """.formatted(delai)))
+                .andExpect(status().isConflict());
+    }
+
+    private void definirGrille(String tenantId) throws Exception {
+        mockMvc.perform(put("/api/v1/configurations/{cle}", "grille-decision")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"perimetre": "%s", "valeur": "grille v1", "auteur": "actor-admin-1"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isOk());
     }
 }

@@ -9,5 +9,8 @@
     </div>
 
     <app-ecritures-table *ngIf="!loading()" [ecritures]="ecritures()" />
+
+    <h3 class="fc-panel__title">Paiements en espèces</h3>
+    <app-especes-table *ngIf="!loading()" [paiements]="paiementsEspeces()" />
   </section>
 </main>

@@ -2,6 +2,7 @@ package com.fretcorridor.gateway.infrastructure.trk;
 
 import com.fretcorridor.gateway.domain.trk.PositionVehicule;
 import com.fretcorridor.gateway.domain.trk.TrkPort;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -10,12 +11,18 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
- * TODO(moteur): remplacer par l'appel réel à service-trk une fois ce service
- * livré (Sprint 6 Moteur, @stevetelecom, issue #21). Âges volontairement
- * variés (récent, ancien) pour démontrer que l'âge est toujours restitué,
- * jamais une position figée sans horodatage exploitable (RG-043).
+ * Fixture de test uniquement — vit dans src/test/java, jamais sur le
+ * classpath de production (même mécanisme que
+ * ServiceIdaAuthenticationAdapter/MockIdaAuthenticationAdapter et
+ * RealGeoAdapter/MockGeoAdapter, cf. docs/ROADMAP_INTEGRATION_gateway.md).
+ * @Primary suffit à lever l'ambiguïté avec ServiceBurPositionAdapter
+ * pendant les tests, puisque cette classe n'existe tout simplement pas
+ * dans le jar déployé. Âges volontairement variés (récent, ancien) pour
+ * démontrer que l'âge est toujours restitué, jamais une position figée
+ * sans horodatage exploitable (RG-043).
  */
 @Component
+@Primary
 public class MockTrkAdapter implements TrkPort {
 
     private final List<PositionVehicule> positions = List.of(
