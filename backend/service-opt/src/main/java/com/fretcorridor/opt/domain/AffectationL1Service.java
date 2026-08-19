@@ -7,11 +7,14 @@ import com.fretcorridor.opt.client.CoutLotResponseDto;
 import com.fretcorridor.opt.client.CoutResponseDto;
 import com.fretcorridor.opt.client.ItineraireRequestDto;
 import com.fretcorridor.opt.client.ItineraireResponseDto;
+import com.fretcorridor.opt.client.AxeDetailDto;
+import com.fretcorridor.opt.client.ServiceGeoClient;
 import com.fretcorridor.opt.client.ServiceMatClient;
 import com.fretcorridor.opt.client.ValhallaClient;
 import com.fretcorridor.opt.messaging.AffectationConfirmeeEvent;
 import com.fretcorridor.opt.messaging.OptEventPublisher;
 import com.fretcorridor.opt.messaging.PropositionEmiseEvent;
+import com.fretcorridor.opt.messaging.RepartitionConventionnelleAppliqueeEvent;
 import com.fretcorridor.opt.tarification.TarificationL4Service;
 import com.fretcorridor.opt.tarification.TarificationResultat;
 import org.slf4j.Logger;
@@ -50,16 +53,19 @@ public class AffectationL1Service {
     private final TarificationL4Service tarificationL4Service;
     private final AffectationRepository affectationRepository;
     private final OptEventPublisher eventPublisher;
+    private final ServiceGeoClient serviceGeoClient;
 
     public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
                                  TarificationL4Service tarificationL4Service,
                                  AffectationRepository affectationRepository,
-                                 OptEventPublisher eventPublisher) {
+                                 OptEventPublisher eventPublisher,
+                                 ServiceGeoClient serviceGeoClient) {
         this.serviceMatClient = serviceMatClient;
         this.valhallaClient = valhallaClient;
         this.tarificationL4Service = tarificationL4Service;
         this.affectationRepository = affectationRepository;
         this.eventPublisher = eventPublisher;
+        this.serviceGeoClient = serviceGeoClient;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
@@ -208,6 +214,44 @@ public class AffectationL1Service {
                         Instant.now()
                 );
                 eventPublisher.publierAffectationConfirmee(confirmation);
+
+                // --- Publication Kafka conditionnelle : RepartitionConventionnelleAppliquee
+                // (-> service-pay, EF-GEO-05/RG-052, Phase 4). Uniquement si l'axe porte une
+                // convention configuree (Axe.parametres.conventionRepartition) - RG-052 :
+                // "en trafic intra-camerounais, aucune cle ne s'applique", donc l'absence de
+                // convention N'EST PAS un mode degrade, c'est le comportement attendu par
+                // defaut pour la grande majorite des axes. Limitation connue (README Phase 4
+                // S3.3, Hub sans champ pays) : ne distingue pas encore "axe transfrontalier
+                // sans convention renseignee" de "axe intra-camerounais normal" - les deux
+                // cas aboutissent au meme silence ici, assume jusqu'a l'ajout de Hub.pays.
+                if (demande.axeId() != null) {
+                    AxeDetailDto axeDetail = serviceGeoClient.axeParId(demande.axeId());
+                    if (axeDetail != null && axeDetail.parametres() != null
+                            && axeDetail.parametres().get("conventionRepartition") instanceof java.util.Map<?, ?> conventionMap) {
+
+                        Object conventionCodeObj = conventionMap.get("conventionCode");
+                        Object partsObj = conventionMap.get("partsPourcent");
+
+                        if (conventionCodeObj != null && partsObj instanceof java.util.Map<?, ?> partsMap) {
+                            java.util.Map<String, Double> parts = new java.util.HashMap<>();
+                            for (var entree : partsMap.entrySet()) {
+                                if (entree.getValue() instanceof Number n) {
+                                    parts.put(entree.getKey().toString(), n.doubleValue());
+                                }
+                            }
+
+                            RepartitionConventionnelleAppliqueeEvent repartition = new RepartitionConventionnelleAppliqueeEvent(
+                                    UUID.randomUUID(),
+                                    missionId,
+                                    demande.axeId(),
+                                    conventionCodeObj.toString(),
+                                    parts,
+                                    Instant.now(),
+                                    false);
+                            eventPublisher.publierRepartitionConventionnelleAppliquee(repartition);
+                        }
+                    }
+                }
             }
         }
 

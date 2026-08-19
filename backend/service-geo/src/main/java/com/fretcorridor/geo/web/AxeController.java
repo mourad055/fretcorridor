@@ -6,6 +6,9 @@ import com.fretcorridor.geo.domain.Hub;
 import com.fretcorridor.geo.domain.HubRepository;
 import com.fretcorridor.geo.domain.JournalAuditRisque;
 import com.fretcorridor.geo.domain.JournalAuditRisqueRepository;
+import com.fretcorridor.geo.domain.JournalAuditConvention;
+import com.fretcorridor.geo.domain.JournalAuditConventionRepository;
+import com.fretcorridor.geo.web.dto.ConventionRepartitionRequest;
 import com.fretcorridor.geo.web.dto.AxeCreationRequest;
 import com.fretcorridor.geo.web.dto.RisqueSecuritaireRequest;
 import com.fretcorridor.geo.web.dto.AxeResponse;
@@ -42,12 +45,15 @@ public class AxeController {
     private final AxeRepository axeRepository;
     private final HubRepository hubRepository;
     private final JournalAuditRisqueRepository journalAuditRisqueRepository;
+    private final JournalAuditConventionRepository journalAuditConventionRepository;
 
     public AxeController(AxeRepository axeRepository, HubRepository hubRepository,
-                          JournalAuditRisqueRepository journalAuditRisqueRepository) {
+                          JournalAuditRisqueRepository journalAuditRisqueRepository,
+                          JournalAuditConventionRepository journalAuditConventionRepository) {
         this.axeRepository = axeRepository;
         this.hubRepository = hubRepository;
         this.journalAuditRisqueRepository = journalAuditRisqueRepository;
+        this.journalAuditConventionRepository = journalAuditConventionRepository;
     }
 
     @PostMapping
@@ -192,6 +198,49 @@ public class AxeController {
 
         journalAuditRisqueRepository.save(new JournalAuditRisque(
                 id, requete.acteurId(), niveauAvant, requete.niveauRisque(), requete.motif()));
+
+        return AxeResponse.from(axeRepository.save(axe));
+    }
+
+    /**
+     * G4 (CDC S4.5) / EF-GEO-05, RG-052 (S9.9, S3.3 C2) : renseigne la cle
+     * de repartition conventionnelle d'un axe transfrontalier, avec decision
+     * explicite tracee (JournalAuditConvention, append-only) - meme patron
+     * que renseignerRisqueSecuritaire (Sprint 15, G3).
+     *
+     * La somme des parts doit valoir 100 - verifiee ICI, jamais supposee
+     * cote client (G4 : configuration auditee, pas seulement versionnee).
+     */
+    @PatchMapping("/{id}/convention-repartition")
+    public AxeResponse renseignerConventionRepartition(@PathVariable UUID id,
+                                                          @Valid @RequestBody ConventionRepartitionRequest requete) {
+        Axe axe = axeRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "axe introuvable : " + id));
+
+        double somme = requete.partsPourcent().values().stream().mapToDouble(Double::doubleValue).sum();
+        if (Math.abs(somme - 100.0) > 0.01) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "la somme des parts doit valoir 100 (obtenu : " + somme + ") - RG-052");
+        }
+
+        Map<String, Object> parametres = new java.util.HashMap<>(axe.getParametres());
+        Object conventionExistante = parametres.get("conventionRepartition");
+        String codeAvant = (conventionExistante instanceof Map<?, ?> m && m.get("conventionCode") != null)
+                ? m.get("conventionCode").toString() : null;
+
+        Map<String, Object> convention = new java.util.HashMap<>();
+        convention.put("conventionCode", requete.conventionCode());
+        convention.put("partsPourcent", requete.partsPourcent());
+        convention.put("renseigneParActeurId", requete.acteurId().toString());
+        convention.put("dateRenseignement", java.time.Instant.now().toString());
+        convention.put("motif", requete.motif());
+        parametres.put("conventionRepartition", convention);
+        axe.setParametres(parametres);
+
+        journalAuditConventionRepository.save(new JournalAuditConvention(
+                id, requete.acteurId(), codeAvant, requete.conventionCode(),
+                Map.copyOf(requete.partsPourcent()), requete.motif()));
 
         return AxeResponse.from(axeRepository.save(axe));
     }

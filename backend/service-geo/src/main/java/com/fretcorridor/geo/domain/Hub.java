@@ -49,6 +49,13 @@ public class Hub {
     @Column(name = "h3_index", length = 20)
     private String h3Index;
 
+    // EF-GEO-05 (Phase 4, CDC S9.9) : code pays ISO 3166-1 alpha-3 (CMR, TCD,
+    // CAF...). Nullable en base (migration V6, meme principe que tenant_id
+    // V4) - hubs anterieurs backfilles a 'CMR'. Necessaire pour determiner
+    // quelle convention bilaterale (RG-052) s'applique a un axe transfrontalier.
+    @Column(length = 3)
+    private String pays;
+
     // Renseigne automatiquement a la creation (cf @PrePersist ci-dessous), jamais par le client :
     // evite toute incoherence si un appelant envoie une date fantaisiste
     @Column(name = "date_creation", nullable = false, updatable = false)
@@ -63,17 +70,25 @@ public class Hub {
     // le zonage soit toujours renseigne des la creation.
     @Deprecated
     public Hub(String nom, String ville, TypeHub typeHub, Point position) {
-        this(nom, ville, typeHub, position, null);
+        this(nom, ville, typeHub, position, null, null);
     }
 
-    // Constructeur metier complet : c'est celui-ci que le controller utilise desormais,
-    // avec l'index H3 deja calcule en amont par ZonageH3Service.
+    // Constructeur Phase 1-3 (sans pays) - conserve pour compatibilite avec
+    // tout appelant existant, deprecie au profit du constructeur complet.
+    @Deprecated
     public Hub(String nom, String ville, TypeHub typeHub, Point position, String h3Index) {
+        this(nom, ville, typeHub, position, h3Index, null);
+    }
+
+    // Constructeur metier complet (Phase 4) : c'est celui-ci que le controller
+    // utilise desormais, avec l'index H3 et le pays deja connus a la creation.
+    public Hub(String nom, String ville, TypeHub typeHub, Point position, String h3Index, String pays) {
         this.nom = nom;
         this.ville = ville;
         this.typeHub = typeHub;
         this.position = position;
         this.h3Index = h3Index;
+        this.pays = pays;
     }
 
     // Hook JPA declenche juste avant l'INSERT : garantit que dateCreation est toujours
@@ -92,5 +107,6 @@ public class Hub {
     public TypeHub getTypeHub() { return typeHub; }
     public Point getPosition() { return position; }
     public String getH3Index() { return h3Index; }
+    public String getPays() { return pays; }
     public Instant getDateCreation() { return dateCreation; }
 }

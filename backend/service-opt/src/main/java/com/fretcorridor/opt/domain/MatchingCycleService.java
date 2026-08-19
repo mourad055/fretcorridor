@@ -74,9 +74,17 @@ public class MatchingCycleService {
             return;
         }
 
+        // Volet A Phase 4 (README_PHASE4_MOTEUR S2.2) : RISQUE_AXE, un des 7
+        // termes du cout composite (CDC S8.5.3) prevu depuis le V0 mais jamais
+        // branche jusqu'ici - la donnee existe cote GEO depuis le Sprint 15
+        // (Axe.parametres.risqueSecuritaire) mais n'etait consommee par aucun
+        // module. Valeur identique pour tous les candidats de ce cycle (le
+        // risque est une propriete de l'axe, pas du candidat individuel).
+        Double risqueAxeScore = extraireRisqueAxeScore(axe);
+
         List<CandidatCoutDto> candidatsCommuns = capacites.stream()
                 .map(c -> new CandidatCoutDto(c.getCapaciteId(), c.getTransporteurId(),
-                        c.getVehiculeId(), c.getValeursCriteres(),
+                        c.getVehiculeId(), enrichirAvecRisqueAxe(c.getValeursCriteres(), risqueAxeScore),
                         c.getPosition(), c.getProfilCamion(), c.getTypeVehicule()))
                 .toList();
 
@@ -184,6 +192,54 @@ public class MatchingCycleService {
                     + "filtre ignore ce tour.", axe.nom(), valeur.getClass().getSimpleName());
         }
         return null;
+    }
+
+    /**
+     * Lit Axe.parametres.risqueSecuritaire.niveauRisque (cote GEO, AxeController,
+     * Sprint 15) et le convertit en score [0,1] pour le critere RISQUE_AXE du
+     * cout composite (CDC S8.5.3).
+     *
+     * HYPOTHESE D'EQUIPE (a valider, pas une valeur du CDC - meme statut que
+     * l'hypothese RG-116 deja assumee cote TarificationL4Service) :
+     *   NORMAL ou cle absente -> 0.0 (aucune penalite, meme defaut permissif
+     *                                  que rayonAppariementKm absent)
+     *   SURVEILLE            -> 0.5 (score intermediaire, aucune justification
+     *                                 chiffree du CDC - a confirmer en equipe)
+     *   GELE                  -> n'arrive jamais ici : un axe GELE est deja
+     *                             exclu de axesActifsMatching() cote GEO
+     *                             (AxeController.estOperationnelPourMatching),
+     *                             donc ce cycle ne le traite jamais.
+     */
+    private Double extraireRisqueAxeScore(AxeActifDto axe) {
+        Map<String, Object> parametres = axe.parametres();
+        if (parametres == null) {
+            return 0.0;
+        }
+        Object risque = parametres.get("risqueSecuritaire");
+        if (!(risque instanceof Map<?, ?> risqueMap)) {
+            return 0.0;
+        }
+        Object niveau = risqueMap.get("niveauRisque");
+        if ("SURVEILLE".equals(niveau)) {
+            return 0.5;
+        }
+        return 0.0;
+    }
+
+    /**
+     * Ajoute RISQUE_AXE aux criteres d'un candidat, sans modifier les criteres
+     * deja calcules ailleurs (cf CapaciteEnAttente.getValeursCriteres()).
+     * risqueAxeScore==null n'arrive jamais en pratique (extraireRisqueAxeScore
+     * retourne toujours 0.0 au minimum) mais garde-fou defensif quand meme,
+     * meme principe que les autres degradations gracieuses de ce fichier.
+     */
+    private Map<String, Double> enrichirAvecRisqueAxe(Map<String, Double> valeursCriteres, Double risqueAxeScore) {
+        if (risqueAxeScore == null) {
+            return valeursCriteres;
+        }
+        Map<String, Double> enrichi = new java.util.LinkedHashMap<>(valeursCriteres);
+        enrichi.put("RISQUE_AXE", risqueAxeScore);
+        return enrichi;
     }
 
     /**

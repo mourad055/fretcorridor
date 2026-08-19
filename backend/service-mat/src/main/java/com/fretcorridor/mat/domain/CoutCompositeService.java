@@ -124,7 +124,17 @@ public class CoutCompositeService {
             for (Map.Entry<String, Double> entree : valeursCriteres.entrySet()) {
                 BigDecimal poids = poidsParCritere.get(entree.getKey());
                 if (poids == null) {
-                    continue; // critere hors modele actif : ignore, pas dans le perimetre pondere
+                    // BUG CORRIGE (Phase 4, EF-MAT-11) : un critere transmis par
+                    // l'appelant (OPT) mais absent du modele de ponderation actif
+                    // disparaissait entierement de detailSortie - impossible de
+                    // reconstituer apres coup qu'il avait ete transmis (ex.
+                    // RISQUE_AXE branche cote MatchingCycleService mais pas
+                    // encore pondere en base). null explicite = "transmis, non
+                    // pondere ce cycle" - distinct de 0.0 = "pondere a zero"
+                    // (ex. FACTEUR_TENSION neutre). Ne contribue jamais au total,
+                    // seule la tracabilite change.
+                    detailSortie.put(entree.getKey(), null);
+                    continue;
                 }
                 BigDecimal contribution = poids.multiply(BigDecimal.valueOf(entree.getValue()));
                 detailSortie.put(entree.getKey(), contribution.doubleValue());
