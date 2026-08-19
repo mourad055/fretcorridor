@@ -11,6 +11,8 @@ import org.springframework.stereotype.Service;
 
 import com.fretcorridor.opt.sequencement.alns.AlnsSolver;
 import com.fretcorridor.opt.oracle.OracleChargementService;
+import com.fretcorridor.opt.client.ServiceGeoClient;
+import com.fretcorridor.opt.client.AxeDetailDto;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,7 @@ public class SequencementDeclencheur {
     private final ReplanificationService replanificationService;
     private final com.fretcorridor.opt.messaging.OptEventPublisher optEventPublisher;
     private final OracleChargementService oracleChargementService;
+    private final ServiceGeoClient serviceGeoClient;
 
     private static final List<Tournee.Statut> STATUTS_NON_TERMINES =
             List.of(Tournee.Statut.CONFIRMEE, Tournee.Statut.EN_EXECUTION);
@@ -52,7 +55,8 @@ public class SequencementDeclencheur {
                                     CapaciteEnAttenteRepository capaciteEnAttenteRepository,
                                     ReplanificationService replanificationService,
                                     com.fretcorridor.opt.messaging.OptEventPublisher optEventPublisher,
-                                    OracleChargementService oracleChargementService) {
+                                    OracleChargementService oracleChargementService,
+                                    ServiceGeoClient serviceGeoClient) {
         this.affectationRepository = affectationRepository;
         this.etapeTourneeRepository = etapeTourneeRepository;
         this.tourneeRepository = tourneeRepository;
@@ -61,6 +65,23 @@ public class SequencementDeclencheur {
         this.replanificationService = replanificationService;
         this.optEventPublisher = optEventPublisher;
         this.oracleChargementService = oracleChargementService;
+        this.serviceGeoClient = serviceGeoClient;
+    }
+
+    // EF-MAT-10 : resout les parametres reels de l'axe (dont
+    // detourMaxDistanceKm) aupres de service-geo. Permissif par design :
+    // axeId absent, axe introuvable ou service-geo injoignable -> Map.of(),
+    // jamais une exception qui bloquerait le cycle de sequencement
+    // (cf. ServiceGeoClient.axeParId, deja degrade gracieusement).
+    private Map<String, Object> resoudreParametresAxe(java.util.UUID axeId) {
+        if (axeId == null) {
+            return Map.of();
+        }
+        AxeDetailDto axe = serviceGeoClient.axeParId(axeId);
+        if (axe == null || axe.parametres() == null) {
+            return Map.of();
+        }
+        return axe.parametres();
     }
 
     @Scheduled(fixedDelayString = "${spring.sequencement.cycle-interval-ms:30000}")
@@ -131,8 +152,14 @@ public class SequencementDeclencheur {
                 continue;
             }
 
+            java.util.UUID axeIdPourParametres = affectationsCapacite.stream()
+                    .map(Affectation::getAxeId)
+                    .filter(java.util.Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
             AlnsSolver.ResultatSequencement resultat = alnsSolver.resoudre(
-                    affectationsCapacite, capaciteMaxKg, java.math.BigDecimal.ZERO, Map.of());
+                    affectationsCapacite, capaciteMaxKg, java.math.BigDecimal.ZERO,
+                    resoudreParametresAxe(axeIdPourParametres));
 
             if (resultat.affectationsInserees().isEmpty()) {
                 log.debug("Aucune affectation inseree pour la capacite {} ce tour.", capaciteId);

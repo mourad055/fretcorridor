@@ -57,6 +57,24 @@ public class AnomalieDetector {
     private static final double SEUIL_ECART_CORRIDOR_KM = 50.0;
 
     /**
+     * Fenetre glissante pour le calcul d'ecart de corridor : compare la
+     * derniere position a celle d'il y a FENETRE_ECART_CORRIDOR (pas a la
+     * toute premiere position de l'historique complet de la mission).
+     *
+     * BUG CORRIGE (audit du 2026-08-19) : l'implementation precedente
+     * comparait positions.get(0) - la position de DEPART de la mission,
+     * puisque `positions` recu ici est l'historique complet
+     * (PositionBruteListener.traiterPostIngestion, findByMissionIdOrder...)
+     * - a la derniere position. Sur un trajet de plusieurs dizaines de km,
+     * cette distance depasse mecaniquement SEUIL_ECART_CORRIDOR_KM des le
+     * milieu du trajet, meme sans aucune deviation reelle du corridor :
+     * fausses alertes garanties sur toute mission normale. Meme principe de
+     * fenetre glissante que detecterArretProlonge ci-dessus, qui avait deja
+     * le bon pattern.
+     */
+    private static final Duration FENETRE_ECART_CORRIDOR = Duration.ofMinutes(15);
+
+    /**
      * Distance maximale entre deux positions consécutives considérée comme
      * physiquement possible (en km). Au-delà, c'est une position aberrante.
      * 300 km en 5 minutes = 3600 km/h, impossible pour un camion.
@@ -189,21 +207,38 @@ public class AnomalieDetector {
      */
     private boolean detecterEcartCorridor(List<Position> positions) {
         // MVP : pas encore couplé à GEO, on se base sur la distance
-        // entre la première et la dernière position de la fenêtre
+        // entre la dernière position et celle d'il y a FENETRE_ECART_CORRIDOR
+        // (fenêtre glissante) — jamais la toute première position de
+        // l'historique complet de la mission (cf javadoc FENETRE_ECART_CORRIDOR
+        // ci-dessus, bug corrigé du 2026-08-19).
         if (positions.size() < 5) {
             return false;
         }
 
-        Position premiere = positions.get(0);
+        Instant seuilTemporel = Instant.now().minus(FENETRE_ECART_CORRIDOR);
+        Position reference = positions.stream()
+                .filter(p -> p.getHorodatageCapture().isAfter(seuilTemporel))
+                .findFirst()
+                .orElse(null);
+
+        // Aucune position dans la fenêtre récente (silence radio) : pas de
+        // référence fiable pour calculer un écart — l'absence prolongée est
+        // déjà détectée séparément (cf absenceProlongee ci-dessus), inutile
+        // de doubler l'alerte ici avec une comparaison non pertinente.
+        if (reference == null) {
+            return false;
+        }
+
         Position derniere = positions.get(positions.size() - 1);
 
         double distanceKm = haversine(
-                premiere.getLatitude(), premiere.getLongitude(),
+                reference.getLatitude(), reference.getLongitude(),
                 derniere.getLatitude(), derniere.getLongitude()
         );
 
-        // Alerte si la distance parcourue depuis la première position
-        // dépasse le seuil (indicateur d'un éloignement significatif)
+        // Alerte si la distance parcourue depuis la position de référence
+        // (fenêtre glissante) dépasse le seuil — indicateur d'un éloignement
+        // significatif ET récent, pas un cumul depuis le départ de mission.
         return distanceKm > SEUIL_ECART_CORRIDOR_KM;
     }
 
