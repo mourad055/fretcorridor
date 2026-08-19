@@ -7,6 +7,7 @@ public record NotificationEncaissement(
         String tenantId,
         String missionId,
         BigDecimal montant,
-        String referencePrestataire
+        String referencePrestataire,
+        ModePaiement modePaiement
 ) {
 }

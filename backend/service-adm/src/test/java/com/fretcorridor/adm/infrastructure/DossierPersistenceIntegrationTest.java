@@ -1,5 +1,6 @@
 package com.fretcorridor.adm.infrastructure;
 
+import com.fretcorridor.adm.domain.ConfigurationService;
 import com.fretcorridor.adm.domain.DecisionService;
 import com.fretcorridor.adm.domain.Dossier;
 import com.fretcorridor.adm.domain.FileTravailService;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -19,9 +21,14 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/** Preuve que la file de travail et les décisions persistent réellement en Postgres. */
+/**
+ * Preuve que la file de travail et les décisions persistent réellement en Postgres.
+ * {@code max.block.ms} raccourci : aucun broker Kafka réel ici (cf.
+ * DossierControllerIntegrationTest pour l'explication complète).
+ */
 @SpringBootTest
 @Testcontainers
+@TestPropertySource(properties = "spring.kafka.producer.properties.max.block.ms=2000")
 class DossierPersistenceIntegrationTest {
 
     @Container
@@ -33,6 +40,9 @@ class DossierPersistenceIntegrationTest {
 
     @Autowired
     private DecisionService decisionService;
+
+    @Autowired
+    private ConfigurationService configurationService;
 
     @Test
     void un_dossier_ouvert_avec_ses_parties_et_preuves_est_relu_depuis_postgres() {
@@ -55,11 +65,13 @@ class DossierPersistenceIntegrationTest {
         String tenantId = "tenant-test-" + System.nanoTime();
         Dossier dossier = fileTravailService.ouvrir(tenantId, TypeDossier.INCIDENT, PrioriteDossier.NORMALE, null,
                 List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+        configurationService.definir(DecisionService.CLE_GRILLE_DECISION, tenantId, "grille v1", "actor-admin-1");
 
         decisionService.trancher(dossier.id(), "CLOS_SANS_SUITE", "Incident résolu", "actor-admin-1");
 
         List<Dossier> file = fileTravailService.lister(tenantId);
         assertThat(file.get(0).decision()).isEqualTo("CLOS_SANS_SUITE");
         assertThat(file.get(0).decidePar()).isEqualTo("actor-admin-1");
+        assertThat(file.get(0).grilleVersionAppliquee()).isEqualTo(1);
     }
 }

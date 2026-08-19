@@ -57,6 +57,8 @@ public class DossierEntity {
     private String motifDecision;
     private String decidePar;
     private Instant decideLe;
+    private Integer grilleVersionAppliquee;
+    private String recoursDeDossierId;
 
     protected DossierEntity() {
     }
@@ -66,7 +68,7 @@ public class DossierEntity {
                           com.fretcorridor.adm.domain.StatutDossier statut, String missionId, List<String> parties,
                           List<String> preuvesReferences, Instant ouvertLe, Instant delaiTraitement,
                           String priseEnChargeParActeurId, String decision, String motifDecision, String decidePar,
-                          Instant decideLe) {
+                          Instant decideLe, Integer grilleVersionAppliquee, String recoursDeDossierId) {
         this.id = id;
         this.tenantId = tenantId;
         this.type = type;
@@ -82,6 +84,8 @@ public class DossierEntity {
         this.motifDecision = motifDecision;
         this.decidePar = decidePar;
         this.decideLe = decideLe;
+        this.grilleVersionAppliquee = grilleVersionAppliquee;
+        this.recoursDeDossierId = recoursDeDossierId;
     }
 
     public String getId() {
@@ -142,5 +146,13 @@ public class DossierEntity {
 
     public Instant getDecideLe() {
         return decideLe;
+    }
+
+    public Integer getGrilleVersionAppliquee() {
+        return grilleVersionAppliquee;
+    }
+
+    public String getRecoursDeDossierId() {
+        return recoursDeDossierId;
     }
 }

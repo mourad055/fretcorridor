@@ -39,4 +39,9 @@ class FakeGrandLivrePort implements GrandLivrePort {
     List<EcritureMiroir> toutes() {
         return List.copyOf(ecritures);
     }
+
+    @Override
+    public List<String> listerMissionsAvecEcritures() {
+        return ecritures.stream().map(EcritureMiroir::missionId).distinct().toList();
+    }
 }
