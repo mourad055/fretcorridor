@@ -33,9 +33,13 @@ class AffectationConfirmeeListenerTest {
     }
 
     private AffectationConfirmeeEvent evenement(UUID missionId) {
+        return evenement(missionId, null);
+    }
+
+    private AffectationConfirmeeEvent evenement(UUID missionId, UUID vehiculeId) {
         return new AffectationConfirmeeEvent(
                 UUID.randomUUID(), missionId, UUID.randomUUID(), UUID.randomUUID(),
-                null, UUID.randomUUID(), null, UUID.randomUUID(),
+                vehiculeId, UUID.randomUUID(), null, UUID.randomUUID(),
                 4.05, 9.7, "Douala", 3.87, 11.52, "Yaoundé",
                 300000.0, 18000L, 3600L, null,
                 BigDecimal.valueOf(50000), BigDecimal.valueOf(5000), BigDecimal.valueOf(45000),
@@ -54,6 +58,19 @@ class AffectationConfirmeeListenerTest {
         assertThat(captor.getValue().getId()).isEqualTo(missionId);
         assertThat(captor.getValue().getTenantId()).isEqualTo("tenant-bgft-douala");
         assertThat(captor.getValue().getStatut()).isEqualTo(Mission.StatutMission.EN_ATTENTE);
+    }
+
+    @Test
+    void creates_a_mission_with_the_assigned_vehicle_id() {
+        UUID missionId = UUID.randomUUID();
+        UUID vehiculeId = UUID.randomUUID();
+        when(missionRepository.existsById(missionId)).thenReturn(false);
+
+        listener.ingerer(evenement(missionId, vehiculeId));
+
+        ArgumentCaptor<Mission> captor = ArgumentCaptor.forClass(Mission.class);
+        verify(missionRepository).save(captor.capture());
+        assertThat(captor.getValue().getVehiculeId()).isEqualTo(vehiculeId);
     }
 
     @Test

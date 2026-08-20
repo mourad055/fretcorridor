@@ -25,6 +25,10 @@ spring:
       base-url: http://localhost:8096
       connect-timeout-ms: 500
       read-timeout-ms: 1000
+    service-flt:
+      base-url: http://localhost:8083
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
 
 fretcorridor:
   jwt:
