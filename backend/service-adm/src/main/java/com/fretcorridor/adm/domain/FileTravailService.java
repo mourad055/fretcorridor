@@ -85,8 +85,17 @@ public class FileTravailService {
         return dossierPort.lister(tenantId).stream().sorted(PAR_PRIORITE_PUIS_DELAI).toList();
     }
 
-    public Dossier consulter(String dossierId) {
-        return dossierPort.parId(dossierId).orElseThrow(() -> new DossierIntrouvableException(dossierId));
+    // IDOR corrigé (audit CDC du 19 août, §7.2 : "Dossier de litige lisible
+    // par ID sans vérification de tenant") - même exception pour "introuvable"
+    // et "pas le sien", même principe que capaciteAppartenantA
+    // (service-cap) / missionAppartenantA (service-exe) / notificationAppartenantA
+    // (service-not).
+    public Dossier consulter(String dossierId, String tenantId) {
+        Dossier dossier = dossierPort.parId(dossierId).orElseThrow(() -> new DossierIntrouvableException(dossierId));
+        if (!dossier.tenantId().equals(tenantId)) {
+            throw new DossierIntrouvableException(dossierId);
+        }
+        return dossier;
     }
 
     public Dossier prendreEnCharge(String dossierId, String acteurId) {

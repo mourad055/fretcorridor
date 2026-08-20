@@ -51,12 +51,57 @@ class DossierControllerIntegrationTest {
     private String jwtSecret;
 
     private String token() {
+        return token("tenant-jwt-test");
+    }
+
+    private String token(String tenantId) {
         return Jwts.builder()
                 .subject(UUID.randomUUID().toString())
                 .claim("roles", List.of("ADMIN"))
-                .claim("tenantId", "tenant-jwt-test")
+                .claim("tenantId", tenantId)
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .compact();
+    }
+
+    /** IDOR corrigé (audit CDC du 19 août, §7.2) : un acteur consulte un dossier de son propre tenant. */
+    @Test
+    void consulter_un_dossier_de_son_propre_tenant_reussit() throws Exception {
+        String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
+
+        String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
+                        .header("Authorization", "Bearer " + token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "tenant-jwt-test", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
+                                """.formatted(delai)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(get("/api/v1/dossiers/{id}", dossierId)
+                        .header("Authorization", "Bearer " + token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(dossierId));
+    }
+
+    /** IDOR corrigé (audit CDC du 19 août, §7.2) : un acteur d'un autre tenant ne peut pas consulter ce dossier. */
+    @Test
+    void consulter_un_dossier_d_un_autre_tenant_retourne_404() throws Exception {
+        String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
+
+        String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
+                        .header("Authorization", "Bearer " + token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "tenant-jwt-test", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
+                                """.formatted(delai)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
+
+        mockMvc.perform(get("/api/v1/dossiers/{id}", dossierId)
+                        .header("Authorization", "Bearer " + token("tenant-autre")))
+                .andExpect(status().isNotFound());
     }
 
     @Test
