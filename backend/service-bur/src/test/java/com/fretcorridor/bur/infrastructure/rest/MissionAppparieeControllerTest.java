@@ -42,11 +42,15 @@ class MissionAppparieeControllerTest {
     @Value("${fretcorridor.jwt.secret}")
     private String jwtSecret;
 
-    private String token() {
+    private String token(String tenantId) {
+        return token(tenantId, UUID.randomUUID().toString());
+    }
+
+    private String token(String tenantId, String acteurId) {
         return Jwts.builder()
-                .subject(UUID.randomUUID().toString())
+                .subject(acteurId)
                 .claim("roles", List.of("BUREAU"))
-                .claim("tenantId", "tenant-jwt-test")
+                .claim("tenantId", tenantId)
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .compact();
     }
@@ -65,7 +69,7 @@ class MissionAppparieeControllerTest {
         when(service.listerParTenant("tenant-bgft-douala")).thenReturn(List.of(mission));
 
         mockMvc.perform(get("/api/v1/bur/missions-appariees")
-                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-bgft-douala"))
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].origineNom").value("Douala"))
@@ -77,7 +81,7 @@ class MissionAppparieeControllerTest {
         when(service.listerParTenant("tenant-inconnu")).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/bur/missions-appariees")
-                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-inconnu"))
+                        .header("Authorization", "Bearer " + token("tenant-inconnu")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
@@ -91,8 +95,7 @@ class MissionAppparieeControllerTest {
                 .thenReturn(observatoire);
 
         mockMvc.perform(get("/api/v1/bur/observatoire")
-                        .header("Authorization", "Bearer " + token())
-                        .param("tenantId", "tenant-bgft-douala")
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala"))
                         .param("axeId", axeId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.seuilAtteint").value(true))
@@ -110,8 +113,7 @@ class MissionAppparieeControllerTest {
                 .thenReturn(ObservatoireAxe.sousLeSeuil(axeId, 3));
 
         mockMvc.perform(get("/api/v1/bur/observatoire")
-                        .header("Authorization", "Bearer " + token())
-                        .param("tenantId", "tenant-bgft-douala")
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala"))
                         .param("axeId", axeId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.seuilAtteint").value(false))
@@ -130,8 +132,7 @@ class MissionAppparieeControllerTest {
                 .thenReturn(observatoire);
 
         mockMvc.perform(get("/api/v1/bur/observatoire")
-                        .header("Authorization", "Bearer " + token())
-                        .param("tenantId", "tenant-bgft-douala")
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala"))
                         .param("axeId", axeId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.couverturePourcentage").value(12.50))
@@ -142,11 +143,11 @@ class MissionAppparieeControllerTest {
     void definir_estimation_marche_delegates_to_the_observatoire_service() throws Exception {
         UUID axeId = UUID.randomUUID();
         String corps = """
-                {"tenantId":"tenant-bgft-douala","axeId":"%s","volumeMensuelEstime":350,\
-                "source":"enquête terrain Q1 2026","acteurId":"actor-bureau-1"}""".formatted(axeId);
+                {"axeId":"%s","volumeMensuelEstime":350,\
+                "source":"enquête terrain Q1 2026"}""".formatted(axeId);
 
         mockMvc.perform(put("/api/v1/bur/estimation-marche")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala", "actor-bureau-1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corps))
                 .andExpect(status().isNoContent());
@@ -159,11 +160,11 @@ class MissionAppparieeControllerTest {
     void rejects_a_non_positive_volume_estimation() throws Exception {
         UUID axeId = UUID.randomUUID();
         String corps = """
-                {"tenantId":"tenant-bgft-douala","axeId":"%s","volumeMensuelEstime":0,\
-                "source":"enquête terrain Q1 2026","acteurId":"actor-bureau-1"}""".formatted(axeId);
+                {"axeId":"%s","volumeMensuelEstime":0,\
+                "source":"enquête terrain Q1 2026"}""".formatted(axeId);
 
         mockMvc.perform(put("/api/v1/bur/estimation-marche")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corps))
                 .andExpect(status().isBadRequest());

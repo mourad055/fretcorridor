@@ -1,5 +1,6 @@
 package com.fretcorridor.adm.infrastructure.rest;
 
+import com.fretcorridor.adm.domain.AccesRefuseException;
 import com.fretcorridor.adm.domain.DossierDejaTrancheException;
 import com.fretcorridor.adm.domain.DossierIntrouvableException;
 import com.fretcorridor.adm.domain.DossierNonTrancheException;
@@ -54,6 +55,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleTenantDejaExistant(TenantDejaExistantException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Tenant déjà existant");
+        return problem;
+    }
+
+    @ExceptionHandler(AccesRefuseException.class)
+    public ProblemDetail handleAccesRefuse(AccesRefuseException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Accès refusé");
         return problem;
     }
 
