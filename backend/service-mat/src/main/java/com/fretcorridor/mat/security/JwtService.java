@@ -34,9 +34,22 @@ public class JwtService {
         return UUID.fromString(extraireClaims(token).getSubject());
     }
 
+    /**
+     * Le gateway (Web) émet un unique claim "role" (singulier) ; certains
+     * autres émetteurs de tokens (service-ida, Mobile) émettent "roles"
+     * (liste). On accepte les deux formes plutôt que de rejeter en 401
+     * tout token gateway relayé — sans ce repli, aucun appel du gateway
+     * vers ce service ne peut jamais s'authentifier.
+     */
     @SuppressWarnings("unchecked")
     public List<String> extraireRoles(String token) {
-        return (List<String>) extraireClaims(token).get("roles");
+        Claims claims = extraireClaims(token);
+        Object roles = claims.get("roles");
+        if (roles instanceof List<?>) {
+            return (List<String>) roles;
+        }
+        String role = claims.get("role", String.class);
+        return role != null ? List.of(role) : List.of();
     }
 
     public String extraireTenantId(String token) {
