@@ -44,12 +44,12 @@ public class MockOptAdapter implements OptPort {
     );
 
     @Override
-    public Flux<MissionAppariee> listerMissionsParTenant(String tenantId) {
+    public Flux<MissionAppariee> listerMissionsParTenant(String tenantId, String delegationToken) {
         return Flux.fromIterable(missions).filter(m -> m.tenantId().equals(tenantId));
     }
 
     @Override
-    public Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId) {
+    public Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId, String delegationToken) {
         return Mono.just(new ObservatoireAxeVue(axeId, 3, false, null, null, null, null, null, null, null));
     }
 
@@ -57,7 +57,7 @@ public class MockOptAdapter implements OptPort {
 
     @Override
     public Mono<Void> definirEstimationMarche(String tenantId, String axeId, BigDecimal volumeMensuelEstime,
-                                               String source, String acteurId) {
+                                               String source, String acteurId, String delegationToken) {
         estimationsMarche.put(tenantId + ":" + axeId, volumeMensuelEstime);
         return Mono.empty();
     }
@@ -66,7 +66,7 @@ public class MockOptAdapter implements OptPort {
 
     @Override
     public Mono<AlerteSeuilVue> configurerAlerte(String tenantId, String axeId, String indicateur, String comparateur,
-                                                  BigDecimal seuil, String acteurId) {
+                                                  BigDecimal seuil, String acteurId, String delegationToken) {
         AlerteSeuilVue alerte = new AlerteSeuilVue(UUID.randomUUID().toString(), axeId, indicateur, comparateur,
                 seuil, acteurId, Instant.now());
         alertes.add(alerte);
@@ -74,17 +74,17 @@ public class MockOptAdapter implements OptPort {
     }
 
     @Override
-    public Flux<AlerteSeuilVue> listerAlertes(String tenantId) {
+    public Flux<AlerteSeuilVue> listerAlertes(String tenantId, String delegationToken) {
         return Flux.fromIterable(alertes);
     }
 
     @Override
-    public Flux<EtatAlerteVue> etatAlertes(String tenantId) {
+    public Flux<EtatAlerteVue> etatAlertes(String tenantId, String delegationToken) {
         return Flux.fromIterable(alertes).map(a -> new EtatAlerteVue(a, false, false, null));
     }
 
     @Override
-    public Mono<Void> supprimerAlerte(String id, String tenantId) {
+    public Mono<Void> supprimerAlerte(String id, String tenantId, String delegationToken) {
         alertes.removeIf(a -> a.id().equals(id));
         return Mono.empty();
     }
