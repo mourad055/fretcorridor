@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -55,7 +56,7 @@ class ConfigurationControllerTest {
     @Test
     void definir_a_configuration_uses_the_authenticated_actor_as_author() {
         String token = tokenFor("+237600000003");
-        when(admPort.definirConfiguration(eq("seuil-agregation-bur"), eq("GLOBAL"), eq("5"), eq("actor-admin-1")))
+        when(admPort.definirConfiguration(eq("seuil-agregation-bur"), eq("GLOBAL"), eq("5"), eq("actor-admin-1"), any()))
                 .thenReturn(Mono.just(new ConfigurationVue("seuil-agregation-bur", "GLOBAL", "5", "actor-admin-1", 1, Instant.now())));
 
         webTestClient.put().uri("/api/v1/admin/configurations/seuil-agregation-bur")
@@ -67,14 +68,14 @@ class ConfigurationControllerTest {
                 .expectBody()
                 .jsonPath("$.auteur").isEqualTo("actor-admin-1");
 
-        verify(admPort).definirConfiguration("seuil-agregation-bur", "GLOBAL", "5", "actor-admin-1");
+        verify(admPort).definirConfiguration(eq("seuil-agregation-bur"), eq("GLOBAL"), eq("5"), eq("actor-admin-1"), any());
     }
 
     /** EF-ADM-06 : le catalogue liste les clés déjà configurées, sans avoir à connaître leur nom à l'avance. */
     @Test
     void returns_the_catalogue_of_already_configured_keys() {
         String token = tokenFor("+237600000003");
-        when(admPort.catalogueConfigurations()).thenReturn(Flux.just(
+        when(admPort.catalogueConfigurations(any())).thenReturn(Flux.just(
                 new ConfigurationVue("grille-decision", "GLOBAL", "1", "actor-admin-1", 1, Instant.now())));
 
         webTestClient.get().uri("/api/v1/admin/configurations")

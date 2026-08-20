@@ -71,7 +71,7 @@ class MissionAppparieeControllerFiltreExportTest {
 
     @Test
     void returns_detail_of_a_mission_in_the_actor_tenant() {
-        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
         String token = tokenFor("+237600000001");
 
         webTestClient.get().uri("/api/v1/bureau/missions-appariees/mission-1")
@@ -83,12 +83,12 @@ class MissionAppparieeControllerFiltreExportTest {
                 .jsonPath("$.transporteurNom").isEqualTo("Transport Étoile SARL");
 
         org.mockito.Mockito.verify(admPort)
-                .enregistrerAudit("tenant-bgft-douala", "actor-bureau-1", "CONSULTATION_MISSION_DETAIL", "mission:mission-1");
+                .enregistrerAudit(org.mockito.ArgumentMatchers.eq("tenant-bgft-douala"), org.mockito.ArgumentMatchers.eq("actor-bureau-1"), org.mockito.ArgumentMatchers.eq("CONSULTATION_MISSION_DETAIL"), org.mockito.ArgumentMatchers.eq("mission:mission-1"), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
     void returns_404_for_a_mission_that_does_not_exist() {
-        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
         String token = tokenFor("+237600000001");
 
         webTestClient.get().uri("/api/v1/bureau/missions-appariees/mission-inconnue")
@@ -99,7 +99,7 @@ class MissionAppparieeControllerFiltreExportTest {
 
     @Test
     void returns_404_rather_than_leaking_a_mission_from_another_tenant() {
-        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
         String token = tokenFor("+237600000001");
 
         // mission-3 appartient à tenant-bnft-ndjamena, pas au tenant du token ci-dessus.

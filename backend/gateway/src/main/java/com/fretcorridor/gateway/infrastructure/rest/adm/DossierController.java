@@ -31,14 +31,15 @@ public class DossierController {
     }
 
     @GetMapping
-    public Flux<DossierResponse> fileDeTravail(@RequestParam String tenantId) {
-        return admPort.fileDeTravail(tenantId).map(DossierResponse::from);
+    public Flux<DossierResponse> fileDeTravail(@RequestParam String tenantId,
+                                                @AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.fileDeTravail(tenantId, actor.delegationToken()).map(DossierResponse::from);
     }
 
     @GetMapping("/{dossierId}")
     public Mono<DossierConsolideResponse> consolide(@PathVariable String dossierId,
                                                       @AuthenticationPrincipal AuthenticatedActor actor) {
-        return admPort.dossier(dossierId).flatMap(dossier -> {
+        return admPort.dossier(dossierId, actor.delegationToken()).flatMap(dossier -> {
             DossierResponse dossierResponse = DossierResponse.from(dossier);
             if (dossier.missionId() == null) {
                 return Mono.just(new DossierConsolideResponse(dossierResponse, null, java.util.List.of()));
@@ -60,18 +61,18 @@ public class DossierController {
     @PostMapping("/{dossierId}/prise-en-charge")
     public Mono<DossierResponse> priseEnCharge(@PathVariable String dossierId,
                                                 @AuthenticationPrincipal AuthenticatedActor actor) {
-        return admPort.priseEnCharge(dossierId, actor.actorId()).map(DossierResponse::from);
+        return admPort.priseEnCharge(dossierId, actor.actorId(), actor.delegationToken()).map(DossierResponse::from);
     }
 
     @PostMapping("/{dossierId}/decision")
     public Mono<DossierResponse> decider(@PathVariable String dossierId, @Valid @RequestBody DecisionRequest request,
                                           @AuthenticationPrincipal AuthenticatedActor actor) {
-        return admPort.decider(dossierId, request.decision(), request.motif(), actor.actorId())
+        return admPort.decider(dossierId, request.decision(), request.motif(), actor.actorId(), actor.delegationToken())
                 .map(DossierResponse::from);
     }
 
     @PostMapping("/escalade")
-    public Flux<DossierResponse> escalader() {
-        return admPort.declencherEscalade().map(DossierResponse::from);
+    public Flux<DossierResponse> escalader(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.declencherEscalade(actor.delegationToken()).map(DossierResponse::from);
     }
 }
