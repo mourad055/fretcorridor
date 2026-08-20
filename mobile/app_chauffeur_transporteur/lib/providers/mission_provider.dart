@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'dio_provider.dart';
@@ -124,11 +125,48 @@ class MissionNotifier extends StateNotifier<MissionState> {
     }
   }
 
+  // RG-070/EF-EXE-03 (audit CDC du 19 août) : PRISE_EN_CHARGE/LIVRAISON
+  // exigent désormais une preuve minimale (photo(s) + signature tactile du
+  // tiers) — endpoint multipart dédié côté gateway/service-exe, distinct du
+  // JSON ci-dessus (toujours valable pour EN_TRANSIT/INCIDENT, non concernés
+  // par EF-EXE-03). Voir MissionExecutionController (gateway, consumes
+  // MULTIPART_FORM_DATA) / MissionController (service-exe, même principe).
+  Future<bool> ajouterEtapeAvecPreuve(
+    String missionId,
+    String type,
+    String libelle,
+    List<Uint8List> photos,
+    Uint8List signature,
+  ) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final formData = FormData.fromMap({
+        'type': type,
+        'libelle': libelle,
+        'photos': [
+          for (int i = 0; i < photos.length; i++)
+            MultipartFile.fromBytes(photos[i], filename: 'photo_$i.jpg'),
+        ],
+        'signature': MultipartFile.fromBytes(signature, filename: 'signature.png'),
+      });
+      final response = await _dio.post('/missions/$missionId/etapes', data: formData);
+      state = state.copyWith(chargement: false, detail: MissionDetail.fromJson(response.data));
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      return false;
+    }
+  }
+
   String _messageErreur(DioException e) {
     final status = e.response?.statusCode;
     if (status == 404) return 'Mission introuvable.';
     if (status == 400) {
-      return (e.response?.data is Map ? e.response?.data['detail'] as String? : null) ?? 'Requête refusée.';
+      final detail = e.response?.data is Map ? e.response?.data['detail'] as String? : null;
+      if (detail == 'PREUVE_MANQUANTE') {
+        return 'Une photo et une signature sont obligatoires pour cette étape.';
+      }
+      return detail ?? 'Requête refusée.';
     }
     if (status == 503) return 'Service d\'exécution momentanément indisponible.';
     return 'Erreur de connexion. Vérifiez votre réseau.';
