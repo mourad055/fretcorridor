@@ -1,12 +1,13 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Ecriture } from '../../models/ecriture.models';
 import { StatusBadgeComponent, ecritureStatusVariant, libelleEcritureStatut, libelleModePaiement } from '../status-badge/status-badge.component';
 
 @Component({
   selector: 'app-ecritures-table',
   standalone: true,
-  imports: [CommonModule, StatusBadgeComponent],
+  imports: [CommonModule, StatusBadgeComponent, TranslatePipe],
   templateUrl: './ecritures-table.component.html',
 })
 export class EcrituresTableComponent {

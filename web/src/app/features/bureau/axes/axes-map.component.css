@@ -1,0 +1,11 @@
+.axes-table__row {
+  cursor: pointer;
+}
+
+.axes-table__row--selected {
+  background: var(--fc-primary-soft);
+}
+
+.axes-table__row--selected:hover {
+  background: var(--fc-primary-soft);
+}

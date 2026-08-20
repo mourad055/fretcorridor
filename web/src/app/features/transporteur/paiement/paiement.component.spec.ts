@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { PaiementComponent } from './paiement.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 describe('PaiementComponent', () => {
   let httpMock: HttpTestingController;
@@ -11,7 +12,7 @@ describe('PaiementComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PaiementComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);

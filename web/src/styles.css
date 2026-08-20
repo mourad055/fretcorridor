@@ -16,7 +16,7 @@
   --fc-text: #0a0a0a;
   --fc-muted: #52525b;
   --fc-border: #e4e4e7;
-  --fc-border-strong: #d4d4d8;
+  --fc-border-strong: #86868c;
 
   /* Sémantique */
   --fc-danger: #b42318;
@@ -58,7 +58,7 @@
   /* Layout page */
   --fc-page-padding-x: 1.5rem;
   --fc-page-padding-y: 1.5rem;
-  --fc-touch-min: 2.75rem;
+  --fc-touch-min: 3rem;
 
   /* Largeur de contenu partagée (header + page) pour un alignement centré cohérent */
   --fc-content-width: 72rem;
@@ -267,7 +267,7 @@ a {
   gap: 0.15rem;
   min-height: var(--fc-touch-min);
   padding: 0.7rem 0.8rem;
-  border: 1px solid var(--fc-border);
+  border: 1px solid var(--fc-border-strong);
   border-radius: var(--fc-radius-sm);
   background: var(--fc-surface);
   text-align: left;
@@ -280,7 +280,6 @@ a {
 }
 
 .fc-list__item:hover {
-  border-color: var(--fc-border-strong);
   background: var(--fc-bg);
 }
 
@@ -407,6 +406,17 @@ a {
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    /* Indice de défilement : un fondu apparaît uniquement s'il reste des
+       colonnes cachées de ce côté (même technique que .shell-nav). */
+    background-image:
+      linear-gradient(to right, var(--fc-surface) 50%, transparent),
+      linear-gradient(to left, var(--fc-surface) 50%, transparent),
+      linear-gradient(to right, color-mix(in srgb, var(--fc-text) 14%, transparent), transparent),
+      linear-gradient(to left, color-mix(in srgb, var(--fc-text) 14%, transparent), transparent);
+    background-position: left center, right center, left center, right center;
+    background-repeat: no-repeat;
+    background-size: 24px 100%, 24px 100%, 10px 100%, 10px 100%;
+    background-attachment: local, local, scroll, scroll;
   }
 }
 
@@ -426,7 +436,7 @@ a {
 .field__input {
   width: 100%;
   padding: 0.75rem 0.85rem;
-  border: 1px solid var(--fc-border);
+  border: 1px solid var(--fc-border-strong);
   border-radius: var(--fc-radius-sm);
   background: var(--fc-surface);
   color: var(--fc-text);
@@ -441,11 +451,40 @@ a {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc-primary) 18%, transparent);
 }
 
+textarea.field__input {
+  min-height: 5rem;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.field__hint {
+  margin: 0;
+  color: var(--fc-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
 .field__error {
   margin: 0;
   color: var(--fc-danger);
   font-size: 0.8125rem;
   font-weight: 600;
+}
+
+.field__fieldset {
+  display: grid;
+  gap: var(--fc-space-3);
+  margin: 0 0 var(--fc-space-3);
+  padding: 0;
+  border: 0;
+}
+
+.field__legend {
+  padding: 0 0 var(--fc-space-1);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--fc-text);
 }
 
 /* ── Boutons ──────────────────────────────────────────── */
@@ -483,7 +522,7 @@ a {
 
 .fc-btn--ghost {
   background: transparent;
-  border-color: var(--fc-border);
+  border-color: var(--fc-border-strong);
   color: var(--fc-text);
 }
 
@@ -530,7 +569,7 @@ a {
   width: 100%;
   min-height: var(--fc-touch-min);
   padding: 0.5rem 0.65rem;
-  border: 1px solid var(--fc-border);
+  border: 1px solid var(--fc-border-strong);
   border-radius: var(--fc-radius-sm);
   background: var(--fc-surface);
   font: inherit;

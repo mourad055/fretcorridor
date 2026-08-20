@@ -3,6 +3,7 @@ import { Router, provideRouter } from '@angular/router';
 import { ShellComponent } from './shell.component';
 import { AuthService } from '../../core/auth/auth.service';
 import { Session } from '../../core/auth/auth.models';
+import { provideTranslateServiceForTests } from '../../../testing/translate-testing.providers';
 
 describe('ShellComponent', () => {
   let logoutSpy: jest.Mock;
@@ -15,6 +16,7 @@ describe('ShellComponent', () => {
       imports: [ShellComponent],
       providers: [
         provideRouter([]),
+        provideTranslateServiceForTests(),
         {
           provide: AuthService,
           useValue: { session: () => session, logout: logoutSpy },
@@ -39,7 +41,7 @@ describe('ShellComponent', () => {
     const router = TestBed.inject(Router);
     const navigateSpy = jest.spyOn(router, 'navigateByUrl');
 
-    fixture.nativeElement.querySelector('button').click();
+    fixture.nativeElement.querySelector('.shell__actions > button').click();
 
     expect(logoutSpy).toHaveBeenCalled();
     expect(navigateSpy).toHaveBeenCalledWith('/login');

@@ -43,6 +43,19 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 0.15rem;
+    /* Indice de défilement : un fondu apparaît uniquement s'il reste des onglets
+       cachés de ce côté (technique CSS pure, sans JS — les calques "cache"
+       défilent avec le contenu et masquent le calque "ombre" tant qu'on est
+       au bord). */
+    background-image:
+      linear-gradient(to right, var(--fc-bg) 50%, transparent),
+      linear-gradient(to left, var(--fc-bg) 50%, transparent),
+      linear-gradient(to right, color-mix(in srgb, var(--fc-text) 14%, transparent), transparent),
+      linear-gradient(to left, color-mix(in srgb, var(--fc-text) 14%, transparent), transparent);
+    background-position: left center, right center, left center, right center;
+    background-repeat: no-repeat;
+    background-size: 24px 100%, 24px 100%, 10px 100%, 10px 100%;
+    background-attachment: local, local, scroll, scroll;
   }
 
   .shell-nav__link {

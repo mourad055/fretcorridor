@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { MissionService } from './mission.service';
 import { MissionAppariee, MissionsFiltre, StatutMission } from './mission.models';
 import {
@@ -16,7 +17,7 @@ import {
 @Component({
   selector: 'app-missions-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, StatusBadgeComponent, TranslatePipe],
   templateUrl: './missions-list.component.html',
 })
 export class MissionsListComponent implements OnInit {

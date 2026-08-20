@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { BureauChronologieComponent } from './bureau-chronologie.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 const MISSIONS = [
   {
@@ -21,7 +22,7 @@ describe('BureauChronologieComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BureauChronologieComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
