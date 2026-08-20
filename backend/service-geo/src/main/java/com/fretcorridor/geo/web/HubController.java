@@ -76,7 +76,7 @@ public class HubController {
         // (un hub ne change pas de position une fois cree, cf commentaire sur le champ h3Index).
         String h3Index = zonageH3Service.indexPourPoint(request.latitude(), request.longitude());
 
-        Hub hub = new Hub(request.nom(), request.ville(), request.typeHub(), position, h3Index);
+        Hub hub = new Hub(request.nom(), request.ville(), request.typeHub(), position, h3Index, request.pays());
         return HubResponse.from(hubRepository.save(hub));
     }
 }

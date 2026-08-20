@@ -26,6 +26,16 @@ spring:
     schemas: geo
     default-schema: geo
 
+# Meme secret que service-ida/service-mkt - obligatoire pour valider les JWT
+# emis par service-ida (identite centralisee). Fallback variable d'environnement
+# (FRETCORRIDOR_JWT_SECRET) pour permettre la surcharge en Docker/prod sans
+# jamais forcer un changement de code (ENF-SEC-05, secrets jamais en dur dans
+# le code - la valeur par defaut ci-dessous reste "dev uniquement", comme
+# documente cote service-mkt).
+fretcorridor:
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+
 logging:
   level:
     com.fretcorridor.geo: DEBUG

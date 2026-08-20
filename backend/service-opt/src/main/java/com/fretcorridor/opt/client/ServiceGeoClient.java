@@ -81,4 +81,26 @@ public class ServiceGeoClient {
             return List.of();
         }
     }
+
+    /**
+     * Detail d'un axe par id (EF-GEO-05/RG-052, Phase 4) - lit
+     * parametres.conventionRepartition pour la publication de
+     * RepartitionConventionnelleAppliquee. Retourne null en cas d'echec
+     * (timeout, axe introuvable, GEO indisponible) - meme principe de
+     * degradation gracieuse que les autres methodes de ce client :
+     * l'appelant doit gerer explicitement l'absence de resultat, jamais
+     * une exception qui remonterait jusqu'au cycle L1.
+     */
+    public AxeDetailDto axeParId(java.util.UUID axeId) {
+        try {
+            return restClient.get()
+                    .uri("/api/geo/axes/{id}", axeId)
+                    .retrieve()
+                    .body(AxeDetailDto.class);
+        } catch (RestClientException exception) {
+            log.warn("Echec appel service-geo (axe par id) - mode degrade active, axe={} : {}",
+                    axeId, exception.getMessage());
+            return null;
+        }
+    }
 }

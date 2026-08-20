@@ -1,0 +1,98 @@
+asyncapi: '2.6.0'
+info:
+  title: RepartitionConventionnelleAppliquee
+  version: 0.1.0-draft
+  description: >
+    BROUILLON, redige cote Moteur (Personne 3) pour EF-GEO-05 / RG-052
+    (Phase 4, CDC S9.9 et S3.3 correction C2). Publie par OPT quand une
+    Affectation confirmee porte sur un axe transfrontalier soumis a
+    convention bilaterale (Cameroun-RCA : 60% RCA / 40% Cameroun ;
+    Tchad-Cameroun : 65% Tchad / 35% Cameroun - cles de configuration par
+    convention, JAMAIS des constantes, cf garde-fou G4).
+
+    Consommateur : service-pay (Web, Personne 2) - necessaire pour scinder
+    correctement l'ecriture de paiement entre transporteurs des deux pays
+    (ENF-FIN-01/02 : OPT ne touche jamais a la tresorerie lui-meme, il ne
+    fait qu'informer PAY de la cle applicable).
+
+    A VALIDER avec Personne 2 (Web, porteur de service-pay) au point de
+    synchronisation hebdomadaire (Feuille de route S5.1) avant
+    implementation cote PAY - ce document decrit ce dont PAY a besoin pour
+    appliquer RG-052, pas une decision unilaterale sur son format d'ecriture
+    interne.
+
+    Absent pour toute mission sur un axe intra-camerounais (RG-052 :
+    "aucune cle de nationalite ne s'applique" en trafic intra-camerounais) -
+    cet evenement n'est publie QUE pour les axes transfrontaliers.
+channels:
+  repartition-conventionnelle-appliquee:
+    publish:
+      summary: >
+        Cle de repartition conventionnelle appliquee a une Affectation
+        confirmee sur un axe transfrontalier (module OPT, Moteur).
+      message:
+        $ref: '#/components/messages/RepartitionConventionnelleAppliquee'
+components:
+  messages:
+    RepartitionConventionnelleAppliquee:
+      name: RepartitionConventionnelleAppliquee
+      title: Repartition conventionnelle appliquee
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RepartitionConventionnelleAppliqueePayload'
+  schemas:
+    RepartitionConventionnelleAppliqueePayload:
+      type: object
+      required:
+        - eventId
+        - missionId
+        - axeId
+        - conventionCode
+        - partsPourcent
+        - dateApplication
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Cle d'idempotence.
+        missionId:
+          type: string
+          format: uuid
+          description: Correspond au missionId de AffectationConfirmee (meme mission, event complementaire).
+        axeId:
+          type: string
+          format: uuid
+        conventionCode:
+          type: string
+          description: >
+            Identifiant de la convention bilaterale appliquee (donnee de
+            configuration, jamais une constante - cf G4). Exemples observes
+            au CDC S3.3 : "CAMEROUN_RCA", "TCHAD_CAMEROUN" - convention libre,
+            pas un enum ferme (une nouvelle convention ne doit jamais exiger
+            de redeploiement, meme principe que typeVehicule/code_critere).
+        partsPourcent:
+          type: object
+          description: >
+            Cle = code pays (ISO 3166-1 alpha-3 recommande, ex. "CAF", "TCD",
+            "CMR"), valeur = part en pourcentage. La somme doit valoir 100 -
+            verification a la charge du consommateur (PAY), OPT transmet la
+            configuration telle que lue, ne la valide pas lui-meme (single
+            source of truth = Axe.parametres.conventionRepartition cote GEO).
+          additionalProperties:
+            type: number
+            format: double
+          example:
+            CAF: 60
+            CMR: 40
+        dateApplication:
+          type: string
+          format: date-time
+        modeDegrade:
+          type: boolean
+          description: >
+            EF-MAT-12/ENF-DIS-04, meme convention que CycleMatching/
+            TarificationResultat : true si la cle de convention n'a pas pu
+            etre resolue (Axe.parametres.conventionRepartition absent alors
+            que l'axe est transfrontalier) - PAY doit alors bloquer
+            l'ecriture plutot que de supposer une cle par defaut (G4 : aucun
+            quota code en dur, y compris cote PAY).
