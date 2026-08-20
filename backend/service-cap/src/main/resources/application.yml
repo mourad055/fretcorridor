@@ -45,6 +45,12 @@ spring:
 fretcorridor:
   cap:
     coefficient-volumetrique-kg-par-m3: 333.0
+  # Meme secret que service-ida/service-mkt/service-geo/... - obligatoire
+  # pour valider les JWT emis par service-ida (identite centralisee).
+  # Fallback variable d'environnement pour la surcharge en Docker/prod
+  # (ENF-SEC-05, jamais en dur dans le code).
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
 
 logging:
   level:

@@ -50,9 +50,11 @@ class CapaciteServiceConcurrenceTest {
     @Autowired
     private CapaciteRepository capaciteRepository;
 
+    private static final String TENANT = "tenant-bgft-douala";
+
     @Test
     void deuxDecrementsConcurrentsAvecClesDifferentes_lesDeuxSAppliquent() throws InterruptedException {
-        Capacite capacite = capaciteService.declarer(nouvelleRequeteCapacite(BigDecimal.valueOf(10000)));
+        Capacite capacite = capaciteService.declarer(nouvelleRequeteCapacite(BigDecimal.valueOf(10000)), TENANT);
         UUID capaciteId = capacite.getId();
 
         int nbThreads = 2;
@@ -73,7 +75,7 @@ class CapaciteServiceConcurrenceTest {
                     dernierEssai:
                     for (int tentative = 0; tentative < 10; tentative++) {
                         try {
-                            capaciteService.decrementer(capaciteId, BigDecimal.valueOf(1000), cleIdempotence);
+                            capaciteService.decrementer(capaciteId, TENANT, BigDecimal.valueOf(1000), cleIdempotence);
                             break dernierEssai;
                         } catch (org.springframework.orm.ObjectOptimisticLockingFailureException retry) {
                             Thread.sleep(10);
@@ -104,7 +106,7 @@ class CapaciteServiceConcurrenceTest {
 
     @Test
     void memeDecrementRejoueEnConcurrenceAvecMemeCle_uneSeuleFoisApplique() throws InterruptedException {
-        Capacite capacite = capaciteService.declarer(nouvelleRequeteCapacite(BigDecimal.valueOf(10000)));
+        Capacite capacite = capaciteService.declarer(nouvelleRequeteCapacite(BigDecimal.valueOf(10000)), TENANT);
         UUID capaciteId = capacite.getId();
         String memeCleIdempotence = "cle-partagee-unique";
 
@@ -118,7 +120,7 @@ class CapaciteServiceConcurrenceTest {
             executor.submit(() -> {
                 try {
                     latchDepart.await();
-                    capaciteService.decrementer(capaciteId, BigDecimal.valueOf(500), memeCleIdempotence);
+                    capaciteService.decrementer(capaciteId, TENANT, BigDecimal.valueOf(500), memeCleIdempotence);
                 } catch (Exception e) {
                     System.err.println("ECHEC INATTENDU (test 2) : " + e.getClass().getName() + " - " + e.getMessage());
                     echecsInattendus.incrementAndGet();
