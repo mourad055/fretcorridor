@@ -21,6 +21,12 @@ import java.util.UUID;
  * que de propager l'exception - la declaration de capacite ne doit JAMAIS
  * echouer a cause d'une resolution transporteur en panne, seul
  * transporteurId reste null en aval.
+ *
+ * Transmet desormais le JWT du transporteur appelant (audit CDC du 19 aout,
+ * bloquant §3 "endpoint vehicule public, sans filtre tenant" - corrige cote
+ * service-flt/VehiculeController) - meme secret partage service-ida que le
+ * reste du systeme, aucune infrastructure d'authentification interservices
+ * supplementaire necessaire.
  */
 @Component
 public class ServiceFltClient {
@@ -33,10 +39,11 @@ public class ServiceFltClient {
         this.restClient = serviceFltRestClient;
     }
 
-    public Optional<UUID> resoudreProprietaire(UUID vehiculeId) {
+    public Optional<UUID> resoudreProprietaire(UUID vehiculeId, String token) {
         try {
             VehiculeDto vehicule = restClient.get()
                     .uri("/api/flt/vehicules/{id}", vehiculeId)
+                    .headers(h -> h.setBearerAuth(token))
                     .retrieve()
                     .body(VehiculeDto.class);
 

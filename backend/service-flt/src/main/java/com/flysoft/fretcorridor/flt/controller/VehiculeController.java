@@ -44,15 +44,24 @@ public class VehiculeController {
         return ResponseEntity.ok(vehiculeService.listerMesVehicules(acteurId, tenantId));
     }
 
-    // AJOUT : consomme en synchrone par service-cap (ServiceFltClient, meme
-    // porteur Mobile, Plan d'execution S4.3) pour resoudre le proprietaire
-    // d'un vehicule au moment de la declaration de capacite - ferme le bug
-    // S7. Pas de garde JWT ici : appel interne inter-services (meme porteur),
-    // pas un appel client final - a revoir si le gateway impose une
-    // authentification systemique meme sur les appels internes.
+    // Consomme en synchrone par service-cap (ServiceFltClient, meme porteur
+    // Mobile, Plan d'execution S4.3) pour resoudre le proprietaire d'un
+    // vehicule au moment de la declaration de capacite - ferme le bug S7.
+    //
+    // IDOR corrige (audit CDC du 19 aout, bloquant §3 "endpoint vehicule
+    // public, sans filtre tenant") : cet endpoint etait permitAll() sans
+    // aucune verification, exposant tout vehicule de tout tenant a
+    // quiconque atteignait ce port. service-cap transmet desormais son
+    // propre JWT (celui du transporteur qui declare sa capacite, meme
+    // secret partage service-ida) au lieu d'un appel anonyme -- meme
+    // exception "introuvable" pour "n'existe pas" et "pas votre tenant"
+    // (meme principe que DossierController cote service-adm).
     @GetMapping("/{id}")
-    public ResponseEntity<VehiculeDto.VehiculeResponse> consulter(@PathVariable UUID id) {
+    public ResponseEntity<VehiculeDto.VehiculeResponse> consulter(@PathVariable UUID id,
+                                                                    @RequestHeader("Authorization") String authHeader) {
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
         Vehicule vehicule = vehiculeRepository.findById(id)
+                .filter(v -> tenantId.equals(v.getTenantId()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Vehicule introuvable : " + id));
         return ResponseEntity.ok(VehiculeDto.VehiculeResponse.fromEntity(vehicule));
