@@ -27,6 +27,13 @@ spring:
       # connexions pas encore chaud.
       connect-timeout-ms: 500
       read-timeout-ms: 1000
+    service-geo:
+      base-url: http://localhost:8084
+      # RG-101 : resolution des coefficients de poids taxable par axe.
+      # Best-effort (ENF-DIS-04) : repli sur la reference globale ci-dessous
+      # si service-geo est injoignable.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -39,12 +46,13 @@ spring:
 
 # RG-100/101 (CDC S8.3.3) : poids taxable = max(poids reel, volume x RHO,
 # LDM x LAMBDA) - trois grandeurs. RHO (kg/m3) et LAMBDA (kg par metre de
-# plancher occupe) sont les deux valeurs par defaut citees par le CDC
-# lui-meme (S8.3.2) - PLACEHOLDER a valider avec le metier, jamais code en
-# dur dans le service lui-meme (lu depuis cette config). RG-101 exige un
-# parametrage par tenant ET par axe, versionne/audite - non fait ici
-# (config globale unique, ecart deja signale par l'audit du 19 aout,
-# distinct du bug corrige par ce commit).
+# plancher occupe) sont les deux valeurs de REFERENCE citees par le CDC
+# lui-meme (S8.3.2). RG-101 (bloquant audit du 19 aout, corrige) : ces
+# valeurs ne sont plus la seule source -- CalculateurPoidsTaxable resout en
+# priorite les cles coefficientVolumetriqueKgParM3/coefficientPlancherKgParLdm
+# depuis Axe.parametres (service-geo, versionne par axe/tenant), et ne
+# retombe sur cette config globale qu'en repli (axe sans parametre defini,
+# ou service-geo injoignable).
 fretcorridor:
   cap:
     coefficient-volumetrique-kg-par-m3: 333.0
