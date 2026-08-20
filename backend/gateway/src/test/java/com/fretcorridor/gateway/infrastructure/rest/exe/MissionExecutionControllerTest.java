@@ -54,7 +54,7 @@ class MissionExecutionControllerTest {
     void an_authenticated_actor_lists_their_missions() {
         String token = tokenFor("+237600000002");
         when(missionExecutionPort.mesMissions("mock-ida-delegation-token"))
-                .thenReturn(Flux.just(new MissionExecution("mission-1", "EN_ATTENTE", "Douala", "Yaoundé", "2026-08-12T10:00:00")));
+                .thenReturn(Flux.just(new MissionExecution("mission-1", "EN_ATTENTE", "Douala", "Yaoundé", "2026-08-12T10:00:00", null)));
 
         webTestClient.get().uri("/api/v1/missions/mes")
                 .header("Authorization", "Bearer " + token)
