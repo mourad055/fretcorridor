@@ -4,6 +4,7 @@ import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.domain.pay.PayReadPort;
 import com.fretcorridor.gateway.infrastructure.rest.pay.dto.DeclarationEspecesVueResponse;
 import com.fretcorridor.gateway.infrastructure.rest.pay.dto.EcritureVueResponse;
+import com.fretcorridor.gateway.infrastructure.rest.pay.dto.ModePaiementChoisiResponse;
 import com.fretcorridor.gateway.infrastructure.rest.pay.dto.SoldeTransporteurResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -45,6 +46,18 @@ public class PaiementReadController {
     @GetMapping("/api/v1/paiement")
     public Mono<SoldeTransporteurResponse> monSolde(@AuthenticationPrincipal AuthenticatedActor actor) {
         return soldeDe(actor);
+    }
+
+    /**
+     * S14 Item B (Volet A, Chauffeur, EF-PAY-06/07) : moyen de paiement
+     * choisi par le chargeur pour cette mission — lecture seule, ouvert à
+     * tout acteur authentifié (même raisonnement que /api/v1/paiement,
+     * exclurait sinon un CHAUFFEUR côté mobile). 404 si rien n'a encore été
+     * choisi (mappé globalement par GlobalExceptionHandler).
+     */
+    @GetMapping("/api/v1/paiement/missions/{missionId}/moyen-paiement")
+    public Mono<ModePaiementChoisiResponse> modePaiementChoisi(@PathVariable String missionId) {
+        return payReadPort.modePaiementChoisi(missionId).map(ModePaiementChoisiResponse::from);
     }
 
     private Mono<SoldeTransporteurResponse> soldeDe(AuthenticatedActor actor) {

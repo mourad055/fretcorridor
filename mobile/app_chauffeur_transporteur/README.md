@@ -218,20 +218,20 @@ producteur nulle part** — la chaîne était donc câblée bout en bout mais
 jamais déclenchée en pratique. `service-exe` publie désormais cet
 événement à chaque `PRISE_EN_CHARGE`/`LIVRAISON` confirmée.
 
-## État (S14 — affichage du mode de règlement) — ⚠️ MOCK, backend prêt côté serveur
+## État (S14 — affichage du mode de règlement) — branché sur le backend réel (20 août)
 
 Phase 2, Sprint 14 ("Paiements Mobile Money étendus"), Volet Chauffeur.
 Sur l'écran solde et gains (`lib/screens/paiement_screen.dart`), chaque
-encaissement affiche désormais le moyen de règlement utilisé par le client
-(MTN MoMo / Orange Money / Espèces) — lecture seule.
+encaissement affiche désormais le moyen de règlement choisi par le client
+— lecture seule.
 
-**Toujours mocké côté app** (`lib/mock/moyen_reglement_mock.dart`), mais
-**le backend existe désormais** : `service-pay` expose
-`POST /api/v1/pay/missions/{id}/moyen-paiement` (Client, choix) et
-`GET .../moyen-paiement` (Chauffeur, lecture) — livré par Web le 18 août.
-Il manque encore le proxy gateway (aucune route `moyen-paiement` côté
-`MissionExecutionPort`/`PaiementReadController` à ce jour) avant de pouvoir
-remplacer ce mock par un vrai appel.
+**Réel** : `GET /paiement/missions/{missionId}/moyen-paiement` (gateway →
+`PaiementReadController` → `service-pay`, Item B EF-PAY-06/07), un appel
+par mission d'ENCAISSEMENT distincte de l'historique. 404 (rien choisi
+encore) reste silencieux, comme le mock qu'il remplace. Affiche les 4
+valeurs réelles de `ModePaiement` (monnaie électronique / virement / terme
+contractuel / espèces) — plus fin que ça (MoMo vs Orange Money) n'est pas
+distingué par le backend.
 
 ## État (S15 — sélecteur d'axe) — branché sur le backend réel
 
