@@ -9,7 +9,6 @@ import java.time.Instant;
 import java.util.List;
 
 public record OuvrirDossierRequest(
-        @NotBlank(message = "Le tenant est obligatoire") String tenantId,
         @NotNull(message = "Le type est obligatoire") TypeDossier type,
         @NotNull(message = "La priorité est obligatoire") PrioriteDossier priorite,
         String missionId,

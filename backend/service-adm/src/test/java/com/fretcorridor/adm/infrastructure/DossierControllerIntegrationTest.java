@@ -55,8 +55,12 @@ class DossierControllerIntegrationTest {
     }
 
     private String token(String tenantId) {
+        return token(tenantId, UUID.randomUUID().toString());
+    }
+
+    private String token(String tenantId, String acteurId) {
         return Jwts.builder()
-                .subject(UUID.randomUUID().toString())
+                .subject(acteurId)
                 .claim("roles", List.of("ADMIN"))
                 .claim("tenantId", tenantId)
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
@@ -110,7 +114,7 @@ class DossierControllerIntegrationTest {
         String delai = Instant.now().plus(2, ChronoUnit.DAYS).toString();
 
         String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "type": "LITIGE", "priorite": "NORMALE", "missionId": "mission-a",
@@ -124,24 +128,22 @@ class DossierControllerIntegrationTest {
         definirGrille(tenantId);
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", dossierId)
-                        .header("Authorization", "Bearer " + token())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"acteurId\": \"actor-admin-1\"}"))
+                        .header("Authorization", "Bearer " + token(tenantId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statut").value("EN_COURS"));
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"decision": "RESOLU_EN_FAVEUR_TRANSPORTEUR", "motif": "Preuve conforme", "acteurId": "actor-admin-1"}
+                                {"decision": "RESOLU_EN_FAVEUR_TRANSPORTEUR", "motif": "Preuve conforme"}
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statut").value("CLOS"))
                 .andExpect(jsonPath("$.decision").value("RESOLU_EN_FAVEUR_TRANSPORTEUR"));
 
         mockMvc.perform(get("/api/v1/journal-audit")
-                        .header("Authorization", "Bearer " + token()).param("tenantId", tenantId))
+                        .header("Authorization", "Bearer " + token(tenantId)).param("tenantId", tenantId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.action == 'DOSSIER_DECISION_RESOLU_EN_FAVEUR_TRANSPORTEUR')]").exists());
     }
@@ -152,7 +154,7 @@ class DossierControllerIntegrationTest {
         String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
 
         String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
@@ -163,15 +165,15 @@ class DossierControllerIntegrationTest {
         definirGrille(tenantId);
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\", \"acteurId\": \"actor-admin-1\"}"))
+                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\"}"))
                 .andExpect(status().isOk());
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"decision\": \"AUTRE\", \"motif\": \"m\", \"acteurId\": \"actor-admin-1\"}"))
+                        .content("{\"decision\": \"AUTRE\", \"motif\": \"m\"}"))
                 .andExpect(status().isConflict());
     }
 
@@ -181,7 +183,7 @@ class DossierControllerIntegrationTest {
         String delaiDepasse = Instant.now().minus(1, ChronoUnit.HOURS).toString();
 
         mockMvc.perform(post("/api/v1/dossiers")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "type": "LITIGE", "priorite": "BASSE", "delaiTraitement": "%s"}
@@ -189,11 +191,11 @@ class DossierControllerIntegrationTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/dossiers/escalade")
-                        .header("Authorization", "Bearer " + token()))
+                        .header("Authorization", "Bearer " + token(tenantId)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/dossiers")
-                        .header("Authorization", "Bearer " + token()).param("tenantId", tenantId))
+                        .header("Authorization", "Bearer " + token(tenantId)).param("tenantId", tenantId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].statut").value("ESCALADE"))
                 .andExpect(jsonPath("$[0].priorite").value("HAUTE"));
@@ -206,7 +208,7 @@ class DossierControllerIntegrationTest {
         String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
 
         String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
@@ -216,9 +218,9 @@ class DossierControllerIntegrationTest {
         String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\", \"acteurId\": \"actor-admin-1\"}"))
+                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\"}"))
                 .andExpect(status().isConflict());
     }
 
@@ -230,7 +232,7 @@ class DossierControllerIntegrationTest {
         definirGrille(tenantId);
 
         String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
@@ -240,13 +242,13 @@ class DossierControllerIntegrationTest {
         String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/decision", dossierId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId, "actor-admin-1"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\", \"acteurId\": \"actor-admin-1\"}"))
+                        .content("{\"decision\": \"CLOS_SANS_SUITE\", \"motif\": \"m\"}"))
                 .andExpect(status().isOk());
 
         String reponseRecours = mockMvc.perform(post("/api/v1/dossiers/{id}/recours", dossierId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"priorite": "HAUTE", "delaiTraitement": "%s"}
@@ -258,15 +260,11 @@ class DossierControllerIntegrationTest {
         String recoursId = reponseRecours.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", recoursId)
-                        .header("Authorization", "Bearer " + token())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"acteurId\": \"actor-admin-1\"}"))
+                        .header("Authorization", "Bearer " + token(tenantId, "actor-admin-1")))
                 .andExpect(status().isConflict());
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/prise-en-charge", recoursId)
-                        .header("Authorization", "Bearer " + token())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"acteurId\": \"actor-admin-2\"}"))
+                        .header("Authorization", "Bearer " + token(tenantId, "actor-admin-2")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.statut").value("EN_COURS"));
     }
@@ -277,7 +275,7 @@ class DossierControllerIntegrationTest {
         String delai = Instant.now().plus(1, ChronoUnit.DAYS).toString();
 
         String reponseOuverture = mockMvc.perform(post("/api/v1/dossiers")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "type": "INCIDENT", "priorite": "BASSE", "delaiTraitement": "%s"}
@@ -287,7 +285,7 @@ class DossierControllerIntegrationTest {
         String dossierId = reponseOuverture.replaceAll(".*\"id\":\"([^\"]+)\".*", "$1");
 
         mockMvc.perform(post("/api/v1/dossiers/{id}/recours", dossierId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"priorite": "HAUTE", "delaiTraitement": "%s"}
