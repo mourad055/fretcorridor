@@ -90,6 +90,7 @@ class DossierControllerTest {
     @Test
     void consolidated_dossier_with_no_mission_has_no_chronology_nor_ecritures() {
         String token = tokenFor("+237600000003");
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
         when(admPort.dossier(eq("dossier-1"), any())).thenReturn(Mono.just(dossier(null)));
 
         webTestClient.get().uri("/api/v1/admin/dossiers/dossier-1")
@@ -101,9 +102,26 @@ class DossierControllerTest {
                 .jsonPath("$.ecritures.length()").isEqualTo(0);
     }
 
+    /** ENF-SEC-02 : consultation d'un dossier journalisée (audit CDC §7.2, "consultation de dossier ADM non journalisée"). */
+    @Test
+    void consulting_a_dossier_is_journalized() {
+        String token = tokenFor("+237600000003");
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.dossier(eq("dossier-1"), any())).thenReturn(Mono.just(dossier(null)));
+
+        webTestClient.get().uri("/api/v1/admin/dossiers/dossier-1")
+                .header("Authorization", "Bearer " + token)
+                .exchange()
+                .expectStatus().isOk();
+
+        verify(admPort).enregistrerAudit(eq("tenant-flysoft"), any(), eq("CONSULTATION_DOSSIER_DETAIL"),
+                eq("dossier:dossier-1"), any());
+    }
+
     @Test
     void consolidated_dossier_with_a_mission_aggregates_chronology_and_ecritures() {
         String token = tokenFor("+237600000003");
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
         when(admPort.dossier(eq("dossier-1"), any())).thenReturn(Mono.just(dossier("mission-a")));
         when(exePort.listerMissionsParTenant("tenant-bgft-douala")).thenReturn(Flux.just(
                 new Mission("mission-a", "tenant-bgft-douala", "actor-transporteur-1", "Transport Étoile SARL",
