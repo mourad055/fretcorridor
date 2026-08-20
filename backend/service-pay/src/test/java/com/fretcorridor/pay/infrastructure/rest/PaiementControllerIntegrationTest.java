@@ -1,7 +1,10 @@
 package com.fretcorridor.pay.infrastructure.rest;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -11,11 +14,23 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.List;
+import java.util.UUID;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Suite d'intégration bout-en-bout (Testcontainers, contexte Spring réel) —
+ * authentification requise sur tous les endpoints (audit CDC §Transverse,
+ * "8 services sans authentification") : chaque appel joint désormais un JWT
+ * valide via {@link #token()}. Le contenu du token (acteurId, rôle) n'est
+ * volontairement pas vérifié contre tenantId/transporteurId du corps de
+ * requête ici — seule l'authentification est couverte par ce correctif, cf.
+ * commentaire de {@code SecurityConfig}.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Testcontainers
@@ -28,15 +43,29 @@ class PaiementControllerIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Value("${fretcorridor.jwt.secret}")
+    private String jwtSecret;
+
+    private String token() {
+        return Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("roles", List.of("BUREAU"))
+                .claim("tenantId", "tenant-jwt-test")
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+    }
+
     @Test
     void full_lifecycle_prise_en_charge_then_cloture_then_transporteur_can_read_its_own_ecriture() throws Exception {
         String missionId = "mission-e2e-" + System.nanoTime();
         String tenantId = "tenant-e2e-" + System.nanoTime();
 
-        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionId))
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionId)
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT", "preuveLivraisonReference": "preuve-1"}
@@ -44,7 +73,8 @@ class PaiementControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nature").value("ENCAISSEMENT"));
 
-        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId))
+        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }
@@ -55,6 +85,7 @@ class PaiementControllerIntegrationTest {
 
         // La clôture libère le séquestre : sans prise en charge préalable, aucun séquestre n'existe.
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "tenant-1", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT", "preuveLivraisonReference": "preuve-1"}
@@ -67,25 +98,32 @@ class PaiementControllerIntegrationTest {
         String missionA = "mission-a-" + System.nanoTime();
         String missionB = "mission-b-" + System.nanoTime();
 
-        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionA));
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionA)
+                        .header("Authorization", "Bearer " + token()));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionA)
+                        .header("Authorization", "Bearer " + token())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-A\", \"montant\": 100, \"referencePrestataire\": \"ref-a\", \"modePaiement\": \"VIREMENT\", \"preuveLivraisonReference\": \"preuve-a\"}"));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionA)
+                        .header("Authorization", "Bearer " + token())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-A\", \"montant\": 90, \"referencePrestataire\": \"ref-a-rev\"}"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionB));
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionB)
+                        .header("Authorization", "Bearer " + token()));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionB)
+                        .header("Authorization", "Bearer " + token())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-B\", \"montant\": 200, \"referencePrestataire\": \"ref-b\", \"modePaiement\": \"MONNAIE_ELECTRONIQUE\", \"preuveLivraisonReference\": \"preuve-b\"}"));
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionB)
+                        .header("Authorization", "Bearer " + token())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"tenantId\": \"tenant-1\", \"transporteurId\": \"actor-transporteur-B\", \"montant\": 180, \"referencePrestataire\": \"ref-b-rev\"}"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/pay/transporteurs/{transporteurId}/ecritures", "actor-transporteur-A"))
+        mockMvc.perform(get("/api/v1/pay/transporteurs/{transporteurId}/ecritures", "actor-transporteur-A")
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].montant").value(90));
@@ -97,9 +135,11 @@ class PaiementControllerIntegrationTest {
         String missionId = "mission-terme-" + System.nanoTime();
         String tenantId = "tenant-terme-" + System.nanoTime();
 
-        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionId))
+        mockMvc.perform(post("/api/v1/pay/missions/{missionId}/prise-en-charge", missionId)
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isCreated());
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/confirmation-livraison", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "preuveLivraisonReference": "preuve-terme-1"}
@@ -107,6 +147,7 @@ class PaiementControllerIntegrationTest {
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/garantie", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "garantId": "garant-bnp", "montant": 300, "referenceGarantie": "ref-garantie-1"}
@@ -115,6 +156,7 @@ class PaiementControllerIntegrationTest {
                 .andExpect(jsonPath("$.garantId").value("garant-bnp"));
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 300, "referencePrestataire": "ref-rev-terme"}
@@ -128,11 +170,13 @@ class PaiementControllerIntegrationTest {
         String missionId = "mission-terme-" + System.nanoTime();
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/garantie", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"tenantId\": \"tenant-1\", \"garantId\": \"garant-bnp\", \"montant\": 300, \"referenceGarantie\": \"ref-garantie-1\"}"))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/garantie", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"tenantId\": \"tenant-1\", \"garantId\": \"garant-bnp\", \"montant\": 300, \"referenceGarantie\": \"ref-garantie-2\"}"))
                 .andExpect(status().isConflict());
@@ -145,6 +189,7 @@ class PaiementControllerIntegrationTest {
         String tenantId = "tenant-especes-" + System.nanoTime();
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/paiement-especes", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "montant": 150}
@@ -152,7 +197,8 @@ class PaiementControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.protectionAssuree").value(false));
 
-        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/paiements-especes", tenantId))
+        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/paiements-especes", tenantId)
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].protectionAssuree").value(false));
@@ -164,6 +210,7 @@ class PaiementControllerIntegrationTest {
         String tenantId = "tenant-especes-" + System.nanoTime();
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/paiement-especes", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "montant": 150}
@@ -171,6 +218,7 @@ class PaiementControllerIntegrationTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/reversement", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 150, "referencePrestataire": "ref-rev"}
@@ -185,6 +233,7 @@ class PaiementControllerIntegrationTest {
         String tenantId = "tenant-choix-" + System.nanoTime();
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "modePaiement": "VIREMENT"}
@@ -192,7 +241,8 @@ class PaiementControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.modePaiement").value("VIREMENT"));
 
-        mockMvc.perform(get("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId))
+        mockMvc.perform(get("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId)
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.modePaiement").value("VIREMENT"));
     }
@@ -203,6 +253,7 @@ class PaiementControllerIntegrationTest {
         String tenantId = "tenant-choix-" + System.nanoTime();
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "modePaiement": "MONNAIE_ELECTRONIQUE"}
@@ -210,6 +261,7 @@ class PaiementControllerIntegrationTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId)
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "%s", "modePaiement": "VIREMENT"}
@@ -219,7 +271,8 @@ class PaiementControllerIntegrationTest {
 
     @Test
     void reading_a_moyen_de_paiement_never_chosen_returns_404() throws Exception {
-        mockMvc.perform(get("/api/v1/pay/missions/{missionId}/moyen-paiement", "mission-jamais-choisie"))
+        mockMvc.perform(get("/api/v1/pay/missions/{missionId}/moyen-paiement", "mission-jamais-choisie")
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isNotFound());
     }
 }

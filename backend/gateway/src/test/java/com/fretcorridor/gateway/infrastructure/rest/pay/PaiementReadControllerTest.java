@@ -56,7 +56,7 @@ class PaiementReadControllerTest {
     @Test
     void a_transporteur_sees_its_own_solde_computed_from_its_history() {
         String token = tokenFor("+237600000002");
-        when(payReadPort.ecrituresDuTransporteur("actor-transporteur-1")).thenReturn(Flux.just(
+        when(payReadPort.ecrituresDuTransporteur(eq("actor-transporteur-1"), any())).thenReturn(Flux.just(
                 new EcritureVue("e1", "mission-1", "COMPTE_TRANSPORTEUR", "REVERSEMENT", "DEBIT", new BigDecimal("90"), Instant.now(), "VALIDE", null, false),
                 new EcritureVue("e2", "mission-2", "COMPTE_TRANSPORTEUR", "REVERSEMENT", "DEBIT", new BigDecimal("60"), Instant.now(), "VALIDE", null, false)
         ));
@@ -73,7 +73,7 @@ class PaiementReadControllerTest {
     @Test
     void a_non_transporteur_actor_can_still_reach_the_mobile_solde_endpoint() {
         String token = tokenFor("+237600000001"); // BUREAU — prouve l'absence de restriction de rôle sur /api/v1/paiement
-        when(payReadPort.ecrituresDuTransporteur("actor-bureau-1")).thenReturn(Flux.empty());
+        when(payReadPort.ecrituresDuTransporteur(eq("actor-bureau-1"), any())).thenReturn(Flux.empty());
 
         webTestClient.get().uri("/api/v1/paiement")
                 .header("Authorization", "Bearer " + token)
@@ -96,7 +96,7 @@ class PaiementReadControllerTest {
     @Test
     void a_bureau_sees_the_financial_report_of_its_own_tenant() {
         String token = tokenFor("+237600000001");
-        when(payReadPort.rapportDuTenant("tenant-bgft-douala")).thenReturn(Flux.just(
+        when(payReadPort.rapportDuTenant(eq("tenant-bgft-douala"), any())).thenReturn(Flux.just(
                 new EcritureVue("e1", "mission-1", "COMPTE_SEQUESTRE_PRESTATAIRE", "ENCAISSEMENT", "CREDIT", new BigDecimal("500"), Instant.now(), "VALIDE", "VIREMENT", true)
         ));
         when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
@@ -117,7 +117,7 @@ class PaiementReadControllerTest {
     @Test
     void an_admin_consulting_another_tenant_s_report_is_journalized() {
         String token = tokenFor("+237600000003");
-        when(payReadPort.rapportDuTenant(any())).thenReturn(Flux.empty());
+        when(payReadPort.rapportDuTenant(any(), any())).thenReturn(Flux.empty());
         when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/admin/rapport-financier/tenant-bnft-ndjamena")
@@ -143,7 +143,7 @@ class PaiementReadControllerTest {
     @Test
     void a_bureau_sees_cash_payments_with_no_protection_explicitly_signaled() {
         String token = tokenFor("+237600000001");
-        when(payReadPort.paiementsEspecesDuTenant("tenant-bgft-douala")).thenReturn(Flux.just(
+        when(payReadPort.paiementsEspecesDuTenant(eq("tenant-bgft-douala"), any())).thenReturn(Flux.just(
                 new DeclarationEspecesVue("d1", "mission-especes-1", new BigDecimal("150"), Instant.now(), false)
         ));
         when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
@@ -164,7 +164,7 @@ class PaiementReadControllerTest {
     @Test
     void an_admin_consulting_another_tenant_s_cash_payments_is_journalized() {
         String token = tokenFor("+237600000003");
-        when(payReadPort.paiementsEspecesDuTenant(any())).thenReturn(Flux.empty());
+        when(payReadPort.paiementsEspecesDuTenant(any(), any())).thenReturn(Flux.empty());
         when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/admin/paiements-especes/tenant-bnft-ndjamena")
