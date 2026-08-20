@@ -1,57 +1,43 @@
-<<<<<<< HEAD
 # FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, soir)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
 > la version du 20 août (fin d'après-midi) : **les 18 bloquants initiaux
 > de `AUDIT_CDC_v4_complet_2026-08-19.md` sont désormais tous traités**
-> — 17 résolus sans réserve, le 18e (RG-039) traité avec des limitations
-> explicitement documentées (voir ci-dessous et §6). **26 PR** au total
-> mergées depuis le début de cette passe (#91 à #120, sauf #111).
+> — 17 résolus sans réserve, le 18e (RG-039) traité avec une limitation
+> explicitement documentée (voir ci-dessous et §6). **28 PR** au total
+> mergées depuis le début de cette passe (#91 à #122, sauf #111).
 >
-> **Deux points restent avec un périmètre partiel, à connaître avant
-> de les croire "fermés"** :
-> - **RG-070** (preuve de livraison) — traité côté **backend uniquement**
->   (photo + signature tactile, PR #118). Le code SMS et l'UI mobile
->   restent hors périmètre — **ne pas déployer sans coordination
->   mobile** (le JSON existant pour PRISE_EN_CHARGE/LIVRAISON est
->   désormais refusé par service-exe).
-> - **RG-039** (jusqu'à 3 propositions ordonnées, PR #120) — rang 2/3
->   ajoutés (informationnels, prix estimé) sans toucher au rang 1
->   existant. L'endpoint "accepter" (service-mkt) marque la proposition
->   choisie, mais **ne déclenche pas la réservation réelle de capacité**
->   (`decrementer()` exige le même tenant que le transporteur
->   propriétaire — un chargeur d'un autre tenant ne peut pas l'appeler
->   sans un pont de confiance cross-tenant qui n'existe pas encore).
+> **RG-070 (preuve de livraison) est maintenant fermé de bout en bout** :
+> backend (photo + signature tactile, PR #118) **et UI mobile app
+> Chauffeur** (écran de capture, PR #122) — le parcours Phase 1→Phase 2
+> est de nouveau testable normalement sur téléphone, prise en charge et
+> livraison demandent désormais une photo + signature avant de valider.
+> Le code SMS (autre mode de validation tiers prévu par le CDC) reste
+> hors périmètre — le backend ne le supporte pas (numéro du destinataire
+> non propagé jusqu'à service-exe).
 >
-> Ces deux limitations ont été **décidées explicitement avec
-> l'utilisateur** après découverte de leur ampleur réelle en cours de
-> route (pas des oublis) — voir §6 pour le détail complet et les
-> échanges avec le collègue Moteur.
-=======
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, fin d'après-midi)
-
-> Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
-> la version du 20 août (après-midi) : **17 des 18 bloquants initiaux de
-> `AUDIT_CDC_v4_complet_2026-08-19.md` sont désormais résolus et
-> confirmés dans le code réel** de `dev`. Deux fixes supplémentaires cet
-> après-midi (PR #114/#115), un 3e bloquant retrouvé déjà réglé par le
-> Moteur indépendamment de cette passe (EF-MAT-10, commit `33818d3`), et
-> **deux points laissés "hors périmètre" dans la version précédente de ce
-> document ont en fait été traités** après relecture attentive du compte
-> exact (18, pas 16) :
-> - **RG-101** (coefficient volumétrique global, non scopé tenant/axe) —
->   3e bloquant qui avait été omis du décompte initial, traité PR #117.
-> - **RG-070** (preuve de livraison photo/tiers) — traité **côté backend
->   uniquement** (photo + signature tactile), PR #118. Le code SMS et
->   l'UI mobile restent hors périmètre, voir détail plus bas — **ne pas
->   déployer sans coordination mobile** (le JSON existant pour
->   PRISE_EN_CHARGE/LIVRAISON est désormais refusé).
+> **Seule limitation restante, à connaître** : **RG-039** (jusqu'à 3
+> propositions ordonnées, PR #120) — rang 2/3 ajoutés (informationnels,
+> prix estimé) sans toucher au rang 1 existant. L'endpoint "accepter"
+> (service-mkt) marque la proposition choisie, mais **ne déclenche pas
+> la réservation réelle de capacité** (`decrementer()` exige le même
+> tenant que le transporteur propriétaire — un chargeur d'un autre
+> tenant ne peut pas l'appeler sans un pont de confiance cross-tenant
+> qui n'existe pas encore).
 >
-> **Seul RG-039 reste explicitement ouvert** (une seule proposition au
-> lieu de trois, nécessite un vrai algorithme de sélection — voir §6).
-> **25 PR** au total mergées depuis le début de cette passe (#91 à #118,
-> sauf #111 — voir §6 pour le détail complet).
->>>>>>> backend-stevetelecom
+> Cette limitation a été **décidée explicitement avec l'utilisateur**
+> après découverte de son ampleur réelle en cours de route (pas un
+> oubli) — voir §6 pour le détail complet et les échanges avec le
+> collègue Moteur.
+>
+> **⚠️ Incident corrigé ce soir** : un merge de branche Moteur
+> (`backend-stevetelecom`, commit `c564100` "fusion termine") a laissé
+> des **marqueurs de conflit Git non résolus commités directement sur
+> `dev`** dans ce fichier — corrigé immédiatement en gardant la version
+> la plus à jour (celle-ci). Si un autre fichier affiche un
+> comportement bizarre après un merge Moteur récent, vérifier d'abord
+> l'absence de `<<<<<<<`/`=======`/`>>>>>>>` avant de chercher plus
+> loin.
 
 ---
 
@@ -522,38 +508,44 @@ globale (`application.yml`) si absent/injoignable (ENF-DIS-04).
 Nouveau `CalculateurPoidsTaxableTest` (aucun test dédié n'existait
 avant). Vérifié : `mvn -o test` service-cap, 6 tests, 0 échec.
 
-### RG-070 — preuve d'enlèvement/livraison (PR #118, backend seulement)
+### RG-070 — preuve d'enlèvement/livraison (PR #118 backend + #122 mobile — fermé de bout en bout)
 
-**Traité pour la partie backend uniquement**, décision explicite de
-l'utilisateur ("signature tactile seule pour l'instant") après
-découverte que le code SMS (autre mode de validation tiers prévu par
-le CDC, UC-EXE-03) nécessiterait de faire traverser
+Décision explicite de l'utilisateur ("signature tactile seule pour
+l'instant") après découverte que le code SMS (autre mode de validation
+tiers prévu par le CDC, UC-EXE-03) nécessiterait de faire traverser
 `destinataireTelephone` à travers 3 services (mkt→opt→exe, changement
 de contrat Kafka partagé avec le Moteur — signalé à sa session, pas
-encore fait). **Aucune UI mobile** n'a été construite dans cette
-passe non plus.
+fait). **Ce point (code SMS) reste seul hors périmètre.**
 
-Ce qui est fait : `service-exe` refuse désormais toute
+**Backend (PR #118)** : `service-exe` refuse désormais toute
 `PRISE_EN_CHARGE`/`LIVRAISON` sans au moins une photo ET une signature
 tactile (`PREUVE_MANQUANTE`, nouveau endpoint multipart sur
 `POST /api/missions/{id}/etapes`, différencié de l'ancien JSON par
 `consumes`). Stockage MinIO + empreinte SHA-256 par photo
 (`PreuveEtape`, RG-072/EF-EXE-05, immuable par construction). Le
 gateway (WebFlux) reconstruit un multipart réactif vers service-exe
-(`MissionExecutionPort.ajouterEtapeAvecPreuve`).
+(`MissionExecutionPort.ajouterEtapeAvecPreuve`). EN_TRANSIT/INCIDENT
+ne sont pas concernés (JSON existant inchangé pour ces deux types).
 
-**⚠️ Ne pas déployer ce backend sans un correspondant mobile prêt** :
-l'app Chauffeur envoie aujourd'hui du JSON pour
-PRISE_EN_CHARGE/LIVRAISON — ces appels sont désormais rejetés (400
-`PREUVE_MANQUANTE`) tant que l'app n'envoie pas le nouvel endpoint
-multipart avec photo + signature. EN_TRANSIT/INCIDENT ne sont pas
-concernés (JSON existant inchangé pour ces deux types).
+**Mobile, app Chauffeur/Transporteur (PR #122)** : nouveau
+`SignaturePad` (pad tactile dessiné à la main, `CustomPainter` +
+`RenderRepaintBoundary`, sans nouvelle dépendance pub.dev) +
+`_FormulairePreuve` (`mission_detail_screen.dart`, même patron que
+`_FormulaireIncident` déjà existant) — jusqu'à 3 photos
+(`image_picker`, déjà une dépendance) + signature obligatoires avant
+de valider PRISE_EN_CHARGE/LIVRAISON. `MissionNotifier
+.ajouterEtapeAvecPreuve` (FormData multipart Dio) en plus de
+l'`ajouterEtape` JSON existant (conservé pour EN_TRANSIT/INCIDENT).
 
-Vérifié : `mvn -o test` service-exe (12 tests) + gateway (184 tests),
-0 échec sur les deux modules — y compris un test bout-en-bout
-multipart côté gateway.
+**Le parcours de test Phase 1→Phase 2 sur téléphone fonctionne de
+nouveau normalement** — prise en charge et livraison demandent
+désormais une photo + signature à l'écran, tout le reste est inchangé.
 
-<<<<<<< HEAD
+Vérifié : `mvn -o test` service-exe (12 tests) + gateway (184 tests) —
+backend. `flutter analyze` (0 issue) + `flutter build apk --debug`
+(compilation réelle réussie) — mobile, aucun test Flutter n'existait
+avant pour cet écran.
+
 ### RG-039 — jusqu'à 3 propositions ordonnées (PR #120)
 
 **18e et dernier bloquant, traité en soirée.** Avant de coder, investigation
@@ -600,16 +592,6 @@ tests), 0 échec.
 
 ### Autres points hors périmètre — à ne pas croire résolus
 
-=======
-### Explicitement pas traités — à ne pas croire résolus
-
-- **RG-039** (3 propositions au lieu d'une seule, EF-MKT-07) — nécessite
-  un vrai algorithme de sélection, mis de côté d'un commun accord dès le
-  début de cette passe. Ne pas improviser un correctif superficiel si ce
-  point revient.
-- **RG-070, code SMS + UI mobile** (voir ci-dessus) — reporté, dépendance
-  cross-service signalée au Moteur.
->>>>>>> backend-stevetelecom
 - **Multi-pays / conventions bilatérales** (`service-geo`, EF-GEO-05) —
   fonctionnalité absente du domaine, hors périmètre d'un correctif
   ponctuel.
