@@ -25,21 +25,23 @@ public class ConfigurationController {
 
     /** EF-ADM-06 : catalogue de tous les paramètres métier déjà configurés (pas besoin de connaître la clé à l'avance). */
     @GetMapping
-    public Flux<ConfigurationResponse> catalogue() {
-        return admPort.catalogueConfigurations().map(ConfigurationResponse::from);
+    public Flux<ConfigurationResponse> catalogue(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.catalogueConfigurations(actor.delegationToken()).map(ConfigurationResponse::from);
     }
 
     @GetMapping("/{cle}")
     public Mono<ConfigurationResponse> valeurCourante(@PathVariable String cle,
-                                                       @RequestParam(required = false) String perimetre) {
-        return admPort.configurationCourante(cle, perimetre == null ? PERIMETRE_GLOBAL : perimetre)
+                                                       @RequestParam(required = false) String perimetre,
+                                                       @AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.configurationCourante(cle, perimetre == null ? PERIMETRE_GLOBAL : perimetre, actor.delegationToken())
                 .map(ConfigurationResponse::from);
     }
 
     @GetMapping("/{cle}/historique")
     public Flux<ConfigurationResponse> historique(@PathVariable String cle,
-                                                    @RequestParam(required = false) String perimetre) {
-        return admPort.historiqueConfiguration(cle, perimetre == null ? PERIMETRE_GLOBAL : perimetre)
+                                                    @RequestParam(required = false) String perimetre,
+                                                    @AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.historiqueConfiguration(cle, perimetre == null ? PERIMETRE_GLOBAL : perimetre, actor.delegationToken())
                 .map(ConfigurationResponse::from);
     }
 
@@ -50,7 +52,7 @@ public class ConfigurationController {
         String perimetre = request.perimetre() == null || request.perimetre().isBlank()
                 ? PERIMETRE_GLOBAL
                 : request.perimetre();
-        return admPort.definirConfiguration(cle, perimetre, request.valeur(), actor.actorId())
+        return admPort.definirConfiguration(cle, perimetre, request.valeur(), actor.actorId(), actor.delegationToken())
                 .map(ConfigurationResponse::from);
     }
 }
