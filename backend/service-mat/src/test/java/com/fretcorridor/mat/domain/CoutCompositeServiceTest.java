@@ -42,6 +42,7 @@ class CoutCompositeServiceTest {
         // exprime maintenant via findFirstByAxeIdIsNullAndActifTrue plutot que
         // l'ancienne findFirstByActifTrue (RG-106, ponderations par axe).
         when(modelePonderationRepository.findFirstByAxeIdIsNullAndActifTrue()).thenReturn(Optional.empty());
+        when(cycleMatchingRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         CandidatCout candidat = new CandidatCout(capaciteId, Map.of("A", 0.5, "B", 0.8));
 
