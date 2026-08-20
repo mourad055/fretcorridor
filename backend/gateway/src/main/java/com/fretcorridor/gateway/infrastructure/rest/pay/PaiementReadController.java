@@ -56,12 +56,13 @@ public class PaiementReadController {
      * choisi (mappé globalement par GlobalExceptionHandler).
      */
     @GetMapping("/api/v1/paiement/missions/{missionId}/moyen-paiement")
-    public Mono<ModePaiementChoisiResponse> modePaiementChoisi(@PathVariable String missionId) {
-        return payReadPort.modePaiementChoisi(missionId).map(ModePaiementChoisiResponse::from);
+    public Mono<ModePaiementChoisiResponse> modePaiementChoisi(@PathVariable String missionId,
+                                                                @AuthenticationPrincipal AuthenticatedActor actor) {
+        return payReadPort.modePaiementChoisi(missionId, actor.delegationToken()).map(ModePaiementChoisiResponse::from);
     }
 
     private Mono<SoldeTransporteurResponse> soldeDe(AuthenticatedActor actor) {
-        return payReadPort.ecrituresDuTransporteur(actor.actorId())
+        return payReadPort.ecrituresDuTransporteur(actor.actorId(), actor.delegationToken())
                 .map(EcritureVueResponse::from)
                 .collectList()
                 .map(historique -> new SoldeTransporteurResponse(
@@ -74,7 +75,7 @@ public class PaiementReadController {
     @GetMapping("/api/v1/bureau/rapport-financier")
     public Mono<java.util.List<EcritureVueResponse>> rapportFinancierBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
         return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + actor.tenantId())
-                .then(payReadPort.rapportDuTenant(actor.tenantId()).map(EcritureVueResponse::from).collectList());
+                .then(payReadPort.rapportDuTenant(actor.tenantId(), actor.delegationToken()).map(EcritureVueResponse::from).collectList());
     }
 
     @GetMapping("/api/v1/admin/rapport-financier/{tenantId}")
@@ -84,14 +85,14 @@ public class PaiementReadController {
     ) {
         // ENF-SEC-02 : consultation transverse d'un tenant par un Admin, journalisée nominativement.
         return admPort.enregistrerAudit(tenantId, actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + tenantId)
-                .then(payReadPort.rapportDuTenant(tenantId).map(EcritureVueResponse::from).collectList());
+                .then(payReadPort.rapportDuTenant(tenantId, actor.delegationToken()).map(EcritureVueResponse::from).collectList());
     }
 
     /** EF-PAY-07 (S) : missions payées en espèces (mode dégradé, sans protection) du territoire du Bureau. EF-BUR-06 : consultation journalisée. */
     @GetMapping("/api/v1/bureau/paiements-especes")
     public Mono<java.util.List<DeclarationEspecesVueResponse>> paiementsEspecesBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
         return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + actor.tenantId())
-                .then(payReadPort.paiementsEspecesDuTenant(actor.tenantId()).map(DeclarationEspecesVueResponse::from).collectList());
+                .then(payReadPort.paiementsEspecesDuTenant(actor.tenantId(), actor.delegationToken()).map(DeclarationEspecesVueResponse::from).collectList());
     }
 
     @GetMapping("/api/v1/admin/paiements-especes/{tenantId}")
@@ -101,6 +102,6 @@ public class PaiementReadController {
     ) {
         // ENF-SEC-02 : consultation transverse d'un tenant par un Admin, journalisée nominativement.
         return admPort.enregistrerAudit(tenantId, actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + tenantId)
-                .then(payReadPort.paiementsEspecesDuTenant(tenantId).map(DeclarationEspecesVueResponse::from).collectList());
+                .then(payReadPort.paiementsEspecesDuTenant(tenantId, actor.delegationToken()).map(DeclarationEspecesVueResponse::from).collectList());
     }
 }

@@ -1,5 +1,7 @@
 package com.fretcorridor.pay.infrastructure.rest;
 
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +18,8 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
+import java.util.List;
+import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -42,6 +46,21 @@ class WebhookPrestataireControllerIntegrationTest {
     @Value("${fretcorridor.pay.webhook-secret}")
     private String secret;
 
+    @Value("${fretcorridor.jwt.secret}")
+    private String jwtSecret;
+
+    // /webhooks/prestataire reste permitAll (le prestataire externe n'a pas de
+    // JWT), mais GET /tenants/{id}/rapport (utilisé ici pour vérifier l'état
+    // écrit) exige désormais une authentification comme tout autre endpoint.
+    private String token() {
+        return Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("roles", List.of("BUREAU"))
+                .claim("tenantId", "tenant-jwt-test")
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+    }
+
     @Test
     void a_correctly_signed_new_notification_records_an_encaissement() throws Exception {
         String tenantId = "tenant-webhook-" + System.nanoTime();
@@ -55,7 +74,8 @@ class WebhookPrestataireControllerIntegrationTest {
                         .content(corps))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId))
+        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].nature").value("ENCAISSEMENT"))
@@ -75,7 +95,8 @@ class WebhookPrestataireControllerIntegrationTest {
                         .content(corps))
                 .andExpect(status().isUnauthorized());
 
-        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId))
+        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
@@ -102,7 +123,8 @@ class WebhookPrestataireControllerIntegrationTest {
                         .content(corps))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId))
+        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
+                        .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }
