@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, soir)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
@@ -26,6 +27,31 @@
 > l'utilisateur** après découverte de leur ampleur réelle en cours de
 > route (pas des oublis) — voir §6 pour le détail complet et les
 > échanges avec le collègue Moteur.
+=======
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, fin d'après-midi)
+
+> Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
+> la version du 20 août (après-midi) : **17 des 18 bloquants initiaux de
+> `AUDIT_CDC_v4_complet_2026-08-19.md` sont désormais résolus et
+> confirmés dans le code réel** de `dev`. Deux fixes supplémentaires cet
+> après-midi (PR #114/#115), un 3e bloquant retrouvé déjà réglé par le
+> Moteur indépendamment de cette passe (EF-MAT-10, commit `33818d3`), et
+> **deux points laissés "hors périmètre" dans la version précédente de ce
+> document ont en fait été traités** après relecture attentive du compte
+> exact (18, pas 16) :
+> - **RG-101** (coefficient volumétrique global, non scopé tenant/axe) —
+>   3e bloquant qui avait été omis du décompte initial, traité PR #117.
+> - **RG-070** (preuve de livraison photo/tiers) — traité **côté backend
+>   uniquement** (photo + signature tactile), PR #118. Le code SMS et
+>   l'UI mobile restent hors périmètre, voir détail plus bas — **ne pas
+>   déployer sans coordination mobile** (le JSON existant pour
+>   PRISE_EN_CHARGE/LIVRAISON est désormais refusé).
+>
+> **Seul RG-039 reste explicitement ouvert** (une seule proposition au
+> lieu de trois, nécessite un vrai algorithme de sélection — voir §6).
+> **25 PR** au total mergées depuis le début de cette passe (#91 à #118,
+> sauf #111 — voir §6 pour le détail complet).
+>>>>>>> backend-stevetelecom
 
 ---
 
@@ -527,6 +553,7 @@ Vérifié : `mvn -o test` service-exe (12 tests) + gateway (184 tests),
 0 échec sur les deux modules — y compris un test bout-en-bout
 multipart côté gateway.
 
+<<<<<<< HEAD
 ### RG-039 — jusqu'à 3 propositions ordonnées (PR #120)
 
 **18e et dernier bloquant, traité en soirée.** Avant de coder, investigation
@@ -573,6 +600,16 @@ tests), 0 échec.
 
 ### Autres points hors périmètre — à ne pas croire résolus
 
+=======
+### Explicitement pas traités — à ne pas croire résolus
+
+- **RG-039** (3 propositions au lieu d'une seule, EF-MKT-07) — nécessite
+  un vrai algorithme de sélection, mis de côté d'un commun accord dès le
+  début de cette passe. Ne pas improviser un correctif superficiel si ce
+  point revient.
+- **RG-070, code SMS + UI mobile** (voir ci-dessus) — reporté, dépendance
+  cross-service signalée au Moteur.
+>>>>>>> backend-stevetelecom
 - **Multi-pays / conventions bilatérales** (`service-geo`, EF-GEO-05) —
   fonctionnalité absente du domaine, hors périmètre d'un correctif
   ponctuel.
