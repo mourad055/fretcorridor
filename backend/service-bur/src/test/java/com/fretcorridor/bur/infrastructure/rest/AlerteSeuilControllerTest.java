@@ -5,8 +5,15 @@ import com.fretcorridor.bur.domain.AlerteSeuilService;
 import com.fretcorridor.bur.domain.Comparateur;
 import com.fretcorridor.bur.domain.EtatAlerte;
 import com.fretcorridor.bur.domain.IndicateurObservatoire;
+import com.fretcorridor.bur.infrastructure.config.SecurityConfig;
+import com.fretcorridor.bur.infrastructure.security.JwtAuthenticationFilter;
+import com.fretcorridor.bur.infrastructure.security.JwtService;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -25,11 +32,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
 @WebMvcTest(AlerteSeuilController.class)
 class AlerteSeuilControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Value("${fretcorridor.jwt.secret}")
+    private String jwtSecret;
+
+    private String token() {
+        return Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("roles", List.of("BUREAU"))
+                .claim("tenantId", "tenant-jwt-test")
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+    }
 
     @MockBean
     private AlerteSeuilService service;
@@ -43,6 +63,7 @@ class AlerteSeuilControllerTest {
                 Comparateur.SUPERIEUR, new BigDecimal("25000"), "actor-bureau-1")).thenReturn(alerte);
 
         mockMvc.perform(post("/api/v1/bur/alertes")
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "tenant-bgft-douala", "axeId": "%s", "indicateur": "PRIX_MEDIANE",
@@ -62,7 +83,8 @@ class AlerteSeuilControllerTest {
                 new EtatAlerte(alerte, true, true, new BigDecimal("3"))
         ));
 
-        mockMvc.perform(get("/api/v1/bur/alertes/etat").param("tenantId", "tenant-bgft-douala"))
+        mockMvc.perform(get("/api/v1/bur/alertes/etat")
+                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-bgft-douala"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].evaluable").value(true))
@@ -72,7 +94,8 @@ class AlerteSeuilControllerTest {
 
     @Test
     void supprime_une_alerte() throws Exception {
-        mockMvc.perform(delete("/api/v1/bur/alertes/alerte-1").param("tenantId", "tenant-bgft-douala"))
+        mockMvc.perform(delete("/api/v1/bur/alertes/alerte-1")
+                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-bgft-douala"))
                 .andExpect(status().isNoContent());
 
         verify(service).supprimer("alerte-1", "tenant-bgft-douala");
@@ -81,6 +104,7 @@ class AlerteSeuilControllerTest {
     @Test
     void refuse_une_configuration_sans_indicateur() throws Exception {
         mockMvc.perform(post("/api/v1/bur/alertes")
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"tenantId": "tenant-bgft-douala", "axeId": "%s",

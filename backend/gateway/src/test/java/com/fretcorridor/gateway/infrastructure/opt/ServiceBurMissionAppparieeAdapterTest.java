@@ -1,6 +1,7 @@
 package com.fretcorridor.gateway.infrastructure.opt;
 
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
+import com.fretcorridor.gateway.domain.opt.OptServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -40,7 +41,7 @@ class ServiceBurMissionAppparieeAdapterTest {
                         [{"missionId":"mission-1","axeId":"axe-1","transporteurId":"transp-1","origineNom":"Douala","destinationNom":"Yaoundé","prixTransport":50000,"devise":"XAF","confirmeeLe":"2026-08-10T12:00:00Z"}]
                         """));
 
-        StepVerifier.create(adapter.listerMissionsParTenant("tenant-bgft-douala").collectList())
+        StepVerifier.create(adapter.listerMissionsParTenant("tenant-bgft-douala", "delegation-token-1").collectList())
                 .assertNext(missions -> {
                     assertThat(missions).hasSize(1);
                     MissionAppariee mission = missions.get(0);
@@ -62,9 +63,19 @@ class ServiceBurMissionAppparieeAdapterTest {
                 .setHeader("Content-Type", "application/json")
                 .setBody("[]"));
 
-        adapter.listerMissionsParTenant("tenant-bnft-ndjamena").collectList().block();
+        adapter.listerMissionsParTenant("tenant-bnft-ndjamena", "delegation-token-1").collectList().block();
 
         var requete = serviceBur.takeRequest();
         assertThat(requete.getPath()).isEqualTo("/api/v1/bur/missions-appariees?tenantId=tenant-bnft-ndjamena");
+        assertThat(requete.getHeader("Authorization")).isEqualTo("Bearer delegation-token-1");
+    }
+
+    @Test
+    void refuses_to_call_service_bur_without_a_delegation_token() {
+        StepVerifier.create(adapter.listerMissionsParTenant("tenant-bgft-douala", null))
+                .expectError(OptServiceIndisponibleException.class)
+                .verify();
+
+        assertThat(serviceBur.getRequestCount()).isZero();
     }
 }

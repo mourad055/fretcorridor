@@ -10,5 +10,5 @@ import reactor.core.publisher.Flux;
 public interface TrkPort {
 
     /** ENF-MUL-01 : ne restitue jamais que les positions du tenant demandé. */
-    Flux<PositionVehicule> listerPositionsParTenant(String tenantId);
+    Flux<PositionVehicule> listerPositionsParTenant(String tenantId, String delegationToken);
 }
