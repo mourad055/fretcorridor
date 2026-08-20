@@ -4,11 +4,11 @@ import com.fretcorridor.adm.domain.DecisionService;
 import com.fretcorridor.adm.domain.Dossier;
 import com.fretcorridor.adm.domain.EscaladeService;
 import com.fretcorridor.adm.domain.FileTravailService;
+import com.fretcorridor.adm.domain.AccesRefuseException;
 import com.fretcorridor.adm.infrastructure.rest.dto.DecisionRequest;
 import com.fretcorridor.adm.infrastructure.rest.dto.DossierResponse;
 import com.fretcorridor.adm.infrastructure.rest.dto.OuvrirDossierRequest;
 import com.fretcorridor.adm.infrastructure.rest.dto.OuvrirRecoursRequest;
-import com.fretcorridor.adm.infrastructure.rest.dto.PriseEnChargeRequest;
 import com.fretcorridor.adm.infrastructure.security.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -41,17 +41,30 @@ public class DossierController {
     }
 
     @PostMapping
-    public ResponseEntity<DossierResponse> ouvrir(@Valid @RequestBody OuvrirDossierRequest request) {
-        Dossier dossier = fileTravailService.ouvrir(request.tenantId(), request.type(), request.priorite(),
+    public ResponseEntity<DossierResponse> ouvrir(@Valid @RequestBody OuvrirDossierRequest request,
+                                                    @RequestHeader("Authorization") String authHeader) {
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        Dossier dossier = fileTravailService.ouvrir(tenantId, request.type(), request.priorite(),
                 request.missionId(), request.parties() == null ? List.of() : request.parties(),
                 request.preuvesReferences() == null ? List.of() : request.preuvesReferences(),
                 request.delaiTraitement());
         return ResponseEntity.status(201).body(DossierResponse.from(dossier));
     }
 
+    // IDOR corrigé (audit CDC §Transverse) : un tenant ne consulte plus la
+    // file de travail d'un autre tenant que le sien, sauf ADMINISTRATION
+    // (même principe que service-pay/PaiementController).
     @GetMapping
-    public List<DossierResponse> fileDeTravail(@RequestParam String tenantId) {
+    public List<DossierResponse> fileDeTravail(@RequestParam String tenantId,
+                                                @RequestHeader("Authorization") String authHeader) {
+        if (!estAdministration(authHeader) && !tenantId.equals(jwtService.extraireTenantId(authHeader.substring(7)))) {
+            throw new AccesRefuseException();
+        }
         return fileTravailService.lister(tenantId).stream().map(DossierResponse::from).toList();
+    }
+
+    private boolean estAdministration(String authHeader) {
+        return jwtService.extraireRoles(authHeader.substring(7)).contains("ADMINISTRATION");
     }
 
     @GetMapping("/{dossierId}")
@@ -63,14 +76,17 @@ public class DossierController {
 
     @PostMapping("/{dossierId}/prise-en-charge")
     public DossierResponse priseEnCharge(@PathVariable String dossierId,
-                                          @Valid @RequestBody PriseEnChargeRequest request) {
-        return DossierResponse.from(fileTravailService.prendreEnCharge(dossierId, request.acteurId()));
+                                          @RequestHeader("Authorization") String authHeader) {
+        String acteurId = jwtService.extraireActeurId(authHeader.substring(7));
+        return DossierResponse.from(fileTravailService.prendreEnCharge(dossierId, acteurId));
     }
 
     @PostMapping("/{dossierId}/decision")
-    public DossierResponse decider(@PathVariable String dossierId, @Valid @RequestBody DecisionRequest request) {
+    public DossierResponse decider(@PathVariable String dossierId, @Valid @RequestBody DecisionRequest request,
+                                    @RequestHeader("Authorization") String authHeader) {
+        String acteurId = jwtService.extraireActeurId(authHeader.substring(7));
         return DossierResponse.from(
-                decisionService.trancher(dossierId, request.decision(), request.motif(), request.acteurId()));
+                decisionService.trancher(dossierId, request.decision(), request.motif(), acteurId));
     }
 
     /** EF-ADM-04/RG-098 : ouvre un recours contre une décision rendue, second Dossier lié à l'original. */
