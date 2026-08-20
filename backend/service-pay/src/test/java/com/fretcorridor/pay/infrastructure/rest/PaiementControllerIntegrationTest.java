@@ -47,9 +47,35 @@ class PaiementControllerIntegrationTest {
     private String jwtSecret;
 
     private String token() {
+        return token("tenant-jwt-test");
+    }
+
+    // tenantId vient désormais du JWT, jamais du corps de requête (audit CDC
+    // §Transverse) - ce helper permet à chaque test de faire correspondre le
+    // tenant du token à celui qu'il vérifie ensuite via un GET
+    // /tenants/{id}/... ou /transporteurs/{id}/....
+    private String token(String tenantId) {
         return Jwts.builder()
                 .subject(UUID.randomUUID().toString())
                 .claim("roles", List.of("BUREAU"))
+                .claim("tenantId", tenantId)
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+    }
+
+    private String token(String tenantId, String acteurId) {
+        return Jwts.builder()
+                .subject(acteurId)
+                .claim("roles", List.of("BUREAU"))
+                .claim("tenantId", tenantId)
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+    }
+
+    private String tokenAdmin() {
+        return Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("roles", List.of("ADMINISTRATION"))
                 .claim("tenantId", "tenant-jwt-test")
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .compact();
@@ -65,16 +91,16 @@ class PaiementControllerIntegrationTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/cloture", missionId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tenantId": "%s", "transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT", "preuveLivraisonReference": "preuve-1"}
-                                """.formatted(tenantId)))
+                                {"transporteurId": "actor-transporteur-1", "montant": 500, "referencePrestataire": "ref-1", "modePaiement": "VIREMENT", "preuveLivraisonReference": "preuve-1"}
+                                """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nature").value("ENCAISSEMENT"));
 
         mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
-                        .header("Authorization", "Bearer " + token()))
+                        .header("Authorization", "Bearer " + token(tenantId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }
@@ -123,7 +149,7 @@ class PaiementControllerIntegrationTest {
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/pay/transporteurs/{transporteurId}/ecritures", "actor-transporteur-A")
-                        .header("Authorization", "Bearer " + token()))
+                        .header("Authorization", "Bearer " + tokenAdmin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].montant").value(90));
@@ -189,16 +215,16 @@ class PaiementControllerIntegrationTest {
         String tenantId = "tenant-especes-" + System.nanoTime();
 
         mockMvc.perform(post("/api/v1/pay/missions/{missionId}/paiement-especes", missionId)
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token(tenantId))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tenantId": "%s", "montant": 150}
-                                """.formatted(tenantId)))
+                                {"montant": 150}
+                                """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.protectionAssuree").value(false));
 
         mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/paiements-especes", tenantId)
-                        .header("Authorization", "Bearer " + token()))
+                        .header("Authorization", "Bearer " + token(tenantId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].protectionAssuree").value(false));
@@ -274,5 +300,42 @@ class PaiementControllerIntegrationTest {
         mockMvc.perform(get("/api/v1/pay/missions/{missionId}/moyen-paiement", "mission-jamais-choisie")
                         .header("Authorization", "Bearer " + token()))
                 .andExpect(status().isNotFound());
+    }
+
+    /** IDOR corrigé (audit CDC §Transverse) : tenantId vient du JWT, jamais du corps — un tenant ne lit pas le rapport d'un autre. */
+    @Test
+    void reading_another_tenant_s_rapport_is_refused() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        String autreTenantId = "tenant-autre-" + System.nanoTime();
+
+        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
+                        .header("Authorization", "Bearer " + token(autreTenantId)))
+                .andExpect(status().isForbidden());
+    }
+
+    /** IDOR corrigé (audit CDC §Transverse) : ADMINISTRATION consulte n'importe quel tenant, consultation transverse légitime. */
+    @Test
+    void administration_reads_any_tenant_s_rapport() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+
+        mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
+                        .header("Authorization", "Bearer " + tokenAdmin()))
+                .andExpect(status().isOk());
+    }
+
+    /** IDOR corrigé (audit CDC §Transverse) : un transporteur ne lit pas les écritures d'un autre transporteur que lui-même. */
+    @Test
+    void reading_another_transporteur_s_ecritures_is_refused() throws Exception {
+        mockMvc.perform(get("/api/v1/pay/transporteurs/{transporteurId}/ecritures", "actor-transporteur-A")
+                        .header("Authorization", "Bearer " + token("tenant-jwt-test", "actor-transporteur-B")))
+                .andExpect(status().isForbidden());
+    }
+
+    /** IDOR corrigé (audit CDC §Transverse) : un transporteur lit ses propres écritures sans restriction. */
+    @Test
+    void reading_ones_own_ecritures_is_allowed() throws Exception {
+        mockMvc.perform(get("/api/v1/pay/transporteurs/{transporteurId}/ecritures", "actor-transporteur-A")
+                        .header("Authorization", "Bearer " + token("tenant-jwt-test", "actor-transporteur-A")))
+                .andExpect(status().isOk());
     }
 }

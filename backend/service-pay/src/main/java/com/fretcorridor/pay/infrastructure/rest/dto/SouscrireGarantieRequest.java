@@ -7,7 +7,6 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record SouscrireGarantieRequest(
-        @NotBlank String tenantId,
         @NotBlank String garantId,
         @NotNull @Positive BigDecimal montant,
         @NotBlank String referenceGarantie
