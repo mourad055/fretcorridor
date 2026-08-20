@@ -52,7 +52,7 @@ public class MissionAppparieeController {
     public Mono<ResponseEntity<MissionAppparieeResponse>> detail(
             @AuthenticationPrincipal AuthenticatedActor actor,
             @PathVariable String missionId) {
-        return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_MISSION_DETAIL", "mission:" + missionId)
+        return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_MISSION_DETAIL", "mission:" + missionId, actor.delegationToken())
                 .then(optPort.listerMissionsParTenant(actor.tenantId())
                         .filter(mission -> mission.id().equals(missionId))
                         .next()

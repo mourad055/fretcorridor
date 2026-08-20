@@ -13,6 +13,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -54,7 +55,7 @@ class TenantControllerTest {
     @Test
     void an_admin_lists_tenants() {
         String token = tokenFor("+237600000003");
-        when(admPort.tenants()).thenReturn(Flux.just(new TenantVue("tenant-bgft-douala", "Bureau Douala", "Cameroun")));
+        when(admPort.tenants(any())).thenReturn(Flux.just(new TenantVue("tenant-bgft-douala", "Bureau Douala", "Cameroun")));
 
         webTestClient.get().uri("/api/v1/admin/tenants")
                 .header("Authorization", "Bearer " + token)
@@ -67,7 +68,7 @@ class TenantControllerTest {
     @Test
     void creer_un_tenant_uses_the_authenticated_actor_as_author() {
         String token = tokenFor("+237600000003");
-        when(admPort.creerTenant(eq("tenant-new"), eq("Bureau Neuf"), eq("Tchad"), eq("actor-admin-1")))
+        when(admPort.creerTenant(eq("tenant-new"), eq("Bureau Neuf"), eq("Tchad"), eq("actor-admin-1"), any()))
                 .thenReturn(Mono.just(new TenantVue("tenant-new", "Bureau Neuf", "Tchad")));
 
         webTestClient.post().uri("/api/v1/admin/tenants")
@@ -77,6 +78,6 @@ class TenantControllerTest {
                 .exchange()
                 .expectStatus().isOk();
 
-        verify(admPort).creerTenant("tenant-new", "Bureau Neuf", "Tchad", "actor-admin-1");
+        verify(admPort).creerTenant(eq("tenant-new"), eq("Bureau Neuf"), eq("Tchad"), eq("actor-admin-1"), any());
     }
 }

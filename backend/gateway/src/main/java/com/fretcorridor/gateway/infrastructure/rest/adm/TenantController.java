@@ -22,14 +22,14 @@ public class TenantController {
     }
 
     @GetMapping
-    public Flux<TenantResponse> lister() {
-        return admPort.tenants().map(TenantResponse::from);
+    public Flux<TenantResponse> lister(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.tenants(actor.delegationToken()).map(TenantResponse::from);
     }
 
     @PostMapping
     public Mono<TenantResponse> creer(@Valid @RequestBody CreerTenantRequest request,
                                        @AuthenticationPrincipal AuthenticatedActor actor) {
-        return admPort.creerTenant(request.id(), request.nom(), request.pays(), actor.actorId())
+        return admPort.creerTenant(request.id(), request.nom(), request.pays(), actor.actorId(), actor.delegationToken())
                 .map(TenantResponse::from);
     }
 }
