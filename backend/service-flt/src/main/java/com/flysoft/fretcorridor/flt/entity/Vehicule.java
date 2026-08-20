@@ -26,6 +26,12 @@ public class Vehicule {
     @Column(nullable = false)
     private String typeVehicule;
 
+    // RG-088 (audit CDC du 19 août, bloquant corrigé) : une immatriculation
+    // identifie un véhicule physique unique, indépendamment du tenant qui le
+    // déclare — deux tenants ne doivent jamais pouvoir déclarer la même
+    // plaque. NULL reste autorisé plusieurs fois (contrainte SQL standard) :
+    // un véhicule pas encore immatriculé (neuf, en cours de démarches).
+    @Column(unique = true)
     private String immatriculation;
 
     private Double profilHauteurMetres;
