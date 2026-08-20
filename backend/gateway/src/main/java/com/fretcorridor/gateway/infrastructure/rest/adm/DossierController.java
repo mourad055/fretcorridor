@@ -36,7 +36,8 @@ public class DossierController {
     }
 
     @GetMapping("/{dossierId}")
-    public Mono<DossierConsolideResponse> consolide(@PathVariable String dossierId) {
+    public Mono<DossierConsolideResponse> consolide(@PathVariable String dossierId,
+                                                      @AuthenticationPrincipal AuthenticatedActor actor) {
         return admPort.dossier(dossierId).flatMap(dossier -> {
             DossierResponse dossierResponse = DossierResponse.from(dossier);
             if (dossier.missionId() == null) {
@@ -46,7 +47,7 @@ public class DossierController {
                     .filter(m -> m.id().equals(dossier.missionId()))
                     .map(MissionResponse::from)
                     .collectList();
-            Mono<java.util.List<EcritureVueResponse>> ecritures = payReadPort.rapportDuTenant(dossier.tenantId())
+            Mono<java.util.List<EcritureVueResponse>> ecritures = payReadPort.rapportDuTenant(dossier.tenantId(), actor.delegationToken())
                     .filter(e -> dossier.missionId().equals(e.missionId()))
                     .map(EcritureVueResponse::from)
                     .collectList();

@@ -16,6 +16,10 @@ spring:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
 
 fretcorridor:
+  # ⚠️ Même secret que service-ida — obligatoire pour que service-pay puisse
+  # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
   pay:
     # EF-PAY-05 / ENF-SEC-05 : secret HMAC du webhook prestataire, jamais codé
     # en dur — la valeur par défaut n'est valable qu'en développement local.
