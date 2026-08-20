@@ -2,9 +2,11 @@ import {
   AfterViewInit,
   Component,
   ElementRef,
+  EventEmitter,
   Input,
   OnChanges,
   OnDestroy,
+  Output,
   SimpleChanges,
   ViewChild,
 } from '@angular/core';
@@ -15,6 +17,8 @@ import { coordonneesVille } from './villes-cemac';
 
 const CENTRE_CEMAC: [number, number] = [6.5, 12.5];
 const ZOOM_INITIAL = 5;
+const POIDS_LIGNE = 3;
+const POIDS_LIGNE_SELECTIONNEE = 6;
 
 const COULEUR_VISIBILITE = '#a1a1aa';
 const COULEUR_MATCHING = '#d40f16';
@@ -55,12 +59,15 @@ function libelleEtatsAxe(axe: Axe): string {
 })
 export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy {
   @Input() axes: Axe[] = [];
+  @Input() axeSelectionneId: string | null = null;
+  @Output() readonly axeSelectionne = new EventEmitter<string>();
 
   @ViewChild('mapHost', { static: true }) private readonly mapHost!: ElementRef<HTMLDivElement>;
 
   private map: L.Map | null = null;
   private layers: L.LayerGroup | null = null;
   private viewInitialized = false;
+  private readonly lignesParAxeId = new Map<string, L.Polyline>();
 
   ngAfterViewInit(): void {
     this.viewInitialized = true;
@@ -70,6 +77,8 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['axes'] && this.viewInitialized) {
       this.dessinerCouches();
+    } else if (changes['axeSelectionneId'] && !changes['axeSelectionneId'].firstChange) {
+      this.appliquerSelection();
     }
   }
 
@@ -111,6 +120,7 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
     const L = await import('leaflet');
 
     this.layers.clearLayers();
+    this.lignesParAxeId.clear();
 
     const hubsVus = new Set<string>();
     const bounds: L.LatLngExpression[] = [];
@@ -125,7 +135,7 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
       const couleur = couleurPourAxe(axe);
       const ligne = L.polyline([origine, destination], {
         color: couleur,
-        weight: 3,
+        weight: POIDS_LIGNE,
         opacity: 0.9,
         lineCap: 'round',
       });
@@ -133,7 +143,9 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
         `<strong>${this.echapper(axe.origine)} → ${this.echapper(axe.destination)}</strong><br/>` +
           `${axe.distanceKm} km — ${this.echapper(libelleEtatsAxe(axe))}`
       );
+      ligne.on('click', () => this.axeSelectionne.emit(axe.id));
       this.layers.addLayer(ligne);
+      this.lignesParAxeId.set(axe.id, ligne);
       bounds.push(origine, destination);
 
       for (const [nom, coords] of [
@@ -166,6 +178,17 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
     }
 
     requestAnimationFrame(() => this.map?.invalidateSize());
+    this.appliquerSelection();
+  }
+
+  private appliquerSelection(): void {
+    for (const [id, ligne] of this.lignesParAxeId) {
+      const selectionnee = id === this.axeSelectionneId;
+      ligne.setStyle({ weight: selectionnee ? POIDS_LIGNE_SELECTIONNEE : POIDS_LIGNE, opacity: selectionnee ? 1 : 0.9 });
+      if (selectionnee) {
+        ligne.bringToFront();
+      }
+    }
   }
 
   private echapper(valeur: string): string {

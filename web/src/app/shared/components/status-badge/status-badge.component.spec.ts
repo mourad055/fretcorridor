@@ -95,33 +95,33 @@ describe('mapping statut → variante', () => {
   });
 });
 
-describe('libellés FR des enums (Sprint 15)', () => {
-  it('traduit les statuts de dossier', () => {
-    expect(libelleDossierStatut('OUVERT')).toBe('Ouvert');
-    expect(libelleDossierStatut('EN_COURS')).toBe('En cours');
-    expect(libelleDossierStatut('ESCALADE')).toBe('Escaladé');
-    expect(libelleDossierStatut('CLOS')).toBe('Clos');
+describe('libellés des enums → clés de traduction (Sprint 15, i18n au Sprint 23)', () => {
+  it('mappe les statuts de dossier vers leur clé enum.*', () => {
+    expect(libelleDossierStatut('OUVERT')).toBe('enum.dossierStatut.OUVERT');
+    expect(libelleDossierStatut('EN_COURS')).toBe('enum.dossierStatut.EN_COURS');
+    expect(libelleDossierStatut('ESCALADE')).toBe('enum.dossierStatut.ESCALADE');
+    expect(libelleDossierStatut('CLOS')).toBe('enum.dossierStatut.CLOS');
     expect(libelleDossierStatut(undefined)).toBe('');
   });
 
-  it('traduit les statuts KYC', () => {
-    expect(libelleKycStatut('EN_ATTENTE')).toBe('En attente');
-    expect(libelleKycStatut('VALIDE')).toBe('Validé');
-    expect(libelleKycStatut('REJETE')).toBe('Rejeté');
+  it('mappe les statuts KYC vers leur clé enum.*', () => {
+    expect(libelleKycStatut('EN_ATTENTE')).toBe('enum.kycStatut.EN_ATTENTE');
+    expect(libelleKycStatut('VALIDE')).toBe('enum.kycStatut.VALIDE');
+    expect(libelleKycStatut('REJETE')).toBe('enum.kycStatut.REJETE');
   });
 
-  it("traduit les états d'axe", () => {
-    expect(libelleAxeVisibilite(true)).toBe('Visible');
-    expect(libelleAxeVisibilite(false)).toBe('Masqué');
-    expect(libelleAxeMatching(true)).toBe('Matching actif');
-    expect(libelleAxeMatching(false)).toBe('Matching inactif');
-    expect(libelleAxePaiement(true)).toBe('Paiement actif');
-    expect(libelleAxePaiement(false)).toBe('Paiement inactif');
+  it("mappe les états d'axe vers leur clé enum.*", () => {
+    expect(libelleAxeVisibilite(true)).toBe('enum.axeVisibilite.ACTIVE');
+    expect(libelleAxeVisibilite(false)).toBe('enum.axeVisibilite.INACTIVE');
+    expect(libelleAxeMatching(true)).toBe('enum.axeMatching.ACTIVE');
+    expect(libelleAxeMatching(false)).toBe('enum.axeMatching.INACTIVE');
+    expect(libelleAxePaiement(true)).toBe('enum.axePaiement.ACTIVE');
+    expect(libelleAxePaiement(false)).toBe('enum.axePaiement.INACTIVE');
   });
 
-  it("traduit les statuts d'écriture", () => {
-    expect(libelleEcritureStatut('VALIDE')).toBe('Validée');
-    expect(libelleEcritureStatut('SUSPENDU')).toBe('Suspendue');
+  it("mappe les statuts d'écriture vers leur clé enum.*", () => {
+    expect(libelleEcritureStatut('VALIDE')).toBe('enum.ecritureStatut.VALIDE');
+    expect(libelleEcritureStatut('SUSPENDU')).toBe('enum.ecritureStatut.SUSPENDU');
   });
 
   it('traduit les modes de paiement et affiche un tiret sur un reversement (mode null)', () => {
@@ -132,48 +132,48 @@ describe('libellés FR des enums (Sprint 15)', () => {
     expect(libelleModePaiement(null)).toBe('—');
   });
 
-  it('traduit les statuts de mission', () => {
-    expect(libelleMissionStatut('CONFIRMEE')).toBe('Confirmée');
-    expect(libelleMissionStatut('EN_COURS')).toBe('En cours');
-    expect(libelleMissionStatut('CLOTUREE')).toBe('Clôturée');
+  it('mappe les statuts de mission vers leur clé enum.*', () => {
+    expect(libelleMissionStatut('CONFIRMEE')).toBe('enum.missionStatut.CONFIRMEE');
+    expect(libelleMissionStatut('EN_COURS')).toBe('enum.missionStatut.EN_COURS');
+    expect(libelleMissionStatut('CLOTUREE')).toBe('enum.missionStatut.CLOTUREE');
   });
 
-  it('traduit les modes de collecte', () => {
-    expect(libelleModeCollecte('PORTE_A_PORTE')).toBe('Porte à porte');
-    expect(libelleModeCollecte('POINT_DEPOT')).toBe('Point de dépôt');
+  it('mappe les modes de collecte vers leur clé enum.*', () => {
+    expect(libelleModeCollecte('PORTE_A_PORTE')).toBe('enum.modeCollecte.PORTE_A_PORTE');
+    expect(libelleModeCollecte('POINT_DEPOT')).toBe('enum.modeCollecte.POINT_DEPOT');
   });
 
-  it('traduit les états de capacité', () => {
-    expect(libelleCapaciteEtat('PUBLIEE')).toBe('Publiée');
-    expect(libelleCapaciteEtat('APPARIEE')).toBe('Appariée');
-    expect(libelleCapaciteEtat('EXPIREE')).toBe('Expirée');
+  it('mappe les états de capacité vers leur clé enum.*', () => {
+    expect(libelleCapaciteEtat('PUBLIEE')).toBe('enum.capaciteEtat.PUBLIEE');
+    expect(libelleCapaciteEtat('APPARIEE')).toBe('enum.capaciteEtat.APPARIEE');
+    expect(libelleCapaciteEtat('EXPIREE')).toBe('enum.capaciteEtat.EXPIREE');
   });
 
-  it("traduit les types d'acteur KYC connus et humanise les valeurs inconnues", () => {
-    expect(libelleTypeActeur('CHAUFFEUR')).toBe('Chauffeur');
-    expect(libelleTypeActeur('TRANSPORTEUR_PERSONNE_MORALE')).toBe('Transporteur (personne morale)');
+  it("mappe les types d'acteur KYC connus vers leur clé enum.* et humanise les valeurs inconnues", () => {
+    expect(libelleTypeActeur('CHAUFFEUR')).toBe('enum.typeActeur.CHAUFFEUR');
+    expect(libelleTypeActeur('TRANSPORTEUR_PERSONNE_MORALE')).toBe('enum.typeActeur.TRANSPORTEUR_PERSONNE_MORALE');
     expect(libelleTypeActeur('AUTRE_TYPE')).toBe('Autre type');
   });
 
-  it('traduit les types de dossier', () => {
-    expect(libelleTypeDossier('MODERATION')).toBe('Modération');
-    expect(libelleTypeDossier('INCIDENT')).toBe('Incident');
-    expect(libelleTypeDossier('LITIGE')).toBe('Litige');
+  it('mappe les types de dossier vers leur clé enum.*', () => {
+    expect(libelleTypeDossier('MODERATION')).toBe('enum.typeDossier.MODERATION');
+    expect(libelleTypeDossier('INCIDENT')).toBe('enum.typeDossier.INCIDENT');
+    expect(libelleTypeDossier('LITIGE')).toBe('enum.typeDossier.LITIGE');
   });
 
-  it('traduit les priorités de dossier', () => {
-    expect(libellePrioriteDossier('BASSE')).toBe('Basse');
-    expect(libellePrioriteDossier('NORMALE')).toBe('Normale');
-    expect(libellePrioriteDossier('HAUTE')).toBe('Haute');
+  it('mappe les priorités de dossier vers leur clé enum.*', () => {
+    expect(libellePrioriteDossier('BASSE')).toBe('enum.prioriteDossier.BASSE');
+    expect(libellePrioriteDossier('NORMALE')).toBe('enum.prioriteDossier.NORMALE');
+    expect(libellePrioriteDossier('HAUTE')).toBe('enum.prioriteDossier.HAUTE');
   });
 
-  it("traduit les états d'étape de mission", () => {
-    expect(libelleEtapeEtat('A_VENIR')).toBe('À venir');
-    expect(libelleEtapeEtat('EN_COURS')).toBe('En cours');
-    expect(libelleEtapeEtat('TERMINEE')).toBe('Terminée');
+  it("mappe les états d'étape de mission vers leur clé enum.*", () => {
+    expect(libelleEtapeEtat('A_VENIR')).toBe('enum.etapeEtat.A_VENIR');
+    expect(libelleEtapeEtat('EN_COURS')).toBe('enum.etapeEtat.EN_COURS');
+    expect(libelleEtapeEtat('TERMINEE')).toBe('enum.etapeEtat.TERMINEE');
   });
 
-  it("humanise les actions du journal d'audit", () => {
+  it("humanise les actions du journal d'audit (vocabulaire ouvert, pas traduit)", () => {
     expect(libelleJournalAction('DOSSIER_OUVERT')).toBe('Dossier ouvert');
     expect(libelleJournalAction(undefined)).toBe('');
   });

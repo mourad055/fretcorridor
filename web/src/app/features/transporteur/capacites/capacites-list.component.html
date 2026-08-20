@@ -33,8 +33,8 @@
           <td>{{ capacite.destination }}</td>
           <td>{{ capacite.departLe | date: 'short' }}</td>
           <td>{{ capacite.poidsTaxableKg }} kg</td>
-          <td>{{ libelleModeCollecte(capacite.modeCollecte) }}</td>
-          <td><app-status-badge [label]="libelleCapaciteEtat(capacite.etat)" [variant]="capaciteStatusVariant(capacite.etat)" /></td>
+          <td>{{ libelleModeCollecte(capacite.modeCollecte) | translate }}</td>
+          <td><app-status-badge [label]="libelleCapaciteEtat(capacite.etat) | translate" [variant]="capaciteStatusVariant(capacite.etat)" /></td>
         </tr>
       </tbody>
     </table>

@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { AxesMapComponent } from './axes-map.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 describe('AxesMapComponent', () => {
   let httpMock: HttpTestingController;
@@ -11,7 +12,7 @@ describe('AxesMapComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AxesMapComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
@@ -33,6 +34,31 @@ describe('AxesMapComponent', () => {
     expect(rows).toHaveLength(2);
     expect(fixture.debugElement.query(By.css('app-corridor-map'))).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Matching');
+  });
+
+  it('sélectionne une ligne au clic puis la désélectionne au second clic', () => {
+    const fixture = TestBed.createComponent(AxesMapComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/axes`).flush([
+      { id: 'axe-1', origine: 'Douala', destination: 'Yaoundé', distanceKm: 300, visibiliteActive: true, matchingActif: true, paiementActif: true },
+      { id: 'axe-2', origine: 'Douala', destination: 'Bafoussam', distanceKm: 350, visibiliteActive: true, matchingActif: true, paiementActif: false },
+    ]);
+    fixture.detectChanges();
+
+    const [premiereLigne, deuxiemeLigne] = fixture.debugElement.queryAll(By.css('table.axes-table tbody tr'));
+
+    premiereLigne.nativeElement.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.axeSelectionneId()).toBe('axe-1');
+    expect(premiereLigne.nativeElement.classList).toContain('axes-table__row--selected');
+    expect(premiereLigne.nativeElement.getAttribute('aria-selected')).toBe('true');
+    expect(deuxiemeLigne.nativeElement.getAttribute('aria-selected')).toBe('false');
+
+    premiereLigne.nativeElement.click();
+    fixture.detectChanges();
+    expect(fixture.componentInstance.axeSelectionneId()).toBeNull();
+    expect(premiereLigne.nativeElement.classList).not.toContain('axes-table__row--selected');
   });
 
   it("affiche un message si aucun axe n'est activé", () => {

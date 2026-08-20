@@ -3,8 +3,8 @@
     <div class="shell__header-inner">
       <div class="shell__brand">
         <app-brand-logo size="sm" />
-        @if (roleLabel()) {
-          <span class="shell__role">{{ roleLabel() }}</span>
+        @if (roleLabelKey()) {
+          <span class="shell__role">{{ roleLabelKey() | translate }}</span>
         }
         @if (session()?.tenantId) {
           <span class="shell__tenant">{{ session()?.tenantId }}</span>
@@ -12,8 +12,9 @@
       </div>
 
       <div class="shell__actions">
+        <app-langue-switch />
         <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="logout()">
-          Déconnexion
+          {{ 'shell.logout' | translate }}
         </button>
       </div>
     </div>

@@ -5,6 +5,7 @@ import { provideRouter, Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { LoginComponent } from './login.component';
 import { environment } from '../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../testing/translate-testing.providers';
 
 describe('LoginComponent', () => {
   let httpMock: HttpTestingController;
@@ -17,6 +18,7 @@ describe('LoginComponent', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([{ path: 'bureau', children: [] }]),
+        provideTranslateServiceForTests(),
       ],
     }).compileComponents();
 
@@ -57,7 +59,7 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
 
     expect(navigateSpy).not.toHaveBeenCalled();
-    expect(component.errorMessage()).toBe('Numéro de téléphone ou code invalide.');
+    expect(component.errorMessage()).toBe('login.error');
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));
     expect(alert.nativeElement.textContent).toContain('Numéro de téléphone ou code invalide.');
   });
@@ -71,7 +73,7 @@ describe('LoginComponent', () => {
     component.loginAsDemo(component.demoAccounts[0]);
 
     expect(component.phone()).toBe('+237600000001');
-    expect(component.code()).toBe('123456');
+    expect(component.code()).toBe('1234');
 
     const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/login`);
     req.flush({ token: 'header.eyJzdWIiOiJhIn0.sig', role: 'BUREAU', tenantId: 'tenant-1' });
@@ -89,11 +91,18 @@ describe('LoginComponent', () => {
     component.loginAsDemo(compteTchad!);
 
     expect(component.phone()).toBe('+235600000004');
-    expect(component.code()).toBe('123456');
+    expect(component.code()).toBe('1234');
 
     const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/login`);
     req.flush({ token: 'header.eyJzdWIiOiJiIn0.sig', role: 'BUREAU', tenantId: 'tenant-bnft-ndjamena' });
 
     expect(navigateSpy).toHaveBeenCalledWith('/bureau');
+  });
+
+  it('affiche le sélecteur de langue (comportement testé dans LangueSwitchComponent)', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('app-langue-switch'))).toBeTruthy();
   });
 });

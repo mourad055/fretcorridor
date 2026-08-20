@@ -28,14 +28,18 @@ public class MockIdaAuthenticationAdapter implements AuthenticationPort {
     /** Jeton de délégation factice — non vérifié par les tests gateway, juste présent pour exercer le passe-plat JwtService. */
     private static final String JETON_IDA_FACTICE = "mock-ida-delegation-token";
 
+    // actorId des deux comptes Transporteur aligné sur les UUID réels de service-ida
+    // (docs/proposition-seed-service-ida.sql) : MockCapAdapter/MockExeAdapter filtrent
+    // par actorId (contrairement à NOT/GEO/OPT/TRK, qui filtrent par tenantId), donc
+    // cette valeur doit rester identique entre la démo réelle et cette suite de tests.
     private final Map<String, Actor> actorsByPhone = Map.of(
             "+237600000001", new Actor("actor-bureau-1", "+237600000001", Role.BUREAU, "tenant-bgft-douala", JETON_IDA_FACTICE),
-            "+237600000002", new Actor("actor-transporteur-1", "+237600000002", Role.TRANSPORTEUR, "tenant-bgft-douala", JETON_IDA_FACTICE),
+            "+237600000002", new Actor("a0000000-0000-0000-0000-000000000002", "+237600000002", Role.TRANSPORTEUR, "tenant-bgft-douala", JETON_IDA_FACTICE),
             "+237600000003", new Actor("actor-admin-1", "+237600000003", Role.ADMIN, "tenant-flysoft", JETON_IDA_FACTICE),
             // Second tenant Bureau, pour les tests et démonstrations d'isolation multi-tenant (ENF-MUL-01).
             "+235600000004", new Actor("actor-bureau-2", "+235600000004", Role.BUREAU, "tenant-bnft-ndjamena", JETON_IDA_FACTICE),
             // Second Transporteur du même tenant, pour les tests d'isolation par acteur (PRD §5.3).
-            "+237600000005", new Actor("actor-transporteur-2", "+237600000005", Role.TRANSPORTEUR, "tenant-bgft-douala", JETON_IDA_FACTICE),
+            "+237600000005", new Actor("a0000000-0000-0000-0000-000000000005", "+237600000005", Role.TRANSPORTEUR, "tenant-bgft-douala", JETON_IDA_FACTICE),
             // Agent de terrain, pour les tests d'enrôlement (UC-IDA-03).
             "+237600000006", new Actor("actor-agent-1", "+237600000006", Role.AGENT, "tenant-bgft-douala", JETON_IDA_FACTICE)
     );

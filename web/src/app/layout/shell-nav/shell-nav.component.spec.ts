@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { ShellNavComponent } from './shell-nav.component';
 import { AuthService } from '../../core/auth/auth.service';
 import { Session } from '../../core/auth/auth.models';
+import { provideTranslateServiceForTests } from '../../../testing/translate-testing.providers';
 
 describe('ShellNavComponent', () => {
   function configure(session: Session | null): void {
@@ -11,6 +12,7 @@ describe('ShellNavComponent', () => {
       imports: [ShellNavComponent],
       providers: [
         provideRouter([]),
+        provideTranslateServiceForTests(),
         { provide: AuthService, useValue: { session: () => session } },
       ],
     });

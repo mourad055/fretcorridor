@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { RapportFinancierComponent } from './rapport-financier.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 describe('RapportFinancierComponent', () => {
   let httpMock: HttpTestingController;
@@ -11,7 +12,7 @@ describe('RapportFinancierComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [RapportFinancierComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);

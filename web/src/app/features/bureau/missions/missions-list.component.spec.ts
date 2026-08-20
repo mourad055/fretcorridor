@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { MissionsListComponent } from './missions-list.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 const MISSIONS = [
   {
@@ -23,7 +24,7 @@ describe('MissionsListComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MissionsListComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);

@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { DossiersComponent } from './dossiers.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 const DOSSIER = {
   id: 'dossier-1',
@@ -29,7 +30,7 @@ describe('DossiersComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DossiersComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
@@ -117,6 +118,32 @@ describe('DossiersComponent', () => {
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
 
     expect(fixture.componentInstance.trancheEnCours()).toBe(false);
+  });
+
+  it('désactive Trancher tant que la décision ou le motif est vide, et ne fait aucun appel réseau si on force malgré tout', () => {
+    const fixture = TestBed.createComponent(DossiersComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.ouvrirDossier('dossier-1');
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/dossiers/dossier-1`)
+      .flush({ dossier: DOSSIER, mission: null, ecritures: [] });
+    fixture.detectChanges();
+
+    const trancherBtn = fixture.debugElement.query(By.css('.field__fieldset .fc-btn--primary'));
+    expect(trancherBtn.nativeElement.disabled).toBe(true);
+
+    fixture.componentInstance.decisionTexte.set('   ');
+    fixture.componentInstance.motifTexte.set('Preuve conforme');
+    fixture.detectChanges();
+    expect(trancherBtn.nativeElement.disabled).toBe(true);
+
+    fixture.componentInstance.trancher();
+    httpMock.expectNone(`${environment.apiBaseUrl}/admin/dossiers/dossier-1/decision`);
+
+    fixture.componentInstance.decisionTexte.set('RESOLU');
+    fixture.detectChanges();
+    expect(trancherBtn.nativeElement.disabled).toBe(false);
   });
 
   it("désactive le bouton d'escalade pendant la détection", () => {
