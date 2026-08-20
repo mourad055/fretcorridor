@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -108,7 +109,7 @@ class DossierControllerTest {
                 new Mission("mission-a", "tenant-bgft-douala", "actor-transporteur-1", "Transport Étoile SARL",
                         "Douala", "Yaoundé", List.of(new EtapeMission(1, EtapeType.ENLEVEMENT, "Douala", EtapeEtat.TERMINEE)))
         ));
-        when(payReadPort.rapportDuTenant("tenant-bgft-douala")).thenReturn(Flux.just(
+        when(payReadPort.rapportDuTenant(eq("tenant-bgft-douala"), any())).thenReturn(Flux.just(
                 new EcritureVue("e1", "mission-a", "COMPTE_SEQUESTRE_PRESTATAIRE", "ENCAISSEMENT", "CREDIT",
                         new BigDecimal("500"), Instant.now(), "VALIDE", "VIREMENT", false),
                 new EcritureVue("e2", "mission-autre", "COMPTE_SEQUESTRE_PRESTATAIRE", "ENCAISSEMENT", "CREDIT",

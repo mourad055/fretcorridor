@@ -82,8 +82,10 @@ class MissionServiceTest {
     }
 
     @Test
-    void delivering_a_mission_publishes_a_mission_livree_event() {
-        when(missionRepository.findById(missionId)).thenReturn(Optional.of(missionDuTransporteur()));
+    void delivering_a_mission_already_picked_up_publishes_a_mission_livree_event() {
+        Mission missionDejaPriseEnCharge = missionDuTransporteur();
+        missionDejaPriseEnCharge.setStatut(Mission.StatutMission.PRISE_EN_CHARGE);
+        when(missionRepository.findById(missionId)).thenReturn(Optional.of(missionDejaPriseEnCharge));
 
         var requete = new MissionDto.AjouterEtapeRequest();
         requete.setType(EtapeMission.TypeEtape.LIVRAISON);
@@ -98,6 +100,24 @@ class MissionServiceTest {
         assertThat(captor.getValue().tenantId()).isEqualTo(TENANT);
         assertThat(captor.getValue().transporteurId()).isEqualTo(transporteurId);
         assertThat(captor.getValue().preuveLivraisonReference()).isNotBlank();
+    }
+
+    // RG-062 (audit CDC du 19 août, bloquant corrigé) : une livraison sans
+    // prise en charge préalable libérait le séquestre à tort — reproduit
+    // involontairement par l'ancienne version de ce test.
+    @Test
+    void delivering_a_mission_never_picked_up_is_refused() {
+        when(missionRepository.findById(missionId)).thenReturn(Optional.of(missionDuTransporteur()));
+
+        var requete = new MissionDto.AjouterEtapeRequest();
+        requete.setType(EtapeMission.TypeEtape.LIVRAISON);
+        requete.setLibelle("Livraison à Yaoundé");
+
+        assertThatThrownBy(() -> service.ajouterEtape(missionId, transporteurId, TENANT, requete))
+                .hasMessage("ETAPE_HORS_SEQUENCE");
+
+        verify(etapeMissionRepository, never()).save(any());
+        verify(missionEventPublisher, never()).publierMissionLivree(any());
     }
 
     @Test

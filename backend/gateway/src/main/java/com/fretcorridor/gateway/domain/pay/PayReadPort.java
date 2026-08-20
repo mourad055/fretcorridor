@@ -11,14 +11,14 @@ import reactor.core.publisher.Mono;
  */
 public interface PayReadPort {
 
-    Flux<EcritureVue> ecrituresDuTransporteur(String transporteurId);
+    Flux<EcritureVue> ecrituresDuTransporteur(String transporteurId, String delegationToken);
 
-    Flux<EcritureVue> rapportDuTenant(String tenantId);
+    Flux<EcritureVue> rapportDuTenant(String tenantId, String delegationToken);
 
-    Flux<DeclarationEspecesVue> paiementsEspecesDuTenant(String tenantId);
+    Flux<DeclarationEspecesVue> paiementsEspecesDuTenant(String tenantId, String delegationToken);
 
     // S14 Item B (Volet A, Chauffeur) : erreur MissionIntrouvableException si
     // le chargeur n'a pas encore choisi de moyen pour cette mission (404 côté
     // service-pay).
-    Mono<ModePaiementChoisi> modePaiementChoisi(String missionId);
+    Mono<ModePaiementChoisi> modePaiementChoisi(String missionId, String delegationToken);
 }

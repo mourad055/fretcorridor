@@ -31,6 +31,13 @@ public class Mission {
     // pas de FK inter-service) — condition pour que le chauffeur voie "ses"
     // missions (EF-EXE-02, jusqu'ici hors périmètre, cf. commentaire ci-dessus).
     private UUID transporteurId;
+
+    // Renseigné par AffectationConfirmeeListener quand service-opt a résolu
+    // le véhicule affecté (référence service-flt, pas de FK inter-service) -
+    // permet à service-flt de rattacher une position GPS au bon véhicule
+    // avant publication de PositionBrute (cf audit §7.1, canal Kafka mort).
+    private UUID vehiculeId;
+
     private UUID axeId;
     private String origineNom;
     private String destinationNom;
