@@ -1,36 +1,37 @@
 import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
 
 interface OngletNav {
   path: string;
-  label: string;
+  labelKey: string;
   exact: boolean;
 }
 
 const ONGLETS_BUREAU: OngletNav[] = [
-  { path: '/bureau', label: 'Axes', exact: true },
-  { path: '/bureau/missions', label: 'Missions appariées', exact: false },
-  { path: '/bureau/positions', label: 'Suivi temps réel', exact: false },
-  { path: '/bureau/chronologie', label: 'Chronologie', exact: false },
-  { path: '/bureau/rapport-financier', label: 'Rapport financier', exact: false },
-  { path: '/bureau/notifications', label: 'Notifications', exact: false },
+  { path: '/bureau', labelKey: 'nav.bureau.axes', exact: true },
+  { path: '/bureau/missions', labelKey: 'nav.bureau.missions', exact: false },
+  { path: '/bureau/positions', labelKey: 'nav.bureau.positions', exact: false },
+  { path: '/bureau/chronologie', labelKey: 'nav.bureau.chronologie', exact: false },
+  { path: '/bureau/rapport-financier', labelKey: 'nav.bureau.rapportFinancier', exact: false },
+  { path: '/bureau/notifications', labelKey: 'nav.bureau.notifications', exact: false },
 ];
 
 const ONGLETS_TRANSPORTEUR: OngletNav[] = [
-  { path: '/transporteur', label: 'Capacités', exact: true },
-  { path: '/transporteur/missions', label: 'Mes missions', exact: false },
-  { path: '/transporteur/paiement', label: 'Paiement', exact: false },
+  { path: '/transporteur', labelKey: 'nav.transporteur.capacites', exact: true },
+  { path: '/transporteur/missions', labelKey: 'nav.transporteur.missions', exact: false },
+  { path: '/transporteur/paiement', labelKey: 'nav.transporteur.paiement', exact: false },
 ];
 
 const ONGLETS_ADMIN: OngletNav[] = [
-  { path: '/admin', label: 'KYC', exact: true },
-  { path: '/admin/rapport-financier', label: 'Rapport financier', exact: false },
-  { path: '/admin/dossiers', label: 'Dossiers', exact: false },
-  { path: '/admin/configurations', label: 'Configuration', exact: false },
-  { path: '/admin/tenants', label: 'Tenants', exact: false },
-  { path: '/admin/journal-audit', label: "Journal d'audit", exact: false },
+  { path: '/admin', labelKey: 'nav.admin.kyc', exact: true },
+  { path: '/admin/rapport-financier', labelKey: 'nav.admin.rapportFinancier', exact: false },
+  { path: '/admin/dossiers', labelKey: 'nav.admin.dossiers', exact: false },
+  { path: '/admin/configurations', labelKey: 'nav.admin.configuration', exact: false },
+  { path: '/admin/tenants', labelKey: 'nav.admin.tenants', exact: false },
+  { path: '/admin/journal-audit', labelKey: 'nav.admin.journalAudit', exact: false },
 ];
 
 /**
@@ -40,7 +41,7 @@ const ONGLETS_ADMIN: OngletNav[] = [
 @Component({
   selector: 'app-shell-nav',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, TranslatePipe],
   templateUrl: './shell-nav.component.html',
   styleUrl: './shell-nav.component.css',
 })

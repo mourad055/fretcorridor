@@ -1,0 +1,124 @@
+{
+  "login": {
+    "title": "Sign in",
+    "hint": "The freight corridor, connected.",
+    "phoneLabel": "Phone number",
+    "codeLabel": "PIN code",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "error": "Invalid phone number or code.",
+    "demo": {
+      "label": "Demo accounts",
+      "bureau": "Freight bureau",
+      "transporteur": "Carrier",
+      "admin": "Administration",
+      "bureauTchad": "Freight bureau (Chad)"
+    },
+    "showcase": {
+      "title": "FretCorridor"
+    }
+  },
+  "langue": {
+    "fr": "French",
+    "en": "English",
+    "selecteurAria": "Change the interface language"
+  },
+  "shell": {
+    "role": {
+      "bureau": "Freight bureau",
+      "transporteur": "Carrier",
+      "admin": "Administration"
+    },
+    "logout": "Log out",
+    "navAriaLabel": "Main navigation"
+  },
+  "nav": {
+    "bureau": {
+      "axes": "Routes",
+      "missions": "Matched loads",
+      "positions": "Live tracking",
+      "chronologie": "Timeline",
+      "rapportFinancier": "Financial report",
+      "notifications": "Notifications"
+    },
+    "transporteur": {
+      "capacites": "Capacity",
+      "missions": "My loads",
+      "paiement": "Payment"
+    },
+    "admin": {
+      "kyc": "KYC",
+      "rapportFinancier": "Financial report",
+      "dossiers": "Cases",
+      "configuration": "Configuration",
+      "tenants": "Tenants",
+      "journalAudit": "Audit log"
+    }
+  },
+  "enum": {
+    "dossierStatut": {
+      "OUVERT": "Open",
+      "EN_COURS": "In progress",
+      "ESCALADE": "Escalated",
+      "CLOS": "Closed"
+    },
+    "kycStatut": {
+      "EN_ATTENTE": "Pending",
+      "VALIDE": "Approved",
+      "REJETE": "Rejected"
+    },
+    "axeVisibilite": {
+      "ACTIVE": "Visible",
+      "INACTIVE": "Hidden"
+    },
+    "axeMatching": {
+      "ACTIVE": "Matching active",
+      "INACTIVE": "Matching inactive"
+    },
+    "axePaiement": {
+      "ACTIVE": "Payment active",
+      "INACTIVE": "Payment inactive"
+    },
+    "ecritureStatut": {
+      "VALIDE": "Cleared",
+      "SUSPENDU": "Suspended"
+    },
+    "missionStatut": {
+      "CONFIRMEE": "Confirmed",
+      "EN_COURS": "In progress",
+      "CLOTUREE": "Closed"
+    },
+    "modeCollecte": {
+      "PORTE_A_PORTE": "Door to door",
+      "POINT_DEPOT": "Drop-off point"
+    },
+    "capaciteEtat": {
+      "PUBLIEE": "Published",
+      "APPARIEE": "Matched",
+      "EXPIREE": "Expired"
+    },
+    "typeActeur": {
+      "CHAUFFEUR": "Driver",
+      "TRANSPORTEUR_PERSONNE_MORALE": "Carrier (legal entity)"
+    },
+    "typeDossier": {
+      "MODERATION": "Moderation",
+      "INCIDENT": "Incident",
+      "LITIGE": "Dispute"
+    },
+    "prioriteDossier": {
+      "BASSE": "Low",
+      "NORMALE": "Normal",
+      "HAUTE": "High"
+    },
+    "etapeEtat": {
+      "A_VENIR": "Upcoming",
+      "EN_COURS": "In progress",
+      "TERMINEE": "Done"
+    },
+    "etapeType": {
+      "ENLEVEMENT": "Pickup",
+      "LIVRAISON": "Delivery"
+    }
+  }
+}

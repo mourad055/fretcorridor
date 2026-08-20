@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { MissionChronologieComponent } from './mission-chronologie.component';
 import { Mission } from '../../models/mission.models';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 const MISSIONS: Mission[] = [
   {
@@ -18,7 +19,10 @@ const MISSIONS: Mission[] = [
 
 describe('MissionChronologieComponent', () => {
   it('affiche une entree de chronologie par etape de mission', async () => {
-    await TestBed.configureTestingModule({ imports: [MissionChronologieComponent] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [MissionChronologieComponent],
+      providers: [provideTranslateServiceForTests()],
+    }).compileComponents();
     const fixture = TestBed.createComponent(MissionChronologieComponent);
     fixture.componentRef.setInput('missions', MISSIONS);
     fixture.detectChanges();

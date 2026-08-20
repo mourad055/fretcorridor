@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-07T00:00:00.000Z",
+  "title": "Design System: FretCorridor",
+  "extensions": {
+    "colorMeta": {
+      "corridor-red": { "role": "primary", "displayName": "Rouge Corridor", "canonical": "#d40f16", "tonalRamp": ["#3d0405", "#5e0709", "#82090c", "#a80c0f", "#d40f16", "#e3423f", "#ef7a72", "#f8b3ac"] },
+      "corridor-red-hover": { "role": "primary", "displayName": "Rouge Corridor Hover", "canonical": "#b80d13" },
+      "corridor-red-soft": { "role": "primary", "displayName": "Rouge Corridor Doux", "canonical": "#fcecec" },
+      "surface": { "role": "neutral", "displayName": "Surface", "canonical": "#ffffff" },
+      "neutral-bg": { "role": "neutral", "displayName": "Fond Neutre", "canonical": "#f5f5f6" },
+      "ink": { "role": "neutral", "displayName": "Encre", "canonical": "#0a0a0a" },
+      "ink-muted": { "role": "neutral", "displayName": "Encre Atténuée", "canonical": "#52525b" },
+      "border": { "role": "neutral", "displayName": "Bordure", "canonical": "#e4e4e7" },
+      "border-strong": { "role": "neutral", "displayName": "Bordure Renforcée", "canonical": "#86868c" },
+      "danger": { "role": "error", "displayName": "Danger", "canonical": "#b42318" },
+      "danger-soft": { "role": "error", "displayName": "Danger Doux", "canonical": "#fef3f2" },
+      "success": { "role": "success", "displayName": "Succès", "canonical": "#067647" },
+      "success-soft": { "role": "success", "displayName": "Succès Doux", "canonical": "#ecfdf3" },
+      "warning": { "role": "warning", "displayName": "Avertissement", "canonical": "#b54708" }
+    },
+    "typographyMeta": {
+      "title": { "displayName": "Title", "purpose": "Titres de page et de panel, h1-h3. Pas d'échelle display plus grande." },
+      "body": { "displayName": "Body", "purpose": "Texte courant, cellules de tableau, contenu de formulaire." },
+      "label": { "displayName": "Label", "purpose": "En-têtes de tableau, libellés de filtre, titres de panel, badges." }
+    },
+    "shadows": [
+      { "name": "elevation-panel", "value": "0 1px 2px color-mix(in srgb, #0a0a0a 6%, transparent)", "purpose": "Détache un panel/tableau du fond de page. Seul usage d'ombre au repos." },
+      { "name": "elevation-floating", "value": "0 8px 24px color-mix(in srgb, #0a0a0a 8%, transparent)", "purpose": "Réservée aux éléments détachés du flux (menus flottants, popovers futurs)." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Easing unique de tout le système, 160ms." },
+      { "name": "duration-standard", "value": "160ms", "purpose": "Durée standard des transitions d'état (couleur, bordure, ombre)." }
+    ],
+    "breakpoints": [
+      { "name": "xs", "value": "480px" },
+      { "name": "sm", "value": "720px" },
+      { "name": "md", "value": "860px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Action primaire d'un écran ou d'une ligne.",
+      "html": "<button class=\"ds-btn-primary\">Consulter</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid transparent; border-radius: 8px; padding: 0.7rem 1rem; font-family: Montserrat, sans-serif; font-weight: 700; font-size: 0.875rem; color: #ffffff; background: #d40f16; cursor: pointer; transition: background 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-primary:hover { background: #b80d13; } .ds-btn-primary:focus-visible { outline: 2px solid #d40f16; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.65; cursor: wait; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Action secondaire.",
+      "html": "<button class=\"ds-btn-ghost\">Annuler</button>",
+      "css": ".ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #86868c; border-radius: 8px; padding: 0.7rem 1rem; font-family: Montserrat, sans-serif; font-weight: 700; font-size: 0.875rem; color: #0a0a0a; background: transparent; cursor: pointer; transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), color 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-btn-ghost:hover { border-color: color-mix(in srgb, #d40f16 35%, #86868c); color: #d40f16; background: #fcecec; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "Pastille de statut colorée avec libellé texte obligatoire.",
+      "html": "<span class=\"ds-badge ds-badge--success\">Validée</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; padding: 0.15rem 0.5rem; border-radius: 999px; font-family: Montserrat, sans-serif; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap; } .ds-badge--success { background: #ecfdf3; color: #067647; } .ds-badge--warning { background: color-mix(in srgb, #b54708 12%, #fff); color: #b54708; } .ds-badge--danger { background: #fef3f2; color: #b42318; } .ds-badge--primary { background: #fcecec; color: #d40f16; } .ds-badge--neutral { background: #f5f5f6; color: #52525b; border: 1px solid #e4e4e7; }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Conteneur de contenu principal, ombre imperceptible.",
+      "html": "<section class=\"ds-panel\"><h2 class=\"ds-panel-title\">Titre</h2><p>Contenu</p></section>",
+      "css": ".ds-panel { display: flex; flex-direction: column; gap: 16px; padding: 16px; border: 1px solid #e4e4e7; border-radius: 10px; background: #ffffff; box-shadow: 0 1px 2px color-mix(in srgb, #0a0a0a 6%, transparent); } .ds-panel-title { font-family: Montserrat, sans-serif; font-size: 0.8125rem; font-weight: 700; color: #52525b; margin: 0; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "field-input",
+      "description": "Champ de formulaire avec label visible.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-input\">Libellé</label><input id=\"ds-input\" class=\"ds-field-input\" /></div>",
+      "css": ".ds-field { display: grid; gap: 0.35rem; } .ds-field-label { font-family: Montserrat, sans-serif; font-size: 0.8125rem; font-weight: 600; color: #0a0a0a; } .ds-field-input { width: 100%; padding: 0.75rem 0.85rem; border: 1px solid #86868c; border-radius: 8px; background: #ffffff; color: #0a0a0a; font-family: Montserrat, sans-serif; transition: border-color 160ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-field-input:focus { outline: none; border-color: #d40f16; box-shadow: 0 0 0 3px color-mix(in srgb, #d40f16 18%, transparent); }"
+    },
+    {
+      "name": "Nav Link",
+      "kind": "nav",
+      "refersTo": "nav-link",
+      "description": "Onglet de navigation par rôle, pilule.",
+      "html": "<a class=\"ds-nav-link ds-nav-link--active\" href=\"#\">Missions</a>",
+      "css": ".ds-nav-link { display: inline-flex; align-items: center; padding: 0.45rem 0.85rem; min-height: 2.75rem; border-radius: 999px; color: #52525b; font-family: Montserrat, sans-serif; font-size: 0.8125rem; font-weight: 600; text-decoration: none; white-space: nowrap; transition: color 160ms cubic-bezier(0.16, 1, 0.3, 1), background 160ms cubic-bezier(0.16, 1, 0.3, 1); } .ds-nav-link:hover { color: #0a0a0a; background: #f5f5f6; } .ds-nav-link--active { color: #d40f16; background: #fcecec; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Le Poste de Contrôle",
+    "overview": "FretCorridor est le poste de contrôle du corridor de fret CEMAC Douala–N'Djamena : un opérateur y supervise des flux, pas un visiteur qu'on cherche à séduire. Chaque écran répond à une seule question opérationnelle — où en est ce dossier, ce paiement, cette mission — et le système visuel s'efface derrière cette réponse plutôt que de la décorer. Le rouge de marque (Rouge Corridor) fonctionne comme une couleur de signalisation officielle : rare, réservée aux actions primaires et aux accents d'état actif, jamais étalée en fond ou en dégradé. La personnalité voulue — moderne, rassurante, professionnelle — se traduit par des composants feutrés et rassurants : transitions courtes mais jamais sèches, coins arrondis généreux et constants, ombres quasi imperceptibles réservées aux surfaces de contenu.",
+    "keyCharacteristics": [
+      "Rouge Corridor réservé aux actions et états actifs, jamais en fond de page ou en dégradé.",
+      "Densité assumée : tableaux et listes priment sur les cartes.",
+      "Plat par défaut : l'élévation signale exclusivement une surface de contenu distincte.",
+      "Statuts toujours doublés d'un libellé texte lisible, jamais d'une couleur seule."
+    ],
+    "rules": [
+      { "name": "La Règle du Signal Rare", "body": "Le Rouge Corridor n'apparaît que sur une action primaire, un état actif ou un focus — jamais en fond de section, jamais en dégradé.", "section": "colors" },
+      { "name": "La Règle de la Couleur Non Seule", "body": "Aucune information d'état ne repose sur la couleur seule : chaque badge de statut porte toujours un libellé texte explicite.", "section": "colors" },
+      { "name": "La Règle des Deux Bordures", "body": "Bordure sert les surfaces (panels, tableaux) ; Bordure Renforcée sert exclusivement les composants interactifs, seule valeur du système à 3:1 contre blanc (WCAG 1.4.11).", "section": "colors" },
+      { "name": "La Règle de l'Écart Modeste", "body": "Le titre de page le plus grand du système ne dépasse jamais 1.5x la taille du corps de texte. La hiérarchie vient du poids et de la couleur atténuée, pas de sauts de taille spectaculaires.", "section": "typography" },
+      { "name": "La Règle du Plat par Défaut", "body": "Toute surface est plate au repos. L'élévation n'apparaît que pour distinguer une zone de contenu du fond, jamais en réponse à un état d'interaction.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do garder le Rouge Corridor réservé aux actions primaires, états actifs et focus.",
+      "Do traduire chaque statut backend en libellé français lisible avant affichage.",
+      "Do utiliser l'ombre panel exclusivement pour distinguer une surface de contenu du fond.",
+      "Do respecter le rythme d'espacement 4/8/12/16/20/24/32px partout.",
+      "Do garder un point de focus visible sur tout élément interactif."
+    ],
+    "donts": [
+      "Don't utiliser de fond crème/beige/parchemin.",
+      "Don't construire un hero, un dégradé décoratif ou un ton startup fun.",
+      "Don't afficher un code d'enum brut directement dans un template.",
+      "Don't faire reposer une information d'état sur la couleur seule.",
+      "Don't utiliser de bordure colorée en border-left/border-right comme accent décoratif.",
+      "Don't ajouter d'ombre portée sur les boutons, badges ou liens de navigation au repos."
+    ]
+  }
+}

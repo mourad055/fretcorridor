@@ -11,19 +11,19 @@ class MockCapAdapterTest {
 
     @Test
     void returns_only_the_capacities_of_the_requested_transporteur() {
-        StepVerifier.create(adapter.listerParTransporteur("actor-transporteur-1").collectList())
+        StepVerifier.create(adapter.listerParTransporteur("a0000000-0000-0000-0000-000000000002").collectList())
                 .assertNext(capacites -> assertThat(capacites)
                         .hasSize(2)
-                        .allMatch(c -> c.transporteurId().equals("actor-transporteur-1")))
+                        .allMatch(c -> c.transporteurId().equals("a0000000-0000-0000-0000-000000000002")))
                 .verifyComplete();
     }
 
     @Test
     void returns_a_different_set_for_a_different_transporteur() {
-        StepVerifier.create(adapter.listerParTransporteur("actor-transporteur-2").collectList())
+        StepVerifier.create(adapter.listerParTransporteur("a0000000-0000-0000-0000-000000000005").collectList())
                 .assertNext(capacites -> assertThat(capacites)
                         .hasSize(1)
-                        .allMatch(c -> c.transporteurId().equals("actor-transporteur-2")))
+                        .allMatch(c -> c.transporteurId().equals("a0000000-0000-0000-0000-000000000005")))
                 .verifyComplete();
     }
 

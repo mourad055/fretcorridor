@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { CorridorMapComponent } from './corridor-map.component';
 import { Axe } from './axe.models';
+import { polylignesCreees } from '../../../../testing/leaflet.mock';
 
 /**
  * Leaflet est doublé en test (src/testing/leaflet.mock.ts) : jsdom ne
@@ -15,6 +16,7 @@ describe('CorridorMapComponent', () => {
   ];
 
   beforeEach(async () => {
+    polylignesCreees.length = 0;
     await TestBed.configureTestingModule({
       imports: [CorridorMapComponent],
     }).compileComponents();
@@ -43,6 +45,35 @@ describe('CorridorMapComponent', () => {
     fixture.detectChanges();
 
     fixture.componentInstance.axes = AXES;
+    expect(() => fixture.detectChanges()).not.toThrow();
+  });
+
+  it("émet axeSelectionne avec l'id de l'axe quand on clique sur sa ligne", async () => {
+    const fixture = TestBed.createComponent(CorridorMapComponent);
+    fixture.componentInstance.axes = AXES;
+    fixture.detectChanges();
+    // initialiserCarte() est asynchrone (import dynamique de Leaflet) et dessine
+    // les couches dans un requestAnimationFrame — attendre au-delà d'un tick microtask.
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const emis: string[] = [];
+    fixture.componentInstance.axeSelectionne.subscribe((id) => emis.push(id));
+
+    expect(polylignesCreees).toHaveLength(1);
+    polylignesCreees[0].trigger('click');
+
+    expect(emis).toEqual(['axe-1']);
+  });
+
+  it('ne jette pas quand axeSelectionneId change après le rendu initial', () => {
+    const fixture = TestBed.createComponent(CorridorMapComponent);
+    fixture.componentInstance.axes = AXES;
+    fixture.detectChanges();
+
+    fixture.componentInstance.axeSelectionneId = 'axe-1';
+    expect(() => fixture.detectChanges()).not.toThrow();
+
+    fixture.componentInstance.axeSelectionneId = null;
     expect(() => fixture.detectChanges()).not.toThrow();
   });
 });

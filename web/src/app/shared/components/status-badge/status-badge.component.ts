@@ -139,17 +139,22 @@ function humanize(value?: string): string {
   return lower.charAt(0).toUpperCase() + lower.slice(1);
 }
 
-/** Libellés FR lisibles pour les enums backend affichés bruts (Sprint 15). */
+/**
+ * Clés de traduction (`| translate` côté template) pour les enums backend
+ * affichés bruts (Sprint 15, converties en clés i18n au Sprint 23 — voir
+ * public/assets/i18n/{fr,en}.json, namespace `enum.*`). Le texte de repli
+ * (valeur brute) sert pour une valeur backend future non encore traduite.
+ */
 export function libelleDossierStatut(statut?: string): string {
   switch (statut) {
     case 'OUVERT':
-      return 'Ouvert';
+      return 'enum.dossierStatut.OUVERT';
     case 'EN_COURS':
-      return 'En cours';
+      return 'enum.dossierStatut.EN_COURS';
     case 'ESCALADE':
-      return 'Escaladé';
+      return 'enum.dossierStatut.ESCALADE';
     case 'CLOS':
-      return 'Clos';
+      return 'enum.dossierStatut.CLOS';
     default:
       return statut ?? '';
   }
@@ -158,34 +163,34 @@ export function libelleDossierStatut(statut?: string): string {
 export function libelleKycStatut(statut?: string): string {
   switch (statut) {
     case 'EN_ATTENTE':
-      return 'En attente';
+      return 'enum.kycStatut.EN_ATTENTE';
     case 'VALIDE':
-      return 'Validé';
+      return 'enum.kycStatut.VALIDE';
     case 'REJETE':
-      return 'Rejeté';
+      return 'enum.kycStatut.REJETE';
     default:
       return statut ?? '';
   }
 }
 
 export function libelleAxeVisibilite(active: boolean): string {
-  return active ? 'Visible' : 'Masqué';
+  return active ? 'enum.axeVisibilite.ACTIVE' : 'enum.axeVisibilite.INACTIVE';
 }
 
 export function libelleAxeMatching(actif: boolean): string {
-  return actif ? 'Matching actif' : 'Matching inactif';
+  return actif ? 'enum.axeMatching.ACTIVE' : 'enum.axeMatching.INACTIVE';
 }
 
 export function libelleAxePaiement(actif: boolean): string {
-  return actif ? 'Paiement actif' : 'Paiement inactif';
+  return actif ? 'enum.axePaiement.ACTIVE' : 'enum.axePaiement.INACTIVE';
 }
 
 export function libelleEcritureStatut(statut?: string): string {
   switch (statut) {
     case 'VALIDE':
-      return 'Validée';
+      return 'enum.ecritureStatut.VALIDE';
     case 'SUSPENDU':
-      return 'Suspendue';
+      return 'enum.ecritureStatut.SUSPENDU';
     default:
       return statut ?? '';
   }
@@ -194,11 +199,11 @@ export function libelleEcritureStatut(statut?: string): string {
 export function libelleMissionStatut(statut?: string): string {
   switch (statut) {
     case 'CONFIRMEE':
-      return 'Confirmée';
+      return 'enum.missionStatut.CONFIRMEE';
     case 'EN_COURS':
-      return 'En cours';
+      return 'enum.missionStatut.EN_COURS';
     case 'CLOTUREE':
-      return 'Clôturée';
+      return 'enum.missionStatut.CLOTUREE';
     default:
       return statut ?? '';
   }
@@ -207,9 +212,9 @@ export function libelleMissionStatut(statut?: string): string {
 export function libelleModeCollecte(mode?: string): string {
   switch (mode) {
     case 'PORTE_A_PORTE':
-      return 'Porte à porte';
+      return 'enum.modeCollecte.PORTE_A_PORTE';
     case 'POINT_DEPOT':
-      return 'Point de dépôt';
+      return 'enum.modeCollecte.POINT_DEPOT';
     default:
       return mode ?? '';
   }
@@ -218,11 +223,11 @@ export function libelleModeCollecte(mode?: string): string {
 export function libelleCapaciteEtat(etat?: string): string {
   switch (etat) {
     case 'PUBLIEE':
-      return 'Publiée';
+      return 'enum.capaciteEtat.PUBLIEE';
     case 'APPARIEE':
-      return 'Appariée';
+      return 'enum.capaciteEtat.APPARIEE';
     case 'EXPIREE':
-      return 'Expirée';
+      return 'enum.capaciteEtat.EXPIREE';
     default:
       return etat ?? '';
   }
@@ -231,9 +236,9 @@ export function libelleCapaciteEtat(etat?: string): string {
 export function libelleTypeActeur(type?: string): string {
   switch (type) {
     case 'CHAUFFEUR':
-      return 'Chauffeur';
+      return 'enum.typeActeur.CHAUFFEUR';
     case 'TRANSPORTEUR_PERSONNE_MORALE':
-      return 'Transporteur (personne morale)';
+      return 'enum.typeActeur.TRANSPORTEUR_PERSONNE_MORALE';
     default:
       return humanize(type);
   }
@@ -242,11 +247,11 @@ export function libelleTypeActeur(type?: string): string {
 export function libelleTypeDossier(type?: string): string {
   switch (type) {
     case 'MODERATION':
-      return 'Modération';
+      return 'enum.typeDossier.MODERATION';
     case 'INCIDENT':
-      return 'Incident';
+      return 'enum.typeDossier.INCIDENT';
     case 'LITIGE':
-      return 'Litige';
+      return 'enum.typeDossier.LITIGE';
     default:
       return type ?? '';
   }
@@ -255,11 +260,11 @@ export function libelleTypeDossier(type?: string): string {
 export function libellePrioriteDossier(priorite?: string): string {
   switch (priorite) {
     case 'BASSE':
-      return 'Basse';
+      return 'enum.prioriteDossier.BASSE';
     case 'NORMALE':
-      return 'Normale';
+      return 'enum.prioriteDossier.NORMALE';
     case 'HAUTE':
-      return 'Haute';
+      return 'enum.prioriteDossier.HAUTE';
     default:
       return priorite ?? '';
   }
@@ -268,16 +273,17 @@ export function libellePrioriteDossier(priorite?: string): string {
 export function libelleEtapeEtat(etat?: string): string {
   switch (etat) {
     case 'A_VENIR':
-      return 'À venir';
+      return 'enum.etapeEtat.A_VENIR';
     case 'EN_COURS':
-      return 'En cours';
+      return 'enum.etapeEtat.EN_COURS';
     case 'TERMINEE':
-      return 'Terminée';
+      return 'enum.etapeEtat.TERMINEE';
     default:
       return etat ?? '';
   }
 }
 
+/** Action du journal d'audit : vocabulaire ouvert (pas un enum fermé) — reste humanisée plutôt que traduite. */
 export function libelleJournalAction(action?: string): string {
   return humanize(action);
 }

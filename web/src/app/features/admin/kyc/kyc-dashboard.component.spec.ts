@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
 import { KycDashboardComponent } from './kyc-dashboard.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 const PENDING = [
   { id: 'kyc-1', acteurNom: 'Jean Mbarga', acteurTelephone: '+237677000001', typeActeur: 'CHAUFFEUR', soumisLe: '2026-01-01T00:00:00Z', statut: 'EN_ATTENTE' },
@@ -16,7 +17,7 @@ describe('KycDashboardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [KycDashboardComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);

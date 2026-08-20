@@ -19,7 +19,7 @@
       <td>{{ ecriture.sens }}</td>
       <td>{{ ecriture.montant }}</td>
       <td>{{ ecriture.creeLe | date: 'short' }}</td>
-      <td><app-status-badge [label]="libelleEcritureStatut(ecriture.statut)" [variant]="ecritureStatusVariant(ecriture.statut)" /></td>
+      <td><app-status-badge [label]="libelleEcritureStatut(ecriture.statut) | translate" [variant]="ecritureStatusVariant(ecriture.statut)" /></td>
       <td>
         <app-status-badge *ngIf="ecriture.litigeActif" label="Litige — reversement suspendu" variant="danger" />
       </td>

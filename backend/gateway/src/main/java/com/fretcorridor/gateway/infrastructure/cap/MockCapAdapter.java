@@ -20,13 +20,13 @@ import java.util.List;
 public class MockCapAdapter implements CapacitePort {
 
     private final List<Capacite> capacites = List.of(
-            new Capacite("cap-1", "actor-transporteur-1", "Camion 10T — LT 1234 AB",
+            new Capacite("cap-1", "a0000000-0000-0000-0000-000000000002", "Camion 10T — LT 1234 AB",
                     "Douala", "Yaoundé", Instant.now().plus(1, ChronoUnit.DAYS),
                     9500, ModeCollecte.PORTE_A_PORTE, CapaciteEtat.PUBLIEE),
-            new Capacite("cap-2", "actor-transporteur-1", "Camion 10T — LT 1234 AB",
+            new Capacite("cap-2", "a0000000-0000-0000-0000-000000000002", "Camion 10T — LT 1234 AB",
                     "Yaoundé", "Douala", Instant.now().plus(3, ChronoUnit.DAYS),
                     9500, ModeCollecte.POINT_DEPOT, CapaciteEtat.APPARIEE),
-            new Capacite("cap-3", "actor-transporteur-2", "Fourgon 3T — LT 5678 CD",
+            new Capacite("cap-3", "a0000000-0000-0000-0000-000000000005", "Fourgon 3T — LT 5678 CD",
                     "Douala", "Bafoussam", Instant.now().plus(2, ChronoUnit.DAYS),
                     2800, ModeCollecte.PORTE_A_PORTE, CapaciteEtat.PUBLIEE)
     );

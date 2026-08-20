@@ -4,6 +4,8 @@
  * 12). Couvre uniquement l'API utilisée par CorridorMapComponent.
  */
 class FakeLayer {
+  private readonly handlers = new Map<string, () => void>();
+
   addTo(): this {
     return this;
   }
@@ -19,8 +21,12 @@ class FakeLayer {
   getBounds(): unknown {
     return {};
   }
-  on(): this {
+  on(event: string, handler: () => void): this {
+    this.handlers.set(event, handler);
     return this;
+  }
+  trigger(event: string): void {
+    this.handlers.get(event)?.();
   }
 }
 
@@ -60,8 +66,13 @@ export function layerGroup(): FakeLayerGroup {
   return new FakeLayerGroup();
 }
 
+/** Dernières polylignes créées, dans l'ordre — permet aux tests de déclencher leurs événements (ex. clic). */
+export const polylignesCreees: FakeLayer[] = [];
+
 export function polyline(): FakeLayer {
-  return new FakeLayer();
+  const ligne = new FakeLayer();
+  polylignesCreees.push(ligne);
+  return ligne;
 }
 
 export function circleMarker(): FakeLayer {
