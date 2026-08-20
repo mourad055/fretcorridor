@@ -20,16 +20,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * tenantId, meme principe que missionAppartenantA/notificationAppartenantA
  * ailleurs dans ce depot).
  *
- * GET /{id} reste volontairement permitAll : consomme en synchrone interne
- * par service-not (PropositionRetourAVideListener, declenche par Kafka,
- * AUCUN contexte JWT utilisateur disponible dans ce flux - contrairement a
- * une requete HTTP entrante) - meme raisonnement documente que
- * service-geo/service-opt (PR #81, "GET permitAll... jamais de JWT entre
- * microservices du meme perimetre"). Une isolation tenant complete sur cette
- * lecture necessiterait un mecanisme d'authentification inter-services
- * (cle API partagee ou mTLS) - decision d'architecture distincte, pas
- * traitee ici. Meme ecart, memes raisons, sur service-flt
- * (GET /api/flt/vehicules/{id}, appele par service-cap lui-meme).
+ * GET /{id} reste permitAll au niveau Spring Security (consomme en
+ * synchrone interne par service-not, PropositionRetourAVideListener,
+ * declenche par Kafka -- AUCUN JWT utilisateur disponible dans ce flux,
+ * contrairement a une requete HTTP entrante), MAIS n'est plus ouvert sans
+ * controle depuis l'audit de suivi du 20 aout : CapaciteController.obtenir
+ * verifie desormais une cle interne partagee (X-Internal-Service-Key,
+ * ENF-SEC-05, meme mecanisme de rotation par variable d'environnement que
+ * fretcorridor.jwt.secret) -- seul service-not (le seul appelant legitime,
+ * Plan d'Execution §4.3 : appel synchrone autorise entre deux services du
+ * meme porteur Mobile) connait la valeur configuree.
  */
 @Configuration
 @EnableWebSecurity
