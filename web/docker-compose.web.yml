@@ -1,0 +1,21 @@
+# Même convention que backend/gateway/docker-compose.gateway.yml : toujours
+# exécuté depuis la racine du repo, context relatif à web/. À empiler avec
+# infra/docker-compose.yml + gateway/docker-compose.gateway.yml (+ les
+# fichiers des services réellement appelés par le gateway) :
+#   docker compose -f infra/docker-compose.yml \
+#     -f backend/gateway/docker-compose.gateway.yml \
+#     -f web/docker-compose.web.yml up -d --build
+#
+# GATEWAY_HOST/GATEWAY_PORT (résolus par envsubst dans nginx.conf au
+# démarrage du conteneur, cf. Dockerfile) : "gateway" résout par nom de
+# conteneur si docker-compose.gateway.yml fait partie de la même commande.
+services:
+  web:
+    build:
+      context: ../web
+    container_name: fretcorridor-web
+    environment:
+      GATEWAY_HOST: gateway
+      GATEWAY_PORT: 8082
+    ports:
+      - "4200:80"
