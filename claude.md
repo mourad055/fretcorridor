@@ -1,8 +1,10 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026)
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, soir)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
-> la version du 18 août 2026 : S11 et S12 sont passés en réel depuis
-> (PR #81, #82, #84, #85), un audit complet du CDC a été mené (voir
+> la version du 18 août 2026 : **toute la Phase 2 (S11, S12, S14, S15) est
+> désormais réelle de bout en bout** — S11 et S12 passés en réel dans
+> l'après-midi (PR #81, #82, #84, #85), S14 dans la foulée (PR #87). Un
+> audit complet du CDC a été mené entre-temps (voir
 > `AUDIT_CDC_v4_complet_2026-08-19.md` à la racine) et son bloquant #1
 > (build Web cassé, `@ngx-translate/core`) corrigé (PR #83).
 
@@ -18,7 +20,7 @@ Le test bout-en-bout Docker du fix S7 (condition qui figurait ici au
 17 août) **a été fait, en dehors d'une session Claude Code** — voir §5.1
 pour le résultat détaillé. Ne plus le traiter comme "en attente".
 
-**Exceptions actées** :
+**Exceptions actées — toute la Phase 2 en fait partie désormais** :
 - **S15** (sélecteur d'axe, Chauffeur + Client) — `service-geo` confirmé
   prêt par le Moteur (2 axes réels en base, filtrage réel), câblé avec
   accord explicite de l'utilisateur.
@@ -29,12 +31,14 @@ pour le résultat détaillé. Ne plus le traiter comme "en attente".
 - **S12** (retour à vide, Chauffeur) — déjà réel depuis le 18 août, mais
   un gap silencieux (`etape-executee` sans producteur) empêchait le
   déclenchement effectif ; corrigé le 20 août (PR #85). Voir §5.2.
+- **S14** (moyen de paiement, Chauffeur + Client) — backend Item B livré
+  par Web le 18 août, gateway + mobile câblés le 20 (PR #87). Espèces
+  reste une exception assumée (confirmation locale, jamais envoyée au
+  backend) — voir §5.5, pas un oubli.
 
-Ce n'est pas un modèle à reproduire automatiquement pour les autres
-sprints — ne sortir un sprint du mock que sur demande explicite, après
-confirmation du backend concerné. **S14 reste partiellement mocké** (le
-backend existe désormais côté serveur pour Item B, mais ni la gateway ni
-le mobile ne sont câblés) — voir §5.5.
+Ce n'est pas un modèle à reproduire automatiquement pour les **prochains**
+sprints (S16 à S19, Phase 3) — ne sortir un sprint du mock que sur
+demande explicite, après confirmation du backend concerné.
 
 ---
 
@@ -61,10 +65,13 @@ merge de PR associé, c'est probablement lui — le signaler explicitement
 **Protocole confirmé en usage (20 août)** : branche `backend-stevetelecom`
 poussée en PR (#81) plutôt que commitée directement cette fois — bon
 signe. Le mot **PULL REQUEST** a été demandé et reçu avant chaque merge
-(#81 à #85) ; `gh pr merge` reste bloqué par le classificateur auto-mode
-de l'outil dans certains cas malgré la confirmation reçue — dans ce cas,
-rendre la main à l'utilisateur pour qu'il merge lui-même sur GitHub,
-jamais chercher à contourner.
+(#81 à #87, 7 PR consécutives) ; `gh pr merge` reste bloqué par le
+classificateur auto-mode de l'outil dans certains cas malgré la
+confirmation reçue — dans ce cas, rendre la main à l'utilisateur pour
+qu'il merge lui-même sur GitHub, jamais chercher à contourner. Sur #87,
+`gh pr checks` a d'abord montré des checks `pending` (gateway) : attendre
+qu'ils passent avant de merger plutôt que de merger sur un statut
+incomplet — quelques cycles de sondage (~10s) ont suffi.
 
 ---
 
@@ -105,7 +112,7 @@ Redis, MinIO. Phase 1 = Sprints 1 à 10. Phase 2 = Sprints 11, 12, 14, 15
 | `service-opt` | Moteur de matching + séquencement tournées | Moteur | ✅ Avancé — Kuhn-Munkres, + séquencement ALNS (Sprint 11/12), consomme `EtapeExecutee` (producteur réel côté `service-exe` depuis le 20 août), publie `PropositionRetourAVideEvent`, `TourneeConstituee` (S11, 20 août), oracle chargement S16 |
 | `service-trk` | Suivi/ETA temps réel | Moteur | ✅ |
 | `gateway` | Point d'entrée Web (Bureau/Transporteur/Admin) | Web | ✅ Architecture hexagonale, 2 fixes de ports mergés (service-adm, service-pay — PR #59) |
-| `service-pay` | Paiement, grand livre miroir | Web | ✅ `ModePaiementChoisi` (S14 Item B, 18 août) : `POST`/`GET .../moyen-paiement` — pas encore de proxy gateway (voir §5.5) |
+| `service-pay` | Paiement, grand livre miroir | Web | ✅ `ModePaiementChoisi` (S14 Item B, 18 août) : `POST`/`GET .../moyen-paiement`, proxifié par la gateway (Chauffeur) et appelé directement par l'app Client (20 août, voir §5.5) |
 | `service-bur` | Agrégation Bureau (missions) | Web | ✅ |
 | `service-adm` | Back-office (KYC, tenants, config, audit) | Web | ✅ |
 
@@ -142,13 +149,14 @@ Toute la Phase 2 est mergée dans `dev` :
 | S11 — Consolidation LTL | ✅ **branché sur le vrai backend** (PR #81/#82/#84 — 20 août) | ⚠️ mocké, Volet B (indicateur "envoi consolidé") non traité dans ce lot |
 | S12 — Retour à vide | ✅ **branché sur le vrai backend, chaîne complète** (PR #76/#77 — 18 août, gap `etape-executee` comblé PR #85 — 20 août) | — (rien pour Client) |
 | S13 | — (backend/Web uniquement) | — |
-| S14 — Paiement Mobile Money | 🟡 **backend réel côté serveur (Item B, 18 août), gateway et mobile encore mockés** (voir §5.5) | ⚠️ mocké |
+| S14 — Paiement Mobile Money | ✅ **branché sur le vrai backend** (Item B 18 août, gateway+mobile PR #87 — 20 août) | ✅ **branché sur le vrai backend pour MoMo/Orange Money** (PR #87) — Espèces reste local, exception assumée (§5.5) |
 | S15 — Second axe | ✅ **branché sur le vrai backend** (PR #56 puis re-câblage réel PR #60) | ✅ **branché sur le vrai backend** (PR #57 puis re-câblage réel PR #61) |
 
-**S11, S12 et S15 sont réels de bout en bout. S14 est à mi-chemin** : le
-domaine financier existe désormais côté `service-pay` (Item B, `Mode
-Paiement Choisi`), mais aucune route gateway ni écran mobile ne le
-consomme encore — voir §5.5.
+**S12 et S15 sont réels à 100 %. S11 et S14 sont réels côté
+Chauffeur/Transporteur** (l'essentiel du travail de cette session) —
+**S11 Volet B (Client) reste mocké**, non traité, et **S14 Volet B
+(Client) est réel pour l'électronique, volontairement local pour
+Espèces**.
 
 ---
 
@@ -288,26 +296,43 @@ entités Mission. Le Moteur suggère qu'un ADR documente ce choix côté
 Contrat `tournee-constituee.yaml` toujours marqué BROUILLON dans le
 fichier — voir §4, pas bloquant en pratique.
 
-### 5.5 S14 réel (Chauffeur + Client) — backend livré (18 août), gateway et mobile restent à faire
+### 5.5 S14 réel (Chauffeur + Client) — FAIT (20 août)
 
 Le blocage du 18 août ("le concept moyen de paiement n'existe nulle
-part dans le domaine service-pay") est levé côté Web : Item B
-(`docs/DEPENDANCES_MOBILE_PHASE4.md`) a été conçu et livré par Personne 2
-le 18 août — `ModePaiementChoisi` (un choix par mission, "moyen
-choisi/prévu" distinct du "moyen effectivement encaissé", volontairement
-non recoupés), `POST`/`GET /api/v1/pay/missions/{id}/moyen-paiement`.
+part dans le domaine service-pay") avait été levé côté Web dès le 18 :
+Item B (`docs/DEPENDANCES_MOBILE_PHASE4.md`) livré par Personne 2 —
+`ModePaiementChoisi` (un choix par mission, "moyen choisi/prévu" distinct
+du "moyen effectivement encaissé", volontairement non recoupés),
+`POST`/`GET /api/v1/pay/missions/{id}/moyen-paiement`. Gateway et mobile
+sont restés mockés jusqu'au 20 août (PR #87) — ce qui suit décrit ce lot.
 
-**Reste à faire, deux couches, aucune commencée à ce jour** :
-1. **Gateway** : aucune route `moyen-paiement` n'existe ni côté
-   `PaiementReadController` (lecture seule, ENF-FIN-01) ni ailleurs — il
-   faudrait un port d'écriture dédié pour le `POST` (Client), la lecture
-   seule actuelle du gateway ne suffit pas pour ce cas précis (le client
-   choisit son moyen, ce n'est pas une consultation).
-2. **Mobile** : `lib/mock/moyen_reglement_mock.dart` (Chauffeur, lecture)
-   et `choix_paiement_provider.dart` (Client, écriture) restent mockés,
-   à remplacer une fois la gateway prête.
+**Gateway (Chauffeur, lecture seule)** : `PayReadPort.modePaiementChoisi()`
++ `ServicePayWebClientAdapter`, `GET /api/v1/paiement/missions/{id}/moyen-paiement`
+(`PaiementReadController`) — ouvert à tout acteur authentifié (même
+raisonnement que `/api/v1/paiement` déjà existant, sinon `CHAUFFEUR`
+serait exclu). 404 (rien choisi) mappé sur `MissionIntrouvableException`,
+déjà géré globalement.
 
-Domaine financier de `service-pay`, propriété de Personne 2 (Web) —
-gateway et mobile sont en revanche du ressort Mobile. Pas de blocage
-externe restant, contrairement au 18 août : à faire sur demande
-explicite.
+**App Client (écrit)** : **aucune route gateway** — l'app Client appelle
+`service-pay` directement (port 8088), même principe architectural que
+tous ses autres providers (`dio_provider.dart` documente l'absence de
+gateway unifiée pour le rôle Chargeur depuis le S6/S7). Nouveau
+`payDioProvider`.
+
+**Décision de conception notable, à connaître avant de toucher à cet
+écran** : MoMo et Orange Money envoient tous deux `MONNAIE_ELECTRONIQUE`
+(seule granularité connue de `ModePaiement`, 4 valeurs). **Espèces
+n'appelle jamais le backend** — confirmation purement locale. Ce n'est
+pas un oubli : le commentaire du commit service-pay Item B est explicite,
+"espèces (EF-PAY-07) explicitement hors périmètre — mode dégradé décidé
+à l'enlèvement, jamais choisi en amont dans l'app". Le mélange
+réel/local sur un même écran est donc voulu, pas un bug à corriger.
+
+**Écrans mobiles rattachés à une vraie mission** (fini le mode "démo"
+sans contexte, même principe que S11/§5.4) : `PaiementScreen` (Client)
+prend désormais un `missionId`, accessible depuis "Suivi"
+(`suivi_screen.dart`, à côté de "Signaler un litige") — l'entrée
+générique de l'accueil a été retirée. Côté Chauffeur, l'écran solde/gains
+affiche les 4 valeurs réelles de `ModePaiement` (pas de distinction
+MoMo/Orange Money, contrairement à ce que supposait le mock qu'il
+remplace) ; `lib/mock/moyen_reglement_mock.dart` supprimé.
