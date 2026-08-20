@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../mock/consolidation_mock.dart';
 import '../providers/suivi_provider.dart';
 import '../theme/app_theme.dart';
 import 'litige_screen.dart';
@@ -78,11 +77,12 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
               : ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
-                    // S11 — indicateur "envoi consolidé" (MOCK, voir
-                    // consolidation_mock.dart). Purement informatif, aucune
-                    // action associée. N'affecte pas le rendu par défaut :
-                    // absent quand l'envoi n'est pas (mockquement) consolidé.
-                    if (estEnvoiConsolideMock(suivi.chronologie!)) ...[
+                    // S11 — indicateur "envoi consolidé" : réel,
+                    // tourneeId non-null signifie que service-opt a
+                    // regroupé cette Mission dans une Tournée LTL
+                    // (TourneeConstitueeListener, service-exe). Purement
+                    // informatif, aucune action associée.
+                    if (suivi.chronologie!.tourneeId != null) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
