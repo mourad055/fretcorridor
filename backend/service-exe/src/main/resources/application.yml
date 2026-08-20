@@ -30,7 +30,7 @@ minio:
 
 fretcorridor:
   jwt:
-    secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
   exe:
     # Phase 1 mono-tenant assumé (même raisonnement que l'ADR 0011, GEO ; même
     # valeur que service-bur) : AffectationConfirmee ne porte pas de tenant,

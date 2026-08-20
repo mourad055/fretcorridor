@@ -32,7 +32,7 @@ spring:
 
 fretcorridor:
   jwt:
-    secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
   not:
     # Même hypothèse mono-tenant Phase 1 que service-exe (ADR 0011) — même
     # valeur que fretcorridor.exe.tenant-id-phase1, pour que les notifications
