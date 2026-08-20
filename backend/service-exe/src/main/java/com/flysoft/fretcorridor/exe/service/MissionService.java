@@ -62,6 +62,7 @@ public class MissionService {
     public MissionDto.ChronologieResponse ajouterEtape(UUID missionId, UUID transporteurId, String tenantId,
                                                          MissionDto.AjouterEtapeRequest requete) {
         Mission mission = missionAppartenantA(missionId, transporteurId, tenantId);
+        verifierPrecedence(mission.getStatut(), requete.getType());
 
         EtapeMission etape = EtapeMission.builder()
                 .mission(mission)
@@ -159,6 +160,33 @@ public class MissionService {
             throw new RuntimeException("ACCES_REFUSE");
         }
         return mission;
+    }
+
+    // RG-062 (audit CDC du 19 août, bloquant §3 — "livraison sans preuve ni
+    // précédence libère le séquestre") : une LIVRAISON sur une mission
+    // jamais prise en charge passait jusqu'ici sans aucune vérification,
+    // libérant le séquestre côté service-pay via publierMissionLivree() à
+    // tort. INCIDENT reste toujours accepté (journalisation, pas une étape
+    // de progression). EN_TRANSIT/LIVRAISON acceptent un rejeu depuis le
+    // même statut (retry réseau, app hors ligne) sans le traiter comme une
+    // régression de séquence.
+    //
+    // RG-070 (preuve minimale photo/tiers) reste hors périmètre de ce
+    // correctif : EF-EXE-03 (aucun champ photo/signature) est une
+    // fonctionnalité distincte et plus large, pas un bug de séquence — non
+    // traitée ici.
+    private void verifierPrecedence(Mission.StatutMission statutActuel, EtapeMission.TypeEtape type) {
+        boolean valide = switch (type) {
+            case PRISE_EN_CHARGE -> statutActuel == Mission.StatutMission.EN_ATTENTE;
+            case EN_TRANSIT -> statutActuel == Mission.StatutMission.PRISE_EN_CHARGE
+                    || statutActuel == Mission.StatutMission.EN_TRANSIT;
+            case LIVRAISON -> statutActuel == Mission.StatutMission.PRISE_EN_CHARGE
+                    || statutActuel == Mission.StatutMission.EN_TRANSIT;
+            case INCIDENT -> true;
+        };
+        if (!valide) {
+            throw new RuntimeException("ETAPE_HORS_SEQUENCE");
+        }
     }
 
     private Optional<Mission.StatutMission> nouveauStatutPour(EtapeMission.TypeEtape type) {
