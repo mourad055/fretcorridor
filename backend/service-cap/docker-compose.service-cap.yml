@@ -1,0 +1,27 @@
+# Bloc Docker Compose du service-cap (Mobile — CAP : declaration de
+# capacite, poids taxable, expiration automatique). Ne contient PAS l'infra
+# partagee (Postgres, Kafka...) : ce fichier s'empile TOUJOURS sur
+# infra/docker-compose.yml, jamais utilisable seul.
+#
+# Usage :
+#   docker compose -f infra/docker-compose.yml \
+#                   -f backend/service-cap/docker-compose.service-cap.yml up -d
+#
+# Contexte "../backend/service-cap" (pas "../backend" comme les services du
+# Moteur) : service-cap ne depend PAS de common-libs (incompatibilite Java
+# 17/21, cf discussion - les DTOs necessaires sont dupliques localement dans
+# com.flysoft.fretcorridor.cap.messaging), donc pas besoin d'englober
+# common-libs/ dans le contexte de build.
+services:
+  service-cap:
+    build:
+      context: ../backend/service-cap
+      dockerfile: Dockerfile
+    container_name: fretcorridor-service-cap
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8096:8096"
+    depends_on:
+      postgres:
+        condition: service_healthy

@@ -7,11 +7,14 @@ import com.fretcorridor.opt.client.CoutLotResponseDto;
 import com.fretcorridor.opt.client.CoutResponseDto;
 import com.fretcorridor.opt.client.ItineraireRequestDto;
 import com.fretcorridor.opt.client.ItineraireResponseDto;
+import com.fretcorridor.opt.client.AxeDetailDto;
+import com.fretcorridor.opt.client.ServiceGeoClient;
 import com.fretcorridor.opt.client.ServiceMatClient;
 import com.fretcorridor.opt.client.ValhallaClient;
 import com.fretcorridor.opt.messaging.AffectationConfirmeeEvent;
 import com.fretcorridor.opt.messaging.OptEventPublisher;
 import com.fretcorridor.opt.messaging.PropositionEmiseEvent;
+import com.fretcorridor.opt.messaging.RepartitionConventionnelleAppliqueeEvent;
 import com.fretcorridor.opt.tarification.TarificationL4Service;
 import com.fretcorridor.opt.tarification.TarificationResultat;
 import org.slf4j.Logger;
@@ -21,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,16 +54,19 @@ public class AffectationL1Service {
     private final TarificationL4Service tarificationL4Service;
     private final AffectationRepository affectationRepository;
     private final OptEventPublisher eventPublisher;
+    private final ServiceGeoClient serviceGeoClient;
 
     public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
                                  TarificationL4Service tarificationL4Service,
                                  AffectationRepository affectationRepository,
-                                 OptEventPublisher eventPublisher) {
+                                 OptEventPublisher eventPublisher,
+                                 ServiceGeoClient serviceGeoClient) {
         this.serviceMatClient = serviceMatClient;
         this.valhallaClient = valhallaClient;
         this.tarificationL4Service = tarificationL4Service;
         this.affectationRepository = affectationRepository;
         this.eventPublisher = eventPublisher;
+        this.serviceGeoClient = serviceGeoClient;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
@@ -132,6 +139,7 @@ public class AffectationL1Service {
 
             Affectation affectation = new Affectation(
                     demandeId, capaciteId, cycleMatchingIds[i][indiceCapacite], demande.axeId(),
+                    demande.poidsTaxableKg(),
                     demande.origineDemande().latitude(), demande.origineDemande().longitude(),
                     demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
                     itineraire != null ? itineraire.distanceMetres() : null,
@@ -178,14 +186,25 @@ public class AffectationL1Service {
                 );
                 eventPublisher.publierPropositionEmise(proposition);
 
+                // RG-039/EF-MKT-07 (CDC : "au plus trois propositions par
+                // demande, ordonnées, motif de classement intelligible") :
+                // rang 1 ci-dessus reste l'affectation Kuhn-Munkres committee
+                // (comportement inchangé) ; rang 2/3 sont des alternatives
+                // purement informationnelles, classees par cout sur la meme
+                // ligne de la matrice -- aucune Affectation/AffectationConfirmee
+                // pour elles, prix estime (pas ferme au sens RG-041 tant que
+                // non accepte explicitement, cf AccepterPropositionService).
+                publierAlternatives(demandeId, demande, matriceCouts[i], capacitesReference,
+                        cycleMatchingIds[i], indiceCapacite);
+
                 // --- Publication Kafka : AffectationConfirmee (→ service-exe) ---
                 AffectationConfirmeeEvent confirmation = new AffectationConfirmeeEvent(
                         UUID.randomUUID(),
                         missionId,
                         demandeId,
                         capaciteId,
-                        null,
-                        null,
+                        candidatRetenu.vehiculeId(),
+                        candidatRetenu.transporteurId(),
                         null,
                         demande.axeId(),
                         demande.origineDemande() != null ? demande.origineDemande().latitude() : 0,
@@ -207,10 +226,95 @@ public class AffectationL1Service {
                         Instant.now()
                 );
                 eventPublisher.publierAffectationConfirmee(confirmation);
+
+                // --- Publication Kafka conditionnelle : RepartitionConventionnelleAppliquee
+                // (-> service-pay, EF-GEO-05/RG-052, Phase 4). Uniquement si l'axe porte une
+                // convention configuree (Axe.parametres.conventionRepartition) - RG-052 :
+                // "en trafic intra-camerounais, aucune cle ne s'applique", donc l'absence de
+                // convention N'EST PAS un mode degrade, c'est le comportement attendu par
+                // defaut pour la grande majorite des axes. Limitation connue (README Phase 4
+                // S3.3, Hub sans champ pays) : ne distingue pas encore "axe transfrontalier
+                // sans convention renseignee" de "axe intra-camerounais normal" - les deux
+                // cas aboutissent au meme silence ici, assume jusqu'a l'ajout de Hub.pays.
+                if (demande.axeId() != null) {
+                    AxeDetailDto axeDetail = serviceGeoClient.axeParId(demande.axeId());
+                    if (axeDetail != null && axeDetail.parametres() != null
+                            && axeDetail.parametres().get("conventionRepartition") instanceof java.util.Map<?, ?> conventionMap) {
+
+                        Object conventionCodeObj = conventionMap.get("conventionCode");
+                        Object partsObj = conventionMap.get("partsPourcent");
+
+                        if (conventionCodeObj != null && partsObj instanceof java.util.Map<?, ?> partsMap) {
+                            java.util.Map<String, Double> parts = new java.util.HashMap<>();
+                            for (var entree : partsMap.entrySet()) {
+                                if (entree.getValue() instanceof Number n) {
+                                    parts.put(entree.getKey().toString(), n.doubleValue());
+                                }
+                            }
+
+                            RepartitionConventionnelleAppliqueeEvent repartition = new RepartitionConventionnelleAppliqueeEvent(
+                                    UUID.randomUUID(),
+                                    missionId,
+                                    demande.axeId(),
+                                    conventionCodeObj.toString(),
+                                    parts,
+                                    Instant.now(),
+                                    false);
+                            eventPublisher.publierRepartitionConventionnelleAppliquee(repartition);
+                        }
+                    }
+                }
             }
         }
 
         return new AffectationLotResultat(false, resultatsFinaux);
+    }
+
+    /**
+     * RG-039/EF-MKT-07 : jusqu'à 2 alternatives supplémentaires (rang 2/3),
+     * classées par coût croissant parmi les candidats non retenus de cette
+     * demande. Purement informationnelles -- aucune Affectation créée, prix
+     * estimé (pas ferme, RG-041) directement dérivé du coût composite
+     * (service-mat), sans recalcul tarification/itinéraire Valhalla pour
+     * limiter le surcoût réseau sur des candidats qui peuvent ne jamais être
+     * acceptés. missionId volontairement null -- distingue une vraie
+     * affectation committée (rang 1) d'une simple alternative (cf
+     * Proposition.missionId, service-mkt, colonne nullable).
+     */
+    private void publierAlternatives(UUID demandeId, DemandeAvecCandidats demande, double[] coutsLigne,
+                                      List<UUID> capacitesReference, UUID[] cycleMatchingIdsLigne, int indiceRetenu) {
+        record CandidatAlternatif(int indice, double cout) {
+        }
+        List<CandidatAlternatif> autres = new ArrayList<>();
+        for (int j = 0; j < coutsLigne.length; j++) {
+            if (j != indiceRetenu) {
+                autres.add(new CandidatAlternatif(j, coutsLigne[j]));
+            }
+        }
+        autres.sort(Comparator.comparingDouble(CandidatAlternatif::cout));
+
+        int rang = 2;
+        for (CandidatAlternatif candidat : autres.stream().limit(2).toList()) {
+            PropositionEmiseEvent alternative = new PropositionEmiseEvent(
+                    UUID.randomUUID(),
+                    cycleMatchingIdsLigne[candidat.indice()],
+                    demandeId,
+                    capacitesReference.get(candidat.indice()),
+                    null,
+                    demande.axeId(),
+                    rang,
+                    rang == 2 ? "2e meilleur prix" : "3e meilleur prix",
+                    BigDecimal.valueOf(candidat.cout()),
+                    null,
+                    "XAF",
+                    0,
+                    null,
+                    demande.origineDemande() != null ? "Origine" : null,
+                    demande.destinationDemande() != null ? "Destination" : null,
+                    Instant.now());
+            eventPublisher.publierPropositionEmise(alternative);
+            rang++;
+        }
     }
 
     private ItineraireResponseDto calculerItineraireSiPossible(DemandeAvecCandidats demande,

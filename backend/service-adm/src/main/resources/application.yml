@@ -1,0 +1,46 @@
+server:
+  # 8085 est déjà pris par service-opt (interne Docker) — collision fragile
+  # (sans conséquence tant que les deux tournent avec des port mappings hôte
+  # distincts, mais casse dès qu'on les lance sans compose séparé, ex. deux
+  # `java -jar` locaux). 8095 aligné sur le port hôte déjà utilisé.
+  port: ${SERVER_PORT:8095}
+
+spring:
+  application:
+    name: service-adm
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fretcorridor}
+    username: ${SPRING_DATASOURCE_USERNAME:fretcorridor}
+    password: ${SPRING_DATASOURCE_PASSWORD:fretcorridor}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+fretcorridor:
+  # ⚠️ Même secret que service-ida — obligatoire pour que service-adm puisse
+  # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  adm:
+    ordonnanceur-escalade:
+      # EF-ADM-05 : fréquence d'exécution de l'ordonnanceur d'escalade
+      # automatique (délai plafond porté par chaque Dossier.delaiTraitement,
+      # pas de valeur globale à configurer ici).
+      intervalle-ms: ${FRETCORRIDOR_ADM_ORDONNANCEUR_INTERVALLE_MS:900000}
+    incident-reconciliation:
+      # EF-PAY-09 : délai plafond appliqué aux incidents ouverts sur écart de
+      # réconciliation (service-pay) — au-delà, EscaladeScheduler (EF-ADM-05)
+      # les escalade automatiquement, même mécanisme que tout autre Dossier.
+      delai-heures: ${FRETCORRIDOR_ADM_INCIDENT_RECONCILIATION_DELAI_HEURES:48}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

@@ -1,0 +1,22 @@
+[build]
+  command = "npm run build"
+  publish = "dist/web/browser"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Proxifie l'API vers le gateway Render (même origine pour le navigateur,
+# cohérent avec apiBaseUrl relatif en prod — cf. environment.ts). Doit
+# précéder le fallback SPA ci-dessous : Netlify prend la première règle qui
+# matche.
+[[redirects]]
+  from = "/api/v1/*"
+  to = "https://fretcorridor-gateway.onrender.com/api/v1/:splat"
+  status = 200
+  force = true
+
+# Fallback SPA : laisse le routeur Angular gérer les chemins côté client.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

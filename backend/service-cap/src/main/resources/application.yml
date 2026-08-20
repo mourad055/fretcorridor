@@ -1,0 +1,74 @@
+server:
+  port: 8096
+
+spring:
+  application:
+    name: service-cap
+  datasource:
+    url: jdbc:postgresql://localhost:5434/fretcorridor
+    username: fretcorridor
+    password: fretcorridor
+  jpa:
+    hibernate:
+      # Garde-fou anti-derive, identique aux autres services : le schema est
+      # TOUJOURS pilote par Flyway, jamais par Hibernate auto-ddl.
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    schemas: cap
+    default-schema: cap
+  client:
+    service-flt:
+      base-url: http://localhost:8092
+      # Best-effort (ENF-DIS-04) : service-cap ne doit jamais rester bloque
+      # pour resoudre un transporteur. Marge allongee (etait 200/300ms) suite
+      # au test Docker reel du 18 aout : le tout premier appel apres un
+      # docker-compose up echouait systematiquement en timeout, pool de
+      # connexions pas encore chaud.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
+    service-geo:
+      base-url: http://localhost:8084
+      # RG-101 : resolution des coefficients de poids taxable par axe.
+      # Best-effort (ENF-DIS-04) : repli sur la reference globale ci-dessous
+      # si service-geo est injoignable.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        enable.idempotence: true
+        acks: all
+        retries: 3
+
+# RG-100/101 (CDC S8.3.3) : poids taxable = max(poids reel, volume x RHO,
+# LDM x LAMBDA) - trois grandeurs. RHO (kg/m3) et LAMBDA (kg par metre de
+# plancher occupe) sont les deux valeurs de REFERENCE citees par le CDC
+# lui-meme (S8.3.2). RG-101 (bloquant audit du 19 aout, corrige) : ces
+# valeurs ne sont plus la seule source -- CalculateurPoidsTaxable resout en
+# priorite les cles coefficientVolumetriqueKgParM3/coefficientPlancherKgParLdm
+# depuis Axe.parametres (service-geo, versionne par axe/tenant), et ne
+# retombe sur cette config globale qu'en repli (axe sans parametre defini,
+# ou service-geo injoignable).
+fretcorridor:
+  cap:
+    coefficient-volumetrique-kg-par-m3: 333.0
+    coefficient-plancher-kg-par-ldm: 1850.0
+  # Meme secret que service-ida/service-mkt/service-geo/... - obligatoire
+  # pour valider les JWT emis par service-ida (identite centralisee).
+  # Fallback variable d'environnement pour la surcharge en Docker/prod
+  # (ENF-SEC-05, jamais en dur dans le code).
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  # GET /api/cap/capacites/{id} : appelé par service-not (Kafka, aucun JWT
+  # utilisateur disponible dans ce flux) -- clé interne partagée en
+  # remplacement du permitAll nu, jamais en dur en prod (ENF-SEC-05).
+  internal:
+    service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+
+logging:
+  level:
+    com.flysoft.fretcorridor.cap: DEBUG

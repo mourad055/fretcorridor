@@ -1,0 +1,8 @@
+<article class="mission-chronologie" *ngFor="let mission of missions">
+  <h3>{{ mission.transporteurNom }} — {{ mission.origine }} → {{ mission.destination }}</h3>
+  <ol>
+    <li *ngFor="let etape of mission.etapes" [ngClass]="'etape-' + etape.etat.toLowerCase()">
+      {{ (etape.type === 'ENLEVEMENT' ? 'enum.etapeType.ENLEVEMENT' : 'enum.etapeType.LIVRAISON') | translate }} — {{ etape.lieu }} ({{ libelleEtapeEtat(etape.etat) | translate }})
+    </li>
+  </ol>
+</article>

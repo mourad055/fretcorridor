@@ -18,4 +18,7 @@ node_modules/
 .env.local
 
 # Claude Code local state
-.claude/settings.local.json
+.claude/
+
+# Documents de reprise de session, personnels/non partagés
+docs/CONTEXTE_SESSION_UI.md

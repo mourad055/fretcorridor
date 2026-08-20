@@ -1,0 +1,104 @@
+package com.fretcorridor.pay.domain;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+/**
+ * FE-PAY-01/02/04 : orchestration du grand livre miroir. Domaine pur, sans
+ * dépendance à Spring — testable sans mock de framework (PRD §8.1).
+ */
+public class GrandLivreService {
+
+    private final GrandLivrePort grandLivrePort;
+    private final GarantiePort garantiePort;
+    private final LitigeMissionPort litigeMissionPort;
+    private final SequestrePort sequestrePort;
+
+    public GrandLivreService(GrandLivrePort grandLivrePort, GarantiePort garantiePort, LitigeMissionPort litigeMissionPort,
+                              SequestrePort sequestrePort) {
+        this.grandLivrePort = grandLivrePort;
+        this.garantiePort = garantiePort;
+        this.litigeMissionPort = litigeMissionPort;
+        this.sequestrePort = sequestrePort;
+    }
+
+    public EcritureMiroir enregistrerEncaissement(String tenantId, String missionId, BigDecimal montant, String referencePrestataire, ModePaiement modePaiement) {
+        EcritureMiroir ecriture = new EcritureMiroir(
+                UUID.randomUUID().toString(), tenantId, missionId, TypeCompte.COMPTE_SEQUESTRE_PRESTATAIRE, null,
+                SensEcriture.CREDIT, NatureEcriture.ENCAISSEMENT, modePaiement, montant, referencePrestataire,
+                Instant.now(), StatutEcriture.VALIDE
+        );
+        grandLivrePort.enregistrer(ecriture);
+        return ecriture;
+    }
+
+    /**
+     * ENF-FIN-02 : refuse tout reversement dont le montant cumulé dépasse
+     * l'encaissement validé de la mission. EF-PAY-06 (terme contractuel) :
+     * une garantie tierce active couvre le même rôle qu'un encaissement réel
+     * pour cette vérification — RG-075 reste vérifié par construction, le
+     * risque de crédit restant porté par le garant (jamais FretCorridor).
+     * EF-PAY-08, CDC UC-PAY-02 A1 : un litige actif sur la mission suspend
+     * tout reversement, quel que soit le solde disponible. RG-078 : aucun
+     * reversement sans preuve de livraison enregistrée — vérifié en dernier
+     * (après litige et solde) pour ne pas masquer ces deux motifs de refus
+     * plus spécifiques derrière un séquestre simplement jamais libéré.
+     */
+    public EcritureMiroir enregistrerReversement(String tenantId, String missionId, String transporteurId, BigDecimal montant, String referencePrestataire) {
+        if (litigeActifPourMission(missionId)) {
+            throw new ReversementSuspenduPourLitigeException(missionId);
+        }
+
+        if (soldeDisponiblePourReversement(missionId).compareTo(montant) < 0) {
+            throw new ReversementSansEncaissementException(missionId);
+        }
+
+        if (!sequestreLibereAvecPreuve(missionId)) {
+            throw new ReversementSansPreuveLivraisonException(missionId);
+        }
+
+        EcritureMiroir ecriture = new EcritureMiroir(
+                UUID.randomUUID().toString(), tenantId, missionId, TypeCompte.COMPTE_TRANSPORTEUR, transporteurId,
+                SensEcriture.DEBIT, NatureEcriture.REVERSEMENT, null, montant, referencePrestataire,
+                Instant.now(), StatutEcriture.VALIDE
+        );
+        grandLivrePort.enregistrer(ecriture);
+        return ecriture;
+    }
+
+    public List<EcritureMiroir> ecrituresDuBeneficiaire(String beneficiaireId) {
+        return grandLivrePort.parBeneficiaire(beneficiaireId);
+    }
+
+    public List<EcritureMiroir> ecrituresDuTenant(String tenantId) {
+        return grandLivrePort.parTenant(tenantId);
+    }
+
+    /** Exposition en lecture (rapport financier, solde Transporteur) : la mission a-t-elle un litige ouvert en ce moment ? */
+    public boolean litigeActifPourMission(String missionId) {
+        return litigeMissionPort.parMission(missionId).map(LitigeMission::actif).orElse(false);
+    }
+
+    /** Encaissement réel + garantie active, net des reversements déjà exécutés (utilisé par RG-075 et par l'ordonnanceur EF-PAY-08). */
+    public BigDecimal soldeDisponiblePourReversement(String missionId) {
+        BigDecimal totalEncaisse = totalParNature(missionId, NatureEcriture.ENCAISSEMENT);
+        BigDecimal totalGaranti = garantiePort.parMission(missionId).map(Garantie::montant).orElse(BigDecimal.ZERO);
+        BigDecimal totalDejaReverse = totalParNature(missionId, NatureEcriture.REVERSEMENT);
+        return totalEncaisse.add(totalGaranti).subtract(totalDejaReverse);
+    }
+
+    /** RG-078 : {@link Sequestre}'s compact constructor garantit qu'un séquestre LIBERE porte toujours une preuve non vide. */
+    private boolean sequestreLibereAvecPreuve(String missionId) {
+        return sequestrePort.parMission(missionId).map(s -> s.etat() == SequestreEtat.LIBERE).orElse(false);
+    }
+
+    private BigDecimal totalParNature(String missionId, NatureEcriture nature) {
+        List<EcritureMiroir> ecritures = grandLivrePort.parMission(missionId);
+        return ecritures.stream()
+                .filter(e -> e.nature() == nature && e.statut() == StatutEcriture.VALIDE)
+                .map(EcritureMiroir::montant)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+}

@@ -1,0 +1,35 @@
+<main class="fc-page">
+  <section class="journal-audit fc-panel">
+    <h2 class="fc-panel__title">Journal d'audit</h2>
+
+    <div class="fc-actions">
+      <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()">Exporter en CSV</button>
+    </div>
+
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && entrees().length === 0">Aucune entrée dans le journal d'audit.</div>
+
+    <table class="fc-table" *ngIf="!loading() && entrees().length > 0">
+      <thead>
+        <tr>
+          <th>Acteur</th>
+          <th>Action</th>
+          <th>Ressource</th>
+          <th>Horodatage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let entree of entrees()">
+          <td>{{ entree.acteurId }}</td>
+          <td>{{ libelleJournalAction(entree.action) }}</td>
+          <td>{{ entree.ressource }}</td>
+          <td>{{ entree.horodatage | date: 'short' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>

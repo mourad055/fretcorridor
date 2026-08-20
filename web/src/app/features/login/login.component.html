@@ -1,0 +1,91 @@
+<section class="login-page">
+  <div class="login-layout">
+    <div class="login-pane">
+      <div class="login-card">
+        <div class="login-card__lang">
+          <app-langue-switch />
+        </div>
+
+        <header class="login-card__header">
+          <div class="login-card__logo">
+            <app-brand-logo size="lg" />
+          </div>
+          <h1 class="login-card__title">{{ 'login.title' | translate }}</h1>
+          <p class="login-card__hint">{{ 'login.hint' | translate }}</p>
+        </header>
+
+        <form class="login-form" (ngSubmit)="submit()" #loginForm="ngForm">
+          <div class="field">
+            <label class="field__label" for="phone">{{ 'login.phoneLabel' | translate }}</label>
+            <input
+              id="phone"
+              name="phone"
+              class="field__input"
+              type="tel"
+              autocomplete="tel"
+              [ngModel]="phone()"
+              (ngModelChange)="phone.set($event)"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="code">{{ 'login.codeLabel' | translate }}</label>
+            <input
+              id="code"
+              name="code"
+              class="field__input"
+              type="text"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              [ngModel]="code()"
+              (ngModelChange)="code.set($event)"
+              required
+            />
+          </div>
+
+          <p class="login-form__error" role="alert" *ngIf="errorMessage() as messageKey">{{ messageKey | translate }}</p>
+
+          <button class="fc-btn fc-btn--primary fc-btn--block" type="submit" [disabled]="submitting() || loginForm.invalid">
+            {{ (submitting() ? 'login.submitting' : 'login.submit') | translate }}
+          </button>
+        </form>
+
+        <div class="login-demo" *ngIf="enableDemoLogin">
+          <p class="login-demo__label">{{ 'login.demo.label' | translate }}</p>
+          <div class="login-demo__buttons">
+            <button
+              type="button"
+              class="fc-btn fc-btn--ghost fc-btn--sm fc-btn--block login-demo__btn"
+              *ngFor="let account of demoAccounts"
+              [disabled]="submitting()"
+              (click)="loginAsDemo(account)"
+            >
+              {{ account.labelKey | translate }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-showcase" aria-hidden="true">
+      <video
+        class="login-showcase__video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        poster="/assets/login-preview-poster.jpg"
+        src="/assets/login-preview.mp4"
+      ></video>
+
+      <div class="login-showcase__scrim"></div>
+
+      <div class="login-showcase__caption">
+        <p class="login-showcase__title">{{ 'login.showcase.title' | translate }}</p>
+        <p class="login-showcase__subtitle">{{ 'login.hint' | translate }}</p>
+      </div>
+    </div>
+  </div>
+</section>

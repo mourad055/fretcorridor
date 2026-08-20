@@ -1,0 +1,59 @@
+.mission-chronologie {
+  padding: var(--fc-space-3) 0;
+  border-top: 1px solid var(--fc-border);
+}
+
+.mission-chronologie:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.mission-chronologie h3 {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin-bottom: var(--fc-space-2);
+}
+
+.mission-chronologie ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.mission-chronologie li {
+  font-size: 0.8125rem;
+  color: var(--fc-muted);
+  padding-left: 1rem;
+  position: relative;
+}
+
+.mission-chronologie li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.4rem;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--fc-border-strong);
+}
+
+.mission-chronologie li.etape-terminee {
+  color: var(--fc-success);
+}
+
+.mission-chronologie li.etape-terminee::before {
+  background: var(--fc-success);
+}
+
+.mission-chronologie li.etape-en_cours {
+  color: var(--fc-primary);
+  font-weight: 600;
+}
+
+.mission-chronologie li.etape-en_cours::before {
+  background: var(--fc-primary);
+}

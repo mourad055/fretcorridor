@@ -1,0 +1,35 @@
+# Profil de test isole (CapaciteServiceConcurrenceTest) : H2 en memoire, pas
+# Testcontainers Postgres - suffisant ici car Capacite n'a aucune colonne
+# PostGIS et le test porte uniquement sur le verrou optimiste (@Version) +
+# l'idempotence (contrainte unique), deux mecanismes JPA standards que H2
+# supporte nativement.
+spring:
+  datasource:
+    url: jdbc:h2:mem:capacite_test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        # Sans ceci, Hibernate genere "create table cap.capacite" mais
+        # jamais le "CREATE SCHEMA cap" prealable - contrairement a
+        # Postgres/Flyway (V1__init_schema.sql fait le CREATE SCHEMA a la
+        # main), H2 + ddl-auto ne cree pas les schemas implicitement.
+        hbm2ddl:
+          create_namespaces: true
+    # Sans ceci, schema.sql s'execute AVANT que Hibernate cree cap.capacite
+    # (ordre par defaut Spring Boot) - la FK de decrement_log echouerait.
+    defer-datasource-initialization: true
+  flyway:
+    enabled: false
+  sql:
+    init:
+      mode: always
+
+logging:
+  level:
+    com.flysoft.fretcorridor.cap: DEBUG

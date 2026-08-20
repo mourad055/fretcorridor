@@ -20,8 +20,19 @@ paths:
   /api/geo/axes:
     get:
       operationId: listerAxes
-      summary: Liste tous les axes
+      summary: Liste les axes, filtres par tenant si precise
+      description: |
+        ENF-MUL-01 (corrige le 2026-08-09, suite audit gateway) : si tenantId
+        est fourni, le filtrage est fait ICI en base (jamais par un appelant
+        a posteriori). Sans tenantId (retro-compatibilite OPT, appel interne
+        synchrone sans notion de tenant), retourne tous les axes.
       tags: [Axes]
+      parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema: { type: string, format: uuid }
+          description: Si absent, retourne tous les axes (usage interne OPT/filtre L0)
       responses:
         '200':
           description: Liste des axes
@@ -285,6 +296,11 @@ components:
           type: object
           additionalProperties: true
           description: JSONB libre (EF-GEO-02) — ex. fenetreMatchingMs, rayonAppariementKm
+        tenantId:
+          type: string
+          format: uuid
+          nullable: true
+          description: "Optionnel. Si absent, le tenant BGFT (Phase 1 par defaut) est applique.
 
     AxeResponse:
       type: object
@@ -301,6 +317,13 @@ components:
         parametres:
           type: object
           additionalProperties: true
+        tenantId:
+          type: string
+          format: uuid
+          nullable: true
+          description: |
+            ENF-MUL-01. Nullable pour les donnees anterieures a la migration
+            V4 (pre-remplies avec le tenant BGFT par defaut en pratique).
         dateCreation: { type: string, format: date-time }
 
     HubCreationRequest:

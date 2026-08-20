@@ -1,0 +1,38 @@
+server:
+  port: ${SERVER_PORT:8083}
+
+spring:
+  application:
+    name: service-bur
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fretcorridor}
+    username: ${SPRING_DATASOURCE_USERNAME:fretcorridor}
+    password: ${SPRING_DATASOURCE_PASSWORD:fretcorridor}
+  jpa:
+    hibernate:
+      # ddl-auto=update est un choix de développement (Phase 1) ; les migrations
+      # versionnées (Flyway/Liquibase) sont attendues avant la mise en production.
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+fretcorridor:
+  # ⚠️ Même secret que service-ida — obligatoire pour que service-bur puisse
+  # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  bur:
+    # EF-BUR-04 (anticipé) : seuil minimal d'effectif avant restitution d'une
+    # statistique agrégée. Valeur de développement volontairement basse.
+    seuil-agregation: ${FRETCORRIDOR_BUR_SEUIL_AGREGATION:3}
+    # Phase 1 mono-tenant assumé (même raisonnement que l'ADR 0011, GEO) :
+    # AffectationConfirmee ne porte pas de tenant, on le stampe ici à
+    # l'ingestion. À remplacer par une vraie résolution axe->tenant en Phase 3.
+    tenant-id-phase1: ${FRETCORRIDOR_BUR_TENANT_ID_PHASE1:tenant-bgft-douala}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

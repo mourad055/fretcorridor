@@ -1,0 +1,24 @@
+package com.fretcorridor.gateway.domain.pay;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+/**
+ * Port hexagonal vers service-pay — contrairement aux autres périmètres
+ * consommés cette Phase 1 (GEO, OPT, TRK, EXE), service-pay appartient à ce
+ * même périmètre et est réellement implémenté : cet adaptateur appelle le
+ * service réel (WebClient), ce n'est pas un mock.
+ */
+public interface PayReadPort {
+
+    Flux<EcritureVue> ecrituresDuTransporteur(String transporteurId, String delegationToken);
+
+    Flux<EcritureVue> rapportDuTenant(String tenantId, String delegationToken);
+
+    Flux<DeclarationEspecesVue> paiementsEspecesDuTenant(String tenantId, String delegationToken);
+
+    // S14 Item B (Volet A, Chauffeur) : erreur MissionIntrouvableException si
+    // le chargeur n'a pas encore choisi de moyen pour cette mission (404 côté
+    // service-pay).
+    Mono<ModePaiementChoisi> modePaiementChoisi(String missionId, String delegationToken);
+}

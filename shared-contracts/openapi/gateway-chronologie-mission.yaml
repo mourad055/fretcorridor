@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — Gateway — Chronologie de mission
+  version: "1.0.0"
+  description: >
+    Sprint 7 (PRD §9) : chronologie de mission. Un Bureau supervise son
+    territoire (ENF-MUL-01) ; un Transporteur ne voit que ses propres missions
+    (PRD §5.3). Consomme aujourd'hui un adaptateur mock côté gateway, en
+    attendant service-exe (Mobile) — TODO(mobile).
+servers:
+  - url: http://localhost:8082
+
+paths:
+  /api/v1/bureau/missions-chronologie:
+    get:
+      operationId: listBureauMissionsChronologie
+      summary: Liste les missions (avec chronologie d'étapes) du tenant de l'acteur Bureau
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Missions du tenant courant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mission'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Rôle insuffisant (réservé au rôle BUREAU)
+
+  /api/v1/transporteur/missions:
+    get:
+      operationId: listTransporteurMissions
+      summary: Liste les missions (avec chronologie d'étapes) de l'acteur Transporteur authentifié
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Missions de l'acteur courant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mission'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Rôle insuffisant (réservé au rôle TRANSPORTEUR)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    EtapeMission:
+      type: object
+      required: [rang, type, lieu, etat]
+      properties:
+        rang:
+          type: integer
+        type:
+          type: string
+          enum: [ENLEVEMENT, LIVRAISON]
+        lieu:
+          type: string
+        etat:
+          type: string
+          enum: [A_VENIR, EN_COURS, TERMINEE]
+
+    Mission:
+      type: object
+      required: [id, transporteurNom, origine, destination, etapes]
+      properties:
+        id:
+          type: string
+        transporteurNom:
+          type: string
+        origine:
+          type: string
+        destination:
+          type: string
+        etapes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EtapeMission'

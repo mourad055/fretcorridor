@@ -4,6 +4,7 @@ import com.flysoft.fretcorridor.flt.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -30,6 +31,24 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health").permitAll()
+                // Sans cette regle, toute reponse d'erreur (404, 500...) sur
+                // une route par ailleurs permitAll declenche un forward
+                // interne Servlet vers /error, lui-meme re-filtre par la
+                // securite et bloque (anyRequest().authenticated()) - le vrai
+                // code d'erreur est alors masque par un 403 trompeur.
+                .requestMatchers("/error").permitAll()
+                // "/mes" doit rester authentifié malgré le pattern {id} plus
+                // permissif ci-dessous — Spring Security prend la première
+                // règle qui matche, pas la plus spécifique (contrairement au
+                // routage MVC), d'où l'ordre explicite ici.
+                .requestMatchers(HttpMethod.GET, "/api/flt/vehicules/mes").authenticated()
+                // IDOR corrige (audit CDC du 19 aout, bloquant §3) : cette
+                // route etait permitAll() pour l'appel interne service-cap
+                // -> service-flt (ServiceFltClient) ; ce dernier transmet
+                // desormais son propre JWT (cf VehiculeController.consulter),
+                // donc plus besoin de derogation ici -- retombe sur
+                // anyRequest().authenticated() ci-dessous, meme regle que le
+                // reste du service.
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

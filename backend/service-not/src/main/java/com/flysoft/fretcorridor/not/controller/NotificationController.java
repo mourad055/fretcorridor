@@ -2,6 +2,7 @@ package com.flysoft.fretcorridor.not.controller;
 
 import com.flysoft.fretcorridor.not.dto.NotificationDto;
 import com.flysoft.fretcorridor.not.security.JwtService;
+import com.flysoft.fretcorridor.not.service.NotificationIntrouvableException;
 import com.flysoft.fretcorridor.not.service.NotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,9 +36,25 @@ public class NotificationController {
     }
 
     @PatchMapping("/{id}/lue")
-    public ResponseEntity<?> marquerCommeLue(@PathVariable UUID id) {
-        notificationService.marquerCommeLue(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> marquerCommeLue(@PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
+        try {
+            notificationService.marquerCommeLue(id, jwtService.extraireActeurId(authHeader.substring(7)));
+            return ResponseEntity.noContent().build();
+        } catch (NotificationIntrouvableException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // S12 — acceptation/refus d'une proposition de retour à vide.
+    @PatchMapping("/{id}/repondre")
+    public ResponseEntity<?> repondre(@PathVariable UUID id, @RequestBody NotificationDto.RepondreRequest requete,
+                                       @RequestHeader("Authorization") String authHeader) {
+        try {
+            notificationService.repondre(id, jwtService.extraireActeurId(authHeader.substring(7)), requete.isAccepte());
+            return ResponseEntity.noContent().build();
+        } catch (NotificationIntrouvableException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // Préparé pour le vrai push — enregistrer maintenant, exploiter plus tard

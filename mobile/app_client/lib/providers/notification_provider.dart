@@ -51,5 +51,5 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
 }
 
 final notificationProvider = StateNotifierProvider<NotificationNotifier, NotificationState>((ref) {
-  return NotificationNotifier(ref.watch(dioProvider));
+  return NotificationNotifier(ref.watch(notDioProvider));
 });

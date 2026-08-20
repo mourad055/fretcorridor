@@ -1,0 +1,15 @@
+# Bloc Docker Compose du service-mkt (Mobile).
+# Ne contient PAS l'infra partagee (Postgres, Kafka...) : ce fichier s'empile
+# TOUJOURS sur infra/docker-compose.yml, jamais utilisable seul.
+services:
+  service-mkt:
+    build:
+      context: ../backend/service-mkt
+    container_name: fretcorridor-service-mkt
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8089:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy

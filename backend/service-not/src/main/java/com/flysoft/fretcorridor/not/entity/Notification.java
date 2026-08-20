@@ -44,5 +44,14 @@ public class Notification {
     @Builder.Default
     private LocalDateTime dateCreation = LocalDateTime.now();
 
-    public enum TypeNotification { PROPOSITION_RECUE, STATUT_MISSION, INFO_GENERALE }
+    // S12 (retour à vide) : réponse du chauffeur, null tant qu'il n'a pas
+    // répondu. Uniquement pertinent pour PROPOSITION_RETOUR — reste null
+    // pour les autres types (jamais affiché côté app dans ce cas).
+    // Aucun contrat pour relayer cette réponse au Moteur à ce jour (aucun
+    // événement de sortie défini) — la réponse reste locale à service-not.
+    private Boolean reponseAcceptee;
+
+    private LocalDateTime dateReponse;
+
+    public enum TypeNotification { PROPOSITION_RECUE, STATUT_MISSION, INFO_GENERALE, PROPOSITION_RETOUR, ALERTE_ECART }
 }

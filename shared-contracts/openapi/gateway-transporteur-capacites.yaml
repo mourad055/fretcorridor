@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — Gateway — Capacités déclarées (Transporteur)
+  version: "1.0.0"
+  description: >
+    FE-TRP-01 (Sprint 4, lecture seule) : un Transporteur voit ses propres
+    capacités déclarées. Le transporteurId est résolu exclusivement depuis le
+    JWT (PRD §5.3, périmètre strict par acteur). Consomme aujourd'hui un
+    adaptateur mock côté gateway, en attendant service-cap/service-mkt
+    (Mobile) — TODO(mobile).
+servers:
+  - url: http://localhost:8082
+
+paths:
+  /api/v1/transporteur/capacites:
+    get:
+      operationId: listTransporteurCapacites
+      summary: Liste les capacités déclarées par l'acteur Transporteur authentifié
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Capacités de l'acteur courant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Capacite'
+        '401':
+          description: Non authentifié
+        '403':
+          description: Rôle insuffisant (réservé au rôle TRANSPORTEUR)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Capacite:
+      type: object
+      required: [id, vehicule, origine, destination, departLe, poidsTaxableKg, modeCollecte, etat]
+      properties:
+        id:
+          type: string
+        vehicule:
+          type: string
+        origine:
+          type: string
+        destination:
+          type: string
+        departLe:
+          type: string
+          format: date-time
+        poidsTaxableKg:
+          type: number
+        modeCollecte:
+          type: string
+          enum: [PORTE_A_PORTE, POINT_DEPOT]
+        etat:
+          type: string
+          enum: [PUBLIEE, APPARIEE, EXPIREE]

@@ -18,10 +18,22 @@ spring:
       hibernate:
         default_schema: service_flt
     open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  client:
+    service-exe:
+      base-url: http://localhost:8093
+      # Best-effort (ENF-DIS-04) : l'ingestion d'une position ne doit jamais
+      # rester bloquee pour resoudre le vehicule affecte.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
 
 fretcorridor:
   jwt:
-    secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
 
 logging:
   level:

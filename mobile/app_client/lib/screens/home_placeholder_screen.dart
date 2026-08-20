@@ -7,7 +7,6 @@ import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'completer_profil_screen.dart';
 import 'mes_demandes_screen.dart';
-import 'paiement_screen.dart';
 import 'notifications_screen.dart';
 
 class HomePlaceholderScreen extends ConsumerWidget {
@@ -136,16 +135,6 @@ class HomePlaceholderScreen extends ConsumerWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const CompleterProfilScreen()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          _CarteAction(
-            icone: Icons.payments_outlined,
-            titre: 'Paiement',
-            description: 'Prestataire agréé — à l\'acceptation d\'une proposition',
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const PaiementScreen()),
             ),
           ),
         ],

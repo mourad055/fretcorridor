@@ -1,0 +1,694 @@
+/*
+ * Système de design porté de FretCorridor V3 (estie-glo/fretcorridor, web/src/styles.scss) :
+ * mêmes tokens, mêmes classes utilitaires. Seul ajout propre à ce périmètre : .fc-table,
+ * car cette V4 conserve des tableaux là où V3 utilise un pattern liste + détail (fc-split).
+ */
+:root {
+  /* Marque */
+  --fc-primary: #d40f16;
+  --fc-primary-hover: #b80d13;
+  --fc-primary-soft: color-mix(in srgb, var(--fc-primary) 8%, #ffffff);
+  --fc-primary-contrast: #ffffff;
+
+  /* Surfaces — blanc dominant, neutre froid léger (pas crème) */
+  --fc-bg: #f5f5f6;
+  --fc-surface: #ffffff;
+  --fc-text: #0a0a0a;
+  --fc-muted: #52525b;
+  --fc-border: #e4e4e7;
+  --fc-border-strong: #86868c;
+
+  /* Sémantique */
+  --fc-danger: #b42318;
+  --fc-danger-soft: #fef3f2;
+  --fc-success: #067647;
+  --fc-success-soft: #ecfdf3;
+  --fc-warning: #b54708;
+
+  /* Élévation & forme */
+  --fc-shadow-sm: 0 1px 2px color-mix(in srgb, #0a0a0a 6%, transparent);
+  --fc-shadow: 0 8px 24px color-mix(in srgb, #0a0a0a 8%, transparent);
+  --fc-radius: 0.625rem;
+  --fc-radius-sm: 0.5rem;
+  --fc-radius-pill: 999px;
+
+  /* Type & motion */
+  --fc-font: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --fc-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --fc-duration: 160ms;
+
+  /* Espacement */
+  --fc-space-1: 0.25rem;
+  --fc-space-2: 0.5rem;
+  --fc-space-3: 0.75rem;
+  --fc-space-4: 1rem;
+  --fc-space-5: 1.25rem;
+  --fc-space-6: 1.5rem;
+  --fc-space-8: 2rem;
+
+  /* Z-index */
+  --fc-z-sticky: 20;
+  --fc-z-toast: 100;
+
+  /* Breakpoints (référence — utiliser dans les @media) */
+  --fc-bp-md: 860px;
+  --fc-bp-sm: 720px;
+  --fc-bp-xs: 480px;
+
+  /* Layout page */
+  --fc-page-padding-x: 1.5rem;
+  --fc-page-padding-y: 1.5rem;
+  --fc-touch-min: 3rem;
+
+  /* Largeur de contenu partagée (header + page) pour un alignement centré cohérent */
+  --fc-content-width: 72rem;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --fc-page-padding-x: 1rem;
+    --fc-page-padding-y: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --fc-page-padding-x: 0.85rem;
+    --fc-page-padding-y: 0.85rem;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--fc-font);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--fc-text);
+  background: var(--fc-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  text-wrap: balance;
+  letter-spacing: -0.02em;
+  color: var(--fc-text);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+p {
+  margin: 0;
+}
+
+button,
+input,
+select,
+a {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--fc-primary);
+  outline-offset: 2px;
+}
+
+/* ── Page ─────────────────────────────────────────────── */
+.fc-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-5);
+  width: 100%;
+  max-width: var(--fc-content-width);
+  margin: 0 auto;
+}
+
+.fc-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--fc-space-3);
+}
+
+.fc-page__title {
+  font-size: clamp(1.125rem, 2.5vw, 1.375rem);
+}
+
+.fc-page__subtitle {
+  margin-top: var(--fc-space-1);
+  color: var(--fc-muted);
+  font-size: 0.875rem;
+  max-width: 42rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 480px) {
+  .fc-page__header {
+    align-items: flex-start;
+  }
+
+  .fc-page__count {
+    align-self: flex-start;
+  }
+}
+
+.fc-page__count {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--fc-radius-pill);
+  background: var(--fc-surface);
+  border: 1px solid var(--fc-border);
+  color: var(--fc-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── Split master-detail ──────────────────────────────── */
+.fc-split {
+  display: grid;
+  grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
+  gap: var(--fc-space-4);
+  min-height: 22rem;
+  align-items: stretch;
+}
+
+@media (max-width: 860px) {
+  .fc-split {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    gap: var(--fc-space-3);
+  }
+
+  .fc-split > aside.fc-panel,
+  .fc-split > .fc-panel:first-child {
+    max-height: min(42vh, 20rem);
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .fc-split > section.fc-panel,
+  .fc-split > .fc-panel:last-child:not(:only-child) {
+    min-height: 12rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fc-split > aside.fc-panel,
+  .fc-split > .fc-panel:first-child {
+    max-height: min(38vh, 16rem);
+  }
+}
+
+/* ── Panel ────────────────────────────────────────────── */
+.fc-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-4);
+  min-height: 0;
+  padding: var(--fc-space-4);
+  border: 1px solid var(--fc-border);
+  border-radius: var(--fc-radius);
+  background: var(--fc-surface);
+  box-shadow: var(--fc-shadow-sm);
+}
+
+.fc-panel__title {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--fc-muted);
+}
+
+.fc-panel__scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .fc-panel {
+    padding: var(--fc-space-3);
+    gap: var(--fc-space-3);
+  }
+}
+
+/* ── Liste sélectionnable ─────────────────────────────── */
+.fc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+}
+
+.fc-list__item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-height: var(--fc-touch-min);
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--fc-border-strong);
+  border-radius: var(--fc-radius-sm);
+  background: var(--fc-surface);
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  transition:
+    border-color var(--fc-duration) var(--fc-ease),
+    background var(--fc-duration) var(--fc-ease),
+    box-shadow var(--fc-duration) var(--fc-ease);
+}
+
+.fc-list__item:hover {
+  background: var(--fc-bg);
+}
+
+.fc-list__item--active {
+  border-color: var(--fc-primary);
+  background: var(--fc-primary-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fc-primary) 25%, transparent);
+}
+
+.fc-list__label {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: var(--fc-text);
+}
+
+.fc-list__meta {
+  font-size: 0.75rem;
+  color: var(--fc-muted);
+  font-weight: 500;
+}
+
+/* ── Détail clé/valeur ────────────────────────────────── */
+.fc-dl {
+  margin: 0;
+  display: grid;
+  gap: 0;
+}
+
+.fc-dl__row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 11rem) minmax(0, 1fr);
+  gap: var(--fc-space-3);
+  padding: var(--fc-space-3) 0;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-dl__row:first-child {
+  padding-top: 0;
+}
+
+.fc-dl__row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.fc-dl dt {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fc-muted);
+}
+
+.fc-dl dd {
+  margin: 0;
+  word-break: break-word;
+  font-weight: 500;
+  color: var(--fc-text);
+}
+
+@media (max-width: 520px) {
+  .fc-dl__row {
+    grid-template-columns: 1fr;
+    gap: var(--fc-space-1);
+  }
+}
+
+/* ── Tableau (propre à ce périmètre V4 — V3 n'utilise que fc-list/fc-dl) ── */
+.fc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--fc-border);
+  border-radius: var(--fc-radius);
+  background: var(--fc-surface);
+  box-shadow: var(--fc-shadow-sm);
+  overflow: hidden;
+}
+
+.fc-table caption {
+  text-align: left;
+  padding: var(--fc-space-3) var(--fc-space-4);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--fc-muted);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-table th,
+.fc-table td {
+  padding: 0.7rem var(--fc-space-4);
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.fc-table thead th {
+  background: var(--fc-bg);
+  color: var(--fc-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-table tbody tr {
+  border-top: 1px solid var(--fc-border);
+  transition: background var(--fc-duration) var(--fc-ease);
+}
+
+.fc-table tbody tr:first-child {
+  border-top: 0;
+}
+
+.fc-table tbody tr:hover {
+  background: var(--fc-bg);
+}
+
+.fc-table tbody td {
+  color: var(--fc-text);
+}
+
+@media (max-width: 720px) {
+  .fc-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Indice de défilement : un fondu apparaît uniquement s'il reste des
+       colonnes cachées de ce côté (même technique que .shell-nav). */
+    background-image:
+      linear-gradient(to right, var(--fc-surface) 50%, transparent),
+      linear-gradient(to left, var(--fc-surface) 50%, transparent),
+      linear-gradient(to right, color-mix(in srgb, var(--fc-text) 14%, transparent), transparent),
+      linear-gradient(to left, color-mix(in srgb, var(--fc-text) 14%, transparent), transparent);
+    background-position: left center, right center, left center, right center;
+    background-repeat: no-repeat;
+    background-size: 24px 100%, 24px 100%, 10px 100%, 10px 100%;
+    background-attachment: local, local, scroll, scroll;
+  }
+}
+
+/* ── Champ de formulaire (repris de login V3, généralisé) ── */
+.field {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: var(--fc-space-3);
+}
+
+.field__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.field__input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--fc-border-strong);
+  border-radius: var(--fc-radius-sm);
+  background: var(--fc-surface);
+  color: var(--fc-text);
+  transition:
+    border-color var(--fc-duration) var(--fc-ease),
+    box-shadow var(--fc-duration) var(--fc-ease);
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--fc-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc-primary) 18%, transparent);
+}
+
+textarea.field__input {
+  min-height: 5rem;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.field__hint {
+  margin: 0;
+  color: var(--fc-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.field__error {
+  margin: 0;
+  color: var(--fc-danger);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.field__fieldset {
+  display: grid;
+  gap: var(--fc-space-3);
+  margin: 0 0 var(--fc-space-3);
+  padding: 0;
+  border: 0;
+}
+
+.field__legend {
+  padding: 0 0 var(--fc-space-1);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--fc-text);
+}
+
+/* ── Boutons ──────────────────────────────────────────── */
+.fc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--fc-space-2);
+  border: 1px solid transparent;
+  border-radius: var(--fc-radius-sm);
+  padding: 0.7rem 1rem;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition:
+    background var(--fc-duration) var(--fc-ease),
+    border-color var(--fc-duration) var(--fc-ease),
+    color var(--fc-duration) var(--fc-ease),
+    opacity var(--fc-duration) var(--fc-ease);
+}
+
+.fc-btn:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.fc-btn--primary {
+  background: var(--fc-primary);
+  color: var(--fc-primary-contrast);
+}
+
+.fc-btn--primary:not(:disabled):hover {
+  background: var(--fc-primary-hover);
+}
+
+.fc-btn--ghost {
+  background: transparent;
+  border-color: var(--fc-border-strong);
+  color: var(--fc-text);
+}
+
+.fc-btn--ghost:hover {
+  border-color: color-mix(in srgb, var(--fc-primary) 35%, var(--fc-border));
+  color: var(--fc-primary);
+  background: var(--fc-primary-soft);
+}
+
+.fc-btn--block {
+  width: 100%;
+}
+
+.fc-btn--sm {
+  padding: 0.5rem 0.8rem;
+  font-size: 0.8125rem;
+  min-height: 2.25rem;
+}
+
+/* Barre de filtres réutilisable */
+.fc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fc-space-3);
+  align-items: flex-end;
+}
+
+.fc-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1 1 10rem;
+  min-width: min(100%, 10rem);
+}
+
+.fc-filters__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--fc-muted);
+}
+
+.fc-filters__select,
+.fc-filters__input {
+  width: 100%;
+  min-height: var(--fc-touch-min);
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--fc-border-strong);
+  border-radius: var(--fc-radius-sm);
+  background: var(--fc-surface);
+  font: inherit;
+  color: var(--fc-text);
+}
+
+.fc-filters__select:focus,
+.fc-filters__input:focus {
+  outline: none;
+  border-color: var(--fc-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc-primary) 18%, transparent);
+}
+
+/* Groupe d'actions — empilement mobile */
+.fc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .fc-actions--stack-sm .fc-btn {
+    flex: 1 1 100%;
+  }
+}
+
+/* ── Feedback ─────────────────────────────────────────── */
+.fc-msg {
+  margin: 0;
+  color: var(--fc-muted);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.fc-msg--error {
+  color: var(--fc-danger);
+  font-weight: 600;
+}
+
+.fc-msg--success {
+  color: var(--fc-success);
+  font-weight: 600;
+}
+
+.fc-empty {
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: var(--fc-space-8) var(--fc-space-4);
+  color: var(--fc-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .fc-empty {
+    padding: var(--fc-space-6) var(--fc-space-3);
+  }
+}
+
+.fc-banner {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--fc-radius-sm);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.fc-banner--success {
+  background: var(--fc-success-soft);
+  color: var(--fc-success);
+  border: 1px solid color-mix(in srgb, var(--fc-success) 22%, transparent);
+}
+
+.fc-banner--error {
+  background: var(--fc-danger-soft);
+  color: var(--fc-danger);
+  border: 1px solid color-mix(in srgb, var(--fc-danger) 22%, transparent);
+}
+
+/* ── Skeleton loading ─────────────────────────────────── */
+.fc-skeleton {
+  display: grid;
+  gap: var(--fc-space-2);
+}
+
+.fc-skeleton__line {
+  height: 2.75rem;
+  border-radius: var(--fc-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--fc-bg) 0%,
+    color-mix(in srgb, var(--fc-border) 70%, #fff) 50%,
+    var(--fc-bg) 100%
+  );
+  background-size: 200% 100%;
+  animation: fc-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes fc-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .fc-skeleton__line {
+    animation: none;
+    background: var(--fc-bg);
+  }
+}

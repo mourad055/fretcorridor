@@ -1,0 +1,183 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — service-pay
+  version: "1.0.0"
+  description: >
+    Sprint 8 (PRD §9, cœur du périmètre). Grand livre en partie double,
+    séquestre logique, adaptateur sandbox du prestataire de paiement
+    (verrou V2 non levé — PRD §1.3). FretCorridor n'écrit jamais dans un
+    compte de trésorerie qui lui appartient (ENF-FIN-01) ; aucun reversement
+    n'est instruit sans encaissement préalable (ENF-FIN-02) ; la
+    réconciliation isole tout écart (ENF-FIN-03). L'ingestion par POST direct
+    (prise-en-charge/clôture/reversement) est temporaire — remplacée par une
+    consommation d'événements Kafka une fois le bus câblé pour ce service.
+servers:
+  - url: http://localhost:8084
+
+paths:
+  /api/v1/pay/missions/{missionId}/prise-en-charge:
+    post:
+      operationId: priseEnCharge
+      summary: Déclenche le séquestre logique à la prise en charge de la mission
+      parameters:
+        - name: missionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Séquestre déclenché
+        '409':
+          description: Séquestre déjà déclenché pour cette mission (RFC 7807)
+
+  /api/v1/pay/missions/{missionId}/cloture:
+    post:
+      operationId: cloturerMission
+      summary: Enregistre l'encaissement au séquestre du prestataire et libère le séquestre
+      parameters:
+        - name: missionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId, transporteurId, montant, referencePrestataire]
+              properties:
+                tenantId: { type: string }
+                transporteurId: { type: string }
+                montant: { type: number }
+                referencePrestataire: { type: string }
+      responses:
+        '200':
+          description: Écriture d'encaissement créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ecriture'
+        '409':
+          description: Aucun séquestre déclenché pour cette mission (RFC 7807)
+
+  /api/v1/pay/missions/{missionId}/reversement:
+    post:
+      operationId: enregistrerReversement
+      summary: Enregistre un reversement au transporteur (ENF-FIN-02 appliqué)
+      parameters:
+        - name: missionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId, transporteurId, montant, referencePrestataire]
+              properties:
+                tenantId: { type: string }
+                transporteurId: { type: string }
+                montant: { type: number }
+                referencePrestataire: { type: string }
+      responses:
+        '200':
+          description: Écriture de reversement créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ecriture'
+        '409':
+          description: Reversement refusé — aucun encaissement suffisant (ENF-FIN-02, RFC 7807)
+
+  /api/v1/pay/transporteurs/{transporteurId}/ecritures:
+    get:
+      operationId: ecrituresTransporteur
+      summary: Liste les écritures d'un transporteur (périmètre strict par acteur)
+      parameters:
+        - name: transporteurId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Écritures du transporteur
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ecriture'
+
+  /api/v1/pay/tenants/{tenantId}/rapport:
+    get:
+      operationId: rapportTenant
+      summary: Rapport financier d'un tenant (Bureau/Admin)
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Écritures du tenant
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ecriture'
+
+  /api/v1/pay/missions/{missionId}/reconciliation:
+    post:
+      operationId: reconcilierMission
+      summary: Réconciliation ENF-FIN-03 — isole les écritures en cas d'écart
+      parameters:
+        - name: missionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Résultat de la réconciliation
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [missionId, ecart, declencheeLe, bloquante]
+                properties:
+                  missionId: { type: string }
+                  ecart: { type: number }
+                  declencheeLe: { type: string, format: date-time }
+                  bloquante: { type: boolean }
+
+components:
+  schemas:
+    Ecriture:
+      type: object
+      required: [id, missionId, typeCompte, nature, sens, montant, creeLe, statut]
+      properties:
+        id: { type: string }
+        missionId: { type: string }
+        typeCompte:
+          type: string
+          enum: [COMPTE_TRANSPORTEUR, COMPTE_CHARGEUR, COMPTE_SEQUESTRE_PRESTATAIRE]
+        nature:
+          type: string
+          enum: [ENCAISSEMENT, REVERSEMENT]
+        sens:
+          type: string
+          enum: [DEBIT, CREDIT]
+        montant: { type: number }
+        creeLe: { type: string, format: date-time }
+        statut:
+          type: string
+          enum: [VALIDE, SUSPENDUE]

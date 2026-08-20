@@ -1,0 +1,44 @@
+server:
+  port: ${SERVER_PORT:8088}
+
+spring:
+  application:
+    name: service-pay
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/fretcorridor}
+    username: ${SPRING_DATASOURCE_USERNAME:fretcorridor}
+    password: ${SPRING_DATASOURCE_PASSWORD:fretcorridor}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+
+fretcorridor:
+  # ⚠️ Même secret que service-ida — obligatoire pour que service-pay puisse
+  # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  pay:
+    # EF-PAY-05 / ENF-SEC-05 : secret HMAC du webhook prestataire, jamais codé
+    # en dur — la valeur par défaut n'est valable qu'en développement local.
+    webhook-secret: ${FRETCORRIDOR_PAY_WEBHOOK_SECRET:dev-secret-change-me-in-production-min-32-bytes}
+    ordonnanceur-reversement:
+      # EF-PAY-08, RG-079 : délai de contestation (départ = clôture/libération
+      # du séquestre, cf. ADR 0015) avant reversement automatique. Valeur de
+      # développement volontairement basse pour observer le déclenchement.
+      delai-contestation-heures: ${FRETCORRIDOR_PAY_DELAI_CONTESTATION_HEURES:48}
+      # Fréquence d'exécution de l'ordonnanceur.
+      intervalle-ms: ${FRETCORRIDOR_PAY_ORDONNANCEUR_INTERVALLE_MS:900000}
+    ordonnanceur-reconciliation:
+      # EF-PAY-02, RG-077 : fréquence du rapprochement quotidien. Valeur de
+      # développement volontairement basse (comme l'ordonnanceur de
+      # reversement) pour observer le déclenchement.
+      intervalle-ms: ${FRETCORRIDOR_PAY_ORDONNANCEUR_RECONCILIATION_INTERVALLE_MS:900000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

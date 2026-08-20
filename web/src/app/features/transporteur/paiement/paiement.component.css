@@ -1,0 +1,9 @@
+.solde-montant {
+  margin: 0 0 var(--fc-space-3);
+  font-size: 0.9375rem;
+}
+
+.solde-montant strong {
+  color: var(--fc-primary);
+  font-size: 1.25rem;
+}

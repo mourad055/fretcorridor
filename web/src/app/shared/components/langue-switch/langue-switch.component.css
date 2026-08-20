@@ -1,0 +1,31 @@
+.langue-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.langue-switch__btn {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--fc-border-strong);
+  border-radius: var(--fc-radius-sm);
+  background: transparent;
+  color: var(--fc-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background var(--fc-duration) var(--fc-ease),
+    color var(--fc-duration) var(--fc-ease),
+    border-color var(--fc-duration) var(--fc-ease);
+}
+
+.langue-switch__btn:hover {
+  border-color: var(--fc-primary);
+  color: var(--fc-primary);
+}
+
+.langue-switch__btn--active {
+  background: var(--fc-primary);
+  border-color: var(--fc-primary);
+  color: var(--fc-primary-contrast);
+}

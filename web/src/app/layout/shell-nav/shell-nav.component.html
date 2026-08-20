@@ -1,0 +1,11 @@
+<nav class="shell-nav" [attr.aria-label]="'shell.navAriaLabel' | translate">
+  <a
+    *ngFor="let onglet of onglets()"
+    class="shell-nav__link"
+    [routerLink]="onglet.path"
+    [routerLinkActive]="'shell-nav__link--active'"
+    [routerLinkActiveOptions]="{ exact: onglet.exact }"
+  >
+    {{ onglet.labelKey | translate }}
+  </a>
+</nav>
