@@ -9,14 +9,17 @@ const _libellesType = {
   TypeEtapeTournee.livraison: 'Livraison',
 };
 
-/// S11 — écran de tournée multi-étapes (groupage LTL) — ⚠️ MOCK, voir
-/// mission_multi_etapes_provider.dart. N'affiche qu'UNE seule action à la
-/// fois (l'étape en cours), avec la chronologie des étapes déjà faites en
-/// dessous — même principe que l'écran S7 (mission_detail_screen.dart),
-/// généralisé à N étapes au lieu d'un statut linéaire fixe. Écran séparé,
-/// le flux S7 existant n'est pas modifié.
+/// S11 — écran de tournée multi-étapes (groupage LTL), câblé sur
+/// GET /missions/tournees/{tourneeId} (voir mission_multi_etapes_provider.dart).
+/// N'affiche qu'UNE seule action à la fois (l'étape en cours), avec la
+/// chronologie des étapes déjà faites en dessous — même principe que
+/// l'écran S7 (mission_detail_screen.dart), généralisé à N étapes au lieu
+/// d'un statut linéaire fixe. Écran séparé, le flux S7 existant n'est pas
+/// modifié.
 class MissionMultiEtapesScreen extends ConsumerStatefulWidget {
-  const MissionMultiEtapesScreen({super.key});
+  final String tourneeId;
+
+  const MissionMultiEtapesScreen({super.key, required this.tourneeId});
 
   @override
   ConsumerState<MissionMultiEtapesScreen> createState() => _MissionMultiEtapesScreenState();
@@ -26,59 +29,79 @@ class _MissionMultiEtapesScreenState extends ConsumerState<MissionMultiEtapesScr
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(missionMultiEtapesProvider.notifier).chargerTourneeDemo());
+    Future.microtask(() => ref.read(missionMultiEtapesProvider.notifier).chargerTournee(widget.tourneeId));
   }
 
   @override
   Widget build(BuildContext context) {
-    final tournee = ref.watch(missionMultiEtapesProvider).tournee;
+    final state = ref.watch(missionMultiEtapesProvider);
+    final tournee = state.tournee;
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: Text(tournee == null ? 'Tournée groupée' : tournee.axeLibelle)),
-      body: tournee == null
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
-                    ),
-                    child: const Row(children: [
-                      Icon(Icons.science_outlined, color: AppColors.accent, size: 16),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Démonstration — tournée simulée en attendant le multi-étapes côté service-opt.',
-                          style: TextStyle(color: AppColors.accent, fontSize: 12),
+      appBar: AppBar(title: const Text('Tournée groupée')),
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(missionMultiEtapesProvider.notifier).chargerTournee(widget.tourneeId),
+        child: state.chargement && tournee == null
+            ? const Center(child: CircularProgressIndicator())
+            : state.erreur != null && tournee == null
+                ? _erreur(state.erreur!)
+                : tournee == null
+                    ? const SizedBox.shrink()
+                    : SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (state.erreur != null) ...[
+                              _bandeauErreur(state.erreur!),
+                              const SizedBox(height: 16),
+                            ],
+                            Text('Envoi groupé — ${tournee.etapes.length} étapes',
+                                style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 16),
+                            if (tournee.terminee) _carteTourneeTerminee() else _carteEtapeCourante(tournee.etapeCourante!, state.chargement),
+                            const SizedBox(height: 24),
+                            Text('Chronologie', style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: 12),
+                            if (tournee.etapesTerminees.isEmpty)
+                              const Text('Aucune étape terminée pour le moment.', style: TextStyle(color: AppColors.texteMuet))
+                            else
+                              ...tournee.etapesTerminees.map(_carteEtapeTerminee),
+                          ],
                         ),
                       ),
-                    ]),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('Envoi groupé — ${tournee.etapes.length} étapes', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 16),
-                  if (tournee.terminee) _carteTourneeTerminee() else _carteEtapeCourante(tournee.etapeCourante!),
-                  const SizedBox(height: 24),
-                  Text('Chronologie', style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 12),
-                  if (tournee.etapesTerminees.isEmpty)
-                    const Text('Aucune étape terminée pour le moment.', style: TextStyle(color: AppColors.texteMuet))
-                  else
-                    ...tournee.etapesTerminees.map(_carteEtapeTerminee),
-                ],
-              ),
-            ),
+      ),
     );
   }
 
-  Widget _carteEtapeCourante(EtapeTournee etape) {
+  Widget _erreur(String message) {
+    return ListView(children: [
+      const SizedBox(height: 80),
+      const Center(child: Icon(Icons.wifi_off, color: AppColors.texteMuet, size: 48)),
+      const SizedBox(height: 12),
+      Center(child: Text(message, style: const TextStyle(color: AppColors.texteMuet))),
+    ]);
+  }
+
+  Widget _bandeauErreur(String message) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: AppColors.erreur.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.erreur.withValues(alpha: 0.4)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.error_outline, color: AppColors.erreur, size: 16),
+        const SizedBox(width: 8),
+        Expanded(child: Text(message, style: const TextStyle(color: AppColors.erreur, fontSize: 12))),
+      ]),
+    );
+  }
+
+  Widget _carteEtapeCourante(EtapeTournee etape, bool chargement) {
     final estEnlevement = etape.type == TypeEtapeTournee.enlevement;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -98,9 +121,10 @@ class _MissionMultiEtapesScreenState extends ConsumerState<MissionMultiEtapesScr
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(_libellesType[etape.type]!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  Text(etape.lieuNom, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
-                  if (etape.envoiReference != null)
-                    Text('Réf. ${etape.envoiReference}', style: const TextStyle(color: AppColors.texteMuet, fontSize: 11)),
+                  Text('Demande ${etape.demandeId.substring(0, 8)}',
+                      style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                  Text('${etape.pointLatitude.toStringAsFixed(4)}, ${etape.pointLongitude.toStringAsFixed(4)}',
+                      style: const TextStyle(color: AppColors.texteMuet, fontSize: 11)),
                 ],
               ),
             ),
@@ -110,13 +134,16 @@ class _MissionMultiEtapesScreenState extends ConsumerState<MissionMultiEtapesScr
             width: double.infinity,
             height: 48,
             child: ElevatedButton(
-              onPressed: () => ref.read(missionMultiEtapesProvider.notifier).confirmerEtapeCourante(),
+              onPressed: chargement ? null : () => ref.read(missionMultiEtapesProvider.notifier).confirmerEtapeCourante(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: Text(estEnlevement ? 'Confirmer l\'enlèvement' : 'Confirmer la livraison',
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+              child: chargement
+                  ? const SizedBox(
+                      width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.texteBouton))
+                  : Text(estEnlevement ? 'Confirmer l\'enlèvement' : 'Confirmer la livraison',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
             ),
           ),
           const SizedBox(height: 10),
@@ -125,13 +152,12 @@ class _MissionMultiEtapesScreenState extends ConsumerState<MissionMultiEtapesScr
             height: 40,
             child: OutlinedButton.icon(
               onPressed: () {
-                final tournee = ref.read(missionMultiEtapesProvider).tournee!;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (_) => PlanChargementScreen(
-                      missionId: tournee.missionId,
-                      etapeLibelle: '${_libellesType[etape.type]} — ${etape.lieuNom}',
+                      missionId: etape.missionId,
+                      etapeLibelle: '${_libellesType[etape.type]} — Demande ${etape.demandeId.substring(0, 8)}',
                     ),
                   ),
                 );
@@ -183,7 +209,7 @@ class _MissionMultiEtapesScreenState extends ConsumerState<MissionMultiEtapesScr
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(_libellesType[etape.type]!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-              Text(etape.lieuNom, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+              Text('Demande ${etape.demandeId.substring(0, 8)}', style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
             ],
           ),
         ),

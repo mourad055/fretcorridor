@@ -1,129 +1,138 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'dio_provider.dart';
 
 enum TypeEtapeTournee { enlevement, livraison }
 
-enum StatutEtapeTournee { aVenir, enCours, terminee }
+TypeEtapeTournee _typeEtapeDe(String valeur) =>
+    valeur == 'LIVRAISON' ? TypeEtapeTournee.livraison : TypeEtapeTournee.enlevement;
 
 class EtapeTournee {
-  final String id;
+  final String missionId;
+  final int rang;
   final TypeEtapeTournee type;
-  final String lieuNom;
-  final String? envoiReference;
-  final StatutEtapeTournee statut;
+  final String demandeId;
+  final double pointLatitude;
+  final double pointLongitude;
+  final String? missionStatut;
 
   const EtapeTournee({
-    required this.id,
+    required this.missionId,
+    required this.rang,
     required this.type,
-    required this.lieuNom,
-    this.envoiReference,
-    required this.statut,
+    required this.demandeId,
+    required this.pointLatitude,
+    required this.pointLongitude,
+    this.missionStatut,
   });
 
-  EtapeTournee copyWith({StatutEtapeTournee? statut}) => EtapeTournee(
-        id: id,
-        type: type,
-        lieuNom: lieuNom,
-        envoiReference: envoiReference,
-        statut: statut ?? this.statut,
+  factory EtapeTournee.fromJson(Map<String, dynamic> json) => EtapeTournee(
+        missionId: json['missionId'] as String,
+        rang: json['rang'] as int,
+        type: _typeEtapeDe(json['typeEtape'] as String),
+        demandeId: json['demandeId'] as String,
+        pointLatitude: (json['pointLatitude'] as num).toDouble(),
+        pointLongitude: (json['pointLongitude'] as num).toDouble(),
+        missionStatut: json['missionStatut'] as String?,
       );
+
+  // EF-MAT-05/06 : "terminée" se dérive du statut réel de la Mission
+  // (service-exe), jamais d'un état local — un ENLEVEMENT est fait dès que
+  // la mission a dépassé EN_ATTENTE, une LIVRAISON seulement si LIVREE.
+  bool get terminee => type == TypeEtapeTournee.enlevement
+      ? const ['PRISE_EN_CHARGE', 'EN_TRANSIT', 'LIVREE'].contains(missionStatut)
+      : missionStatut == 'LIVREE';
 }
 
 class TourneeMultiEtapes {
-  final String missionId;
-  final String axeLibelle;
+  final String tourneeId;
   final List<EtapeTournee> etapes;
 
-  const TourneeMultiEtapes({required this.missionId, required this.axeLibelle, required this.etapes});
+  const TourneeMultiEtapes({required this.tourneeId, required this.etapes});
 
-  int get indexEtapeCourante => etapes.indexWhere((e) => e.statut != StatutEtapeTournee.terminee);
+  int get indexEtapeCourante => etapes.indexWhere((e) => !e.terminee);
 
   bool get terminee => indexEtapeCourante == -1;
 
   EtapeTournee? get etapeCourante => terminee ? null : etapes[indexEtapeCourante];
 
-  List<EtapeTournee> get etapesTerminees => etapes.where((e) => e.statut == StatutEtapeTournee.terminee).toList();
+  List<EtapeTournee> get etapesTerminees => etapes.where((e) => e.terminee).toList();
 }
 
 class MissionMultiEtapesState {
+  final bool chargement;
+  final String? erreur;
   final TourneeMultiEtapes? tournee;
 
-  const MissionMultiEtapesState({this.tournee});
+  const MissionMultiEtapesState({this.chargement = false, this.erreur, this.tournee});
 
-  MissionMultiEtapesState copyWith({TourneeMultiEtapes? tournee}) => MissionMultiEtapesState(tournee: tournee ?? this.tournee);
+  MissionMultiEtapesState copyWith({bool? chargement, String? erreur, TourneeMultiEtapes? tournee}) =>
+      MissionMultiEtapesState(
+        chargement: chargement ?? this.chargement,
+        erreur: erreur,
+        tournee: tournee ?? this.tournee,
+      );
 }
 
-/// S11 (Sprint 11, "Consolidation LTL moteur V1") — ⚠️ MOCK, aucun appel réseau.
-///
-/// service-opt (Moteur) n'expose pas encore le multi-étapes côté serveur ;
-/// le topic Kafka `EtapeExecutee` est en cours de spec côté Moteur pour S12
-/// (missionId = celui d'AffectationConfirmeeEvent, confirmé). Ce provider
-/// simule localement une tournée de groupage (plusieurs enlèvements et/ou
-/// livraisons consécutifs) pour permettre de construire et valider l'écran
-/// dès maintenant. À remplacer par un vrai fetch (GET) + une confirmation
-/// d'étape (POST) vers le gateway une fois service-opt/service-exe prêts —
-/// même contrat que MissionExecutionController (S7), généralisé à N étapes.
+// S11 (EF-MAT-05/06) : GET /missions/tournees/{tourneeId} — voir
+// MissionExecutionController (gateway), qui consomme TourneeConstituee
+// (service-opt) via service-exe. Remplace le MOCK initial — même contrat
+// que MissionExecutionController (S7), généralisé à N étapes.
 class MissionMultiEtapesNotifier extends StateNotifier<MissionMultiEtapesState> {
-  MissionMultiEtapesNotifier() : super(const MissionMultiEtapesState());
+  final Dio _dio;
 
-  void chargerTourneeDemo() {
-    state = MissionMultiEtapesState(
-      tournee: const TourneeMultiEtapes(
-        missionId: 'mock-tournee-s11-001',
-        axeLibelle: 'Douala → Yaoundé',
-        etapes: [
-          EtapeTournee(
-            id: 'e1',
-            type: TypeEtapeTournee.enlevement,
-            lieuNom: 'Entrepôt Bonabéri (Client A)',
-            envoiReference: 'ENV-1042',
-            statut: StatutEtapeTournee.enCours,
-          ),
-          EtapeTournee(
-            id: 'e2',
-            type: TypeEtapeTournee.enlevement,
-            lieuNom: 'Dépôt Akwa (Client B)',
-            envoiReference: 'ENV-1043',
-            statut: StatutEtapeTournee.aVenir,
-          ),
-          EtapeTournee(
-            id: 'e3',
-            type: TypeEtapeTournee.livraison,
-            lieuNom: 'Mvan (destinataire Client A)',
-            envoiReference: 'ENV-1042',
-            statut: StatutEtapeTournee.aVenir,
-          ),
-          EtapeTournee(
-            id: 'e4',
-            type: TypeEtapeTournee.livraison,
-            lieuNom: 'Nlongkak (destinataire Client B)',
-            envoiReference: 'ENV-1043',
-            statut: StatutEtapeTournee.aVenir,
-          ),
-        ],
-      ),
-    );
+  MissionMultiEtapesNotifier(this._dio) : super(const MissionMultiEtapesState());
+
+  Future<void> chargerTournee(String tourneeId) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final response = await _dio.get('/missions/tournees/$tourneeId');
+      final etapes = (response.data['etapes'] as List<dynamic>)
+          .map((e) => EtapeTournee.fromJson(e as Map<String, dynamic>))
+          .toList();
+      state = state.copyWith(chargement: false, tournee: TourneeMultiEtapes(tourneeId: tourneeId, etapes: etapes));
+    } on DioException catch (e) {
+      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+    }
   }
 
-  /// Confirme l'étape en cours et fait passer la suivante en "en cours" —
-  /// entièrement local (MOCK), aucune écriture réseau.
-  void confirmerEtapeCourante() {
+  // Une étape de tournée ENLEVEMENT/LIVRAISON se confirme par le même
+  // endpoint que le flux S7 mono-étape (PRISE_EN_CHARGE/LIVRAISON), sur la
+  // Mission précise à laquelle l'étape courante appartient — pas de nouvel
+  // endpoint dédié côté backend.
+  Future<bool> confirmerEtapeCourante() async {
     final tournee = state.tournee;
-    if (tournee == null) return;
-    final index = tournee.indexEtapeCourante;
-    if (index == -1) return;
+    final etape = tournee?.etapeCourante;
+    if (tournee == null || etape == null) return false;
 
-    final nouvellesEtapes = [...tournee.etapes];
-    nouvellesEtapes[index] = nouvellesEtapes[index].copyWith(statut: StatutEtapeTournee.terminee);
-    if (index + 1 < nouvellesEtapes.length) {
-      nouvellesEtapes[index + 1] = nouvellesEtapes[index + 1].copyWith(statut: StatutEtapeTournee.enCours);
+    final type = etape.type == TypeEtapeTournee.enlevement ? 'PRISE_EN_CHARGE' : 'LIVRAISON';
+    final libelle = etape.type == TypeEtapeTournee.enlevement
+        ? 'Enlèvement (tournée groupée)'
+        : 'Livraison (tournée groupée)';
+
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      await _dio.post('/missions/${etape.missionId}/etapes', data: {'type': type, 'libelle': libelle});
+      await chargerTournee(tournee.tourneeId);
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      return false;
     }
+  }
 
-    state = MissionMultiEtapesState(
-      tournee: TourneeMultiEtapes(missionId: tournee.missionId, axeLibelle: tournee.axeLibelle, etapes: nouvellesEtapes),
-    );
+  String _messageErreur(DioException e) {
+    final status = e.response?.statusCode;
+    if (status == 404) return 'Tournée introuvable.';
+    if (status == 400) {
+      return (e.response?.data is Map ? e.response?.data['detail'] as String? : null) ?? 'Requête refusée.';
+    }
+    if (status == 503) return 'Service d\'exécution momentanément indisponible.';
+    return 'Erreur de connexion. Vérifiez votre réseau.';
   }
 }
 
-final missionMultiEtapesProvider = StateNotifierProvider<MissionMultiEtapesNotifier, MissionMultiEtapesState>((ref) {
-  return MissionMultiEtapesNotifier();
+final missionMultiEtapesProvider =
+    StateNotifierProvider<MissionMultiEtapesNotifier, MissionMultiEtapesState>((ref) {
+  return MissionMultiEtapesNotifier(ref.watch(dioProvider));
 });
