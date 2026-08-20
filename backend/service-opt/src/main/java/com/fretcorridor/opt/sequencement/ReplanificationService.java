@@ -8,6 +8,8 @@ import com.fretcorridor.opt.messaging.OptEventPublisher;
 import com.fretcorridor.opt.messaging.PropositionRetourAVideEvent;
 import com.fretcorridor.opt.sequencement.alns.AlnsSolver;
 import com.fretcorridor.opt.sequencement.alns.EtatSolution;
+import com.fretcorridor.opt.client.ServiceGeoClient;
+import com.fretcorridor.opt.client.AxeDetailDto;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -48,19 +50,35 @@ public class ReplanificationService {
     private final CapaciteEnAttenteRepository capaciteEnAttenteRepository;
     private final AlnsSolver alnsSolver;
     private final OptEventPublisher eventPublisher;
+    private final ServiceGeoClient serviceGeoClient;
 
     public ReplanificationService(TourneeRepository tourneeRepository,
                                    EtapeTourneeRepository etapeTourneeRepository,
                                    AffectationRepository affectationRepository,
                                    CapaciteEnAttenteRepository capaciteEnAttenteRepository,
                                    AlnsSolver alnsSolver,
-                                   OptEventPublisher eventPublisher) {
+                                   OptEventPublisher eventPublisher,
+                                   ServiceGeoClient serviceGeoClient) {
         this.tourneeRepository = tourneeRepository;
         this.etapeTourneeRepository = etapeTourneeRepository;
         this.affectationRepository = affectationRepository;
         this.capaciteEnAttenteRepository = capaciteEnAttenteRepository;
         this.alnsSolver = alnsSolver;
         this.eventPublisher = eventPublisher;
+        this.serviceGeoClient = serviceGeoClient;
+    }
+
+    // EF-MAT-10 : voir SequencementDeclencheur.resoudreParametresAxe -
+    // meme contrat de degradation permissive.
+    private Map<String, Object> resoudreParametresAxe(UUID axeId) {
+        if (axeId == null) {
+            return Map.of();
+        }
+        AxeDetailDto axe = serviceGeoClient.axeParId(axeId);
+        if (axe == null || axe.parametres() == null) {
+            return Map.of();
+        }
+        return axe.parametres();
     }
 
     /**
@@ -149,12 +167,22 @@ public class ReplanificationService {
                 .orElse(null);
 
         AlnsSolver.ResultatSequencement resultat = alnsSolver.resoudre(
-                affectationsAReplanifier, capaciteMaxKg, chargeDejaABord, Map.of());
+                affectationsAReplanifier, capaciteMaxKg, chargeDejaABord,
+                resoudreParametresAxe(tourneeExistante.getAxeId()));
 
         // Seules les etapes vraiment reordonnancees sont supprimees - jamais
         // les livraisons en transit figees.
+        //
+        // flush() OBLIGATOIRE ici : Hibernate ordonne par defaut les
+        // INSERT avant les DELETE dans une meme transaction, quel que soit
+        // l'ordre d'appel en code - sans ce flush, un nouveau save() plus
+        // bas peut s'executer AVANT que ce delete soit reellement applique
+        // en base, et violer uq_etape_tournee_rang si le nouveau rang
+        // coincide avec une ancienne etape pas encore supprimee (bug
+        // observe en boucle toutes les 30s, cf SequencementDeclencheur).
         if (!etapesAReordonnancer.isEmpty()) {
             etapeTourneeRepository.deleteAll(etapesAReordonnancer);
+            etapeTourneeRepository.flush();
         }
 
         var sequence = resultat.solutionFinale().getSequence();

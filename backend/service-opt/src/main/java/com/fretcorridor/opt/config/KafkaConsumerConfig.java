@@ -3,6 +3,7 @@ package com.fretcorridor.opt.config;
 import com.fretcorridor.opt.messaging.CapaciteDeclareeEvent;
 import com.fretcorridor.opt.messaging.DemandePublieeEvent;
 import com.fretcorridor.opt.messaging.EtapeExecuteeEvent;
+import com.fretcorridor.opt.messaging.DemandePublieeLotsEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -102,6 +103,23 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, EtapeExecuteeEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(etapeExecuteeConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, DemandePublieeLotsEvent> demandePublieeLotsConsumerFactory() {
+        JsonDeserializer<DemandePublieeLotsEvent> deserializer =
+                new JsonDeserializer<>(DemandePublieeLotsEvent.class, false);
+        deserializer.setUseTypeHeaders(false);
+        return new DefaultKafkaConsumerFactory<>(proprietesBase(), new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, DemandePublieeLotsEvent>
+            demandePublieeLotsKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, DemandePublieeLotsEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(demandePublieeLotsConsumerFactory());
         return factory;
     }
 }
