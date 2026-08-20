@@ -25,14 +25,16 @@ class ChronologieModel {
   final String missionId;
   final String statut;
   final List<EtapeMissionModel> etapes;
+  final String? tourneeId;
 
-  const ChronologieModel({required this.missionId, required this.statut, required this.etapes});
+  const ChronologieModel({required this.missionId, required this.statut, required this.etapes, this.tourneeId});
 
   factory ChronologieModel.fromJson(Map<String, dynamic> json) {
     return ChronologieModel(
       missionId: json['missionId'] ?? '',
       statut: json['statut'] ?? 'EN_ATTENTE',
       etapes: (json['etapes'] as List? ?? []).map((e) => EtapeMissionModel.fromJson(e)).toList(),
+      tourneeId: json['tourneeId'] as String?,
     );
   }
 }
