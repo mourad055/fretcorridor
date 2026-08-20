@@ -17,9 +17,10 @@ import java.time.Duration;
 
 /**
  * Appelle service-cap (Mobile, port 8096) pour la déclaration de capacité
- * (EF-CAP-03/07). Pas d'en-tête d'authentification : service-cap n'a aucune
- * sécurité propre (confirmé — pas de dépendance Spring Security dans son
- * pom.xml), il n'est joignable que depuis le réseau interne via la gateway.
+ * (EF-CAP-03/07). Transmet le delegationToken (JWT service-ida) en Bearer —
+ * service-cap exige désormais une authentification (audit CDC du 19 août,
+ * "0 authentification + IDOR" corrigé), n'était plus vrai que service-cap
+ * n'a aucune sécurité propre.
  */
 @Component
 public class RealCapaciteDeclarationAdapter implements CapaciteDeclarationPort {
@@ -38,9 +39,13 @@ public class RealCapaciteDeclarationAdapter implements CapaciteDeclarationPort {
     }
 
     @Override
-    public Mono<CapaciteDeclaree> declarer(DeclarationCapacite requete) {
+    public Mono<CapaciteDeclaree> declarer(DeclarationCapacite requete, String delegationToken) {
+        if (delegationToken == null) {
+            return Mono.error(new CapServiceIndisponibleException());
+        }
         return webClient.post()
                 .uri("/api/cap/capacites")
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .bodyValue(requete)
                 .retrieve()
                 .bodyToMono(CapaciteDeclaree.class)

@@ -2,6 +2,7 @@ package com.flysoft.fretcorridor.cap.web;
 
 import com.flysoft.fretcorridor.cap.domain.Capacite;
 import com.flysoft.fretcorridor.cap.domain.CapaciteService;
+import com.flysoft.fretcorridor.cap.security.JwtService;
 import com.flysoft.fretcorridor.cap.web.dto.CapaciteCreationRequest;
 import com.flysoft.fretcorridor.cap.web.dto.CapaciteResponse;
 import com.flysoft.fretcorridor.cap.web.dto.DecrementRequest;
@@ -17,22 +18,35 @@ import java.util.UUID;
 public class CapaciteController {
 
     private final CapaciteService capaciteService;
+    private final JwtService jwtService;
 
-    public CapaciteController(CapaciteService capaciteService) {
+    public CapaciteController(CapaciteService capaciteService, JwtService jwtService) {
         this.capaciteService = capaciteService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CapaciteResponse declarer(@Valid @RequestBody CapaciteCreationRequest requete) {
-        Capacite capacite = capaciteService.declarer(requete);
+    public CapaciteResponse declarer(@Valid @RequestBody CapaciteCreationRequest requete,
+                                      @RequestHeader("Authorization") String authHeader) {
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        Capacite capacite = capaciteService.declarer(requete, tenantId);
         return CapaciteResponse.from(capacite);
     }
 
+    // IDOR corrige (audit CDC du 19 aout) : le tenant vient desormais du
+    // JWT, jamais du corps de requete - DecrementRequest ne porte plus
+    // aucune notion de tenant.
     @PostMapping("/{id}/decrement")
-    public CapaciteResponse decrementer(@PathVariable UUID id, @Valid @RequestBody DecrementRequest requete) {
-        Capacite capacite = capaciteService.decrementer(id, requete.montantKg(), requete.cleIdempotence());
-        return CapaciteResponse.from(capacite);
+    public CapaciteResponse decrementer(@PathVariable UUID id, @Valid @RequestBody DecrementRequest requete,
+                                         @RequestHeader("Authorization") String authHeader) {
+        try {
+            String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+            Capacite capacite = capaciteService.decrementer(id, tenantId, requete.montantKg(), requete.cleIdempotence());
+            return CapaciteResponse.from(capacite);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
     }
 
     // S12 (retour à vide) : resolution capaciteId -> transporteurId côté

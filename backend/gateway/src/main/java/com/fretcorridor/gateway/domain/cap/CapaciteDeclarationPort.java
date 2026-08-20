@@ -8,5 +8,5 @@ import reactor.core.publisher.Mono;
  * : pas d'équivalent GET côté service-cap, cf. MockCapAdapter/vue Bureau).
  */
 public interface CapaciteDeclarationPort {
-    Mono<CapaciteDeclaree> declarer(DeclarationCapacite requete);
+    Mono<CapaciteDeclaree> declarer(DeclarationCapacite requete, String delegationToken);
 }

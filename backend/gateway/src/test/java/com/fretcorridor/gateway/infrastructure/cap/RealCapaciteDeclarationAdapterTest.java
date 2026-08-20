@@ -46,7 +46,7 @@ class RealCapaciteDeclarationAdapterTest {
     }
 
     @Test
-    void declares_a_capacity_forwarding_no_auth_header() throws InterruptedException {
+    void declares_a_capacity_with_the_delegation_token() throws InterruptedException {
         serviceCap.enqueue(new MockResponse()
                 .setResponseCode(201)
                 .setHeader("Content-Type", "application/json")
@@ -58,21 +58,30 @@ class RealCapaciteDeclarationAdapterTest {
                          "dateDepart":"2026-08-13T00:00:00Z","dateCreation":"2026-08-12T00:00:00Z"}
                         """));
 
-        StepVerifier.create(adapter.declarer(requete()))
+        StepVerifier.create(adapter.declarer(requete(), "delegation-token-1"))
                 .expectNextMatches(c -> c.id().equals("cap-1") && c.publiee())
                 .verifyComplete();
 
         var requeteRecue = serviceCap.takeRequest();
         assertThat(requeteRecue.getPath()).isEqualTo("/api/cap/capacites");
-        assertThat(requeteRecue.getHeader("Authorization")).isNull();
+        assertThat(requeteRecue.getHeader("Authorization")).isEqualTo("Bearer delegation-token-1");
         assertThat(requeteRecue.getBody().readUtf8()).contains("\"typeVehicule\":\"Camion 10T\"");
+    }
+
+    @Test
+    void refuses_to_call_service_cap_without_a_delegation_token() {
+        StepVerifier.create(adapter.declarer(requete(), null))
+                .expectError(CapServiceIndisponibleException.class)
+                .verify();
+
+        assertThat(serviceCap.getRequestCount()).isZero();
     }
 
     @Test
     void maps_a_400_to_a_refused_error() {
         serviceCap.enqueue(new MockResponse().setResponseCode(400).setBody("Validation échouée"));
 
-        StepVerifier.create(adapter.declarer(requete()))
+        StepVerifier.create(adapter.declarer(requete(), "delegation-token-1"))
                 .expectError(CapaciteRefuseeException.class)
                 .verify();
     }
@@ -84,7 +93,7 @@ class RealCapaciteDeclarationAdapterTest {
                 .setBodyDelay(6, java.util.concurrent.TimeUnit.SECONDS)
                 .setBody("{}"));
 
-        StepVerifier.create(adapter.declarer(requete()))
+        StepVerifier.create(adapter.declarer(requete(), "delegation-token-1"))
                 .expectError(CapServiceIndisponibleException.class)
                 .verify(java.time.Duration.ofSeconds(10));
     }
