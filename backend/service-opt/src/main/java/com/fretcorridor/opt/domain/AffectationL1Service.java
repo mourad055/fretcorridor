@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -185,6 +186,17 @@ public class AffectationL1Service {
                 );
                 eventPublisher.publierPropositionEmise(proposition);
 
+                // RG-039/EF-MKT-07 (CDC : "au plus trois propositions par
+                // demande, ordonnées, motif de classement intelligible") :
+                // rang 1 ci-dessus reste l'affectation Kuhn-Munkres committee
+                // (comportement inchangé) ; rang 2/3 sont des alternatives
+                // purement informationnelles, classees par cout sur la meme
+                // ligne de la matrice -- aucune Affectation/AffectationConfirmee
+                // pour elles, prix estime (pas ferme au sens RG-041 tant que
+                // non accepte explicitement, cf AccepterPropositionService).
+                publierAlternatives(demandeId, demande, matriceCouts[i], capacitesReference,
+                        cycleMatchingIds[i], indiceCapacite);
+
                 // --- Publication Kafka : AffectationConfirmee (→ service-exe) ---
                 AffectationConfirmeeEvent confirmation = new AffectationConfirmeeEvent(
                         UUID.randomUUID(),
@@ -256,6 +268,53 @@ public class AffectationL1Service {
         }
 
         return new AffectationLotResultat(false, resultatsFinaux);
+    }
+
+    /**
+     * RG-039/EF-MKT-07 : jusqu'à 2 alternatives supplémentaires (rang 2/3),
+     * classées par coût croissant parmi les candidats non retenus de cette
+     * demande. Purement informationnelles -- aucune Affectation créée, prix
+     * estimé (pas ferme, RG-041) directement dérivé du coût composite
+     * (service-mat), sans recalcul tarification/itinéraire Valhalla pour
+     * limiter le surcoût réseau sur des candidats qui peuvent ne jamais être
+     * acceptés. missionId volontairement null -- distingue une vraie
+     * affectation committée (rang 1) d'une simple alternative (cf
+     * Proposition.missionId, service-mkt, colonne nullable).
+     */
+    private void publierAlternatives(UUID demandeId, DemandeAvecCandidats demande, double[] coutsLigne,
+                                      List<UUID> capacitesReference, UUID[] cycleMatchingIdsLigne, int indiceRetenu) {
+        record CandidatAlternatif(int indice, double cout) {
+        }
+        List<CandidatAlternatif> autres = new ArrayList<>();
+        for (int j = 0; j < coutsLigne.length; j++) {
+            if (j != indiceRetenu) {
+                autres.add(new CandidatAlternatif(j, coutsLigne[j]));
+            }
+        }
+        autres.sort(Comparator.comparingDouble(CandidatAlternatif::cout));
+
+        int rang = 2;
+        for (CandidatAlternatif candidat : autres.stream().limit(2).toList()) {
+            PropositionEmiseEvent alternative = new PropositionEmiseEvent(
+                    UUID.randomUUID(),
+                    cycleMatchingIdsLigne[candidat.indice()],
+                    demandeId,
+                    capacitesReference.get(candidat.indice()),
+                    null,
+                    demande.axeId(),
+                    rang,
+                    rang == 2 ? "2e meilleur prix" : "3e meilleur prix",
+                    BigDecimal.valueOf(candidat.cout()),
+                    null,
+                    "XAF",
+                    0,
+                    null,
+                    demande.origineDemande() != null ? "Origine" : null,
+                    demande.destinationDemande() != null ? "Destination" : null,
+                    Instant.now());
+            eventPublisher.publierPropositionEmise(alternative);
+            rang++;
+        }
     }
 
     private ItineraireResponseDto calculerItineraireSiPossible(DemandeAvecCandidats demande,

@@ -4,6 +4,7 @@ import com.flysoft.fretcorridor.mkt.client.ServiceGeoClient;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
 import com.flysoft.fretcorridor.mkt.entity.CatalogueEmballage;
 import com.flysoft.fretcorridor.mkt.entity.Demande;
+import com.flysoft.fretcorridor.mkt.entity.Proposition;
 import com.flysoft.fretcorridor.mkt.repository.CatalogueEmballageRepository;
 import com.flysoft.fretcorridor.mkt.repository.DemandeRepository;
 import com.flysoft.fretcorridor.mkt.repository.PropositionRepository;
@@ -120,9 +121,46 @@ public class DemandeService {
         return propositionRepository.findByDemandeIdOrderByRangAsc(demandeId).stream()
                 .map(p -> DemandeDto.PropositionResponse.builder()
                         .id(p.getId())
+                        .rang(p.getRang())
                         .motifClassement(p.getMotifClassement())
                         .prixEstime(p.getPrixTransport() != null ? p.getPrixTransport().toString() : null)
+                        .statut(p.getStatut().name())
                         .build())
                 .toList();
+    }
+
+    // RG-039/EF-MKT-08 : le chargeur choisit une des au plus 3 propositions
+    // reçues (EF-MKT-07) -- marque celle-ci ACCEPTEE et les autres de la même
+    // demande EXPIREE. La réservation atomique de capacité (autre volet
+    // d'EF-MKT-08) reste hors périmètre ici -- voir javadoc Proposition.statut.
+    @Transactional
+    public DemandeDto.PropositionResponse accepterProposition(UUID demandeId, UUID propositionId, String tenantId) {
+        demandeRepository.findByIdAndTenantId(demandeId, tenantId)
+                .orElseThrow(() -> new RuntimeException("DEMANDE_INTROUVABLE"));
+
+        Proposition proposition = propositionRepository.findByIdAndDemandeId(propositionId, demandeId)
+                .orElseThrow(() -> new RuntimeException("PROPOSITION_INTROUVABLE"));
+
+        if (proposition.getStatut() != Proposition.Statut.EN_ATTENTE) {
+            throw new RuntimeException("PROPOSITION_DEJA_TRAITEE");
+        }
+
+        List<Proposition> propositionsDeLaDemande = propositionRepository.findByDemandeIdOrderByRangAsc(demandeId);
+        for (Proposition p : propositionsDeLaDemande) {
+            if (p.getId().equals(propositionId)) {
+                p.setStatut(Proposition.Statut.ACCEPTEE);
+            } else if (p.getStatut() == Proposition.Statut.EN_ATTENTE) {
+                p.setStatut(Proposition.Statut.EXPIREE);
+            }
+        }
+        propositionRepository.saveAll(propositionsDeLaDemande);
+
+        return DemandeDto.PropositionResponse.builder()
+                .id(proposition.getId())
+                .rang(proposition.getRang())
+                .motifClassement(proposition.getMotifClassement())
+                .prixEstime(proposition.getPrixTransport() != null ? proposition.getPrixTransport().toString() : null)
+                .statut(proposition.getStatut().name())
+                .build();
     }
 }

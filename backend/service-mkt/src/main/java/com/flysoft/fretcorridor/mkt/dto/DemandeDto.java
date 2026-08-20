@@ -77,14 +77,16 @@ public class DemandeDto {
         }
     }
 
-    // S5 — stub en attendant service-mat/service-opt (Moteur)
+    // S5 — alimenté par PropositionEmiseListener (service-opt, Moteur)
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
     public static class PropositionResponse {
         private UUID id;
+        private Integer rang;
         private String motifClassement;
         private String prixEstime;
+        private String statut;
     }
 }

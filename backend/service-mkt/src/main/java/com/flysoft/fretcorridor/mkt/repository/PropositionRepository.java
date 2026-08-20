@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface PropositionRepository extends JpaRepository<Proposition, UUID> {
     List<Proposition> findByDemandeIdOrderByRangAsc(UUID demandeId);
+
+    java.util.Optional<Proposition> findByIdAndDemandeId(UUID id, UUID demandeId);
 }
