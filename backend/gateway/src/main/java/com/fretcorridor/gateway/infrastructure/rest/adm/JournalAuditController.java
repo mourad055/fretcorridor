@@ -2,9 +2,11 @@ package com.fretcorridor.gateway.infrastructure.rest.adm;
 
 import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.infrastructure.rest.adm.dto.EntreeJournalAuditResponse;
+import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,13 +26,15 @@ public class JournalAuditController {
     }
 
     @GetMapping
-    public Flux<EntreeJournalAuditResponse> lister(@RequestParam(required = false) String tenantId) {
-        return admPort.journalAudit(tenantId).map(EntreeJournalAuditResponse::from);
+    public Flux<EntreeJournalAuditResponse> lister(@RequestParam(required = false) String tenantId,
+                                                    @AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.journalAudit(tenantId, actor.delegationToken()).map(EntreeJournalAuditResponse::from);
     }
 
     @GetMapping("/export")
-    public Mono<ResponseEntity<String>> exporter(@RequestParam(required = false) String tenantId) {
-        return admPort.exporterJournalAudit(tenantId)
+    public Mono<ResponseEntity<String>> exporter(@RequestParam(required = false) String tenantId,
+                                                  @AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.exporterJournalAudit(tenantId, actor.delegationToken())
                 .map(csv -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType("text/csv"))
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"journal-audit.csv\"")

@@ -75,7 +75,7 @@ class KycControllerTest {
     void an_admin_can_validate_a_dossier_and_the_action_is_journalized() {
         String adminToken = tokenFor("+237600000003");
         String idempotencyKey = UUID.randomUUID().toString();
-        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.post().uri("/api/v1/admin/kyc/kyc-1/decision")
                 .header("Authorization", "Bearer " + adminToken)
@@ -88,7 +88,7 @@ class KycControllerTest {
                 .jsonPath("$.statut").isEqualTo("VALIDE");
 
         verify(admPort).enregistrerAudit(any(), any(), org.mockito.ArgumentMatchers.eq("KYC_DECISION_VALIDE"),
-                org.mockito.ArgumentMatchers.eq("kyc-dossier:kyc-1"));
+                org.mockito.ArgumentMatchers.eq("kyc-dossier:kyc-1"), any());
     }
 
     @Test

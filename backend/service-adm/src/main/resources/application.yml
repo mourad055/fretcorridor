@@ -23,6 +23,10 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
 fretcorridor:
+  # ⚠️ Même secret que service-ida — obligatoire pour que service-adm puisse
+  # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
   adm:
     ordonnanceur-escalade:
       # EF-ADM-05 : fréquence d'exécution de l'ordonnanceur d'escalade
