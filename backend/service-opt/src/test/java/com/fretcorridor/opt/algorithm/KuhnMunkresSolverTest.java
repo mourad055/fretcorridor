@@ -81,12 +81,13 @@ class KuhnMunkresSolverTest {
     }
 
     @Test
-    @DisplayName("Matrice vide retourne tableau vide")
+    @DisplayName("Matrice vide rejetée explicitement (contrat du solveur, jamais atteint en pratique : "
+            + "AffectationL1Service filtre les lots vides avant l'appel)")
     void matriceVide() {
         double[][] couts = {};
-        int[] resultat = KuhnMunkresSolver.resoudre(couts);
 
-        assertThat(resultat).isEmpty();
+        assertThatThrownBy(() -> KuhnMunkresSolver.resoudre(couts))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
