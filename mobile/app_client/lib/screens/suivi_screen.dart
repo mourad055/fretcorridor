@@ -4,6 +4,7 @@ import '../mock/consolidation_mock.dart';
 import '../providers/suivi_provider.dart';
 import '../theme/app_theme.dart';
 import 'litige_screen.dart';
+import 'paiement_screen.dart';
 
 // S6 (position/ETA) + S7 (chronologie) réunis dans un seul écran "Suivi" —
 // plus naturel côté client qu'une navigation séparée pour deux vues
@@ -174,6 +175,27 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                             ),
                           )),
                     const SizedBox(height: 24),
+                    // S14 (EF-PAY-06) : choix du moyen de paiement, rattaché
+                    // à la mission réelle de ce suivi.
+                    SizedBox(
+                      width: double.infinity,
+                      height: 44,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PaiementScreen(missionId: suivi.chronologie!.missionId),
+                          ),
+                        ),
+                        icon: const Icon(Icons.payments_outlined, size: 18, color: AppColors.accent),
+                        label: const Text('Choisir le moyen de paiement', style: TextStyle(color: AppColors.accent)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.accent),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
                       height: 44,

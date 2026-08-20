@@ -1,12 +1,16 @@
 package com.fretcorridor.gateway.infrastructure.pay;
 
+import com.fretcorridor.gateway.domain.exe.MissionIntrouvableException;
 import com.fretcorridor.gateway.domain.pay.DeclarationEspecesVue;
 import com.fretcorridor.gateway.domain.pay.EcritureVue;
+import com.fretcorridor.gateway.domain.pay.ModePaiementChoisi;
 import com.fretcorridor.gateway.domain.pay.PayReadPort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Appelle le service réel service-pay (contrairement aux autres adaptateurs
@@ -44,5 +48,18 @@ public class ServicePayWebClientAdapter implements PayReadPort {
                 .uri("/api/v1/pay/tenants/{tenantId}/paiements-especes", tenantId)
                 .retrieve()
                 .bodyToFlux(DeclarationEspecesVue.class);
+    }
+
+    @Override
+    public Mono<ModePaiementChoisi> modePaiementChoisi(String missionId) {
+        return webClient.get()
+                .uri("/api/v1/pay/missions/{missionId}/moyen-paiement", missionId)
+                .retrieve()
+                .bodyToMono(ModePaiementChoisi.class)
+                .onErrorMap(this::est404, e -> new MissionIntrouvableException());
+    }
+
+    private boolean est404(Throwable e) {
+        return e instanceof WebClientResponseException wcre && wcre.getStatusCode().value() == 404;
     }
 }
