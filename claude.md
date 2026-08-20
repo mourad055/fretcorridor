@@ -2,11 +2,16 @@
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
 > la version du 18 août 2026 : **toute la Phase 2 (S11, S12, S14, S15) est
-> désormais réelle de bout en bout** — S11 et S12 passés en réel dans
-> l'après-midi (PR #81, #82, #84, #85), S14 dans la foulée (PR #87). Un
-> audit complet du CDC a été mené entre-temps (voir
-> `AUDIT_CDC_v4_complet_2026-08-19.md` à la racine) et son bloquant #1
-> (build Web cassé, `@ngx-translate/core`) corrigé (PR #83).
+> désormais réelle de bout en bout, Chauffeur ET Client** — S11 et S12
+> passés en réel dans l'après-midi (PR #81, #82, #84, #85), S14 dans la
+> foulée (PR #87), S11 Volet B Client en dernier (PR #89). Un audit
+> complet du CDC a été mené entre-temps (voir
+> `AUDIT_CDC_v4_complet_2026-08-19.md` à la racine) — son bloquant #1
+> (build Web cassé, `@ngx-translate/core`) est corrigé (PR #83), le reste
+> de ses 18 bloquants / 35 majeurs / 29 mineurs **n'a pas été traité
+> systématiquement** (hors périmètre de cette session, ciblée sur S11/S12/S14) —
+> voir §6 pour le détail de ce qui a été corrigé incidemment vs. ce qui
+> reste ouvert.
 
 ---
 
@@ -146,17 +151,20 @@ Toute la Phase 2 est mergée dans `dev` :
 
 | Sprint | Chauffeur/Transporteur | Client |
 |---|---|---|
-| S11 — Consolidation LTL | ✅ **branché sur le vrai backend** (PR #81/#82/#84 — 20 août) | ⚠️ mocké, Volet B (indicateur "envoi consolidé") non traité dans ce lot |
+| S11 — Consolidation LTL | ✅ **branché sur le vrai backend** (PR #81/#82/#84 — 20 août) | ✅ **branché sur le vrai backend** (PR #89 — 20 août) |
 | S12 — Retour à vide | ✅ **branché sur le vrai backend, chaîne complète** (PR #76/#77 — 18 août, gap `etape-executee` comblé PR #85 — 20 août) | — (rien pour Client) |
 | S13 | — (backend/Web uniquement) | — |
 | S14 — Paiement Mobile Money | ✅ **branché sur le vrai backend** (Item B 18 août, gateway+mobile PR #87 — 20 août) | ✅ **branché sur le vrai backend pour MoMo/Orange Money** (PR #87) — Espèces reste local, exception assumée (§5.5) |
 | S15 — Second axe | ✅ **branché sur le vrai backend** (PR #56 puis re-câblage réel PR #60) | ✅ **branché sur le vrai backend** (PR #57 puis re-câblage réel PR #61) |
 
-**S12 et S15 sont réels à 100 %. S11 et S14 sont réels côté
-Chauffeur/Transporteur** (l'essentiel du travail de cette session) —
-**S11 Volet B (Client) reste mocké**, non traité, et **S14 Volet B
-(Client) est réel pour l'électronique, volontairement local pour
-Espèces**.
+**Toute la Phase 2 (S11, S12, S14, S15) est réelle de bout en bout,
+Chauffeur et Client, depuis le 20 août au soir.** Le dernier volet mocké
+(S11 Volet B, indicateur "envoi consolidé" côté Client) a fermé sans
+aucun changement backend : `tourneeId` était déjà exposé par
+`service-exe` sur l'endpoint chronologie du Client depuis la PR #82,
+juste jamais lu côté app (PR #89). Seule exception assumée restante :
+Espèces (S14 Client) confirmé localement, jamais envoyé au backend — un
+choix de conception documenté en §5.5, pas un gap.
 
 ---
 
@@ -336,3 +344,68 @@ générique de l'accueil a été retirée. Côté Chauffeur, l'écran solde/gain
 affiche les 4 valeurs réelles de `ModePaiement` (pas de distinction
 MoMo/Orange Money, contrairement à ce que supposait le mock qu'il
 remplace) ; `lib/mock/moyen_reglement_mock.dart` supprimé.
+
+### 5.6 S11 Volet B (Client) — FAIT (20 août), zéro changement backend
+
+Dernier volet mocké de toute la Phase 2. `tourneeId` (nullable) était en
+fait déjà exposé sur `GET /missions/demande/{demandeId}/chronologie` —
+le même champ ajouté à `ChronologieResponse` côté `service-exe` pour le
+Volet A Chauffeur (PR #82), qui se trouve être le même endpoint que
+consomme déjà l'écran de suivi Client pour sa propre chronologie. Personne
+ne l'avait remarqué avant de vérifier : `ChronologieModel` (Client) ne
+lisait simplement pas ce champ. Ajouté (`chronologie_model.dart`), le
+bandeau "envoi groupé" (`suivi_screen.dart`) se base maintenant dessus au
+lieu du mock déterministe sur `missionId.hashCode`. `lib/mock/consolidation_mock.dart`
+supprimé (PR #89).
+
+---
+
+## 6. Suivi de l'audit CDC du 19 août — ce qui a été corrigé, ce qui reste ouvert
+
+`AUDIT_CDC_v4_complet_2026-08-19.md` (racine du dépôt) reste la référence
+complète : 18 bloquants, 35 majeurs, 29 mineurs, ~50 % de conformité CDC
+globale. **Cette session n'a pas fait de passe de correction systématique
+sur l'audit** — son mandat était de sortir S11/S12/S14 du mock, pas de
+remédier à l'audit. Plusieurs corrections sont quand même arrivées, soit
+en amont (PR #81, travail du Moteur lui-même) soit en aval (mon propre
+travail S12). Statut réel, pour ne pas laisser croire que l'audit est
+clos :
+
+**Bloquants corrigés (2 sur 18)** :
+- `etape-executee` jamais produit (§7.1) — **corrigé PR #85** (cette
+  session, voir §5.2).
+- EF-MAT-10 détour jamais borné en production (§3) — **corrigé PR #81**
+  (Moteur).
+
+**Bloquants partiellement corrigés (1 sur 18)** :
+- Zéro authentification sur 8 services (§1.1) — **4 sur 8 corrigés**
+  (`service-geo`/`service-mat`/`service-opt`/`service-trk`, PR #81, JWT
+  émis par `service-ida`). **`service-pay`, `service-adm`, `service-bur`,
+  `service-cap` restent sans authentification applicative.** Point
+  d'attention direct : le câblage S14 Client (§5.5) appelle `service-pay`
+  sans authentification, cohérent avec l'état actuel du dépôt mais hérite
+  du même risque — `POST /moyen-paiement` reste forgeable par quiconque
+  connaît un `missionId`, exactement comme les endpoints déjà signalés
+  par l'audit sur ce service.
+
+**Bloquants non touchés (15 sur 18)**, notamment : pipeline marketplace →
+matching mort (`service-mkt`) ; une seule proposition au lieu de 3
+(RG-039) ; livraison sans preuve ni précédence libère le séquestre
+(`service-exe`, touché par cette session pour S11/S12 mais **ce bug
+précis n'a pas été corrigé** — RG-062/070 toujours absents
+d'`ajouterEtape()`) ; IDOR notifications (`service-not`) ; poids taxable
+incomplet + 0 authentification (`service-cap`) ; activation enrôlement
+agent inaccessible (`service-ida`) ; endpoint véhicule public sans
+filtre tenant + immatriculation sans unicité (`service-flt`) ; perte de
+position en coupure réseau (Mobile).
+
+**Majeurs corrigés incidemment (PR #81, Moteur)** : perte silencieuse de
+demandes non affectées (`MatchingCycleService`) ; confusion doublon
+Kafka / contrainte violée (`CapaciteDeclareeListener`) ; fausses alertes
+`AnomalieDetector` (`service-trk`) ; endpoints sensibles `AxeController`
+(gel d'axe, override risque) désormais restreints à `ROLE_ADMINISTRATION`.
+
+**Tout le reste (33 majeurs, 29 mineurs) n'a pas été vérifié ni corrigé**
+dans cette session — ne pas supposer qu'un point de l'audit est réglé
+sans le revérifier dans le code, ce document ne liste que ce qui a été
+touché explicitement.
