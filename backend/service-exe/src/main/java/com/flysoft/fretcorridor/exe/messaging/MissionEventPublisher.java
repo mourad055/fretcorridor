@@ -10,6 +10,7 @@ public class MissionEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(MissionEventPublisher.class);
     private static final String TOPIC_MISSION_LIVREE = "mission-livree";
+    private static final String TOPIC_ETAPE_EXECUTEE = "etape-executee";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -35,6 +36,28 @@ public class MissionEventPublisher {
         } catch (Exception exceptionBlocante) {
             log.error("Echec publication MissionLivree (send() bloquant) - mission={} - "
                     + "confirmation de livraison non bloquee (ENF-DIS-04)", event.missionId(), exceptionBlocante);
+        }
+    }
+
+    // S12 (EF-MAT-09/RG-058) : meme degradation gracieuse - un echec de
+    // publication ne doit jamais bloquer la confirmation d'etape cote
+    // chauffeur.
+    public void publierEtapeExecutee(EtapeExecuteeEvent event) {
+        try {
+            kafkaTemplate.send(TOPIC_ETAPE_EXECUTEE, event.missionId().toString(), event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.info("EtapeExecutee publiee - mission={}, typeEtape={}, offset={}",
+                                    event.missionId(), event.typeEtape(), result.getRecordMetadata().offset());
+                        } else {
+                            log.error("Echec publication EtapeExecutee (callback async) - mission={}, typeEtape={}",
+                                    event.missionId(), event.typeEtape(), ex);
+                        }
+                    });
+        } catch (Exception exceptionBlocante) {
+            log.error("Echec publication EtapeExecutee (send() bloquant) - mission={}, typeEtape={} - "
+                    + "confirmation d'etape non bloquee (ENF-DIS-04)", event.missionId(), event.typeEtape(),
+                    exceptionBlocante);
         }
     }
 }
