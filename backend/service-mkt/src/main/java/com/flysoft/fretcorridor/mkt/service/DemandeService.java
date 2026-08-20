@@ -1,5 +1,6 @@
 package com.flysoft.fretcorridor.mkt.service;
 
+import com.flysoft.fretcorridor.mkt.client.ServiceGeoClient;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
 import com.flysoft.fretcorridor.mkt.entity.CatalogueEmballage;
 import com.flysoft.fretcorridor.mkt.entity.Demande;
@@ -12,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,6 +29,7 @@ public class DemandeService {
     private final CatalogueEmballageRepository catalogueRepository;
     private final MktEventPublisher eventPublisher;
     private final PropositionRepository propositionRepository;
+    private final ServiceGeoClient serviceGeoClient;
 
     // RG-038 : publication exige le niveau KYC 1 minimum
     @Transactional
@@ -42,6 +46,14 @@ public class DemandeService {
         double poidsTotal = emballage.getPoidsUnitaireKg() * request.getQuantite();
         double volumeTotal = emballage.getVolumeUnitaireM3() * request.getQuantite();
         double poidsTaxable = Math.max(poidsTotal, volumeTotal * COEFFICIENT_VOLUMETRIQUE);
+
+        // Resolution de l'axe (service-geo) par nom de ville - ferme le
+        // bloquant audit §1.2 : sans axeId, DemandePubliee n'etait jamais
+        // emis et le cycle de matching d'OPT ne se declenchait donc jamais.
+        // valeursCriteres reste volontairement une map vide (pas de barème en
+        // dur invente ici) : seule sa non-nullite conditionne la publication,
+        // l'enrichissement reel des criteres restant a la charge du Moteur.
+        Optional<UUID> axeId = serviceGeoClient.resoudreAxe(request.getVilleDepart(), request.getVilleArrivee());
 
         Demande demande = Demande.builder()
                 .clientActeurId(clientActeurId)
@@ -62,6 +74,9 @@ public class DemandeService {
                 .destinataireNom(request.getDestinataireNom())
                 .destinataireTelephone(request.getDestinataireTelephone())
                 .tenantId(tenantId)
+                .axeId(axeId.orElse(null))
+                .valeursCriteres(axeId.isPresent() ? Map.of() : null)
+                .statut(axeId.isPresent() ? Demande.StatutDemande.PUBLIEE : Demande.StatutDemande.AXE_NON_DESSERVI)
                 .build();
 
         demande = demandeRepository.save(demande);
