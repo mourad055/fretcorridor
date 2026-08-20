@@ -73,6 +73,27 @@ class FileTravailServiceTest {
                 .anyMatch(e -> e.action().equals("DOSSIER_PRIS_EN_CHARGE") && e.acteurId().equals("actor-admin-1"));
     }
 
+    /** IDOR corrigé (audit CDC du 19 août, §7.2). */
+    @Test
+    void consulter_un_dossier_de_son_propre_tenant_reussit() {
+        Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
+                "mission-a", List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+
+        Dossier consulte = service.consulter(dossier.id(), "tenant-bgft-douala");
+
+        assertThat(consulte.id()).isEqualTo(dossier.id());
+    }
+
+    /** IDOR corrigé (audit CDC du 19 août, §7.2) : même exception que "introuvable", jamais une confirmation d'existence. */
+    @Test
+    void consulter_un_dossier_d_un_autre_tenant_est_refuse_comme_introuvable() {
+        Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
+                "mission-a", List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+
+        assertThatThrownBy(() -> service.consulter(dossier.id(), "tenant-bnft-ndjamena"))
+                .isInstanceOf(DossierIntrouvableException.class);
+    }
+
     @Test
     void prendre_en_charge_un_dossier_inconnu_leve_une_exception() {
         assertThatThrownBy(() -> service.prendreEnCharge("dossier-inconnu", "actor-admin-1"))
