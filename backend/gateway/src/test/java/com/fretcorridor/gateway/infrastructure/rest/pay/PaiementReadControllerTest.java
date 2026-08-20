@@ -99,7 +99,7 @@ class PaiementReadControllerTest {
         when(payReadPort.rapportDuTenant(eq("tenant-bgft-douala"), any())).thenReturn(Flux.just(
                 new EcritureVue("e1", "mission-1", "COMPTE_SEQUESTRE_PRESTATAIRE", "ENCAISSEMENT", "CREDIT", new BigDecimal("500"), Instant.now(), "VALIDE", "VIREMENT", true)
         ));
-        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/bureau/rapport-financier")
                 .header("Authorization", "Bearer " + token)
@@ -111,14 +111,14 @@ class PaiementReadControllerTest {
                 .jsonPath("$[0].litigeActif").isEqualTo(true);
 
         verify(admPort).enregistrerAudit(eq("tenant-bgft-douala"), any(), eq("CONSULTATION_RAPPORT_FINANCIER"),
-                eq("tenant:tenant-bgft-douala"));
+                eq("tenant:tenant-bgft-douala"), any());
     }
 
     @Test
     void an_admin_consulting_another_tenant_s_report_is_journalized() {
         String token = tokenFor("+237600000003");
         when(payReadPort.rapportDuTenant(any(), any())).thenReturn(Flux.empty());
-        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/admin/rapport-financier/tenant-bnft-ndjamena")
                 .header("Authorization", "Bearer " + token)
@@ -126,7 +126,7 @@ class PaiementReadControllerTest {
                 .expectStatus().isOk();
 
         verify(admPort).enregistrerAudit(eq("tenant-bnft-ndjamena"), any(), eq("CONSULTATION_RAPPORT_FINANCIER"),
-                eq("tenant:tenant-bnft-ndjamena"));
+                eq("tenant:tenant-bnft-ndjamena"), any());
     }
 
     @Test
@@ -146,7 +146,7 @@ class PaiementReadControllerTest {
         when(payReadPort.paiementsEspecesDuTenant(eq("tenant-bgft-douala"), any())).thenReturn(Flux.just(
                 new DeclarationEspecesVue("d1", "mission-especes-1", new BigDecimal("150"), Instant.now(), false)
         ));
-        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/bureau/paiements-especes")
                 .header("Authorization", "Bearer " + token)
@@ -158,14 +158,14 @@ class PaiementReadControllerTest {
                 .jsonPath("$[0].protectionAssuree").isEqualTo(false);
 
         verify(admPort).enregistrerAudit(eq("tenant-bgft-douala"), any(), eq("CONSULTATION_PAIEMENTS_ESPECES"),
-                eq("tenant:tenant-bgft-douala"));
+                eq("tenant:tenant-bgft-douala"), any());
     }
 
     @Test
     void an_admin_consulting_another_tenant_s_cash_payments_is_journalized() {
         String token = tokenFor("+237600000003");
         when(payReadPort.paiementsEspecesDuTenant(any(), any())).thenReturn(Flux.empty());
-        when(admPort.enregistrerAudit(any(), any(), any(), any())).thenReturn(Mono.empty());
+        when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
         webTestClient.get().uri("/api/v1/admin/paiements-especes/tenant-bnft-ndjamena")
                 .header("Authorization", "Bearer " + token)
@@ -173,6 +173,6 @@ class PaiementReadControllerTest {
                 .expectStatus().isOk();
 
         verify(admPort).enregistrerAudit(eq("tenant-bnft-ndjamena"), any(), eq("CONSULTATION_PAIEMENTS_ESPECES"),
-                eq("tenant:tenant-bnft-ndjamena"));
+                eq("tenant:tenant-bnft-ndjamena"), any());
     }
 }

@@ -77,7 +77,7 @@ class DossierControllerTest {
     @Test
     void an_admin_sees_the_file_de_travail_of_a_tenant() {
         String token = tokenFor("+237600000003");
-        when(admPort.fileDeTravail("tenant-bgft-douala")).thenReturn(Flux.just(dossier(null)));
+        when(admPort.fileDeTravail(eq("tenant-bgft-douala"), any())).thenReturn(Flux.just(dossier(null)));
 
         webTestClient.get().uri("/api/v1/admin/dossiers?tenantId=tenant-bgft-douala")
                 .header("Authorization", "Bearer " + token)
@@ -90,7 +90,7 @@ class DossierControllerTest {
     @Test
     void consolidated_dossier_with_no_mission_has_no_chronology_nor_ecritures() {
         String token = tokenFor("+237600000003");
-        when(admPort.dossier("dossier-1")).thenReturn(Mono.just(dossier(null)));
+        when(admPort.dossier(eq("dossier-1"), any())).thenReturn(Mono.just(dossier(null)));
 
         webTestClient.get().uri("/api/v1/admin/dossiers/dossier-1")
                 .header("Authorization", "Bearer " + token)
@@ -104,7 +104,7 @@ class DossierControllerTest {
     @Test
     void consolidated_dossier_with_a_mission_aggregates_chronology_and_ecritures() {
         String token = tokenFor("+237600000003");
-        when(admPort.dossier("dossier-1")).thenReturn(Mono.just(dossier("mission-a")));
+        when(admPort.dossier(eq("dossier-1"), any())).thenReturn(Mono.just(dossier("mission-a")));
         when(exePort.listerMissionsParTenant("tenant-bgft-douala")).thenReturn(Flux.just(
                 new Mission("mission-a", "tenant-bgft-douala", "actor-transporteur-1", "Transport Étoile SARL",
                         "Douala", "Yaoundé", List.of(new EtapeMission(1, EtapeType.ENLEVEMENT, "Douala", EtapeEtat.TERMINEE)))
@@ -129,20 +129,20 @@ class DossierControllerTest {
     @Test
     void prise_en_charge_uses_the_authenticated_actor_id_never_a_client_supplied_one() {
         String token = tokenFor("+237600000003");
-        when(admPort.priseEnCharge(eq("dossier-1"), eq("actor-admin-1"))).thenReturn(Mono.just(dossier(null)));
+        when(admPort.priseEnCharge(eq("dossier-1"), eq("actor-admin-1"), any())).thenReturn(Mono.just(dossier(null)));
 
         webTestClient.post().uri("/api/v1/admin/dossiers/dossier-1/prise-en-charge")
                 .header("Authorization", "Bearer " + token)
                 .exchange()
                 .expectStatus().isOk();
 
-        verify(admPort).priseEnCharge("dossier-1", "actor-admin-1");
+        verify(admPort).priseEnCharge(eq("dossier-1"), eq("actor-admin-1"), any());
     }
 
     @Test
     void decision_uses_the_authenticated_actor_id_never_a_client_supplied_one() {
         String token = tokenFor("+237600000003");
-        when(admPort.decider(eq("dossier-1"), eq("RESOLU"), eq("motif"), eq("actor-admin-1")))
+        when(admPort.decider(eq("dossier-1"), eq("RESOLU"), eq("motif"), eq("actor-admin-1"), any()))
                 .thenReturn(Mono.just(dossier(null)));
 
         webTestClient.post().uri("/api/v1/admin/dossiers/dossier-1/decision")
@@ -152,6 +152,6 @@ class DossierControllerTest {
                 .exchange()
                 .expectStatus().isOk();
 
-        verify(admPort).decider("dossier-1", "RESOLU", "motif", "actor-admin-1");
+        verify(admPort).decider(eq("dossier-1"), eq("RESOLU"), eq("motif"), eq("actor-admin-1"), any());
     }
 }

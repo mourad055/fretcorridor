@@ -14,6 +14,7 @@ import reactor.core.publisher.Mono;
 import java.time.Instant;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /** FE-ADM-05 (Sprint 10) : journal d'audit consultable et exportable, RBAC ADMIN. */
@@ -53,7 +54,7 @@ class JournalAuditControllerTest {
     @Test
     void an_admin_lists_the_journal_entries() {
         String token = tokenFor("+237600000003");
-        when(admPort.journalAudit(null)).thenReturn(Flux.just(
+        when(admPort.journalAudit(any(), any())).thenReturn(Flux.just(
                 new EntreeJournalAuditVue("e1", "tenant-bgft-douala", "actor-admin-1", "DOSSIER_OUVERT",
                         "dossier:d1", Instant.now())));
 
@@ -68,7 +69,7 @@ class JournalAuditControllerTest {
     @Test
     void an_admin_exports_the_journal_as_csv() {
         String token = tokenFor("+237600000003");
-        when(admPort.exporterJournalAudit(null)).thenReturn(Mono.just("id,tenantId,acteurId,action,ressource,horodatage\n"));
+        when(admPort.exporterJournalAudit(any(), any())).thenReturn(Mono.just("id,tenantId,acteurId,action,ressource,horodatage\n"));
 
         webTestClient.get().uri("/api/v1/admin/journal-audit/export")
                 .header("Authorization", "Bearer " + token)
