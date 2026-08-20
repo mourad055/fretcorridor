@@ -4,15 +4,19 @@ import com.flysoft.fretcorridor.exe.dto.MissionDto;
 import com.flysoft.fretcorridor.exe.entity.EtapeMission;
 import com.flysoft.fretcorridor.exe.entity.EtapeTournee;
 import com.flysoft.fretcorridor.exe.entity.Mission;
+import com.flysoft.fretcorridor.exe.entity.PhotoPreuve;
+import com.flysoft.fretcorridor.exe.entity.PreuveEtape;
 import com.flysoft.fretcorridor.exe.messaging.EtapeExecuteeEvent;
 import com.flysoft.fretcorridor.exe.messaging.MissionEventPublisher;
 import com.flysoft.fretcorridor.exe.messaging.MissionLivreeEvent;
 import com.flysoft.fretcorridor.exe.repository.EtapeMissionRepository;
 import com.flysoft.fretcorridor.exe.repository.EtapeTourneeRepository;
 import com.flysoft.fretcorridor.exe.repository.MissionRepository;
+import com.flysoft.fretcorridor.exe.repository.PreuveEtapeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -28,6 +32,8 @@ public class MissionService {
 
     private final MissionRepository missionRepository;
     private final EtapeMissionRepository etapeMissionRepository;
+    private final PreuveEtapeRepository preuveEtapeRepository;
+    private final PreuveStorageService preuveStorageService;
     private final EtapeTourneeRepository etapeTourneeRepository;
     private final MissionEventPublisher missionEventPublisher;
 
@@ -58,11 +64,29 @@ public class MissionService {
 
     // EF-EXE-02/04 : une étape fait progresser le statut de la mission —
     // INCIDENT est journalisé sans changer le statut (pas une étape terminale).
+    // Conservé pour EN_TRANSIT/INCIDENT (JSON, aucune preuve exigée par
+    // EF-EXE-03) -- PRISE_EN_CHARGE/LIVRAISON sont rejetées ici (cf.
+    // verifierPreuveRequise) : passer par l'overload multipart ci-dessous.
     @Transactional
     public MissionDto.ChronologieResponse ajouterEtape(UUID missionId, UUID transporteurId, String tenantId,
                                                          MissionDto.AjouterEtapeRequest requete) {
+        return ajouterEtape(missionId, transporteurId, tenantId, requete, null, null);
+    }
+
+    // RG-070/EF-EXE-03 (CDC, UC-EXE-03, bloquant audit du 19 août) : "aucune
+    // livraison n'est enregistrée sans au moins une photographie et une
+    // validation par un tiers" -- exigence étendue par EF-EXE-03 à tout
+    // enlèvement également. Validation tiers = signature tactile ici ; le
+    // code SMS (autre mode prévu par le CDC) est différé -- le numéro du
+    // destinataire n'est pas propagé jusqu'à service-exe aujourd'hui (signalé
+    // au Moteur, cf claude.md).
+    @Transactional
+    public MissionDto.ChronologieResponse ajouterEtape(UUID missionId, UUID transporteurId, String tenantId,
+                                                         MissionDto.AjouterEtapeRequest requete,
+                                                         List<MultipartFile> photos, MultipartFile signature) {
         Mission mission = missionAppartenantA(missionId, transporteurId, tenantId);
         verifierPrecedence(mission.getStatut(), requete.getType());
+        verifierPreuveRequise(requete.getType(), photos, signature);
 
         EtapeMission etape = EtapeMission.builder()
                 .mission(mission)
@@ -71,6 +95,11 @@ public class MissionService {
                 .horodatageCapture(requete.getHorodatageCapture() != null ? requete.getHorodatageCapture() : LocalDateTime.now())
                 .build();
         etape = etapeMissionRepository.save(etape);
+
+        if (requete.getType() == EtapeMission.TypeEtape.PRISE_EN_CHARGE
+                || requete.getType() == EtapeMission.TypeEtape.LIVRAISON) {
+            enregistrerPreuve(mission.getTenantId(), missionId, etape, photos, signature);
+        }
 
         nouveauStatutPour(requete.getType()).ifPresent(mission::setStatut);
         missionRepository.save(mission);
@@ -83,6 +112,37 @@ public class MissionService {
 
         var etapes = etapeMissionRepository.findByMissionIdOrderByHorodatageTransmissionAsc(missionId);
         return MissionDto.ChronologieResponse.fromEntity(mission, etapes);
+    }
+
+    private void verifierPreuveRequise(EtapeMission.TypeEtape type, List<MultipartFile> photos, MultipartFile signature) {
+        boolean concerne = type == EtapeMission.TypeEtape.PRISE_EN_CHARGE || type == EtapeMission.TypeEtape.LIVRAISON;
+        if (!concerne) {
+            return;
+        }
+        boolean auMoinsUnePhoto = photos != null && photos.stream().anyMatch(p -> p != null && !p.isEmpty());
+        boolean signaturePresente = signature != null && !signature.isEmpty();
+        if (!auMoinsUnePhoto || !signaturePresente) {
+            throw new RuntimeException("PREUVE_MANQUANTE");
+        }
+    }
+
+    private void enregistrerPreuve(String tenantId, UUID missionId, EtapeMission etape,
+                                    List<MultipartFile> photos, MultipartFile signature) {
+        List<PhotoPreuve> photosPreuve = photos.stream()
+                .filter(p -> p != null && !p.isEmpty())
+                .map(p -> {
+                    PreuveStorageService.ResultatDepot depot = preuveStorageService.deposer(tenantId, missionId, "photo", p);
+                    return new PhotoPreuve(depot.objectKey(), depot.empreinteSha256());
+                })
+                .toList();
+        PreuveStorageService.ResultatDepot depotSignature = preuveStorageService.deposer(tenantId, missionId, "signature", signature);
+
+        preuveEtapeRepository.save(PreuveEtape.builder()
+                .etapeMission(etape)
+                .photos(photosPreuve)
+                .signatureObjectKey(depotSignature.objectKey())
+                .signatureEmpreinteSha256(depotSignature.empreinteSha256())
+                .build());
     }
 
     // Item A (docs/DEPENDANCES_MOBILE_PHASE4.md) : déclenche la libération

@@ -107,4 +107,40 @@ class MissionExecutionControllerTest {
                 .expectBody()
                 .jsonPath("$.detail").isEqualTo("TYPE_ETAPE_INVALIDE");
     }
+
+    // RG-070/EF-EXE-03 : PRISE_EN_CHARGE/LIVRAISON avec preuve (photo +
+    // signature) passent par l'endpoint multipart dédié, distinct du JSON
+    // ci-dessus (consumes différencie les deux, cf MissionExecutionController).
+    @Test
+    void adding_a_pickup_stage_with_proof_uses_the_multipart_endpoint() {
+        String token = tokenFor("+237600000002");
+        when(missionExecutionPort.ajouterEtapeAvecPreuve(eq("mock-ida-delegation-token"), eq("mission-1"),
+                eq("PRISE_EN_CHARGE"), eq("Prise en charge"), any(), any(), any()))
+                .thenReturn(Mono.just(new MissionExecutionDetail("mission-1", "PRISE_EN_CHARGE",
+                        List.of(new EtapeExecution("PRISE_EN_CHARGE", "Prise en charge", "2026-08-20T10:00:00", "2026-08-20T10:00:05")))));
+
+        org.springframework.http.client.MultipartBodyBuilder builder = new org.springframework.http.client.MultipartBodyBuilder();
+        builder.part("type", "PRISE_EN_CHARGE");
+        builder.part("libelle", "Prise en charge");
+        builder.part("photos", new org.springframework.core.io.ByteArrayResource("photo".getBytes()) {
+            @Override
+            public String getFilename() { return "photo.jpg"; }
+        }).header("Content-Type", "image/jpeg");
+        builder.part("signature", new org.springframework.core.io.ByteArrayResource("signature".getBytes()) {
+            @Override
+            public String getFilename() { return "signature.png"; }
+        }).header("Content-Type", "image/png");
+
+        webTestClient.post().uri("/api/v1/missions/mission-1/etapes")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .body(org.springframework.web.reactive.function.BodyInserters.fromMultipartData(builder.build()))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.statut").isEqualTo("PRISE_EN_CHARGE");
+
+        verify(missionExecutionPort).ajouterEtapeAvecPreuve(eq("mock-ida-delegation-token"), eq("mission-1"),
+                eq("PRISE_EN_CHARGE"), eq("Prise en charge"), any(), any(), any());
+    }
 }

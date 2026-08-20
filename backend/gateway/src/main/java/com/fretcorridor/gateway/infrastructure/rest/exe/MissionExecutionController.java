@@ -7,10 +7,14 @@ import com.fretcorridor.gateway.infrastructure.rest.exe.dto.MissionExecutionResp
 import com.fretcorridor.gateway.infrastructure.rest.exe.dto.TourneeDetailResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 /**
  * S7 (EF-EXE-02/04) : exécution de mission côté chauffeur/transporteur.
@@ -38,12 +42,28 @@ public class MissionExecutionController {
         return missionExecutionPort.chronologie(actor.delegationToken(), missionId).map(MissionExecutionDetailResponse::from);
     }
 
-    @PostMapping("/{missionId}/etapes")
+    @PostMapping(value = "/{missionId}/etapes", consumes = MediaType.APPLICATION_JSON_VALUE)
     public Mono<MissionExecutionDetailResponse> ajouterEtape(@PathVariable String missionId,
                                                                @Valid @RequestBody AjouterEtapeRequest request,
                                                                @AuthenticationPrincipal AuthenticatedActor actor) {
         return missionExecutionPort.ajouterEtape(actor.delegationToken(), missionId, request.type(), request.libelle(),
                         request.horodatageCapture())
+                .map(MissionExecutionDetailResponse::from);
+    }
+
+    // RG-070/EF-EXE-03 : PRISE_EN_CHARGE/LIVRAISON avec preuve minimale
+    // obligatoire (photo(s) + signature tactile du tiers).
+    @PostMapping(value = "/{missionId}/etapes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<MissionExecutionDetailResponse> ajouterEtapeAvecPreuve(
+            @PathVariable String missionId,
+            @RequestPart("type") String type,
+            @RequestPart("libelle") String libelle,
+            @RequestPart(value = "horodatageCapture", required = false) String horodatageCapture,
+            @RequestPart(value = "photos", required = false) List<FilePart> photos,
+            @RequestPart(value = "signature", required = false) FilePart signature,
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+        return missionExecutionPort.ajouterEtapeAvecPreuve(actor.delegationToken(), missionId, type, libelle,
+                        horodatageCapture, photos == null ? List.of() : photos, signature)
                 .map(MissionExecutionDetailResponse::from);
     }
 
