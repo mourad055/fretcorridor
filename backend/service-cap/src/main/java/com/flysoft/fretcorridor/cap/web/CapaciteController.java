@@ -7,6 +7,7 @@ import com.flysoft.fretcorridor.cap.web.dto.CapaciteCreationRequest;
 import com.flysoft.fretcorridor.cap.web.dto.CapaciteResponse;
 import com.flysoft.fretcorridor.cap.web.dto.DecrementRequest;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,10 +20,13 @@ public class CapaciteController {
 
     private final CapaciteService capaciteService;
     private final JwtService jwtService;
+    private final String cleInterneAttendue;
 
-    public CapaciteController(CapaciteService capaciteService, JwtService jwtService) {
+    public CapaciteController(CapaciteService capaciteService, JwtService jwtService,
+                               @Value("${fretcorridor.internal.service-key}") String cleInterneAttendue) {
         this.capaciteService = capaciteService;
         this.jwtService = jwtService;
+        this.cleInterneAttendue = cleInterneAttendue;
     }
 
     @PostMapping
@@ -54,8 +58,22 @@ public class CapaciteController {
     // service-not, avant notification au chauffeur. Symétrique du POST
     // existant (même resource), même pattern que ServiceFltClient
     // (service-cap -> service-flt) mais dans l'autre sens.
+    //
+    // IDOR corrige (audit de suivi du 20 aout, perimetre Mobile) :
+    // permitAll() nu jusqu'ici (aucun JWT utilisateur disponible dans ce
+    // flux, declenche par un listener Kafka -- service-not/
+    // PropositionRetourAVideListener -- pas une requete HTTP entrante,
+    // donc pas de token a verifier au sens habituel). Clé interne
+    // partagee (X-Internal-Service-Key, ENF-SEC-05) en remplacement --
+    // seul service-not (le seul appelant legitime, Plan d'Execution §4.3 :
+    // appel synchrone autorise entre deux services du meme porteur Mobile)
+    // connait la valeur configuree.
     @GetMapping("/{id}")
-    public CapaciteResponse obtenir(@PathVariable UUID id) {
+    public CapaciteResponse obtenir(@PathVariable UUID id,
+                                     @RequestHeader(value = "X-Internal-Service-Key", required = false) String cleInterne) {
+        if (!cleInterneAttendue.equals(cleInterne)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Cle interne invalide ou absente");
+        }
         try {
             return CapaciteResponse.from(capaciteService.obtenir(id));
         } catch (IllegalArgumentException e) {

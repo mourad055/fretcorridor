@@ -63,6 +63,11 @@ fretcorridor:
   # (ENF-SEC-05, jamais en dur dans le code).
   jwt:
     secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  # GET /api/cap/capacites/{id} : appelé par service-not (Kafka, aucun JWT
+  # utilisateur disponible dans ce flux) -- clé interne partagée en
+  # remplacement du permitAll nu, jamais en dur en prod (ENF-SEC-05).
+  internal:
+    service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
 
 logging:
   level:

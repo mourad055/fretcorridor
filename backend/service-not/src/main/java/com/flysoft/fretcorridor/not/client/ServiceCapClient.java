@@ -3,6 +3,7 @@ package com.flysoft.fretcorridor.not.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -29,6 +30,9 @@ public class ServiceCapClient {
 
     private final RestClient restClient;
 
+    @Value("${fretcorridor.internal.service-key}")
+    private String cleInterne;
+
     public ServiceCapClient(@Qualifier("serviceCapRestClient") RestClient serviceCapRestClient) {
         this.restClient = serviceCapRestClient;
     }
@@ -37,6 +41,7 @@ public class ServiceCapClient {
         try {
             CapaciteDto capacite = restClient.get()
                     .uri("/api/cap/capacites/{id}", capaciteId)
+                    .header("X-Internal-Service-Key", cleInterne)
                     .retrieve()
                     .body(CapaciteDto.class);
 
