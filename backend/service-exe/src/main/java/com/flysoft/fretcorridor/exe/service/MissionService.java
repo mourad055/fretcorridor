@@ -4,6 +4,7 @@ import com.flysoft.fretcorridor.exe.dto.MissionDto;
 import com.flysoft.fretcorridor.exe.entity.EtapeMission;
 import com.flysoft.fretcorridor.exe.entity.EtapeTournee;
 import com.flysoft.fretcorridor.exe.entity.Mission;
+import com.flysoft.fretcorridor.exe.messaging.EtapeExecuteeEvent;
 import com.flysoft.fretcorridor.exe.messaging.MissionEventPublisher;
 import com.flysoft.fretcorridor.exe.messaging.MissionLivreeEvent;
 import com.flysoft.fretcorridor.exe.repository.EtapeMissionRepository;
@@ -73,6 +74,8 @@ public class MissionService {
         nouveauStatutPour(requete.getType()).ifPresent(mission::setStatut);
         missionRepository.save(mission);
 
+        publierEtapeExecuteeSiPertinent(mission, etape);
+
         if (requete.getType() == EtapeMission.TypeEtape.LIVRAISON) {
             publierMissionLivree(mission, etape);
         }
@@ -88,6 +91,28 @@ public class MissionService {
     // être null ici (condition d'accès de missionAppartenantA), mais si le
     // chargeur n'existe déjà pas côté PAY, RG-078 dégrade sans bloquer —
     // pas la peine de vérifier deux fois.
+    // S12 (EF-MAT-09/RG-058) : signale à OPT qu'une étape planifiée en
+    // Tournee (S11, ENLEVEMENT/LIVRAISON) vient d'être réellement exécutée
+    // — condition pour que le retour à vide se déclenche (jamais avant la
+    // livraison effective de l'aller). EN_TRANSIT/INCIDENT n'ont pas
+    // d'équivalent côté Tournee planifiée par OPT, rien à publier pour eux.
+    private void publierEtapeExecuteeSiPertinent(Mission mission, EtapeMission etape) {
+        EtapeExecuteeEvent.TypeEtape typeEtape = switch (etape.getType()) {
+            case PRISE_EN_CHARGE -> EtapeExecuteeEvent.TypeEtape.ENLEVEMENT;
+            case LIVRAISON -> EtapeExecuteeEvent.TypeEtape.LIVRAISON;
+            case EN_TRANSIT, INCIDENT -> null;
+        };
+        if (typeEtape == null) {
+            return;
+        }
+        missionEventPublisher.publierEtapeExecutee(new EtapeExecuteeEvent(
+                UUID.randomUUID(),
+                mission.getId(),
+                typeEtape,
+                etape.getHorodatageCapture().atZone(ZoneId.systemDefault()).toInstant()
+        ));
+    }
+
     private void publierMissionLivree(Mission mission, EtapeMission etapeLivraison) {
         missionEventPublisher.publierMissionLivree(new MissionLivreeEvent(
                 UUID.randomUUID(),
