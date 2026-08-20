@@ -2,6 +2,7 @@ package com.fretcorridor.gateway.infrastructure.trk;
 
 import com.fretcorridor.gateway.domain.trk.PositionVehicule;
 import com.fretcorridor.gateway.domain.trk.TrkPort;
+import com.fretcorridor.gateway.domain.trk.TrkServiceIndisponibleException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -36,11 +37,15 @@ public class ServiceBurPositionAdapter implements TrkPort {
     }
 
     @Override
-    public Flux<PositionVehicule> listerPositionsParTenant(String tenantId) {
+    public Flux<PositionVehicule> listerPositionsParTenant(String tenantId, String delegationToken) {
+        if (delegationToken == null) {
+            return Flux.error(new TrkServiceIndisponibleException());
+        }
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/positions")
                         .queryParam("tenantId", tenantId)
                         .build())
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .retrieve()
                 .bodyToFlux(PositionBurResponse.class)
                 .map(dto -> new PositionVehicule(

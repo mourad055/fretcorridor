@@ -23,6 +23,6 @@ public class PositionController {
 
     @GetMapping("/api/v1/bureau/positions")
     public Flux<PositionResponse> positions(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return trkPort.listerPositionsParTenant(actor.tenantId()).map(PositionResponse::from);
+        return trkPort.listerPositionsParTenant(actor.tenantId(), actor.delegationToken()).map(PositionResponse::from);
     }
 }

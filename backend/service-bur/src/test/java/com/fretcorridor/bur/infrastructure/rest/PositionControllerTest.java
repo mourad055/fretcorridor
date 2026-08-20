@@ -2,8 +2,15 @@ package com.fretcorridor.bur.infrastructure.rest;
 
 import com.fretcorridor.bur.domain.PositionService;
 import com.fretcorridor.bur.domain.PositionVehicule;
+import com.fretcorridor.bur.infrastructure.config.SecurityConfig;
+import com.fretcorridor.bur.infrastructure.security.JwtAuthenticationFilter;
+import com.fretcorridor.bur.infrastructure.security.JwtService;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -17,11 +24,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
 @WebMvcTest(PositionController.class)
 class PositionControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Value("${fretcorridor.jwt.secret}")
+    private String jwtSecret;
+
+    private String token() {
+        return Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("roles", List.of("BUREAU"))
+                .claim("tenantId", "tenant-jwt-test")
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+    }
 
     @MockBean
     private PositionService service;
@@ -32,7 +52,8 @@ class PositionControllerTest {
                 UUID.randomUUID(), "tenant-bgft-douala", UUID.randomUUID(), 4.05, 9.76, Instant.now());
         when(service.listerParTenant("tenant-bgft-douala")).thenReturn(List.of(position));
 
-        mockMvc.perform(get("/api/v1/bur/positions").param("tenantId", "tenant-bgft-douala"))
+        mockMvc.perform(get("/api/v1/bur/positions")
+                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-bgft-douala"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].latitude").value(4.05))
@@ -43,7 +64,8 @@ class PositionControllerTest {
     void returns_an_empty_list_when_the_tenant_has_no_position() throws Exception {
         when(service.listerParTenant("tenant-inconnu")).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/bur/positions").param("tenantId", "tenant-inconnu"))
+        mockMvc.perform(get("/api/v1/bur/positions")
+                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-inconnu"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }

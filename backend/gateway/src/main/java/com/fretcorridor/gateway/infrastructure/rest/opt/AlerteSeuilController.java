@@ -36,22 +36,22 @@ public class AlerteSeuilController {
             @AuthenticationPrincipal AuthenticatedActor actor,
             @Valid @RequestBody ConfigurerAlerteRequest request) {
         return optPort.configurerAlerte(actor.tenantId(), request.axeId(), request.indicateur(),
-                        request.comparateur(), request.seuil(), actor.actorId())
+                        request.comparateur(), request.seuil(), actor.actorId(), actor.delegationToken())
                 .map(alerte -> ResponseEntity.status(201).body(AlerteSeuilResponse.from(alerte)));
     }
 
     @GetMapping
     public Mono<List<AlerteSeuilResponse>> lister(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return optPort.listerAlertes(actor.tenantId()).map(AlerteSeuilResponse::from).collectList();
+        return optPort.listerAlertes(actor.tenantId(), actor.delegationToken()).map(AlerteSeuilResponse::from).collectList();
     }
 
     @GetMapping("/etat")
     public Mono<List<EtatAlerteResponse>> etat(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return optPort.etatAlertes(actor.tenantId()).map(EtatAlerteResponse::from).collectList();
+        return optPort.etatAlertes(actor.tenantId(), actor.delegationToken()).map(EtatAlerteResponse::from).collectList();
     }
 
     @DeleteMapping("/{id}")
     public Mono<ResponseEntity<Void>> supprimer(@AuthenticationPrincipal AuthenticatedActor actor, @PathVariable String id) {
-        return optPort.supprimerAlerte(id, actor.tenantId()).thenReturn(ResponseEntity.noContent().build());
+        return optPort.supprimerAlerte(id, actor.tenantId(), actor.delegationToken()).thenReturn(ResponseEntity.noContent().build());
     }
 }

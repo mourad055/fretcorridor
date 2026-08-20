@@ -37,7 +37,7 @@ public class MockTrkAdapter implements TrkPort {
     );
 
     @Override
-    public Flux<PositionVehicule> listerPositionsParTenant(String tenantId) {
+    public Flux<PositionVehicule> listerPositionsParTenant(String tenantId, String delegationToken) {
         return Flux.fromIterable(positions).filter(p -> p.tenantId().equals(tenantId));
     }
 }

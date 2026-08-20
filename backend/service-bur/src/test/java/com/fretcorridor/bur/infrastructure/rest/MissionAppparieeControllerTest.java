@@ -4,8 +4,15 @@ import com.fretcorridor.bur.domain.MissionAppariee;
 import com.fretcorridor.bur.domain.MissionAppparieeService;
 import com.fretcorridor.bur.domain.ObservatoireAxe;
 import com.fretcorridor.bur.domain.ObservatoireService;
+import com.fretcorridor.bur.infrastructure.config.SecurityConfig;
+import com.fretcorridor.bur.infrastructure.security.JwtAuthenticationFilter;
+import com.fretcorridor.bur.infrastructure.security.JwtService;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Import;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -25,11 +32,24 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Import({SecurityConfig.class, JwtAuthenticationFilter.class, JwtService.class})
 @WebMvcTest(MissionAppparieeController.class)
 class MissionAppparieeControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Value("${fretcorridor.jwt.secret}")
+    private String jwtSecret;
+
+    private String token() {
+        return Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("roles", List.of("BUREAU"))
+                .claim("tenantId", "tenant-jwt-test")
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+    }
 
     @MockBean
     private MissionAppparieeService service;
@@ -44,7 +64,8 @@ class MissionAppparieeControllerTest {
                 "Douala", "Yaoundé", new BigDecimal("50000"), "XAF", Instant.now());
         when(service.listerParTenant("tenant-bgft-douala")).thenReturn(List.of(mission));
 
-        mockMvc.perform(get("/api/v1/bur/missions-appariees").param("tenantId", "tenant-bgft-douala"))
+        mockMvc.perform(get("/api/v1/bur/missions-appariees")
+                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-bgft-douala"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].origineNom").value("Douala"))
@@ -55,7 +76,8 @@ class MissionAppparieeControllerTest {
     void returns_an_empty_list_when_the_tenant_has_no_mission() throws Exception {
         when(service.listerParTenant("tenant-inconnu")).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/v1/bur/missions-appariees").param("tenantId", "tenant-inconnu"))
+        mockMvc.perform(get("/api/v1/bur/missions-appariees")
+                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-inconnu"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
@@ -69,6 +91,7 @@ class MissionAppparieeControllerTest {
                 .thenReturn(observatoire);
 
         mockMvc.perform(get("/api/v1/bur/observatoire")
+                        .header("Authorization", "Bearer " + token())
                         .param("tenantId", "tenant-bgft-douala")
                         .param("axeId", axeId.toString()))
                 .andExpect(status().isOk())
@@ -87,6 +110,7 @@ class MissionAppparieeControllerTest {
                 .thenReturn(ObservatoireAxe.sousLeSeuil(axeId, 3));
 
         mockMvc.perform(get("/api/v1/bur/observatoire")
+                        .header("Authorization", "Bearer " + token())
                         .param("tenantId", "tenant-bgft-douala")
                         .param("axeId", axeId.toString()))
                 .andExpect(status().isOk())
@@ -106,6 +130,7 @@ class MissionAppparieeControllerTest {
                 .thenReturn(observatoire);
 
         mockMvc.perform(get("/api/v1/bur/observatoire")
+                        .header("Authorization", "Bearer " + token())
                         .param("tenantId", "tenant-bgft-douala")
                         .param("axeId", axeId.toString()))
                 .andExpect(status().isOk())
@@ -121,6 +146,7 @@ class MissionAppparieeControllerTest {
                 "source":"enquête terrain Q1 2026","acteurId":"actor-bureau-1"}""".formatted(axeId);
 
         mockMvc.perform(put("/api/v1/bur/estimation-marche")
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corps))
                 .andExpect(status().isNoContent());
@@ -137,6 +163,7 @@ class MissionAppparieeControllerTest {
                 "source":"enquête terrain Q1 2026","acteurId":"actor-bureau-1"}""".formatted(axeId);
 
         mockMvc.perform(put("/api/v1/bur/estimation-marche")
+                        .header("Authorization", "Bearer " + token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(corps))
                 .andExpect(status().isBadRequest());
