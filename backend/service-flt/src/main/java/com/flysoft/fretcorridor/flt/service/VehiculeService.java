@@ -4,6 +4,7 @@ import com.flysoft.fretcorridor.flt.dto.VehiculeDto;
 import com.flysoft.fretcorridor.flt.entity.Vehicule;
 import com.flysoft.fretcorridor.flt.repository.VehiculeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -32,7 +33,15 @@ public class VehiculeService {
                 .profilMatieresDangereuses(request.isProfilMatieresDangereuses())
                 .tenantId(tenantId)
                 .build();
-        vehicule = vehiculeRepository.save(vehicule);
+        // RG-088 (audit CDC du 19 août) : la contrainte unique (immatriculation,
+        // migration Vehicule.java) protège désormais réellement contre le
+        // doublon inter-tenant — traduit ici en erreur métier explicite plutôt
+        // que de laisser remonter un 500 générique.
+        try {
+            vehicule = vehiculeRepository.save(vehicule);
+        } catch (DataIntegrityViolationException doublon) {
+            throw new ImmatriculationDejaUtiliseeException(request.getImmatriculation());
+        }
         return VehiculeDto.VehiculeResponse.fromEntity(vehicule);
     }
 
