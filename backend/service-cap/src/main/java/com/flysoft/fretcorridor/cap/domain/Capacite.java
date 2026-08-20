@@ -25,6 +25,13 @@ public class Capacite {
     @Column(name = "axe_id", nullable = false)
     private UUID axeId;
 
+    // ENF-MUL-01 (audit CDC du 19 aout, corrige) : le tenant du declarant,
+    // extrait du JWT (CapaciteController), jamais du corps de requete.
+    // Nullable en base (migration V3) - toute nouvelle declaration le
+    // renseigne, contrainte applicative.
+    @Column(name = "tenant_id", length = 100)
+    private String tenantId;
+
     // Resolu via ServiceFltClient au moment de la declaration (best-effort,
     // ferme le bug S7 - transporteurId toujours null cote OPT). Nullable :
     // service-flt injoignable ou vehicule non enregistre ne bloque jamais
@@ -103,7 +110,7 @@ public class Capacite {
         // requis par JPA
     }
 
-    public Capacite(UUID vehiculeId, UUID axeId, UUID transporteurId, ModeDeclaration modeDeclaration,
+    public Capacite(UUID vehiculeId, UUID axeId, String tenantId, UUID transporteurId, ModeDeclaration modeDeclaration,
                      BigDecimal poidsKg, BigDecimal volumeM3, BigDecimal longueurPlancherM,
                      BigDecimal poidsTaxableKg, double origineLatitude, double origineLongitude,
                      String typeVehicule, BigDecimal profilHauteurM, BigDecimal profilLargeurM,
@@ -112,6 +119,7 @@ public class Capacite {
                      boolean profilMatieresDangereuses, Instant dateDepart) {
         this.vehiculeId = vehiculeId;
         this.axeId = axeId;
+        this.tenantId = tenantId;
         this.transporteurId = transporteurId;
         this.modeDeclaration = modeDeclaration;
         this.poidsKg = poidsKg;
@@ -158,6 +166,7 @@ public class Capacite {
     public UUID getId() { return id; }
     public UUID getVehiculeId() { return vehiculeId; }
     public UUID getAxeId() { return axeId; }
+    public String getTenantId() { return tenantId; }
     public UUID getTransporteurId() { return transporteurId; }
     public ModeDeclaration getModeDeclaration() { return modeDeclaration; }
     public BigDecimal getPoidsKg() { return poidsKg; }
