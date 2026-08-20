@@ -8,6 +8,7 @@ class Mission {
   final String? origineNom;
   final String? destinationNom;
   final String? dateCreation;
+  final String? tourneeId;
 
   const Mission({
     required this.missionId,
@@ -15,6 +16,7 @@ class Mission {
     this.origineNom,
     this.destinationNom,
     this.dateCreation,
+    this.tourneeId,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) => Mission(
@@ -23,6 +25,7 @@ class Mission {
         origineNom: json['origineNom'] as String?,
         destinationNom: json['destinationNom'] as String?,
         dateCreation: json['dateCreation'] as String?,
+        tourneeId: json['tourneeId'] as String?,
       );
 }
 
