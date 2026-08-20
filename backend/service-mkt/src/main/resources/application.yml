@@ -23,6 +23,13 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  client:
+    service-geo:
+      base-url: http://localhost:8084
+      # Best-effort (ENF-DIS-04) : la publication d'une demande ne doit
+      # jamais rester bloquee pour resoudre l'axe.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
 
 # ⚠️ Même secret que service-ida — obligatoire pour que service-mkt puisse
 # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).
