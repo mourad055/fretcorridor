@@ -8,19 +8,19 @@ import com.flysoft.fretcorridor.cap.messaging.ProfilCamionDto;
 import com.flysoft.fretcorridor.cap.web.dto.CapaciteCreationRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.annotation.Propagation;
 
 import java.math.BigDecimal;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,16 +32,6 @@ public class CapaciteService {
     private final CalculateurPoidsTaxable calculateurPoidsTaxable;
     private final CapEventPublisher eventPublisher;
     private final ServiceFltClient serviceFltClient;
-    // Isole l'INSERT d'idempotence dans SA PROPRE transaction physique
-    // (REQUIRES_NEW). Sans ca, une violation de contrainte unique sur cet
-    // INSERT marque la transaction Hibernate/JPA EN COURS comme
-    // rollback-only en interne - meme si l'exception est attrapee en Java
-    // (ce qui empeche seulement l'exception de remonter, pas cet etat
-    // interne), le commit final de la methode decrementer() echoue quand
-    // meme avec UnexpectedRollbackException. Decouvert par
-    // CapaciteServiceConcurrenceTest (4/5 appels concurrents avec la meme
-    // cle d'idempotence).
-    private final TransactionTemplate transactionTemplateIdempotence;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -49,19 +39,17 @@ public class CapaciteService {
     public CapaciteService(CapaciteRepository capaciteRepository,
                             CalculateurPoidsTaxable calculateurPoidsTaxable,
                             CapEventPublisher eventPublisher,
-                            ServiceFltClient serviceFltClient,
-                            PlatformTransactionManager transactionManager) {
+                            ServiceFltClient serviceFltClient) {
         this.capaciteRepository = capaciteRepository;
         this.calculateurPoidsTaxable = calculateurPoidsTaxable;
         this.eventPublisher = eventPublisher;
         this.serviceFltClient = serviceFltClient;
-        this.transactionTemplateIdempotence = new TransactionTemplate(transactionManager);
-        this.transactionTemplateIdempotence.setPropagationBehavior(Propagation.REQUIRES_NEW.value());
     }
 
     @Transactional
     public Capacite declarer(CapaciteCreationRequest requete, String tenantId) {
-        BigDecimal poidsTaxable = calculateurPoidsTaxable.calculer(requete.poidsKg(), requete.volumeM3());
+        BigDecimal poidsTaxable = calculateurPoidsTaxable.calculer(
+                requete.poidsKg(), requete.volumeM3(), requete.longueurPlancherM());
 
         // Resolution best-effort du transporteur (ferme le bug S7) - jamais
         // bloquant, cf javadoc ServiceFltClient (ENF-DIS-04).
@@ -132,30 +120,59 @@ public class CapaciteService {
 
         // INSERT immediat plutot qu'un SELECT prealable : la contrainte unique
         // fait le travail d'exclusion mutuelle, evite une fenetre de course
-        // entre "verifier" et "inserer". Isole dans REQUIRES_NEW (cf champ
-        // transactionTemplateIdempotence) pour qu'un echec ici ne marque
-        // jamais la transaction principale comme rollback-only.
-        boolean dejaApplique = Boolean.FALSE.equals(transactionTemplateIdempotence.execute(status -> {
-            try {
-                entityManager.createNativeQuery(
-                                "INSERT INTO cap.decrement_log (capacite_id, cle_idempotence, montant_kg) "
-                                        + "VALUES (?1, ?2, ?3)")
-                        .setParameter(1, capaciteId)
-                        .setParameter(2, cleIdempotence)
-                        .setParameter(3, montantKg)
-                        .executeUpdate();
-                return Boolean.TRUE; // insertion reussie, premiere fois
-            // DataIntegrityViolationException seule ne suffit pas ici : sur un
-            // EntityManager direct (pas un Repository Spring Data), les
-            // exceptions Hibernate brutes ne sont pas traduites - il faut
-            // aussi attraper org.hibernate.exception.ConstraintViolationException.
-            } catch (DataIntegrityViolationException | ConstraintViolationException doublon) {
-                status.setRollbackOnly(); // annule PROPREMENT cette sous-transaction isolee
-                return Boolean.FALSE; // deja applique par un appel concurrent/precedent
+        // entre "verifier" et "inserer".
+        //
+        // Isole dans un SAVEPOINT JDBC natif (Session.doWork), PAS dans sa
+        // propre transaction physique (REQUIRES_NEW, l'ancien choix - voir
+        // bug corrige ci-dessous), et PAS via PROPAGATION_NESTED de Spring
+        // (JpaTransactionManager avec le JpaDialect par defaut de ce projet
+        // ne supporte pas les savepoints - NestedTransactionNotSupportedException,
+        // essaye et abandonne le 20 aout).
+        //
+        // BUG CORRIGE (audit CDC + investigation du 20 aout,
+        // CapaciteServiceConcurrenceTest "deuxDecrementsConcurrentsAvecClesDifferentes"
+        // reproduisait une perte d'ecriture silencieuse malgre @Version) :
+        // REQUIRES_NEW commit CET INSERT immediatement et independamment de
+        // la transaction englobante. Si le decrement lui-meme echoue ensuite
+        // (conflit @Version legitime avec un AUTRE appel concurrent, cle
+        // differente) et que le CALLER retente (comportement documente et
+        // attendu, EF-CAP-07) - le nouvel essai retrouve sa propre cle deja
+        // "appliquee" dans decrement_log (le premier essai a bel et bien
+        // commit cette ligne, alors meme que son decrement reel a ete
+        // annule) et abandonne a tort, croyant le travail deja fait.
+        //
+        // Un savepoint JDBC (au lieu d'une transaction independante) resout
+        // les deux problemes a la fois : un doublon reel (meme cle, deja
+        // appliquee et commit par une transaction PRECEDENTE, entierement
+        // terminee) annule proprement jusqu'au savepoint sans empoisonner la
+        // transaction en cours - mais si le reste de CETTE MEME transaction
+        // echoue ensuite, ce savepoint est annule avec elle (contrairement a
+        // REQUIRES_NEW, qui aurait deja commit), donc un retry repart bien
+        // de zero plutot que de trouver une trace fantome de la tentative
+        // precedente.
+        AtomicBoolean dejaApplique = new AtomicBoolean(false);
+        entityManager.unwrap(Session.class).doWork(connection -> {
+            Savepoint savepoint = connection.setSavepoint();
+            try (PreparedStatement stmt = connection.prepareStatement(
+                    "INSERT INTO cap.decrement_log (capacite_id, cle_idempotence, montant_kg) VALUES (?, ?, ?)")) {
+                stmt.setObject(1, capaciteId);
+                stmt.setString(2, cleIdempotence);
+                stmt.setBigDecimal(3, montantKg);
+                stmt.executeUpdate();
+                connection.releaseSavepoint(savepoint);
+            } catch (SQLException echecInsertion) {
+                // SQLState 23505 = unique_violation (Postgres et H2 en mode
+                // PostgreSQL) = doublon reel, benin. Tout autre SQLState est
+                // une vraie erreur, ne doit jamais etre avale silencieusement.
+                if (!"23505".equals(echecInsertion.getSQLState())) {
+                    throw echecInsertion;
+                }
+                connection.rollback(savepoint);
+                dejaApplique.set(true);
             }
-        }));
+        });
 
-        if (dejaApplique) {
+        if (dejaApplique.get()) {
             log.info("Decrement deja applique (idempotence) - capacite={}, cle={}",
                     capaciteId, cleIdempotence);
             return capacite; // deja decremente lors du premier appel, aucun changement

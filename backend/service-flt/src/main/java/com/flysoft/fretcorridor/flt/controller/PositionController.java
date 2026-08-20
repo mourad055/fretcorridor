@@ -24,7 +24,7 @@ public class PositionController {
             @RequestHeader("Authorization") String authHeader) {
         try {
             String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
-            positionService.enregistrer(request, tenantId);
+            positionService.enregistrer(request, tenantId, authHeader);
             return ResponseEntity.status(201).build();
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());

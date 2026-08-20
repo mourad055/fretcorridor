@@ -76,6 +76,7 @@ public class MissionDto {
         private String statut;
         private List<EtapeResponse> etapes;
         private UUID tourneeId;
+        private UUID vehiculeId;
 
         public static ChronologieResponse fromEntity(Mission m, List<EtapeMission> etapes) {
             return ChronologieResponse.builder()
@@ -83,6 +84,7 @@ public class MissionDto {
                     .statut(m.getStatut().name())
                     .etapes(etapes.stream().map(EtapeResponse::fromEntity).toList())
                     .tourneeId(m.getTourneeId())
+                    .vehiculeId(m.getVehiculeId())
                     .build();
         }
     }

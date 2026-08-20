@@ -2,6 +2,7 @@ package com.flysoft.fretcorridor.flt.controller;
 
 import com.flysoft.fretcorridor.flt.dto.VehiculeDto;
 import com.flysoft.fretcorridor.flt.security.JwtService;
+import com.flysoft.fretcorridor.flt.service.ImmatriculationDejaUtiliseeException;
 import com.flysoft.fretcorridor.flt.service.VehiculeService;
 import com.flysoft.fretcorridor.flt.entity.Vehicule;
 import com.flysoft.fretcorridor.flt.repository.VehiculeRepository;
@@ -24,12 +25,16 @@ public class VehiculeController {
     private final VehiculeRepository vehiculeRepository;
 
     @PostMapping
-    public ResponseEntity<VehiculeDto.VehiculeResponse> declarer(
+    public ResponseEntity<?> declarer(
             @Valid @RequestBody VehiculeDto.DeclarerRequest request,
             @RequestHeader("Authorization") String authHeader) {
         UUID acteurId = jwtService.extraireActeurId(authHeader.substring(7));
         String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
-        return ResponseEntity.status(201).body(vehiculeService.declarer(acteurId, tenantId, request));
+        try {
+            return ResponseEntity.status(201).body(vehiculeService.declarer(acteurId, tenantId, request));
+        } catch (ImmatriculationDejaUtiliseeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/mes")

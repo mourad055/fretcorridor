@@ -37,14 +37,18 @@ spring:
         acks: all
         retries: 3
 
-# EF-CAP-08 : coefficient de conversion volumetrique pour la regle du maximum
-# (poids taxable = max(poids reel, volume x coefficient)). 333 kg/m3 est un
-# ratio courant en fret routier (1 m3 "pese" au moins 333 kg pour la
-# facturation) - PLACEHOLDER a valider avec le metier, jamais code en dur
-# dans le service lui-meme (lu depuis cette config).
+# RG-100/101 (CDC S8.3.3) : poids taxable = max(poids reel, volume x RHO,
+# LDM x LAMBDA) - trois grandeurs. RHO (kg/m3) et LAMBDA (kg par metre de
+# plancher occupe) sont les deux valeurs par defaut citees par le CDC
+# lui-meme (S8.3.2) - PLACEHOLDER a valider avec le metier, jamais code en
+# dur dans le service lui-meme (lu depuis cette config). RG-101 exige un
+# parametrage par tenant ET par axe, versionne/audite - non fait ici
+# (config globale unique, ecart deja signale par l'audit du 19 aout,
+# distinct du bug corrige par ce commit).
 fretcorridor:
   cap:
     coefficient-volumetrique-kg-par-m3: 333.0
+    coefficient-plancher-kg-par-ldm: 1850.0
   # Meme secret que service-ida/service-mkt/service-geo/... - obligatoire
   # pour valider les JWT emis par service-ida (identite centralisee).
   # Fallback variable d'environnement pour la surcharge en Docker/prod

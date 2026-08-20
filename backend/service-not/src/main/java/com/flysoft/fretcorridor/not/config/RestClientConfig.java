@@ -12,12 +12,27 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties(ServiceCapClientProperties.class)
+@EnableConfigurationProperties({ServiceCapClientProperties.class, ServiceFltClientProperties.class})
 public class RestClientConfig {
 
     @Bean
     @Qualifier("serviceCapRestClient")
     public RestClient serviceCapRestClient(ServiceCapClientProperties properties) {
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+                .withConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
+                .withReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));
+
+        ClientHttpRequestFactory requestFactory = ClientHttpRequestFactories.get(settings);
+
+        return RestClient.builder()
+                .baseUrl(properties.getBaseUrl())
+                .requestFactory(requestFactory)
+                .build();
+    }
+
+    @Bean
+    @Qualifier("serviceFltRestClient")
+    public RestClient serviceFltRestClient(ServiceFltClientProperties properties) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
                 .withConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
                 .withReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));

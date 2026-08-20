@@ -8,11 +8,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,6 +52,22 @@ class VehiculeServiceTest {
         verify(vehiculeRepository).save(captor.capture());
         assertThat(captor.getValue().getProprietaireActeurId()).isEqualTo(proprietaireId);
         assertThat(captor.getValue().getTenantId()).isEqualTo(TENANT);
+    }
+
+    // RG-088 (audit CDC du 19 août, bloquant corrigé) : la contrainte unique
+    // JPA sur immatriculation (Vehicule.java) doit se traduire en erreur
+    // métier explicite, pas en 500 générique.
+    @Test
+    void declaring_a_vehicle_with_an_already_used_plate_is_refused() {
+        when(vehiculeRepository.save(any(Vehicule.class))).thenThrow(new DataIntegrityViolationException("doublon"));
+
+        var requete = new VehiculeDto.DeclarerRequest();
+        requete.setTypeVehicule("Camion 10T");
+        requete.setImmatriculation("LT 1234 AB");
+
+        assertThatThrownBy(() -> service.declarer(proprietaireId, TENANT, requete))
+                .isInstanceOf(ImmatriculationDejaUtiliseeException.class)
+                .hasMessageContaining("LT 1234 AB");
     }
 
     @Test
