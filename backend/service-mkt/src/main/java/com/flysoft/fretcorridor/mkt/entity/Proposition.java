@@ -53,4 +53,18 @@ public class Proposition {
 
     @Builder.Default
     private LocalDateTime dateReception = LocalDateTime.now();
+
+    // RG-039/EF-MKT-08 : le chargeur accepte une des au plus 3 propositions
+    // reçues pour une demande -- accepterEnRang() (DemandeService) marque
+    // celle-ci ACCEPTEE et les autres EXPIREE. La réservation atomique de
+    // capacité (EF-MKT-08, "décrémenter réellement chez le transporteur")
+    // reste hors périmètre de ce champ : decrementer() (service-cap) exige
+    // que l'appelant soit le TENANT du transporteur propriétaire de la
+    // capacité, jamais celui du chargeur qui accepte -- un pont cross-tenant
+    // de confiance n'existe pas encore, à construire séparément.
+    public enum Statut { EN_ATTENTE, ACCEPTEE, EXPIREE }
+
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Statut statut = Statut.EN_ATTENTE;
 }
