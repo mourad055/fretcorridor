@@ -47,13 +47,13 @@ public class CapaciteService {
     }
 
     @Transactional
-    public Capacite declarer(CapaciteCreationRequest requete, String tenantId) {
+    public Capacite declarer(CapaciteCreationRequest requete, String tenantId, String token) {
         BigDecimal poidsTaxable = calculateurPoidsTaxable.calculer(
                 requete.poidsKg(), requete.volumeM3(), requete.longueurPlancherM());
 
         // Resolution best-effort du transporteur (ferme le bug S7) - jamais
         // bloquant, cf javadoc ServiceFltClient (ENF-DIS-04).
-        UUID transporteurId = serviceFltClient.resoudreProprietaire(requete.vehiculeId()).orElse(null);
+        UUID transporteurId = serviceFltClient.resoudreProprietaire(requete.vehiculeId(), token).orElse(null);
 
         Capacite capacite = new Capacite(
                 requete.vehiculeId(), requete.axeId(), tenantId, transporteurId, requete.modeDeclaration(),

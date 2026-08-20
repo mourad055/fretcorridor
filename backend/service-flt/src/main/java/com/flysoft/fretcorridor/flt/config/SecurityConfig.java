@@ -42,13 +42,13 @@ public class SecurityConfig {
                 // règle qui matche, pas la plus spécifique (contrairement au
                 // routage MVC), d'où l'ordre explicite ici.
                 .requestMatchers(HttpMethod.GET, "/api/flt/vehicules/mes").authenticated()
-                // Appel interne inter-services (service-cap -> service-flt,
-                // meme porteur Mobile, cf VehiculeController.consulter()) :
-                // pas un appel client final, isolation par le reseau Docker
-                // interne. Corrige le blocage introduit par cette regle
-                // globale, non prevu par l'auteur de l'endpoint (cf commentaire
-                // "Pas de garde JWT ici" dans VehiculeController).
-                .requestMatchers(HttpMethod.GET, "/api/flt/vehicules/*").permitAll()
+                // IDOR corrige (audit CDC du 19 aout, bloquant §3) : cette
+                // route etait permitAll() pour l'appel interne service-cap
+                // -> service-flt (ServiceFltClient) ; ce dernier transmet
+                // desormais son propre JWT (cf VehiculeController.consulter),
+                // donc plus besoin de derogation ici -- retombe sur
+                // anyRequest().authenticated() ci-dessous, meme regle que le
+                // reste du service.
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
