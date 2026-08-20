@@ -7,7 +7,6 @@ import 'axes_screen.dart';
 import 'capacite_screen.dart';
 import 'kyc_screen.dart';
 import 'login_screen.dart';
-import 'mission_multi_etapes_screen.dart';
 import 'missions_screen.dart';
 import 'notifications_screen.dart';
 import 'paiement_screen.dart';
@@ -104,18 +103,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const PaiementScreen()),
-                );
-              },
-            ),
-            // S11 — démonstration mockée du multi-étapes (voir
-            // mission_multi_etapes_provider.dart), en attendant service-opt.
-            IconButton(
-              icon: const Icon(Icons.alt_route_outlined, color: AppColors.texteMuet),
-              tooltip: 'Tournée groupée (démo)',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const MissionMultiEtapesScreen()),
                 );
               },
             ),
