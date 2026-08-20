@@ -33,6 +33,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                // UC-IDA-03 (audit CDC du 19 août, §3) : la personne fraîchement
+                // enrôlée n'a par définition aucun token — .anyRequest().authenticated()
+                // rendait cet endpoint inaccessible en usage réel. L'OTP (haché,
+                // comparé, expirable, verrouillé après échecs répétés — voir
+                // AgentEnrolementService.activer()) est le vrai crédential ici,
+                // même principe que /api/auth/** (PIN).
+                .requestMatchers("/api/agent/enrolements/*/activation").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

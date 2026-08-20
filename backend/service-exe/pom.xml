@@ -26,6 +26,13 @@
         <dependency><groupId>io.jsonwebtoken</groupId><artifactId>jjwt-impl</artifactId><version>0.12.6</version><scope>runtime</scope></dependency>
         <dependency><groupId>io.jsonwebtoken</groupId><artifactId>jjwt-jackson</artifactId><version>0.12.6</version><scope>runtime</scope></dependency>
         <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-test</artifactId><scope>test</scope></dependency>
+        <!-- Consomme AffectationConfirmee (service-opt, Moteur) pour matérialiser
+             les missions du chauffeur — même dépendance que service-bur. -->
+        <dependency><groupId>org.springframework.kafka</groupId><artifactId>spring-kafka</artifactId></dependency>
+        <dependency><groupId>org.springframework.kafka</groupId><artifactId>spring-kafka-test</artifactId><scope>test</scope></dependency>
+        <!-- MinIO (S3) — preuves de livraison/enlèvement (RG-070/072, EF-EXE-03/05),
+             même bibliothèque/version que service-ida (pièces KYC). -->
+        <dependency><groupId>io.minio</groupId><artifactId>minio</artifactId><version>8.5.10</version></dependency>
     </dependencies>
     <build>
         <plugins>

@@ -1,0 +1,42 @@
+<main class="capacites-list fc-page">
+  <header class="fc-page__header">
+    <div>
+      <h1 class="fc-page__title">Mes capacités déclarées</h1>
+    </div>
+  </header>
+
+  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+  <section class="fc-panel">
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && capacites().length === 0">Aucune capacité déclarée pour l'instant.</div>
+
+    <table class="fc-table capacites-table" *ngIf="!loading() && capacites().length > 0">
+      <thead>
+        <tr>
+          <th>Véhicule</th>
+          <th>Origine</th>
+          <th>Destination</th>
+          <th>Départ</th>
+          <th>Poids taxable</th>
+          <th>Mode de collecte</th>
+          <th>État</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let capacite of capacites()">
+          <td>{{ capacite.vehicule }}</td>
+          <td>{{ capacite.origine }}</td>
+          <td>{{ capacite.destination }}</td>
+          <td>{{ capacite.departLe | date: 'short' }}</td>
+          <td>{{ capacite.poidsTaxableKg }} kg</td>
+          <td>{{ libelleModeCollecte(capacite.modeCollecte) | translate }}</td>
+          <td><app-status-badge [label]="libelleCapaciteEtat(capacite.etat) | translate" [variant]="capaciteStatusVariant(capacite.etat)" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>

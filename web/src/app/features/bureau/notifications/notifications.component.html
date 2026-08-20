@@ -1,0 +1,22 @@
+<main class="fc-page">
+  <section class="notifications fc-panel">
+    <h2 class="fc-panel__title">Centre de notifications</h2>
+
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && notifications().length === 0">Aucune notification pour l'instant.</div>
+
+    <ul class="notifications-list" *ngIf="!loading() && notifications().length > 0">
+      <li *ngFor="let notification of notifications()">
+        <span class="notifications-canal fc-badge fc-badge--neutral">{{ notification.canal }}</span>
+        <strong>{{ notification.objet }}</strong>
+        <p>{{ notification.resume }}</p>
+        <span class="notifications-destinataire">{{ notification.destinataire }}</span>
+        <time [attr.datetime]="notification.envoyeeLe">{{ notification.envoyeeLe | date: 'short' }}</time>
+      </li>
+    </ul>
+  </section>
+</main>

@@ -1,0 +1,400 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — Gateway — Back-office Admin
+  version: "1.0.0"
+  description: >
+    Sprint 10 (PRD §9). File de travail, dossier consolidé (agrège en lecture
+    le dossier de service-adm, la chronologie de service-exe et les écritures
+    de service-pay — seule la gateway peut composer plusieurs services de
+    façon synchrone), configuration versionnée, gestion des tenants et
+    journal d'audit append-only. Réservé au rôle ADMIN. L'acteur et l'auteur
+    des mutations sont toujours résolus depuis le JWT, jamais fournis par le
+    client.
+servers:
+  - url: http://localhost:8082
+
+paths:
+  /api/v1/admin/dossiers:
+    get:
+      operationId: fileDeTravailAdmin
+      summary: Liste les dossiers d'un tenant, priorisés
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File de travail
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dossier'
+        '403':
+          description: Rôle insuffisant (réservé au rôle ADMIN)
+
+  /api/v1/admin/dossiers/{dossierId}:
+    get:
+      operationId: dossierConsolideAdmin
+      summary: Dossier consolidé (mission, chronologie, écritures)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dossier consolidé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DossierConsolide'
+
+  /api/v1/admin/dossiers/{dossierId}/prise-en-charge:
+    post:
+      operationId: priseEnChargeDossierAdmin
+      summary: Prend en charge le dossier (acteur résolu depuis le JWT)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dossier pris en charge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+
+  /api/v1/admin/dossiers/{dossierId}/decision:
+    post:
+      operationId: deciderDossierAdmin
+      summary: Clôture le dossier par une décision journalisée
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dossierId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision, motif]
+              properties:
+                decision:
+                  type: string
+                motif:
+                  type: string
+      responses:
+        '200':
+          description: Dossier clos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dossier'
+
+  /api/v1/admin/dossiers/escalade:
+    post:
+      operationId: declencherEscaladeAdmin
+      summary: Détecte et escalade les dossiers dont le délai est dépassé
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dossiers escaladés
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dossier'
+
+  /api/v1/admin/configurations/{cle}:
+    get:
+      operationId: valeurCouranteConfigurationAdmin
+      summary: Valeur courante d'une configuration versionnée
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cle
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: perimetre
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Version courante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Configuration'
+    put:
+      operationId: definirConfigurationAdmin
+      summary: Crée une nouvelle version de la configuration (auteur résolu depuis le JWT)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cle
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [valeur]
+              properties:
+                perimetre:
+                  type: string
+                valeur:
+                  type: string
+      responses:
+        '200':
+          description: Nouvelle version créée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Configuration'
+
+  /api/v1/admin/configurations/{cle}/historique:
+    get:
+      operationId: historiqueConfigurationAdmin
+      summary: Historique complet des versions d'une configuration
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cle
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: perimetre
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Historique des versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Configuration'
+
+  /api/v1/admin/tenants:
+    get:
+      operationId: listerTenantsAdmin
+      summary: Liste tous les tenants
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tenants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tenant'
+    post:
+      operationId: creerTenantAdmin
+      summary: Crée un nouveau tenant (auteur résolu depuis le JWT)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, nom, pays]
+              properties:
+                id:
+                  type: string
+                nom:
+                  type: string
+                pays:
+                  type: string
+      responses:
+        '200':
+          description: Tenant créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+
+  /api/v1/admin/journal-audit:
+    get:
+      operationId: listerJournalAuditAdmin
+      summary: Liste les entrées du journal d'audit
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entrées du journal
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntreeJournalAudit'
+
+  /api/v1/admin/journal-audit/export:
+    get:
+      operationId: exporterJournalAuditAdmin
+      summary: Exporte le journal d'audit au format CSV
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Export CSV
+          content:
+            text/csv:
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Dossier:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        type:
+          type: string
+          enum: [MODERATION, INCIDENT, LITIGE]
+        priorite:
+          type: string
+          enum: [BASSE, NORMALE, HAUTE]
+        statut:
+          type: string
+          enum: [OUVERT, EN_COURS, ESCALADE, CLOS]
+        missionId:
+          type: string
+        parties:
+          type: array
+          items:
+            type: string
+        preuvesReferences:
+          type: array
+          items:
+            type: string
+        ouvertLe:
+          type: string
+          format: date-time
+        delaiTraitement:
+          type: string
+          format: date-time
+        priseEnChargeParActeurId:
+          type: string
+        decision:
+          type: string
+        motifDecision:
+          type: string
+        decidePar:
+          type: string
+        decideLe:
+          type: string
+          format: date-time
+
+    DossierConsolide:
+      type: object
+      properties:
+        dossier:
+          $ref: '#/components/schemas/Dossier'
+        mission:
+          type: object
+          nullable: true
+        ecritures:
+          type: array
+          items:
+            type: object
+
+    Configuration:
+      type: object
+      properties:
+        cle:
+          type: string
+        perimetre:
+          type: string
+        valeur:
+          type: string
+        auteur:
+          type: string
+        version:
+          type: integer
+        creeLe:
+          type: string
+          format: date-time
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+        nom:
+          type: string
+        pays:
+          type: string
+
+    EntreeJournalAudit:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantId:
+          type: string
+        acteurId:
+          type: string
+        action:
+          type: string
+        ressource:
+          type: string
+        horodatage:
+          type: string
+          format: date-time

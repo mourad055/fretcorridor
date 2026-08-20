@@ -1,0 +1,222 @@
+.login-page {
+  min-height: 100dvh;
+  position: relative;
+  background: var(--fc-bg);
+}
+
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--fc-primary);
+  z-index: 1;
+}
+
+.login-layout {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.login-pane {
+  display: grid;
+  place-items: center;
+  padding: clamp(1rem, 4vw, var(--fc-space-6));
+}
+
+.login-card {
+  width: min(100%, 24rem);
+  padding: clamp(1.25rem, 4vw, 2rem) clamp(1rem, 3vw, 1.75rem) clamp(1rem, 3vw, 1.75rem);
+  border: 1px solid var(--fc-border);
+  border-radius: var(--fc-radius);
+  background: var(--fc-surface);
+  box-shadow: var(--fc-shadow);
+}
+
+.login-card__lang {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.login-card__header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.login-card__logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.login-card__title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.login-card__hint {
+  margin-top: 0.35rem;
+  color: var(--fc-muted);
+  font-size: 0.8125rem;
+}
+
+.login-form {
+  display: grid;
+  gap: var(--fc-space-4);
+}
+
+.field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.field__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--fc-text);
+}
+
+.field__input {
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--fc-border-strong);
+  border-radius: var(--fc-radius-sm);
+  background: var(--fc-surface);
+  color: var(--fc-text);
+  transition:
+    border-color var(--fc-duration) var(--fc-ease),
+    box-shadow var(--fc-duration) var(--fc-ease);
+}
+
+.field__input:focus {
+  outline: none;
+  border-color: var(--fc-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc-primary) 18%, transparent);
+}
+
+.login-form__error {
+  margin: 0;
+  color: var(--fc-danger);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* ── Comptes de démonstration (dev uniquement, cf. environment.enableDemoLogin) ── */
+.login-demo {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed var(--fc-border);
+}
+
+.login-demo__label {
+  margin: 0 0 0.65rem;
+  color: var(--fc-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.login-demo__buttons {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.login-demo__btn {
+  justify-content: center;
+}
+
+/* ── Volet vidéo (droite) ── */
+.login-showcase {
+  position: relative;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+.login-showcase__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.login-showcase__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 10, 10, 0.45) 0%,
+    rgba(10, 10, 10, 0.02) 30%,
+    rgba(10, 10, 10, 0.08) 55%,
+    rgba(10, 10, 10, 0.82) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.login-showcase__caption {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  pointer-events: none;
+}
+
+.login-showcase__title {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.55);
+}
+
+.login-showcase__subtitle {
+  margin: 0.45rem 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: clamp(0.8125rem, 1.6vw, 0.9375rem);
+  font-weight: 500;
+  line-height: 1.45;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 960px) {
+  .login-layout {
+    grid-template-columns: 1fr;
+    min-height: 100dvh;
+  }
+
+  .login-showcase {
+    display: none;
+  }
+
+  .login-pane {
+    min-height: 100dvh;
+    align-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-card__title {
+    font-size: 1.125rem;
+  }
+
+  .field__input {
+    min-height: var(--fc-touch-min);
+    font-size: 1rem;
+  }
+
+  .login-form .fc-btn--block {
+    min-height: var(--fc-touch-min);
+  }
+}

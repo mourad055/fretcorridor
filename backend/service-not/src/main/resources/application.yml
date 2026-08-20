@@ -18,10 +18,31 @@ spring:
       hibernate:
         default_schema: service_not
     open-in-view: false
+  kafka:
+    bootstrap-servers: localhost:9092
+  client:
+    service-cap:
+      base-url: http://localhost:8096
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
+    service-flt:
+      base-url: http://localhost:8083
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
 
 fretcorridor:
   jwt:
-    secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  # Même clé que service-cap (fretcorridor.internal.service-key) --
+  # transmise en X-Internal-Service-Key par ServiceCapClient pour
+  # GET /api/cap/capacites/{id} (appel Kafka-déclenché, sans JWT).
+  internal:
+    service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  not:
+    # Même hypothèse mono-tenant Phase 1 que service-exe (ADR 0011) — même
+    # valeur que fretcorridor.exe.tenant-id-phase1, pour que les notifications
+    # PROPOSITION_RETOUR restent cohérentes avec le tenantId des Mission.
+    tenant-id-phase1: ${FRETCORRIDOR_NOT_TENANT_ID_PHASE1:tenant-bgft-douala}
 
 logging:
   level:

@@ -1,0 +1,105 @@
+asyncapi: '2.6.0'
+info:
+  title: DemandePublieeLots
+  version: 0.1.0-draft
+  description: >
+    BROUILLON, redige cote Moteur (Personne 3) pour couvrir un manque
+    identifie lors de la preparation de l'oracle de chargement 3D (Phase 3,
+    Sprint 16, CDC S8.7). Le contrat demande-publiee.yaml existant ne porte
+    que la demande globale (poidsTaxableKg), pas le detail Lot/Colis par
+    colis (CDC S13, entite Lot/Colis : "type catalogue, quantite, poids,
+    dimensions, gerbabilite, fragilite, classe de danger").
+    A VALIDER avec Personne 1 (Mobile, porteur de service-mkt) au point de
+    synchronisation hebdomadaire (Feuille de route S5.1) avant implementation
+    cote MKT - ce document decrit ce dont l'oracle de chargement a besoin
+    pour etre conforme a EF-MAT-07/EF-MAT-13, pas une decision unilaterale
+    sur le format que Mobile doit produire.
+channels:
+  demande-publiee-lots:
+    publish:
+      summary: >
+        Detail des colis d'une demande, complementaire a DemandePubliee
+        (module MKT, Mobile). Publie separement pour ne pas alourdir
+        DemandePubliee sur les demandes FTL simples (majoritaires en Phase 1)
+        qui n'ont pas besoin de detail colis par colis.
+      message:
+        $ref: '#/components/messages/DemandePublieeLots'
+components:
+  messages:
+    DemandePublieeLots:
+      name: DemandePublieeLots
+      title: Detail des lots/colis d'une demande
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DemandePublieeLotsPayload'
+  schemas:
+    DemandePublieeLotsPayload:
+      type: object
+      required:
+        - eventId
+        - demandeId
+        - lots
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          description: Cle d'idempotence.
+        demandeId:
+          type: string
+          format: uuid
+          description: Correspond au demandeId de DemandePubliee (meme demande, event complementaire).
+        lots:
+          type: array
+          items:
+            $ref: '#/components/schemas/LotPayload'
+    LotPayload:
+      type: object
+      required:
+        - lotId
+        - typeCatalogue
+        - quantite
+        - poidsKg
+        - gerbable
+        - fragile
+      properties:
+        lotId:
+          type: string
+          format: uuid
+        typeCatalogue:
+          type: string
+          description: >
+            Reference au catalogue d'emballages (EF-MKT-03/04, TypeEmballage
+            du CDC S13). Chaine libre, pas d'enum - coherent avec le principe
+            deja applique sur typeVehicule/code_critere.
+        quantite:
+          type: integer
+          minimum: 1
+        poidsKg:
+          type: number
+          format: double
+        longueurM:
+          type: number
+          format: double
+          nullable: true
+          description: Dimensions nullable - completude variable selon le mode de declaration (EF-CAP-03), ne bloque jamais l'oracle (degrade en mode restreint, cf README_ORACLE_3D.md S4).
+        largeurM:
+          type: number
+          format: double
+          nullable: true
+        hauteurM:
+          type: number
+          format: double
+          nullable: true
+        gerbable:
+          type: boolean
+          description: Peut etre empile sous d'autres colis (CDC S13).
+        fragile:
+          type: boolean
+        classeDanger:
+          type: string
+          nullable: true
+          description: >
+            Classe de matiere dangereuse si applicable (CDC S13, EF-MKT-10 -
+            "parcours marchandises dangereuses"). Null = pas de matiere
+            dangereuse. Chaine libre (referentiel de classes hors perimetre
+            Moteur).

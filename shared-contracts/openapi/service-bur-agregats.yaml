@@ -1,0 +1,67 @@
+openapi: 3.0.3
+info:
+  title: FretCorridor — service-bur — Agrégats de missions
+  version: "1.0.0"
+  description: >
+    Premier endpoint réel de service-bur (Sprint 5, PRD §9). L'ingestion par
+    POST est un point d'entrée temporaire, remplacé par une consommation
+    d'événements Kafka une fois le bus câblé pour ce service. EF-BUR-04
+    (anticipé) : aucune statistique n'est restituée sous le seuil d'agrégation
+    configuré.
+servers:
+  - url: http://localhost:8083
+
+paths:
+  /api/v1/bur/missions:
+    post:
+      operationId: enregistrerMission
+      summary: Enregistre une occurrence de mission pour un axe (ingestion temporaire)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantId, axeId]
+              properties:
+                tenantId:
+                  type: string
+                axeId:
+                  type: string
+      responses:
+        '201':
+          description: Mission enregistrée
+        '400':
+          description: Requête invalide
+
+  /api/v1/bur/agregats/missions-par-axe:
+    get:
+      operationId: agregatMissionsParAxe
+      summary: Restitue l'agrégat de missions d'un axe, si le seuil d'agrégation est atteint
+      parameters:
+        - name: tenantId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: axeId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Agrégat (nombreMissions absent si le seuil n'est pas atteint)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [axeId, seuilAtteint]
+                properties:
+                  axeId:
+                    type: string
+                  nombreMissions:
+                    type: integer
+                    nullable: true
+                  seuilAtteint:
+                    type: boolean

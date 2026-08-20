@@ -1,41 +1,69 @@
 server:
-  port: 8080
+  # 8082 : le 8080 standard est déjà occupé par un autre service sur cette
+  # machine de développement partagée (cf. docs/adr/0006). Surchargeable via
+  # SERVER_PORT en environnement d'intégration/production.
+  port: ${SERVER_PORT:8082}
 
 spring:
   application:
     name: gateway
   cloud:
     gateway:
-      routes:
-        - id: service-ida
-          uri: http://localhost:8081
-          predicates:
-            - Path=/api/auth/**,/api/acteurs/**,/api/kyc/**
-        - id: service-mkt
-          uri: http://localhost:8082
-          predicates:
-            - Path=/api/catalogue-emballages/**,/api/demandes/**
+      routes: []
+      # Aucune route déclarative Spring Cloud Gateway : ce gateway expose ses
+      # propres contrôleurs REST (JWT/RBAC, agrégation par port hexagonal),
+      # pas un proxy — cf. docs/ANALYSE_FUSION_dev_web-socle.md §6.2.
 
-      # ⚠️ Squelette S1 — routes ajoutées au fur et à mesure des sprints
-      # (service-cap, service-mkt, service-mat/opt, etc.)
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOriginPatterns:
-              - "http://localhost:*"
-              - "http://127.0.0.1:*"
-              - "http://192.168.*.*:*"
-              - "http://10.*.*.*:*"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - PATCH
-              - OPTIONS
-            allowedHeaders: "*"
-            allowCredentials: true
+fretcorridor:
+  jwt:
+    secret: ${FRETCORRIDOR_JWT_SECRET:dev-secret-change-me-in-production-min-32-bytes}
+    validity-minutes: 60
+  service-pay:
+    # service-pay est réellement implémenté (contrairement aux autres services
+    # de ce périmètre) — appel HTTP réel, pas un mock (cf. docs/adr).
+    base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://localhost:8088}
+  service-adm:
+    # service-adm est réellement implémenté (Sprint 10) — appel HTTP réel.
+    # 8095 (pas 8085 : collision avec le port interne par défaut de service-opt).
+    base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://localhost:8095}
+  service-ida:
+    # service-ida (Mobile) est réellement implémenté — appel HTTP réel pour
+    # l'authentification (cf. docs/ROADMAP_INTEGRATION_gateway.md, Phase 1).
+    base-url: ${FRETCORRIDOR_SERVICE_IDA_URL:http://localhost:8081}
+  service-geo:
+    # service-geo (Moteur, Sprint 3, @stevetelecom) est réellement implémenté
+    # depuis ce jour — RealGeoAdapter remplace MockGeoAdapter.
+    base-url: ${FRETCORRIDOR_SERVICE_GEO_URL:http://localhost:8084}
+  service-bur:
+    # service-bur (Web) matérialise les missions appariées depuis Kafka —
+    # ServiceBurMissionAppparieeAdapter remplace MockOptAdapter (jamais
+    # d'appel direct à service-opt, cf. docs/ROADMAP_INTEGRATION_gateway.md).
+    base-url: ${FRETCORRIDOR_SERVICE_BUR_URL:http://localhost:8083}
+  service-flt:
+    # service-flt (Mobile) : appel réel pour le registre de véhicules
+    # (Sprint 10, VehiculePort/RealVehiculeAdapter) et l'envoi de positions
+    # GPS (Sprint 6, PositionPort/RealPositionAdapter) — même service.
+    base-url: ${FRETCORRIDOR_SERVICE_FLT_URL:http://localhost:8083}
+  service-cap:
+    # service-cap (Mobile) : appel réel pour la déclaration de capacité
+    # (CapaciteDeclarationPort/RealCapaciteDeclarationAdapter, Sprint 4).
+    # La vue de lecture Bureau/Transporteur (CapacitePort) reste mockée —
+    # pas d'endpoint GET équivalent côté service-cap.
+    base-url: ${FRETCORRIDOR_SERVICE_CAP_URL:http://localhost:8096}
+  service-exe:
+    # service-exe (Mobile) : appel réel pour l'exécution de mission côté
+    # chauffeur (MissionExecutionPort/RealMissionExecutionAdapter, Sprint 7).
+    # ⚠️ Infrastructure prête et testée, mais fonctionnellement bloquée :
+    # voir README.md section S7 (transporteurId à null en pratique côté
+    # service-opt, hors périmètre Mobile).
+    base-url: ${FRETCORRIDOR_SERVICE_EXE_URL:http://localhost:8093}
+  service-not:
+    # service-not (Mobile) : appel réel pour le centre de notifications côté
+    # chauffeur (NotificationMobilePort/RealNotificationMobileAdapter, Sprint 9).
+    base-url: ${FRETCORRIDOR_SERVICE_NOT_URL:http://localhost:8094}
 
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

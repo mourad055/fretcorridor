@@ -1,7 +1,6 @@
 package com.fretcorridor.opt.client;
 
 import com.fretcorridor.dto.PointGeoDto;
-
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,22 +19,31 @@ import java.util.UUID;
  * Capacite (origine, vehicule) - inutile de faire un aller-retour GEO pour
  * retrouver une donnee deja disponible.
  *
+ * typeVehicule : ajoute pour la Tarification L4 (CDC S8.9.1, COUT_BASE
+ * indexe sur "axe, distance, type de vehicule" en regime forfaitaire).
+ * Chaine libre, pas d'enum Java : coherent avec code_service/code_critere
+ * ailleurs dans le moteur - un nouveau type de vehicule ne doit jamais
+ * exiger de redeploiement. Nullable : un candidat sans type connu degrade
+ * la tarification, ne la fait jamais echouer.
+ *
+ * transporteurId / vehiculeId : ajoutes pour fermer le bug S7 remonte par
+ * Personne 1 (Mobile) - AffectationConfirmeeEvent.transporteurId restait
+ * toujours null faute de donnee source. Nullable comme le reste : tant que
+ * service-cap ne les publie pas reellement dans CapaciteDeclaree (contrat en
+ * discussion), un candidat sans ces champs degrade seulement
+ * AffectationConfirmeeEvent, ne fait jamais echouer le matching L0/L1.
+ *
  * Nullable (comme ProfilCamionDto lui-meme, cf sa javadoc) : un candidat sans
  * position ou profil connu ne doit jamais faire echouer le matching L0/L1 -
  * seul le calcul Valhalla en aval sera degrade pour ce candidat precis.
  */
 public record CandidatCoutDto(
         UUID capaciteId,
+        UUID transporteurId,
+        UUID vehiculeId,
         Map<String, Double> valeursCriteres,
         PointGeoDto positionCapacite,
         ProfilCamionDto profilCamion,
-        // Ajoute pour la Tarification L4 (CDC S8.9.1, COUT_BASE indexe sur
-        // "axe, distance, type de vehicule" en regime forfaitaire). Chaine
-        // libre, pas d'enum Java : coherent avec code_service/code_critere
-        // ailleurs dans le moteur - un nouveau type de vehicule ne doit
-        // jamais exiger de redeploiement. Nullable : un candidat sans type
-        // connu degrade la tarification (cf TarificationL4Service), ne la
-        // fait jamais echouer.
         String typeVehicule
 ) {
 }

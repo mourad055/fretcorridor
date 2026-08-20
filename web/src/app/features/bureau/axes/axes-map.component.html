@@ -1,0 +1,57 @@
+<main class="axes-map fc-page">
+  <header class="fc-page__header">
+    <div>
+      <h1 class="fc-page__title">Carte des axes</h1>
+      <p class="fc-page__subtitle">Axes activés sur votre territoire.</p>
+    </div>
+  </header>
+
+  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+  <section class="fc-panel">
+    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loading() && axes().length === 0">Aucun axe activé sur votre territoire.</div>
+
+    <app-corridor-map
+      *ngIf="!loading() && axes().length > 0"
+      [axes]="axes()"
+      [axeSelectionneId]="axeSelectionneId()"
+      (axeSelectionne)="selectionnerAxe($event)"
+    />
+
+    <table class="fc-table axes-table" *ngIf="!loading() && axes().length > 0">
+      <caption>Détail des axes — sélectionnez une ligne pour la repérer sur la carte</caption>
+      <thead>
+        <tr>
+          <th>Origine</th>
+          <th>Destination</th>
+          <th>Distance</th>
+          <th>Visibilité</th>
+          <th>Matching</th>
+          <th>Paiement</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          *ngFor="let axe of axes()"
+          class="axes-table__row"
+          [class.axes-table__row--selected]="axeSelectionneId() === axe.id"
+          [attr.aria-selected]="axeSelectionneId() === axe.id"
+          tabindex="0"
+          (click)="selectionnerAxe(axe.id)"
+          (keydown.enter)="selectionnerAxe(axe.id)"
+        >
+          <td>{{ axe.origine }}</td>
+          <td>{{ axe.destination }}</td>
+          <td>{{ axe.distanceKm }} km</td>
+          <td><app-status-badge [label]="libelleAxeVisibilite(axe.visibiliteActive) | translate" [variant]="axeVisibiliteVariant(axe.visibiliteActive)" /></td>
+          <td><app-status-badge [label]="libelleAxeMatching(axe.matchingActif) | translate" [variant]="axeMatchingVariant(axe.matchingActif)" /></td>
+          <td><app-status-badge [label]="libelleAxePaiement(axe.paiementActif) | translate" [variant]="axePaiementVariant(axe.paiementActif)" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>

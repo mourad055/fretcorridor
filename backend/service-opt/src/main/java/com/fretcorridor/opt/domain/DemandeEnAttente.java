@@ -53,6 +53,14 @@ public class DemandeEnAttente {
     @Column(name = "poids_taxable_kg")
     private BigDecimal poidsTaxableKg;
 
+    // Sprint 12 (EF-MAT-06/RG-107) : nullable tant que Mobile ne publie pas
+    // encore ce champ (cf DemandePublieeEvent javadoc) - mode permissif.
+    @Column(name = "fenetre_debut")
+    private Instant fenetreDebut;
+
+    @Column(name = "fenetre_fin")
+    private Instant fenetreFin;
+
     @Column(nullable = false)
     private boolean traitee = false;
 
@@ -64,7 +72,8 @@ public class DemandeEnAttente {
     }
 
     public DemandeEnAttente(UUID demandeId, UUID axeId, UUID eventId, Map<String, Double> valeursCriteres,
-                             PointGeoDto origine, PointGeoDto destination, BigDecimal poidsTaxableKg) {
+                             PointGeoDto origine, PointGeoDto destination, BigDecimal poidsTaxableKg,
+                             Instant fenetreDebut, Instant fenetreFin) {
         this.demandeId = demandeId;
         this.axeId = axeId;
         this.eventId = eventId;
@@ -78,6 +87,8 @@ public class DemandeEnAttente {
             this.destinationLongitude = destination.longitude();
         }
         this.poidsTaxableKg = poidsTaxableKg;
+        this.fenetreDebut = fenetreDebut;
+        this.fenetreFin = fenetreFin;
     }
 
     @PrePersist
@@ -92,6 +103,8 @@ public class DemandeEnAttente {
     public boolean isTraitee() { return traitee; }
     public void marquerTraitee() { this.traitee = true; }
     public BigDecimal getPoidsTaxableKg() { return poidsTaxableKg; }
+    public Instant getFenetreDebut() { return fenetreDebut; }
+    public Instant getFenetreFin() { return fenetreFin; }
 
     public PointGeoDto getOrigine() {
         return (origineLatitude == null || origineLongitude == null)

@@ -1,0 +1,30 @@
+<div class="shell">
+  <header class="shell__header">
+    <div class="shell__header-inner">
+      <div class="shell__brand">
+        <app-brand-logo size="sm" />
+        @if (roleLabelKey()) {
+          <span class="shell__role">{{ roleLabelKey() | translate }}</span>
+        }
+        @if (session()?.tenantId) {
+          <span class="shell__tenant">{{ session()?.tenantId }}</span>
+        }
+      </div>
+
+      <div class="shell__actions">
+        <app-langue-switch />
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="logout()">
+          {{ 'shell.logout' | translate }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <app-shell-nav />
+
+  <main class="shell__main">
+    <div class="shell__main-inner">
+      <router-outlet />
+    </div>
+  </main>
+</div>

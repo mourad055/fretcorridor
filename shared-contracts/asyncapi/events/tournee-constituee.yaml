@@ -1,0 +1,116 @@
+asyncapi: '2.6.0'
+info:
+  title: TourneeConstituee
+  version: 0.1.0-draft
+  description: >
+    BROUILLON, redige cote Moteur (Personne 3) suite a la demande explicite
+    de Personne 1 (S11, ecran tournee multi-etapes Chauffeur - Plan
+    d'execution S5.2). A VALIDER au point de synchronisation hebdomadaire
+    des contrats d'API avant integration cote service-exe.
+
+    Publie par service-opt UNIQUEMENT quand une Tournee consolidee (LTL,
+    Sprint 11, CDC S8.6 - PDPTW/ALNS) est confirmee par SequencementDeclencheur
+    (cycle L2, ~30s). Une affectation FTL simple (majoritaire en Phase 1,
+    jamais sequencee en Tournee) ne genere JAMAIS cet evenement - elle est
+    deja entierement decrite par son propre AffectationConfirmeeEvent
+    (une seule origine, une seule destination).
+
+    Modelisation (CDC S13, Mission/Etape) : le CDC prevoit une Mission
+    unique portant plusieurs Etape liees a plusieurs Demande (Mission
+    n-n Demande). Cote implementation reelle, chaque Affectation genere
+    sa propre Mission (service-exe, un missionId = un Affectation.id) -
+    cet evenement sert a regrouper a posteriori plusieurs Missions deja
+    creees sous un meme tourneeId, plutot que de fusionner leurs entites
+    Mission. Choix de modelisation a documenter en ADR cote porteur de
+    service-exe si juge structurant.
+channels:
+  tournee-constituee:
+    publish:
+      summary: >
+        Tournee consolidee confirmee (Sprint 11) - ordre des etapes
+        (enlevement/livraison) pour les Missions deja creees via
+        AffectationConfirmeeEvent.
+      message:
+        $ref: '#/components/messages/TourneeConstituee'
+components:
+  messages:
+    TourneeConstituee:
+      name: TourneeConstituee
+      title: Tournee constituee
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TourneeConstitueePayload'
+  schemas:
+    TourneeConstitueePayload:
+      type: object
+      required:
+        - eventId
+        - tourneeId
+        - capaciteId
+        - etapes
+        - dateGeneration
+      properties:
+        eventId:
+          type: string
+          format: uuid
+        tourneeId:
+          type: string
+          format: uuid
+          description: Cle de regroupement - toutes les etapes ci-dessous appartiennent a cette meme tournee.
+        capaciteId:
+          type: string
+          format: uuid
+        axeId:
+          type: string
+          format: uuid
+          nullable: true
+        etapes:
+          type: array
+          description: Ordonnees par rang croissant (deja triees par service-opt, pas besoin de re-trier cote consommateur).
+          items:
+            type: object
+            required:
+              - missionId
+              - rang
+              - typeEtape
+              - demandeId
+              - pointLatitude
+              - pointLongitude
+            properties:
+              missionId:
+                type: string
+                format: uuid
+                description: >
+                  Meme UUID que AffectationConfirmeeEvent.missionId (=
+                  Affectation.id) - permet de faire le lien avec la Mission
+                  deja creee cote service-exe. Plusieurs etapes de la meme
+                  tournee peuvent partager le meme missionId (une affectation
+                  porte une etape ENLEVEMENT et une etape LIVRAISON).
+              rang:
+                type: integer
+                description: Ordre d'execution au sein de la tournee, 0-indexe.
+              typeEtape:
+                type: string
+                enum: [ENLEVEMENT, LIVRAISON]
+              demandeId:
+                type: string
+                format: uuid
+              pointLatitude:
+                type: number
+                format: double
+              pointLongitude:
+                type: number
+                format: double
+              fenetreDebut:
+                type: string
+                format: date-time
+                nullable: true
+                description: Non implemente cote OPT a ce jour (Phase 1) - present dans le schema pour anticiper CDC S13 (Demande.fenetre), toujours null pour l'instant.
+              fenetreFin:
+                type: string
+                format: date-time
+                nullable: true
+                description: Idem fenetreDebut - toujours null a ce jour.
+        dateGeneration:
+          type: string
+          format: date-time

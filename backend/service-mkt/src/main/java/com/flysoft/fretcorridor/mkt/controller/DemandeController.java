@@ -48,7 +48,7 @@ public class DemandeController {
         }
     }
 
-    // ── GET /api/demandes/{id}/propositions — S5 (stub) ────────
+    // ── GET /api/demandes/{id}/propositions — RG-039/EF-MKT-07 ─
     @GetMapping("/{id}/propositions")
     public ResponseEntity<?> getPropositions(
             @PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
@@ -57,6 +57,26 @@ public class DemandeController {
             String tenantId = jwtService.extraireTenantId(token);
             return ResponseEntity.ok(demandeService.getPropositions(id, tenantId));
         } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // ── POST /api/demandes/{id}/propositions/{propositionId}/accepter — RG-039/EF-MKT-08 ─
+    @PostMapping("/{id}/propositions/{propositionId}/accepter")
+    public ResponseEntity<?> accepterProposition(
+            @PathVariable UUID id, @PathVariable UUID propositionId,
+            @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.substring(7);
+            String tenantId = jwtService.extraireTenantId(token);
+            return ResponseEntity.ok(demandeService.accepterProposition(id, propositionId, tenantId));
+        } catch (RuntimeException e) {
+            if ("DEMANDE_INTROUVABLE".equals(e.getMessage()) || "PROPOSITION_INTROUVABLE".equals(e.getMessage())) {
+                return ResponseEntity.status(404).build();
+            }
+            if ("PROPOSITION_DEJA_TRAITEE".equals(e.getMessage())) {
+                return ResponseEntity.status(409).body(e.getMessage());
+            }
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

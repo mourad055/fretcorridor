@@ -1,0 +1,19 @@
+# Bloc Docker Compose du service-ida (Mobile).
+# Ne contient PAS l'infra partagee (Postgres, Kafka...) : ce fichier s'empile
+# TOUJOURS sur infra/docker-compose.yml, jamais utilisable seul.
+services:
+  service-ida:
+    build:
+      context: ../backend/service-ida
+    container_name: fretcorridor-service-ida
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy

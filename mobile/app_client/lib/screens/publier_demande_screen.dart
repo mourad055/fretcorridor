@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/demande_provider.dart';
+import '../providers/axes_provider.dart';
 import '../models/catalogue_emballage_model.dart';
 import '../theme/app_theme.dart';
 
@@ -20,9 +21,16 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   final _destinataireTelCtrl = TextEditingController();
 
   CatalogueEmballageModel? _emballageSelectionne;
+  String? _axeSelectionneId;
   bool _fragile = false, _perissable = false, _dangereuse = false, _grandeValeur = false;
   String _typeDisponibilite = 'DES_QUE_POSSIBLE';
   String _modeCollecte = 'DOMICILE';
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() => ref.read(axesProvider.notifier).charger());
+  }
 
   @override
   void dispose() {
@@ -91,6 +99,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   @override
   Widget build(BuildContext context) {
     final demandeState = ref.watch(demandeProvider);
+    final axesState = ref.watch(axesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -104,6 +113,36 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
             children: [
               // ── Où ──────────────────────────────────────
               Text('Où', style: Theme.of(context).textTheme.titleMedium),
+              // S15 — sélecteur d'axe (GET /api/geo/axes?tenantId=...),
+              // remplit les villes ci-dessous mais reste facultatif — la
+              // saisie libre fonctionne toujours (ex. axe non couvert).
+              if (axesState.axes.length > 1) ...[
+                _label('AXE (FACULTATIF)'),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: axesState.axes.map((axe) {
+                    final selectionne = _axeSelectionneId == axe.id;
+                    return GestureDetector(
+                      onTap: () => setState(() {
+                        _axeSelectionneId = axe.id;
+                        _villeDepartCtrl.text = axe.origine;
+                        _villeArriveeCtrl.text = axe.destination;
+                      }),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: selectionne ? AppColors.accent : AppColors.surface,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: selectionne ? AppColors.accent : AppColors.bordure),
+                        ),
+                        child: Text('${axe.origine} → ${axe.destination}',
+                            style: TextStyle(color: selectionne ? Colors.white : AppColors.texte, fontSize: 13)),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
               _label('VILLE DE DÉPART'),
               TextFormField(
                 controller: _villeDepartCtrl,

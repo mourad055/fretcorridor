@@ -4,6 +4,7 @@ import com.fretcorridor.geo.domain.TypeHub;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -34,5 +35,11 @@ public record HubCreationRequest(
         Double latitude,
 
         @NotNull @DecimalMin("-180.0") @DecimalMax("180.0")
-        Double longitude
+        Double longitude,
+
+        // EF-GEO-05 (Phase 4) : code pays ISO 3166-1 alpha-3, obligatoire pour
+        // tout nouveau hub - necessaire pour determiner la convention
+        // bilaterale applicable (RG-052) si l'axe qui l'utilise est transfrontalier.
+        @NotNull @Pattern(regexp = "[A-Z]{3}", message = "pays doit etre un code ISO 3166-1 alpha-3 (ex. CMR, TCD, CAF)")
+        String pays
 ) {}

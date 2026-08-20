@@ -1,0 +1,94 @@
+package com.fretcorridor.pay.infrastructure.rest;
+
+import com.fretcorridor.pay.domain.AccesRefuseException;
+import com.fretcorridor.pay.domain.DeclarationEspecesInvalideException;
+import com.fretcorridor.pay.domain.GarantieInvalideException;
+import com.fretcorridor.pay.domain.ModePaiementDejaChoisiException;
+import com.fretcorridor.pay.domain.ReversementSansEncaissementException;
+import com.fretcorridor.pay.domain.ReversementSansPreuveLivraisonException;
+import com.fretcorridor.pay.domain.ReversementSuspenduPourLitigeException;
+import com.fretcorridor.pay.domain.SequestreInvalideException;
+import com.fretcorridor.pay.domain.SignatureInvalideException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ReversementSansEncaissementException.class)
+    public ProblemDetail handleReversementSansEncaissement(ReversementSansEncaissementException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Reversement refusé (ENF-FIN-02)");
+        return problem;
+    }
+
+    @ExceptionHandler(ReversementSansPreuveLivraisonException.class)
+    public ProblemDetail handleReversementSansPreuveLivraison(ReversementSansPreuveLivraisonException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Reversement refusé (RG-078)");
+        return problem;
+    }
+
+    @ExceptionHandler(SequestreInvalideException.class)
+    public ProblemDetail handleSequestreInvalide(SequestreInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Transition de séquestre invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(GarantieInvalideException.class)
+    public ProblemDetail handleGarantieInvalide(GarantieInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Souscription de garantie invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(ModePaiementDejaChoisiException.class)
+    public ProblemDetail handleModePaiementDejaChoisi(ModePaiementDejaChoisiException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Moyen de paiement déjà choisi");
+        return problem;
+    }
+
+    @ExceptionHandler(DeclarationEspecesInvalideException.class)
+    public ProblemDetail handleDeclarationEspecesInvalide(DeclarationEspecesInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Déclaration de paiement espèces invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(ReversementSuspenduPourLitigeException.class)
+    public ProblemDetail handleReversementSuspenduPourLitige(ReversementSuspenduPourLitigeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Reversement suspendu (EF-PAY-08)");
+        return problem;
+    }
+
+    @ExceptionHandler(AccesRefuseException.class)
+    public ProblemDetail handleAccesRefuse(AccesRefuseException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Accès refusé");
+        return problem;
+    }
+
+    @ExceptionHandler(SignatureInvalideException.class)
+    public ProblemDetail handleSignatureInvalide(SignatureInvalideException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setTitle("Notification prestataire rejetée (EF-PAY-05)");
+        return problem;
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
+        String detail = ex.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(error -> error.getField() + " : " + error.getDefaultMessage())
+                .orElse("Requête invalide");
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
+        problem.setTitle("Requête invalide");
+        return problem;
+    }
+}

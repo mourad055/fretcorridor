@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Declencheur du cycle de matching "par fenetre", par axe actif (EF-MAT-01 -
@@ -72,8 +74,17 @@ public class MatchingCycleService {
             return;
         }
 
+        // Volet A Phase 4 (README_PHASE4_MOTEUR S2.2) : RISQUE_AXE, un des 7
+        // termes du cout composite (CDC S8.5.3) prevu depuis le V0 mais jamais
+        // branche jusqu'ici - la donnee existe cote GEO depuis le Sprint 15
+        // (Axe.parametres.risqueSecuritaire) mais n'etait consommee par aucun
+        // module. Valeur identique pour tous les candidats de ce cycle (le
+        // risque est une propriete de l'axe, pas du candidat individuel).
+        Double risqueAxeScore = extraireRisqueAxeScore(axe);
+
         List<CandidatCoutDto> candidatsCommuns = capacites.stream()
-                .map(c -> new CandidatCoutDto(c.getCapaciteId(), c.getValeursCriteres(),
+                .map(c -> new CandidatCoutDto(c.getCapaciteId(), c.getTransporteurId(),
+                        c.getVehiculeId(), enrichirAvecRisqueAxe(c.getValeursCriteres(), risqueAxeScore),
                         c.getPosition(), c.getProfilCamion(), c.getTypeVehicule()))
                 .toList();
 
@@ -121,11 +132,44 @@ public class MatchingCycleService {
             return; // ne marque rien comme traite : on retentera au cycle suivant (ENF-DIS-04)
         }
 
-        demandes.forEach(DemandeEnAttente::marquerTraitee);
-        demandeEnAttenteRepository.saveAll(demandes);
+        // BUG CORRIGE (2026-08-18) : le code precedent marquait TOUT le lot
+        // (demandes ET capacites) comme traite des que le resultat n'etait
+        // pas en mode degrade, sans verifier lesquelles avaient reellement
+        // ete affectees. Kuhn-Munkres etant un appariement optimal, un lot
+        // avec plus de demandes que de capacites (cas courant) laisse
+        // certaines demandes avec capaciteId()==null (cf AffectationResultat
+        // javadoc, "plus de demandes que de capacites disponibles dans le
+        // lot") - ces demandes etaient neanmoins marquees traitee=true et
+        // disparaissaient silencieusement du systeme, en violation de
+        // EF-MAT-01 (traitement par cycles a fenetre, jamais de perte) et
+        // EF-MAT-11/12 (traçabilite/reconstitution de chaque decision).
+        Set<java.util.UUID> demandesAffectees = resultat.affectations().stream()
+                .filter(a -> a.capaciteId() != null)
+                .map(AffectationResultat::demandeId)
+                .collect(Collectors.toSet());
+        Set<java.util.UUID> capacitesAffectees = resultat.affectations().stream()
+                .filter(a -> a.capaciteId() != null)
+                .map(AffectationResultat::capaciteId)
+                .collect(Collectors.toSet());
 
-        capacites.forEach(CapaciteEnAttente::marquerTraitee);
-        capaciteEnAttenteRepository.saveAll(capacites);
+        List<DemandeEnAttente> demandesTraitees = demandes.stream()
+                .filter(d -> demandesAffectees.contains(d.getDemandeId()))
+                .toList();
+        demandesTraitees.forEach(DemandeEnAttente::marquerTraitee);
+        demandeEnAttenteRepository.saveAll(demandesTraitees);
+
+        List<CapaciteEnAttente> capacitesTraitees = capacites.stream()
+                .filter(c -> capacitesAffectees.contains(c.getCapaciteId()))
+                .toList();
+        capacitesTraitees.forEach(CapaciteEnAttente::marquerTraitee);
+        capaciteEnAttenteRepository.saveAll(capacitesTraitees);
+
+        int demandesNonAffecteesCeCycle = demandes.size() - demandesTraitees.size();
+        if (demandesNonAffecteesCeCycle > 0) {
+            log.info("Cycle sur l'axe {} : {} demande(s) non affectee(s) ce tour (plus de demandes "
+                            + "que de capacites disponibles), laissee(s) en attente pour le prochain cycle.",
+                    axe.nom(), demandesNonAffecteesCeCycle);
+        }
     }
 
     /**
@@ -148,6 +192,54 @@ public class MatchingCycleService {
                     + "filtre ignore ce tour.", axe.nom(), valeur.getClass().getSimpleName());
         }
         return null;
+    }
+
+    /**
+     * Lit Axe.parametres.risqueSecuritaire.niveauRisque (cote GEO, AxeController,
+     * Sprint 15) et le convertit en score [0,1] pour le critere RISQUE_AXE du
+     * cout composite (CDC S8.5.3).
+     *
+     * HYPOTHESE D'EQUIPE (a valider, pas une valeur du CDC - meme statut que
+     * l'hypothese RG-116 deja assumee cote TarificationL4Service) :
+     *   NORMAL ou cle absente -> 0.0 (aucune penalite, meme defaut permissif
+     *                                  que rayonAppariementKm absent)
+     *   SURVEILLE            -> 0.5 (score intermediaire, aucune justification
+     *                                 chiffree du CDC - a confirmer en equipe)
+     *   GELE                  -> n'arrive jamais ici : un axe GELE est deja
+     *                             exclu de axesActifsMatching() cote GEO
+     *                             (AxeController.estOperationnelPourMatching),
+     *                             donc ce cycle ne le traite jamais.
+     */
+    private Double extraireRisqueAxeScore(AxeActifDto axe) {
+        Map<String, Object> parametres = axe.parametres();
+        if (parametres == null) {
+            return 0.0;
+        }
+        Object risque = parametres.get("risqueSecuritaire");
+        if (!(risque instanceof Map<?, ?> risqueMap)) {
+            return 0.0;
+        }
+        Object niveau = risqueMap.get("niveauRisque");
+        if ("SURVEILLE".equals(niveau)) {
+            return 0.5;
+        }
+        return 0.0;
+    }
+
+    /**
+     * Ajoute RISQUE_AXE aux criteres d'un candidat, sans modifier les criteres
+     * deja calcules ailleurs (cf CapaciteEnAttente.getValeursCriteres()).
+     * risqueAxeScore==null n'arrive jamais en pratique (extraireRisqueAxeScore
+     * retourne toujours 0.0 au minimum) mais garde-fou defensif quand meme,
+     * meme principe que les autres degradations gracieuses de ce fichier.
+     */
+    private Map<String, Double> enrichirAvecRisqueAxe(Map<String, Double> valeursCriteres, Double risqueAxeScore) {
+        if (risqueAxeScore == null) {
+            return valeursCriteres;
+        }
+        Map<String, Double> enrichi = new java.util.LinkedHashMap<>(valeursCriteres);
+        enrichi.put("RISQUE_AXE", risqueAxeScore);
+        return enrichi;
     }
 
     /**

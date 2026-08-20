@@ -11,12 +11,15 @@ public record AxeResponse(
         String nom,
         UUID hubOrigineId,
         String hubOrigineNom,
+        String hubOrigineVille,
         UUID hubDestinationId,
         String hubDestinationNom,
+        String hubDestinationVille,
         boolean visibiliteActive,
         boolean matchingActif,
         boolean paiementActif,
         Map<String, Object> parametres,
+        String tenantId,
         Instant dateCreation
 ) {
     public static AxeResponse from(Axe axe) {
@@ -25,12 +28,15 @@ public record AxeResponse(
                 axe.getNom(),
                 axe.getHubOrigine().getId(),
                 axe.getHubOrigine().getNom(),
+                axe.getHubOrigine().getVille(),
                 axe.getHubDestination().getId(),
                 axe.getHubDestination().getNom(),
+                axe.getHubDestination().getVille(),
                 axe.isVisibiliteActive(),
                 axe.isMatchingActif(),
                 axe.isPaiementActif(),
                 axe.getParametres(),
+                axe.getTenantId(),
                 axe.getDateCreation()
         );
     }
