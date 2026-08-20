@@ -1,10 +1,26 @@
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dio_provider.dart';
 
+class Piece {
+  final String typeDocument;
+  final String? url;
+  final String? dateDepot;
+
+  const Piece({required this.typeDocument, this.url, this.dateDepot});
+
+  factory Piece.fromJson(Map<String, dynamic> json) => Piece(
+        typeDocument: json['typeDocument'] as String,
+        url: json['url'] as String?,
+        dateDepot: json['dateDepot'] as String?,
+      );
+}
+
 class KycState {
   final bool chargement;
+  final bool depotEnCours;
   final String? erreur;
   final String? succes;
   final String? type; // PARTICULIER ou ENTREPRISE
@@ -12,9 +28,11 @@ class KycState {
   final String? prenom;
   final String? raisonSociale;
   final String niveauKyc;
+  final List<Piece> pieces;
 
   const KycState({
     this.chargement = false,
+    this.depotEnCours = false,
     this.erreur,
     this.succes,
     this.type,
@@ -22,10 +40,17 @@ class KycState {
     this.prenom,
     this.raisonSociale,
     this.niveauKyc = 'NIVEAU_0',
+    this.pieces = const [],
   });
+
+  // RG-011 : niveau 1 = identité déclarée ET au moins une pièce déposée —
+  // pilote l'affichage des deux étapes de l'écran de complétion.
+  bool get identiteDeclaree => (nom != null && prenom != null) || raisonSociale != null;
+  bool get pieceDeposee => pieces.isNotEmpty;
 
   KycState copyWith({
     bool? chargement,
+    bool? depotEnCours,
     String? erreur,
     String? succes,
     String? type,
@@ -33,9 +58,11 @@ class KycState {
     String? prenom,
     String? raisonSociale,
     String? niveauKyc,
+    List<Piece>? pieces,
   }) {
     return KycState(
       chargement: chargement ?? this.chargement,
+      depotEnCours: depotEnCours ?? this.depotEnCours,
       erreur: erreur,
       succes: succes,
       type: type ?? this.type,
@@ -43,6 +70,7 @@ class KycState {
       prenom: prenom ?? this.prenom,
       raisonSociale: raisonSociale ?? this.raisonSociale,
       niveauKyc: niveauKyc ?? this.niveauKyc,
+      pieces: pieces ?? this.pieces,
     );
   }
 }
@@ -64,6 +92,7 @@ class KycNotifier extends StateNotifier<KycState> {
         prenom: response.data['prenom'],
         raisonSociale: response.data['raisonSociale'],
         niveauKyc: response.data['niveauKyc'],
+        pieces: _piecesDe(response.data),
       );
     } on DioException {
       // Pas encore de profil complété — normal juste après l'inscription
@@ -78,14 +107,7 @@ class KycNotifier extends StateNotifier<KycState> {
         'prenom': prenom,
       });
       await _enregistrerNouveauxTokens(response.data);
-      state = state.copyWith(
-        chargement: false,
-        succes: 'Profil complété ✅',
-        type: 'PARTICULIER',
-        nom: response.data['profil']['nom'],
-        prenom: response.data['profil']['prenom'],
-        niveauKyc: response.data['profil']['niveauKyc'],
-      );
+      _appliquerProfil(response.data['profil'], succes: 'Identité enregistrée ✅');
       return true;
     } on DioException catch (e) {
       state = state.copyWith(chargement: false, erreur: 'Erreur : ${e.response?.data ?? e.message}');
@@ -101,18 +123,50 @@ class KycNotifier extends StateNotifier<KycState> {
         if (numeroRegistreCommerce != null) 'numeroRegistreCommerce': numeroRegistreCommerce,
       });
       await _enregistrerNouveauxTokens(response.data);
-      state = state.copyWith(
-        chargement: false,
-        succes: 'Profil complété ✅',
-        type: 'ENTREPRISE',
-        raisonSociale: response.data['profil']['raisonSociale'],
-        niveauKyc: response.data['profil']['niveauKyc'],
-      );
+      _appliquerProfil(response.data['profil'], succes: 'Identité enregistrée ✅');
       return true;
     } on DioException catch (e) {
       state = state.copyWith(chargement: false, erreur: 'Erreur : ${e.response?.data ?? e.message}');
       return false;
     }
+  }
+
+  Future<bool> deposerDocument(String typeDocument, File fichier) async {
+    state = state.copyWith(depotEnCours: true, erreur: null, succes: null);
+    try {
+      final formData = FormData.fromMap({
+        'fichier': await MultipartFile.fromFile(fichier.path, filename: fichier.path.split('/').last),
+        'typeDocument': typeDocument,
+      });
+      final response = await _dio.post('/kyc/documents', data: formData);
+      await _enregistrerNouveauxTokens(response.data);
+      state = state.copyWith(depotEnCours: false);
+      _appliquerProfil(response.data['profil'], succes: 'Pièce déposée ✅');
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(depotEnCours: false, erreur: 'Erreur : ${e.response?.data ?? e.message}');
+      return false;
+    }
+  }
+
+  void _appliquerProfil(Map<String, dynamic> profil, {required String succes}) {
+    state = state.copyWith(
+      chargement: false,
+      depotEnCours: false,
+      succes: succes,
+      type: profil['type'],
+      nom: profil['nom'],
+      prenom: profil['prenom'],
+      raisonSociale: profil['raisonSociale'],
+      niveauKyc: profil['niveauKyc'],
+      pieces: _piecesDe(profil),
+    );
+  }
+
+  List<Piece> _piecesDe(Map<String, dynamic> profil) {
+    return (profil['pieces'] as List<dynamic>? ?? [])
+        .map((p) => Piece.fromJson(p as Map<String, dynamic>))
+        .toList();
   }
 
   // Après complétion du profil, le niveauKyc change → nouveaux tokens

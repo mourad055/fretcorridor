@@ -1,4 +1,67 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, soir)
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, nuit)
+
+> **Session de test mobile de bout en bout (20 août, soir/nuit)** — les
+> deux apps mobiles (Client, Chauffeur/Transporteur) ont été installées
+> et testées sur un téléphone physique (Pixel 6a). Résultats :
+>
+> **Fonctionnalité ajoutée** : l'app Client n'avait **aucun écran
+> d'upload de pièce justificative KYC** — RG-011 exige identité déclarée
+> ET pièce déposée pour atteindre NIVEAU_1 (débloquant "publier une
+> demande"), mais `completer_profil_screen.dart` ne gérait que la
+> première condition et fermait l'écran en laissant croire le profil
+> complet. Ajout d'un écran en 2 étapes (identité, pièce photo via
+> `image_picker`, même pattern que l'app Chauffeur) — `kyc_provider.dart`
+> et `completer_profil_screen.dart` réécrits en conséquence.
+>
+> **4 bugs réels trouvés en testant le parcours complet publication
+> demande → déclaration capacité → matching** (aucun lié aux correctifs
+> d'audit précédents, tous pré-existants) :
+> 1. Gateway → service-geo : le gateway (conteneur Docker) tentait de
+>    résoudre `service-geo` comme un nom de conteneur Docker — cassé dès
+>    que service-geo tourne hors conteneur (process hôte). Symptôme :
+>    `DnsErrorCauseException: NXDOMAIN`.
+> 2. Secret JWT désynchronisé entre le gateway et service-ida : chacun
+>    utilisait sa propre valeur par défaut différente en l'absence de
+>    `FRETCORRIDOR_JWT_SECRET` — tout jeton service-ida rejeté par le
+>    gateway. (Sans effet sur le flux réel de l'app Chauffeur, qui passe
+>    par le login **propre** du gateway `/api/v1/auth/login`, pas
+>    `/api/auth/login` de service-ida — mais un vrai risque de
+>    régression si les deux chemins se recoupent un jour.)
+> 3. `com.fretcorridor.gateway.domain.Role.valueOf(...)` plante
+>    (`NullPointerException: Name is null`) si un JWT ne porte pas une
+>    claim `role` **singulier** — seul le gateway émet ce format ; un
+>    jeton service-ida (claim `roles`, pluriel, liste) fait planter
+>    `JwtReactiveAuthenticationManager`. Les deux systèmes d'auth (JWT
+>    gateway vs JWT service-ida) ne sont **pas interopérables** — à
+>    garder en tête si un flux futur mélange les deux.
+> 4. service-opt → service-geo : même bug DNS que le gateway (service-opt
+>    aussi en conteneur Docker, résout `service-geo:8084` en interne).
+> 5. **Perte silencieuse de capacité déclarée** : `capaciteResiduelleKg`
+>    arrivait `null` dans l'événement Kafka `CapaciteDeclaree` reçu par
+>    service-opt (violation NOT NULL, capacité jamais matchée) — le code
+>    source actuel a pourtant déjà un correctif documenté pour exactement
+>    ce bug (18 août). Cause : le **conteneur Docker service-cap tournait
+>    une image obsolète**, construite avant ce correctif. Résolu en le
+>    relançant en process hôte avec le code `dev` actuel (comme fait pour
+>    la plupart des services ce soir, cf. note environnement ci-dessous).
+>
+> **Note environnement (contexte, pas un bug applicatif)** : la stack
+> Docker locale (`docker ps`, containers "Up 2 days") était bâtie sur du
+> code d'avant la quasi-totalité des correctifs de la nuit. Plutôt que de
+> tout reconstruire (risque disque — les deux partitions de cette machine
+> sont proches de la saturation), la majorité des 14 microservices ont
+> tourné en process `mvn spring-boot:run` sur l'hôte pendant cette
+> session, avec quelques variables d'environnement ajustées à la main
+> (`SPRING_DATASOURCE_URL` vers le port hôte 5434 de Postgres, `SERVER_PORT`
+> pour éviter un conflit avec le gateway sur 8082 côté service-mkt). Le
+> gateway et service-opt (restés en conteneurs) ont été recréés avec des
+> variables d'environnement pointant vers `172.18.0.1` (passerelle Docker
+> bridge) plutôt que les noms de conteneurs Docker absents. **Ceci est un
+> contournement de session de test, pas un changement de configuration
+> durable** — à refaire proprement (rebuild Docker complet ou tout en
+> process hôte) pour la prochaine session.
+
+---
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
 > la version du 20 août (fin d'après-midi) : **les 18 bloquants initiaux
