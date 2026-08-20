@@ -39,6 +39,7 @@ services:
     container_name: fretcorridor-service-opt
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
     ports:
       - "8085:8085"
     depends_on:
