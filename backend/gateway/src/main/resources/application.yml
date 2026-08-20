@@ -16,7 +16,12 @@ spring:
 
 fretcorridor:
   jwt:
-    secret: ${FRETCORRIDOR_JWT_SECRET:dev-secret-change-me-in-production-min-32-bytes}
+    # Valeur par défaut alignée sur geo/mat/opt/trk/ida/mkt (ENF-SEC-05,
+    # secrets jamais en dur — cf. leurs application.yml respectifs) : sans
+    # cet alignement, un token émis ici avec l'ancien défaut ne se valide
+    # jamais côté Moteur tant que FRETCORRIDOR_JWT_SECRET n'est pas exportée
+    # partout de façon identique.
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
     validity-minutes: 60
   service-pay:
     # service-pay est réellement implémenté (contrairement aux autres services
