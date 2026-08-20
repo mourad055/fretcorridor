@@ -4,6 +4,7 @@ import com.flysoft.fretcorridor.mkt.client.ServiceGeoClient;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
 import com.flysoft.fretcorridor.mkt.entity.CatalogueEmballage;
 import com.flysoft.fretcorridor.mkt.entity.Demande;
+import com.flysoft.fretcorridor.mkt.entity.Proposition;
 import com.flysoft.fretcorridor.mkt.messaging.DemandePublieeEvent;
 import com.flysoft.fretcorridor.mkt.messaging.MktEventPublisher;
 import com.flysoft.fretcorridor.mkt.repository.CatalogueEmballageRepository;
@@ -15,10 +16,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -101,5 +106,57 @@ class DemandeServiceTest {
         assertThat(captor.getValue().getStatut()).isEqualTo(Demande.StatutDemande.AXE_NON_DESSERVI);
 
         verify(eventPublisher, never()).publierDemandePubliee(any());
+    }
+
+    // RG-039/EF-MKT-08 : accepter une des au plus 3 propositions marque
+    // celle-ci ACCEPTEE et les autres de la même demande EXPIREE.
+    @Test
+    void accepting_a_proposal_marks_the_others_of_the_same_request_as_expired() {
+        UUID demandeId = UUID.randomUUID();
+        UUID prop1 = UUID.randomUUID();
+        UUID prop2 = UUID.randomUUID();
+        UUID prop3 = UUID.randomUUID();
+        when(demandeRepository.findByIdAndTenantId(demandeId, TENANT))
+                .thenReturn(Optional.of(Demande.builder().id(demandeId).tenantId(TENANT).build()));
+
+        Proposition p1 = proposition(prop1, demandeId, 1, new BigDecimal("50000"));
+        Proposition p2 = proposition(prop2, demandeId, 2, new BigDecimal("52000"));
+        Proposition p3 = proposition(prop3, demandeId, 3, new BigDecimal("55000"));
+        when(propositionRepository.findByIdAndDemandeId(prop2, demandeId)).thenReturn(Optional.of(p2));
+        when(propositionRepository.findByDemandeIdOrderByRangAsc(demandeId)).thenReturn(List.of(p1, p2, p3));
+        when(propositionRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        var reponse = service.accepterProposition(demandeId, prop2, TENANT);
+
+        assertThat(reponse.getStatut()).isEqualTo("ACCEPTEE");
+        assertThat(p1.getStatut()).isEqualTo(Proposition.Statut.EXPIREE);
+        assertThat(p2.getStatut()).isEqualTo(Proposition.Statut.ACCEPTEE);
+        assertThat(p3.getStatut()).isEqualTo(Proposition.Statut.EXPIREE);
+    }
+
+    @Test
+    void accepting_an_already_treated_proposal_is_refused() {
+        UUID demandeId = UUID.randomUUID();
+        UUID propositionId = UUID.randomUUID();
+        when(demandeRepository.findByIdAndTenantId(demandeId, TENANT))
+                .thenReturn(Optional.of(Demande.builder().id(demandeId).tenantId(TENANT).build()));
+        Proposition dejaAcceptee = proposition(propositionId, demandeId, 1, new BigDecimal("50000"));
+        dejaAcceptee.setStatut(Proposition.Statut.ACCEPTEE);
+        when(propositionRepository.findByIdAndDemandeId(propositionId, demandeId)).thenReturn(Optional.of(dejaAcceptee));
+
+        assertThatThrownBy(() -> service.accepterProposition(demandeId, propositionId, TENANT))
+                .hasMessage("PROPOSITION_DEJA_TRAITEE");
+    }
+
+    private Proposition proposition(UUID id, UUID demandeId, int rang, BigDecimal prix) {
+        return Proposition.builder()
+                .id(id)
+                .eventId(UUID.randomUUID())
+                .demandeId(demandeId)
+                .rang(rang)
+                .motifClassement(rang == 1 ? "Affectation optimale L1 (Kuhn-Munkres)" : rang + "e meilleur prix")
+                .prixTransport(prix)
+                .horodatageEmission(LocalDateTime.now())
+                .build();
     }
 }
