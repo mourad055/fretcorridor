@@ -49,7 +49,7 @@ public class KycController {
         return kycPort.decider(dossierId, request.decision(), idempotencyKey)
                 .flatMap(dossier -> admPort
                         .enregistrerAudit(actor.tenantId(), actor.actorId(), "KYC_DECISION_" + request.decision(),
-                                "kyc-dossier:" + dossierId)
+                                "kyc-dossier:" + dossierId, actor.delegationToken())
                         .thenReturn(dossier))
                 .map(dossier -> ResponseEntity.ok(KycDossierResponse.from(dossier)));
     }
