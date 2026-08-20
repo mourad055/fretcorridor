@@ -10,8 +10,11 @@ import com.fretcorridor.gateway.domain.exe.MissionExecutionPort;
 import com.fretcorridor.gateway.domain.exe.MissionIntrouvableException;
 import com.fretcorridor.gateway.domain.exe.TourneeDetail;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
@@ -87,6 +90,42 @@ public class RealMissionExecutionAdapter implements MissionExecutionPort {
                 .uri("/api/missions/{id}/etapes", missionId)
                 .headers(h -> h.setBearerAuth(delegationToken))
                 .bodyValue(corps)
+                .retrieve()
+                .bodyToMono(ChronologieDto.class)
+                .map(ChronologieDto::versDetail)
+                .transform(this::gererErreurs);
+    }
+
+    @Override
+    public Mono<MissionExecutionDetail> ajouterEtapeAvecPreuve(String delegationToken, String missionId, String type,
+                                                                String libelle, String horodatageCapture,
+                                                                List<FilePart> photos, FilePart signature) {
+        if (delegationToken == null) {
+            return Mono.error(new ExeServiceIndisponibleException());
+        }
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        builder.part("type", type);
+        builder.part("libelle", libelle);
+        if (horodatageCapture != null) {
+            builder.part("horodatageCapture", horodatageCapture);
+        }
+        for (FilePart photo : photos) {
+            builder.asyncPart("photos", photo.content(), org.springframework.core.io.buffer.DataBuffer.class)
+                    .filename(photo.filename());
+        }
+        // signature nullable ici (partie multipart optionnelle côté controller) :
+        // ne pas envoyer la partie plutôt que NPE -- service-exe applique déjà
+        // PREUVE_MANQUANTE si absente (verifierPreuveRequise), même principe
+        // que les photos vides.
+        if (signature != null) {
+            builder.asyncPart("signature", signature.content(), org.springframework.core.io.buffer.DataBuffer.class)
+                    .filename(signature.filename());
+        }
+
+        return webClient.post()
+                .uri("/api/missions/{id}/etapes", missionId)
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .body(BodyInserters.fromMultipartData(builder.build()))
                 .retrieve()
                 .bodyToMono(ChronologieDto.class)
                 .map(ChronologieDto::versDetail)
