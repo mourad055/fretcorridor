@@ -53,5 +53,5 @@ public class Notification {
 
     private LocalDateTime dateReponse;
 
-    public enum TypeNotification { PROPOSITION_RECUE, STATUT_MISSION, INFO_GENERALE, PROPOSITION_RETOUR }
+    public enum TypeNotification { PROPOSITION_RECUE, STATUT_MISSION, INFO_GENERALE, PROPOSITION_RETOUR, ALERTE_ECART }
 }
