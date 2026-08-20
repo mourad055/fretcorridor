@@ -25,7 +25,7 @@ spring:
 
 fretcorridor:
   jwt:
-    secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
     expiration-access-ms: 86400000    # 24h
     expiration-refresh-ms: 2592000000 # 30 jours
 

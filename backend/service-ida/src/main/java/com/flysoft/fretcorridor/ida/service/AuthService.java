@@ -80,6 +80,16 @@ public class AuthService {
         Acteur acteur = acteurRepository.findById(acteurId)
                 .orElseThrow(() -> new RuntimeException("ACTEUR_INTROUVABLE"));
 
+        // BUG CORRIGE (audit de suivi du 20 aout, perimetre Mobile) :
+        // rafraichir() ne verifiait jamais acteur.getActif(), contrairement a
+        // login() ci-dessus -- un compte verrouille apres MAX_TENTATIVES
+        // echecs de PIN pouvait continuer a rafraichir indefiniment tant
+        // qu'il detenait un refresh token emis AVANT le blocage. Meme garde
+        // que login().
+        if (!acteur.getActif()) {
+            throw new RuntimeException("COMPTE_BLOQUE");
+        }
+
         String access = jwtService.genererAccessToken(acteur);
         String refresh = jwtService.genererRefreshToken(acteur);
         return AuthDto.AuthResponse.of(access, refresh, acteur);

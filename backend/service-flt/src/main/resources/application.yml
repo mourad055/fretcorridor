@@ -33,7 +33,7 @@ spring:
 
 fretcorridor:
   jwt:
-    secret: fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
 
 logging:
   level:
