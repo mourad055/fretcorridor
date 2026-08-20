@@ -10,11 +10,11 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * PermitAll total : AffectationL1Controller/FiltrageL0Controller sont des
- * endpoints de test manuel (Sprint 5), jamais appeles avec JWT en flux
- * nominal - le vrai declenchement passe par Kafka. Restreindre ici casserait
- * les tests d'integration existants sans aucun benefice de securite reel
- * (le flux nominal ne passe pas par HTTP).
+ * Correctif audit CDC 2026-08-20 (constat #7, priorite 1) : PermitAll total
+ * retire. AffectationL1Controller/FiltrageL0Controller sont des endpoints
+ * de test manuel (Sprint 5) jamais appeles avec JWT en flux nominal - le
+ * vrai declenchement passe par Kafka (EtapeExecuteeListener, etc.), donc
+ * cette restriction ne casse aucun flux de production (ENF-SEC-01).
  */
 @Configuration
 @EnableWebSecurity
@@ -32,7 +32,7 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

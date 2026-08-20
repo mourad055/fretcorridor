@@ -3,6 +3,7 @@ package com.fretcorridor.mat.config;
 import com.fretcorridor.mat.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -10,19 +11,21 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Contrairement a service-geo (endpoints d'administration proteges par
- * ROLE_ADMINISTRATION), service-mat n'expose aucun endpoint destine a un
- * appel humain avec JWT : CoutController.calculerCoutsLot est appele en
- * synchrone interne par ServiceMatClient (OPT -> MAT, meme porteur, budget
- * L0/L1 ~50ms), sans jamais transporter de token (cf README moteur,
- * "MAT<->OPT<->GEO<->TRK = synchrone interne").
+ * Correctif audit CDC 2026-08-20 (constat #7, priorite 1) : le PermitAll
+ * total precedent laissait tout endpoint HTTP de service-mat accessible
+ * sans JWT a quiconque atteint le reseau interne - une hypothese de flux
+ * reseau n'est pas un controle technique (ENF-SEC-01, moindre privilege).
  *
- * PermitAll total ici : ajouter hasRole(...) sur /calculer-lot casserait le
- * cycle L1 en production, puisque ServiceMatClient n'envoie aucun
- * Authorization header aujourd'hui. Le JwtAuthenticationFilter reste en
- * place (dependances ajoutees par coherence entre les 4 modules du
- * perimetre Moteur) mais ne bloque jamais rien tant qu'aucun endpoint
- * n'est explicitement restreint ici.
+ * Seul CoutController.calculerLot (POST /api/mat/couts/calculer-lot) reste
+ * exempte : il est appele en synchrone interne par ServiceMatClient
+ * (OPT -> MAT, meme porteur, budget L0/L1 ~50ms) et ce client ne transporte
+ * aucun Authorization header aujourd'hui - le proteger casserait le cycle
+ * L1 en production. C'est le seul endpoint HTTP reel expose par ce service
+ * (confirme par grep sur les annotations @*Mapping, aucun autre).
+ *
+ * Tout le reste (endpoints futurs inclus) exige desormais un JWT valide.
+ * Si un jour ServiceMatClient porte un secret/token service-a-service,
+ * cette exemption pourra etre retiree.
  */
 @Configuration
 @EnableWebSecurity
@@ -40,7 +43,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/mat/couts/calculer-lot").permitAll()
+                .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
