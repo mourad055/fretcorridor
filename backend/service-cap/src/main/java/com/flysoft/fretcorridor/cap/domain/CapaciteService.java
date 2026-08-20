@@ -61,7 +61,8 @@ public class CapaciteService {
 
     @Transactional
     public Capacite declarer(CapaciteCreationRequest requete) {
-        BigDecimal poidsTaxable = calculateurPoidsTaxable.calculer(requete.poidsKg(), requete.volumeM3());
+        BigDecimal poidsTaxable = calculateurPoidsTaxable.calculer(
+                requete.poidsKg(), requete.volumeM3(), requete.longueurPlancherM());
 
         // Resolution best-effort du transporteur (ferme le bug S7) - jamais
         // bloquant, cf javadoc ServiceFltClient (ENF-DIS-04).
