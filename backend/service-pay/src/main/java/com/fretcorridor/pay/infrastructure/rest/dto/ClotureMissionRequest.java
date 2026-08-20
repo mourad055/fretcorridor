@@ -8,7 +8,6 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record ClotureMissionRequest(
-        @NotBlank String tenantId,
         @NotBlank String transporteurId,
         @NotNull @Positive BigDecimal montant,
         @NotBlank String referencePrestataire,
