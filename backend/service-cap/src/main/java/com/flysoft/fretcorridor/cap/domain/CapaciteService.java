@@ -1,6 +1,7 @@
 package com.flysoft.fretcorridor.cap.domain;
 
 import com.flysoft.fretcorridor.cap.client.ServiceFltClient;
+import com.flysoft.fretcorridor.cap.client.ServiceGeoClient;
 import com.flysoft.fretcorridor.cap.messaging.CapEventPublisher;
 import com.flysoft.fretcorridor.cap.messaging.CapaciteDeclareeEvent;
 import com.flysoft.fretcorridor.cap.messaging.PointGeoDto;
@@ -32,6 +33,7 @@ public class CapaciteService {
     private final CalculateurPoidsTaxable calculateurPoidsTaxable;
     private final CapEventPublisher eventPublisher;
     private final ServiceFltClient serviceFltClient;
+    private final ServiceGeoClient serviceGeoClient;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -39,17 +41,23 @@ public class CapaciteService {
     public CapaciteService(CapaciteRepository capaciteRepository,
                             CalculateurPoidsTaxable calculateurPoidsTaxable,
                             CapEventPublisher eventPublisher,
-                            ServiceFltClient serviceFltClient) {
+                            ServiceFltClient serviceFltClient,
+                            ServiceGeoClient serviceGeoClient) {
         this.capaciteRepository = capaciteRepository;
         this.calculateurPoidsTaxable = calculateurPoidsTaxable;
         this.eventPublisher = eventPublisher;
         this.serviceFltClient = serviceFltClient;
+        this.serviceGeoClient = serviceGeoClient;
     }
 
     @Transactional
     public Capacite declarer(CapaciteCreationRequest requete, String tenantId, String token) {
+        // RG-101 : coefficients resolus par axe (Axe.parametres cote
+        // service-geo), repli sur la reference globale si absent/injoignable
+        // (cf javadoc CalculateurPoidsTaxable/ServiceGeoClient).
+        Map<String, Object> parametresAxe = serviceGeoClient.parametresAxe(requete.axeId()).orElse(null);
         BigDecimal poidsTaxable = calculateurPoidsTaxable.calculer(
-                requete.poidsKg(), requete.volumeM3(), requete.longueurPlancherM());
+                requete.poidsKg(), requete.volumeM3(), requete.longueurPlancherM(), parametresAxe);
 
         // Resolution best-effort du transporteur (ferme le bug S7) - jamais
         // bloquant, cf javadoc ServiceFltClient (ENF-DIS-04).
