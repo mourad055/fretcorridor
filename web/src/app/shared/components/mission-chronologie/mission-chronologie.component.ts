@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Mission } from '../../models/mission.models';
 import { libelleEtapeEtat } from '../status-badge/status-badge.component';
 
@@ -7,7 +8,7 @@ import { libelleEtapeEtat } from '../status-badge/status-badge.component';
 @Component({
   selector: 'app-mission-chronologie',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './mission-chronologie.component.html',
   styleUrl: './mission-chronologie.component.css',
 })

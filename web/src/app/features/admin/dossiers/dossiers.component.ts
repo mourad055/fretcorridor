@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { TranslatePipe } from '@ngx-translate/core';
 import { DossiersService } from './dossiers.service';
 import { Dossier, DossierConsolide } from '../../../shared/models/dossier.models';
 import {
@@ -21,7 +22,7 @@ import {
 @Component({
   selector: 'app-dossiers',
   standalone: true,
-  imports: [CommonModule, FormsModule, StatusBadgeComponent],
+  imports: [CommonModule, FormsModule, StatusBadgeComponent, TranslatePipe],
   templateUrl: './dossiers.component.html',
 })
 export class DossiersComponent {
@@ -42,6 +43,7 @@ export class DossiersComponent {
   readonly dossierEnCours = signal<string | null>(null);
   readonly trancheEnCours = signal(false);
   readonly escaladeEnCours = signal(false);
+  readonly decisionValide = computed(() => this.decisionTexte().trim().length > 0 && this.motifTexte().trim().length > 0);
 
   constructor(private readonly dossiersService: DossiersService) {}
 
@@ -96,7 +98,7 @@ export class DossiersComponent {
 
   trancher(): void {
     const consolide = this.dossierConsolide();
-    if (!consolide) {
+    if (!consolide || !this.decisionValide()) {
       return;
     }
     this.trancheEnCours.set(true);

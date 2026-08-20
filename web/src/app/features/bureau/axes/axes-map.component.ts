@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { AxeService } from './axe.service';
 import { Axe } from './axe.models';
 import { CorridorMapComponent } from './corridor-map.component';
@@ -16,13 +17,19 @@ import { StatusBadgeComponent, axeVisibiliteVariant, axeMatchingVariant, axePaie
 @Component({
   selector: 'app-axes-map',
   standalone: true,
-  imports: [CommonModule, CorridorMapComponent, StatusBadgeComponent],
+  imports: [CommonModule, CorridorMapComponent, StatusBadgeComponent, TranslatePipe],
   templateUrl: './axes-map.component.html',
+  styleUrl: './axes-map.component.css',
 })
 export class AxesMapComponent implements OnInit {
   readonly axes = signal<Axe[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly axeSelectionneId = signal<string | null>(null);
+
+  selectionnerAxe(axeId: string): void {
+    this.axeSelectionneId.update((actuel) => (actuel === axeId ? null : axeId));
+  }
 
   constructor(private readonly axeService: AxeService) {}
 

@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import { CapaciteService } from './capacite.service';
 import { Capacite } from './capacite.models';
 import {
@@ -17,7 +18,7 @@ import {
 @Component({
   selector: 'app-capacites-list',
   standalone: true,
-  imports: [CommonModule, StatusBadgeComponent],
+  imports: [CommonModule, StatusBadgeComponent, TranslatePipe],
   templateUrl: './capacites-list.component.html',
 })
 export class CapacitesListComponent implements OnInit {

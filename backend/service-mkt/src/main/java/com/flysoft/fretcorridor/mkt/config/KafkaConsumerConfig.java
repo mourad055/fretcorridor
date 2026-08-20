@@ -31,11 +31,14 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "service-mkt");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.flysoft.fretcorridor.*,com.fretcorridor.*");
 
+        // JsonDeserializer interdit de mélanger configuration par propriétés et
+        // par setters (IllegalStateException sinon) — setters uniquement, comme
+        // dans le reste du monorepo (cf. service-bur/KafkaConsumerConfig).
         JsonDeserializer<PropositionEmiseEvent> deserializer =
                 new JsonDeserializer<>(PropositionEmiseEvent.class, false);
         deserializer.setUseTypeHeaders(false);
+        deserializer.addTrustedPackages("com.flysoft.fretcorridor.*", "com.fretcorridor.*");
 
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), deserializer);
     }
