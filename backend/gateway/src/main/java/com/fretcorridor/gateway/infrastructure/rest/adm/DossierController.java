@@ -36,9 +36,16 @@ public class DossierController {
         return admPort.fileDeTravail(tenantId, actor.delegationToken()).map(DossierResponse::from);
     }
 
+    /** ENF-SEC-02 : consultation d'un dossier (donnée individuelle) journalisée, même principe que MissionAppparieeController.detail. */
     @GetMapping("/{dossierId}")
     public Mono<DossierConsolideResponse> consolide(@PathVariable String dossierId,
                                                       @AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_DOSSIER_DETAIL",
+                        "dossier:" + dossierId, actor.delegationToken())
+                .then(consulterDossier(dossierId, actor));
+    }
+
+    private Mono<DossierConsolideResponse> consulterDossier(String dossierId, AuthenticatedActor actor) {
         return admPort.dossier(dossierId, actor.delegationToken()).flatMap(dossier -> {
             DossierResponse dossierResponse = DossierResponse.from(dossier);
             if (dossier.missionId() == null) {
