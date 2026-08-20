@@ -4,6 +4,7 @@ import com.fretcorridor.gateway.domain.exe.MissionExecutionPort;
 import com.fretcorridor.gateway.infrastructure.rest.exe.dto.AjouterEtapeRequest;
 import com.fretcorridor.gateway.infrastructure.rest.exe.dto.MissionExecutionDetailResponse;
 import com.fretcorridor.gateway.infrastructure.rest.exe.dto.MissionExecutionResponse;
+import com.fretcorridor.gateway.infrastructure.rest.exe.dto.TourneeDetailResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import jakarta.validation.Valid;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -44,5 +45,12 @@ public class MissionExecutionController {
         return missionExecutionPort.ajouterEtape(actor.delegationToken(), missionId, request.type(), request.libelle(),
                         request.horodatageCapture())
                 .map(MissionExecutionDetailResponse::from);
+    }
+
+    // S11 : ordre planifié de la tournée (multi-étapes, LTL consolidé).
+    @GetMapping("/tournees/{tourneeId}")
+    public Mono<TourneeDetailResponse> tournee(@PathVariable String tourneeId,
+                                                @AuthenticationPrincipal AuthenticatedActor actor) {
+        return missionExecutionPort.tournee(actor.delegationToken(), tourneeId).map(TourneeDetailResponse::from);
     }
 }

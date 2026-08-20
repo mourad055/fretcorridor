@@ -2,11 +2,13 @@ package com.fretcorridor.gateway.infrastructure.exe;
 
 import com.fretcorridor.gateway.domain.exe.EtapeExecution;
 import com.fretcorridor.gateway.domain.exe.EtapeRefuseeException;
+import com.fretcorridor.gateway.domain.exe.EtapeTournee;
 import com.fretcorridor.gateway.domain.exe.ExeServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.exe.MissionExecution;
 import com.fretcorridor.gateway.domain.exe.MissionExecutionDetail;
 import com.fretcorridor.gateway.domain.exe.MissionExecutionPort;
 import com.fretcorridor.gateway.domain.exe.MissionIntrouvableException;
+import com.fretcorridor.gateway.domain.exe.TourneeDetail;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
@@ -91,12 +93,32 @@ public class RealMissionExecutionAdapter implements MissionExecutionPort {
                 .transform(this::gererErreurs);
     }
 
+    @Override
+    public Mono<TourneeDetail> tournee(String delegationToken, String tourneeId) {
+        if (delegationToken == null) {
+            return Mono.error(new ExeServiceIndisponibleException());
+        }
+        return webClient.get()
+                .uri("/api/missions/tournees/{id}", tourneeId)
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .retrieve()
+                .bodyToMono(TourneeDto.class)
+                .map(TourneeDto::versDetail)
+                .transform(this::gererErreursTournee);
+    }
+
     private Mono<MissionExecutionDetail> gererErreurs(Mono<MissionExecutionDetail> mono) {
         return mono
                 .onErrorMap(this::est404, e -> new MissionIntrouvableException())
                 .onErrorMap(this::est400, e -> new EtapeRefuseeException(messageDe(e)))
                 .onErrorMap(e -> !(e instanceof MissionIntrouvableException) && !(e instanceof EtapeRefuseeException),
                         e -> new ExeServiceIndisponibleException());
+    }
+
+    private Mono<TourneeDetail> gererErreursTournee(Mono<TourneeDetail> mono) {
+        return mono
+                .onErrorMap(this::est404, e -> new MissionIntrouvableException())
+                .onErrorMap(e -> !(e instanceof MissionIntrouvableException), e -> new ExeServiceIndisponibleException());
     }
 
     private boolean est400(Throwable e) {
@@ -112,9 +134,25 @@ public class RealMissionExecutionAdapter implements MissionExecutionPort {
     }
 
     private record MissionResumeDto(String missionId, String statut, String origineNom, String destinationNom,
-                                     String dateCreation) {
+                                     String dateCreation, String tourneeId) {
         MissionExecution versMissionExecution() {
-            return new MissionExecution(missionId, statut, origineNom, destinationNom, dateCreation);
+            return new MissionExecution(missionId, statut, origineNom, destinationNom, dateCreation, tourneeId);
+        }
+    }
+
+    private record EtapeTourneeDto(String missionId, int rang, String typeEtape, String demandeId,
+                                    double pointLatitude, double pointLongitude,
+                                    String fenetreDebut, String fenetreFin, String missionStatut) {
+        EtapeTournee versEtape() {
+            return new EtapeTournee(missionId, rang, typeEtape, demandeId, pointLatitude, pointLongitude,
+                    fenetreDebut, fenetreFin, missionStatut);
+        }
+    }
+
+    private record TourneeDto(String tourneeId, List<EtapeTourneeDto> etapes) {
+        TourneeDetail versDetail() {
+            List<EtapeTournee> mapped = etapes == null ? List.of() : etapes.stream().map(EtapeTourneeDto::versEtape).toList();
+            return new TourneeDetail(tourneeId, mapped);
         }
     }
 

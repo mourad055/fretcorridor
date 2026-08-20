@@ -43,6 +43,23 @@ public class MissionController {
         return ResponseEntity.ok(missionService.listerMesMissions(transporteurId, tenantId));
     }
 
+    // S11 : ordre planifié de la tournée (multi-étapes, LTL consolidé) à
+    // laquelle appartient une ou plusieurs Missions du chauffeur connecté.
+    @GetMapping("/tournees/{tourneeId}")
+    public ResponseEntity<?> getTournee(
+            @PathVariable UUID tourneeId, @RequestHeader("Authorization") String authHeader) {
+        try {
+            UUID transporteurId = jwtService.extraireActeurId(authHeader.substring(7));
+            String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+            return ResponseEntity.ok(missionService.getTournee(tourneeId, transporteurId, tenantId));
+        } catch (RuntimeException e) {
+            if ("MISSION_INTROUVABLE".equals(e.getMessage()) || "ACCES_REFUSE".equals(e.getMessage())) {
+                return ResponseEntity.status(404).build();
+            }
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/{missionId}")
     public ResponseEntity<?> getMission(
             @PathVariable UUID missionId, @RequestHeader("Authorization") String authHeader) {
