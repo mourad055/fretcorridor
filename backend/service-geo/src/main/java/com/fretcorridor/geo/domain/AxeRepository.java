@@ -17,5 +17,5 @@ public interface AxeRepository extends JpaRepository<Axe, UUID> {
      * ENF-MUL-01 : isolation stricte par tenant, filtree ICI en base -
      * jamais fabriquee a posteriori par un appelant (gateway ou autre).
      */
-    List<Axe> findByTenantId(UUID tenantId);
+    List<Axe> findByTenantId(String tenantId);
 }

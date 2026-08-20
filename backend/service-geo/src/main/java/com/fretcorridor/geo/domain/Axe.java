@@ -63,8 +63,11 @@ public class Axe {
     // ENF-MUL-01 : isolation stricte par tenant. Nullable en base (migration
     // V4, donnees anciennes pre-remplies avec le tenant BGFT par defaut) mais
     // toujours renseigne a la creation via le constructeur ci-dessous.
+    // String (pas UUID, migration V7) : le tenantId circule partout ailleurs
+    // dans le systeme (JWT, gateway, RealGeoAdapter) comme un identifiant
+    // texte libre (ex. "tenant-bgft-douala"), jamais comme un UUID.
     @Column(name = "tenant_id")
-    private UUID tenantId;
+    private String tenantId;
 
     @Column(name = "date_creation", nullable = false, updatable = false)
     private Instant dateCreation;
@@ -73,7 +76,7 @@ public class Axe {
         // Requis par JPA.
     }
 
-    public Axe(String nom, Hub hubOrigine, Hub hubDestination, UUID tenantId) {
+    public Axe(String nom, Hub hubOrigine, Hub hubDestination, String tenantId) {
         this.nom = nom;
         this.hubOrigine = hubOrigine;
         this.hubDestination = hubDestination;
@@ -117,7 +120,7 @@ public class Axe {
         return parametres;
     }
 
-    public UUID getTenantId() {
+    public String getTenantId() {
         return tenantId;
     }
 

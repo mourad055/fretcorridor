@@ -27,7 +27,7 @@ public record AxeCreationRequest(
 
         // ENF-MUL-01 : optionnel a la creation - null accepte pour compatibilite
         // avec l'existant, mais AxeController applique le tenant BGFT par
-        // defaut (meme UUID fixe que la migration V4) si absent.
-        UUID tenantId
+        // defaut (meme identifiant que la migration V7) si absent.
+        String tenantId
 ) {
 }
