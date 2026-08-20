@@ -67,7 +67,7 @@ class CapaciteDeclarationControllerTest {
     @Test
     void an_authenticated_actor_can_declare_a_capacity() {
         String token = tokenFor("+237600000002");
-        when(capaciteDeclarationPort.declarer(any())).thenReturn(Mono.just(new CapaciteDeclaree(
+        when(capaciteDeclarationPort.declarer(any(), any())).thenReturn(Mono.just(new CapaciteDeclaree(
                 "cap-1", "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222",
                 "TOTALE", BigDecimal.valueOf(9500), BigDecimal.valueOf(9500), BigDecimal.valueOf(9500),
                 false, true, Instant.now().plus(1, ChronoUnit.DAYS), Instant.now())));
@@ -106,7 +106,7 @@ class CapaciteDeclarationControllerTest {
     @Test
     void a_refusal_from_service_cap_is_reported_as_bad_request() {
         String token = tokenFor("+237600000002");
-        when(capaciteDeclarationPort.declarer(any()))
+        when(capaciteDeclarationPort.declarer(any(), any()))
                 .thenReturn(Mono.error(new CapaciteRefuseeException("Validation échouée")));
 
         webTestClient.post().uri("/api/v1/capacites")

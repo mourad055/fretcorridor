@@ -60,7 +60,7 @@ public class CapaciteService {
     }
 
     @Transactional
-    public Capacite declarer(CapaciteCreationRequest requete) {
+    public Capacite declarer(CapaciteCreationRequest requete, String tenantId) {
         BigDecimal poidsTaxable = calculateurPoidsTaxable.calculer(requete.poidsKg(), requete.volumeM3());
 
         // Resolution best-effort du transporteur (ferme le bug S7) - jamais
@@ -68,7 +68,7 @@ public class CapaciteService {
         UUID transporteurId = serviceFltClient.resoudreProprietaire(requete.vehiculeId()).orElse(null);
 
         Capacite capacite = new Capacite(
-                requete.vehiculeId(), requete.axeId(), transporteurId, requete.modeDeclaration(),
+                requete.vehiculeId(), requete.axeId(), tenantId, transporteurId, requete.modeDeclaration(),
                 requete.poidsKg(), requete.volumeM3(), requete.longueurPlancherM(),
                 poidsTaxable, requete.origineLatitude(), requete.origineLongitude(),
                 requete.typeVehicule(),
@@ -127,9 +127,8 @@ public class CapaciteService {
      * requete.
      */
     @Transactional
-    public Capacite decrementer(UUID capaciteId, BigDecimal montantKg, String cleIdempotence) {
-        Capacite capacite = capaciteRepository.findById(capaciteId)
-                .orElseThrow(() -> new IllegalArgumentException("Capacite introuvable : " + capaciteId));
+    public Capacite decrementer(UUID capaciteId, String tenantId, BigDecimal montantKg, String cleIdempotence) {
+        Capacite capacite = capaciteAppartenantA(capaciteId, tenantId);
 
         // INSERT immediat plutot qu'un SELECT prealable : la contrainte unique
         // fait le travail d'exclusion mutuelle, evite une fenetre de course
@@ -164,6 +163,20 @@ public class CapaciteService {
 
         capacite.decrementer(montantKg);
         return capaciteRepository.save(capacite); // verrou optimiste applique ici
+    }
+
+    // IDOR corrige (audit CDC du 19 aout, §3) : POST /decrement acceptait
+    // n'importe quel capaciteId sans verifier de tenant - une seule
+    // exception pour "introuvable" et "pas la sienne", meme principe que
+    // missionAppartenantA (service-exe) / notificationAppartenantA
+    // (service-not).
+    private Capacite capaciteAppartenantA(UUID capaciteId, String tenantId) {
+        Capacite capacite = capaciteRepository.findById(capaciteId)
+                .orElseThrow(() -> new IllegalArgumentException("Capacite introuvable : " + capaciteId));
+        if (!java.util.Objects.equals(capacite.getTenantId(), tenantId)) {
+            throw new IllegalArgumentException("Capacite introuvable : " + capaciteId);
+        }
+        return capacite;
     }
 
     private BigDecimal nz(Double valeur) {
