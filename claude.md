@@ -1,26 +1,31 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, fin d'après-midi)
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, soir)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
-> la version du 20 août (après-midi) : **17 des 18 bloquants initiaux de
-> `AUDIT_CDC_v4_complet_2026-08-19.md` sont désormais résolus et
-> confirmés dans le code réel** de `dev`. Deux fixes supplémentaires cet
-> après-midi (PR #114/#115), un 3e bloquant retrouvé déjà réglé par le
-> Moteur indépendamment de cette passe (EF-MAT-10, commit `33818d3`), et
-> **deux points laissés "hors périmètre" dans la version précédente de ce
-> document ont en fait été traités** après relecture attentive du compte
-> exact (18, pas 16) :
-> - **RG-101** (coefficient volumétrique global, non scopé tenant/axe) —
->   3e bloquant qui avait été omis du décompte initial, traité PR #117.
-> - **RG-070** (preuve de livraison photo/tiers) — traité **côté backend
->   uniquement** (photo + signature tactile), PR #118. Le code SMS et
->   l'UI mobile restent hors périmètre, voir détail plus bas — **ne pas
->   déployer sans coordination mobile** (le JSON existant pour
->   PRISE_EN_CHARGE/LIVRAISON est désormais refusé).
+> la version du 20 août (fin d'après-midi) : **les 18 bloquants initiaux
+> de `AUDIT_CDC_v4_complet_2026-08-19.md` sont désormais tous traités**
+> — 17 résolus sans réserve, le 18e (RG-039) traité avec des limitations
+> explicitement documentées (voir ci-dessous et §6). **26 PR** au total
+> mergées depuis le début de cette passe (#91 à #120, sauf #111).
 >
-> **Seul RG-039 reste explicitement ouvert** (une seule proposition au
-> lieu de trois, nécessite un vrai algorithme de sélection — voir §6).
-> **25 PR** au total mergées depuis le début de cette passe (#91 à #118,
-> sauf #111 — voir §6 pour le détail complet).
+> **Deux points restent avec un périmètre partiel, à connaître avant
+> de les croire "fermés"** :
+> - **RG-070** (preuve de livraison) — traité côté **backend uniquement**
+>   (photo + signature tactile, PR #118). Le code SMS et l'UI mobile
+>   restent hors périmètre — **ne pas déployer sans coordination
+>   mobile** (le JSON existant pour PRISE_EN_CHARGE/LIVRAISON est
+>   désormais refusé par service-exe).
+> - **RG-039** (jusqu'à 3 propositions ordonnées, PR #120) — rang 2/3
+>   ajoutés (informationnels, prix estimé) sans toucher au rang 1
+>   existant. L'endpoint "accepter" (service-mkt) marque la proposition
+>   choisie, mais **ne déclenche pas la réservation réelle de capacité**
+>   (`decrementer()` exige le même tenant que le transporteur
+>   propriétaire — un chargeur d'un autre tenant ne peut pas l'appeler
+>   sans un pont de confiance cross-tenant qui n'existe pas encore).
+>
+> Ces deux limitations ont été **décidées explicitement avec
+> l'utilisateur** après découverte de leur ampleur réelle en cours de
+> route (pas des oublis) — voir §6 pour le détail complet et les
+> échanges avec le collègue Moteur.
 
 ---
 
@@ -522,14 +527,52 @@ Vérifié : `mvn -o test` service-exe (12 tests) + gateway (184 tests),
 0 échec sur les deux modules — y compris un test bout-en-bout
 multipart côté gateway.
 
-### Explicitement pas traités — à ne pas croire résolus
+### RG-039 — jusqu'à 3 propositions ordonnées (PR #120)
 
-- **RG-039** (3 propositions au lieu d'une seule, EF-MKT-07) — nécessite
-  un vrai algorithme de sélection, mis de côté d'un commun accord dès le
-  début de cette passe. Ne pas improviser un correctif superficiel si ce
-  point revient.
-- **RG-070, code SMS + UI mobile** (voir ci-dessus) — reporté, dépendance
-  cross-service signalée au Moteur.
+**18e et dernier bloquant, traité en soirée.** Avant de coder, investigation
+qui a révélé une portée bien plus large que "générer un top-3" :
+`AffectationL1Service` (Kuhn-Munkres) **committe directement** une
+`Affectation`/Mission réelle pour le seul match optimal, et **aucun appel**
+à `POST /api/cap/capacites/{id}/decrement` n'existe nulle part dans le
+pipeline de matching -- EF-MKT-08 ("réservation atomique de la capacité"
+à l'acceptation du chargeur) n'était donc pas câblé du tout, pas
+seulement le classement top-3. Signalé au collègue Moteur (propriétaire
+d'`AffectationL1Service`) avant toute modification.
+
+Décision utilisateur ("Backend complet : top-3 + endpoint accepter") :
+
+- **service-opt** (`AffectationL1Service`) : rang 1 **inchangé**
+  (toujours le pick Kuhn-Munkres, `Affectation`+`AffectationConfirmee`
+  publiés exactement comme avant -- zéro impact sur service-exe/tournées
+  déjà en prod). Rang 2/3 **ajoutés** (`publierAlternatives`) : jusqu'à 2
+  alternatives par coût croissant sur la même ligne de la matrice de
+  cette demande, purement informationnelles (aucune `Affectation`
+  créée, prix estimé non ferme au sens RG-041). "Au plus trois", jamais
+  forcé si moins de candidats disponibles.
+- **service-mkt** : `Proposition.statut` (EN_ATTENTE/ACCEPTEE/EXPIREE),
+  nouveau `POST /api/demandes/{id}/propositions/{propositionId}/accepter`
+  qui marque la proposition choisie et expire les autres de la même
+  demande.
+
+**Limitation assumée et documentée** : l'endpoint "accepter" ne
+déclenche **pas** la réservation réelle de capacité.
+`CapaciteService.decrementer()` exige que l'appelant soit du **même
+tenant** que le propriétaire de la capacité (IDOR corrigé en PR #95) --
+un chargeur (tenant différent du transporteur) qui accepte ne peut donc
+pas l'appeler directement sans un pont de confiance cross-tenant qui
+n'existe pas aujourd'hui. Construire ce pont était hors périmètre de
+cette session -- **à traiter séparément si EF-MKT-08 doit être fermé
+complètement**.
+
+Tests : `AffectationL1ServiceTest` (nouveau, aucun test n'existait avant
+pour cette classe) -- classement rang 1/2/3 par coût, un seul candidat
+ne produit qu'une seule proposition. `DemandeServiceTest` -- accepter
+marque bien les autres EXPIREE, refuse une proposition déjà traitée.
+Vérifié : `mvn -o test` service-opt (9 tests, Java 21) + service-mkt (4
+tests), 0 échec.
+
+### Autres points hors périmètre — à ne pas croire résolus
+
 - **Multi-pays / conventions bilatérales** (`service-geo`, EF-GEO-05) —
   fonctionnalité absente du domaine, hors périmètre d'un correctif
   ponctuel.
