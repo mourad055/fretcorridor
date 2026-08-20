@@ -29,8 +29,9 @@ public class CapaciteController {
     @ResponseStatus(HttpStatus.CREATED)
     public CapaciteResponse declarer(@Valid @RequestBody CapaciteCreationRequest requete,
                                       @RequestHeader("Authorization") String authHeader) {
-        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
-        Capacite capacite = capaciteService.declarer(requete, tenantId);
+        String token = authHeader.substring(7);
+        String tenantId = jwtService.extraireTenantId(token);
+        Capacite capacite = capaciteService.declarer(requete, tenantId, token);
         return CapaciteResponse.from(capacite);
     }
 
