@@ -1,21 +1,23 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, matin)
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, après-midi)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
-> la version du 20 août (nuit) : **la passe de correction systématique
-> sur `AUDIT_CDC_v4_complet_2026-08-19.md` s'est poursuivie le matin du
-> 20 août** — le point structurant laissé explicitement ouvert la nuit
-> précédente (`tenantId`/`acteurId` lus du corps de requête plutôt que du
-> JWT) est désormais **traité sur les trois services concernés**
-> (`service-pay`, `service-adm`, `service-bur` — PR #107 à #110), plus un
-> constat étendu trouvé en cours de route sur `service-bur` (4 contrôleurs
-> internes, hors liste initiale de l'audit). **Java 21 installé** (via
-> `apt`, `openjdk-21-jdk`) — les 4 services Moteur (`service-geo`/`mat`/
-> `opt`/`trk`) sont désormais compilables et testables dans ce sandbox,
-> ce qui n'était pas le cas jusqu'ici (voir §6, section Java 21). **19
-> PR** au total sont mergées depuis le début de cette passe (#91 à #110,
-> #112 — voir §6 pour le détail complet). **Ne pas supposer l'audit
-> clos** : RG-039 et le multi-pays restent explicitement hors périmètre,
-> voir §6.
+> la version du 20 août (matin) : **la passe de correction systématique
+> sur `AUDIT_CDC_v4_complet_2026-08-19.md` est close pour cette session**
+> — sur les 18 bloquants initiaux, **15 sont désormais résolus et
+> confirmés dans le code réel** de `dev`. Deux nouveaux fixes cet
+> après-midi : consultation de dossier ADM non journalisée (ENF-SEC-02,
+> PR #114) et endpoint véhicule public sans filtre tenant (service-flt,
+> PR #115). Un troisième bloquant (EF-MAT-10, "détour jamais borné") a
+> été trouvé déjà réglé par le Moteur indépendamment de cette passe
+> (commit `33818d3`, non documenté avant ce jour). **Restent
+> explicitement hors périmètre (2)** : RG-039 (une seule proposition,
+> nécessite un vrai algorithme) et RG-070 (preuve de livraison
+> photo/tiers, nécessite une infrastructure d'upload — MinIO — absente
+> aujourd'hui). Les deux sont documentés dans le code source lui-même
+> comme des fonctionnalités distinctes, pas des bugs — ne pas les
+> bricoler avec un correctif superficiel si le sujet revient. **22 PR**
+> au total mergées depuis le début de cette passe (#91 à #115, sauf
+> #111 — voir §6 pour le détail complet).
 
 ---
 
@@ -457,14 +459,33 @@ aucun appelant réel cassé). Tests d'intégration : pattern
 correspond à ce que le test doit vérifier), répliqué identiquement sur
 les 4 PR.
 
+### Derniers correctifs de l'après-midi (PR #114, #115)
+
+| # | Service(s) | Correctif |
+|---|---|---|
+| #114 | `gateway` | ENF-SEC-02 : `DossierController.consolide()` ne journalisait aucune consultation de dossier. `admPort.enregistrerAudit(tenantId, acteurId, "CONSULTATION_DOSSIER_DETAIL", "dossier:"+dossierId, ...)` appelé avant la lecture, même pattern exact que `MissionAppparieeController.detail()`/`PaiementReadController` |
+| #115 | `service-flt`, `service-cap` | Bloquant audit §3 "endpoint véhicule public, sans filtre tenant" : `GET /api/flt/vehicules/{id}` était `permitAll()` sans aucune vérification (n'importe qui pouvait lire n'importe quel véhicule de n'importe quel tenant). `service-cap` (`ServiceFltClient`, seul appelant légitime, jamais via le gateway) transmet désormais son propre JWT ; `VehiculeController.consulter` filtre sur le tenantId du JWT (404 si mismatch, même principe que `DossierController` service-adm) |
+
+Ces deux PR n'ont aucune CI (service-flt/service-cap et gateway sur ce
+chemin ne sont pas dans le scope `backend-web-scope.yml` pour flt/cap —
+vérifié localement par `mvn test` sur les modules concernés avant merge).
+
 ### Explicitement pas traités — à ne pas croire résolus
 
 - **RG-039** (3 propositions au lieu d'une seule, EF-MKT-07) — nécessite
   un vrai algorithme de sélection, mis de côté d'un commun accord dès le
   début de cette passe. Ne pas improviser un correctif superficiel si ce
   point revient.
-- **Consultation de dossier ADM non journalisée** (gateway
-  `DossierController.consolide()`, ENF-SEC-02) — pas touché.
+- **RG-070** (preuve de livraison photo/tiers, EF-EXE-03) — la
+  **précédence** des étapes est corrigée (RG-062, PR #96), mais
+  `MissionService.verifierPrecedence` documente explicitement que la
+  preuve minimale reste hors périmètre : une `LIVRAISON` avec un simple
+  `libelle` texte libère toujours le séquestre. Nécessite une
+  infrastructure de capture/upload (photo, MinIO déjà dans la stack
+  mais pas câblé ici) + UI mobile — une fonctionnalité à part entière,
+  pas un correctif de sécurité ponctuel. Ne pas improviser un champ
+  "preuve" texte obligatoire en pensant régler le problème : ça ne
+  changerait rien à la fraude réelle que RG-070 vise à empêcher.
 - **Multi-pays / conventions bilatérales** (`service-geo`, EF-GEO-05) —
   fonctionnalité absente du domaine, hors périmètre d'un correctif
   ponctuel.
@@ -504,6 +525,16 @@ toute façon aucune identité à vérifier).
   première position de l'historique complet. Vérifié en lisant le code
   et son commentaire "BUG CORRIGE (audit du 2026-08-19)" — ne pas
   retravailler ce fichier en pensant le bug encore présent.
+- **EF-MAT-10, détour jamais borné** (`service-opt`,
+  `SequencementDeclencheur`/`ReplanificationService`/`DetourValidator`)
+  — **même commit `33818d3`**, découvert cet après-midi en vérifiant ce
+  bloquant précis (pas documenté avant ce jour, alors que
+  l'`AnomalieDetector` l'était déjà). `alnsSolver.resoudre(...)` reçoit
+  désormais `resoudreParametresAxe(axeId)` (résout `detourMaxDistanceKm`
+  réel auprès de `service-geo`) au lieu d'un `Map.of()` codé en dur —
+  vérifié réel, pas un stub (`ServiceGeoClient.axeParId`, dégradation
+  gracieuse `Map.of()` seulement si axe absent/injoignable). Ne pas
+  retravailler ces fichiers en pensant le détour encore illimité.
 
 ### Contrainte d'environnement Java 21 — résolue (matin du 20 août)
 
