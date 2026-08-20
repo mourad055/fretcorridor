@@ -54,7 +54,7 @@ class CapaciteServiceConcurrenceTest {
 
     @Test
     void deuxDecrementsConcurrentsAvecClesDifferentes_lesDeuxSAppliquent() throws InterruptedException {
-        Capacite capacite = capaciteService.declarer(nouvelleRequeteCapacite(BigDecimal.valueOf(10000)), TENANT);
+        Capacite capacite = capaciteService.declarer(nouvelleRequeteCapacite(BigDecimal.valueOf(10000)), TENANT, "token-test");
         UUID capaciteId = capacite.getId();
 
         int nbThreads = 2;
@@ -106,7 +106,7 @@ class CapaciteServiceConcurrenceTest {
 
     @Test
     void memeDecrementRejoueEnConcurrenceAvecMemeCle_uneSeuleFoisApplique() throws InterruptedException {
-        Capacite capacite = capaciteService.declarer(nouvelleRequeteCapacite(BigDecimal.valueOf(10000)), TENANT);
+        Capacite capacite = capaciteService.declarer(nouvelleRequeteCapacite(BigDecimal.valueOf(10000)), TENANT, "token-test");
         UUID capaciteId = capacite.getId();
         String memeCleIdempotence = "cle-partagee-unique";
 
