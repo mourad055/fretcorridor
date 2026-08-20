@@ -1,23 +1,26 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, après-midi)
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, fin d'après-midi)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
-> la version du 20 août (matin) : **la passe de correction systématique
-> sur `AUDIT_CDC_v4_complet_2026-08-19.md` est close pour cette session**
-> — sur les 18 bloquants initiaux, **15 sont désormais résolus et
-> confirmés dans le code réel** de `dev`. Deux nouveaux fixes cet
-> après-midi : consultation de dossier ADM non journalisée (ENF-SEC-02,
-> PR #114) et endpoint véhicule public sans filtre tenant (service-flt,
-> PR #115). Un troisième bloquant (EF-MAT-10, "détour jamais borné") a
-> été trouvé déjà réglé par le Moteur indépendamment de cette passe
-> (commit `33818d3`, non documenté avant ce jour). **Restent
-> explicitement hors périmètre (2)** : RG-039 (une seule proposition,
-> nécessite un vrai algorithme) et RG-070 (preuve de livraison
-> photo/tiers, nécessite une infrastructure d'upload — MinIO — absente
-> aujourd'hui). Les deux sont documentés dans le code source lui-même
-> comme des fonctionnalités distinctes, pas des bugs — ne pas les
-> bricoler avec un correctif superficiel si le sujet revient. **22 PR**
-> au total mergées depuis le début de cette passe (#91 à #115, sauf
-> #111 — voir §6 pour le détail complet).
+> la version du 20 août (après-midi) : **17 des 18 bloquants initiaux de
+> `AUDIT_CDC_v4_complet_2026-08-19.md` sont désormais résolus et
+> confirmés dans le code réel** de `dev`. Deux fixes supplémentaires cet
+> après-midi (PR #114/#115), un 3e bloquant retrouvé déjà réglé par le
+> Moteur indépendamment de cette passe (EF-MAT-10, commit `33818d3`), et
+> **deux points laissés "hors périmètre" dans la version précédente de ce
+> document ont en fait été traités** après relecture attentive du compte
+> exact (18, pas 16) :
+> - **RG-101** (coefficient volumétrique global, non scopé tenant/axe) —
+>   3e bloquant qui avait été omis du décompte initial, traité PR #117.
+> - **RG-070** (preuve de livraison photo/tiers) — traité **côté backend
+>   uniquement** (photo + signature tactile), PR #118. Le code SMS et
+>   l'UI mobile restent hors périmètre, voir détail plus bas — **ne pas
+>   déployer sans coordination mobile** (le JSON existant pour
+>   PRISE_EN_CHARGE/LIVRAISON est désormais refusé).
+>
+> **Seul RG-039 reste explicitement ouvert** (une seule proposition au
+> lieu de trois, nécessite un vrai algorithme de sélection — voir §6).
+> **25 PR** au total mergées depuis le début de cette passe (#91 à #118,
+> sauf #111 — voir §6 pour le détail complet).
 
 ---
 
@@ -470,22 +473,63 @@ Ces deux PR n'ont aucune CI (service-flt/service-cap et gateway sur ce
 chemin ne sont pas dans le scope `backend-web-scope.yml` pour flt/cap —
 vérifié localement par `mvn test` sur les modules concernés avant merge).
 
+### RG-101 — coefficient volumétrique par tenant/axe (PR #117)
+
+**3e bloquant manqué dans le décompte initial** (18 au total, seulement
+16-17 nommément détaillés dans les versions précédentes de ce document) :
+"Coefficient volumétrique global, non scopé tenant/axe" (§5.2 de
+l'audit) — `CalculateurPoidsTaxable` (RHO/LAMBDA) lisait une seule
+valeur dans `application.yml` pour tout le système. Distinct du bug
+RG-100 déjà corrigé en PR #93 (3e terme LDM manquant, même fichier).
+
+Fix : nouveau `ServiceGeoClient` côté service-cap résout
+`Axe.parametres` (clés `coefficientVolumetriqueKgParM3`/
+`coefficientPlancherKgParLdm`, même mécanisme que
+`detourMaxDistanceKm`/EF-MAT-10) — un axe appartenant à exactement un
+tenant, scoper par axe scope aussi par tenant. Repli sur la référence
+globale (`application.yml`) si absent/injoignable (ENF-DIS-04).
+Nouveau `CalculateurPoidsTaxableTest` (aucun test dédié n'existait
+avant). Vérifié : `mvn -o test` service-cap, 6 tests, 0 échec.
+
+### RG-070 — preuve d'enlèvement/livraison (PR #118, backend seulement)
+
+**Traité pour la partie backend uniquement**, décision explicite de
+l'utilisateur ("signature tactile seule pour l'instant") après
+découverte que le code SMS (autre mode de validation tiers prévu par
+le CDC, UC-EXE-03) nécessiterait de faire traverser
+`destinataireTelephone` à travers 3 services (mkt→opt→exe, changement
+de contrat Kafka partagé avec le Moteur — signalé à sa session, pas
+encore fait). **Aucune UI mobile** n'a été construite dans cette
+passe non plus.
+
+Ce qui est fait : `service-exe` refuse désormais toute
+`PRISE_EN_CHARGE`/`LIVRAISON` sans au moins une photo ET une signature
+tactile (`PREUVE_MANQUANTE`, nouveau endpoint multipart sur
+`POST /api/missions/{id}/etapes`, différencié de l'ancien JSON par
+`consumes`). Stockage MinIO + empreinte SHA-256 par photo
+(`PreuveEtape`, RG-072/EF-EXE-05, immuable par construction). Le
+gateway (WebFlux) reconstruit un multipart réactif vers service-exe
+(`MissionExecutionPort.ajouterEtapeAvecPreuve`).
+
+**⚠️ Ne pas déployer ce backend sans un correspondant mobile prêt** :
+l'app Chauffeur envoie aujourd'hui du JSON pour
+PRISE_EN_CHARGE/LIVRAISON — ces appels sont désormais rejetés (400
+`PREUVE_MANQUANTE`) tant que l'app n'envoie pas le nouvel endpoint
+multipart avec photo + signature. EN_TRANSIT/INCIDENT ne sont pas
+concernés (JSON existant inchangé pour ces deux types).
+
+Vérifié : `mvn -o test` service-exe (12 tests) + gateway (184 tests),
+0 échec sur les deux modules — y compris un test bout-en-bout
+multipart côté gateway.
+
 ### Explicitement pas traités — à ne pas croire résolus
 
 - **RG-039** (3 propositions au lieu d'une seule, EF-MKT-07) — nécessite
   un vrai algorithme de sélection, mis de côté d'un commun accord dès le
   début de cette passe. Ne pas improviser un correctif superficiel si ce
   point revient.
-- **RG-070** (preuve de livraison photo/tiers, EF-EXE-03) — la
-  **précédence** des étapes est corrigée (RG-062, PR #96), mais
-  `MissionService.verifierPrecedence` documente explicitement que la
-  preuve minimale reste hors périmètre : une `LIVRAISON` avec un simple
-  `libelle` texte libère toujours le séquestre. Nécessite une
-  infrastructure de capture/upload (photo, MinIO déjà dans la stack
-  mais pas câblé ici) + UI mobile — une fonctionnalité à part entière,
-  pas un correctif de sécurité ponctuel. Ne pas improviser un champ
-  "preuve" texte obligatoire en pensant régler le problème : ça ne
-  changerait rien à la fraude réelle que RG-070 vise à empêcher.
+- **RG-070, code SMS + UI mobile** (voir ci-dessus) — reporté, dépendance
+  cross-service signalée au Moteur.
 - **Multi-pays / conventions bilatérales** (`service-geo`, EF-GEO-05) —
   fonctionnalité absente du domaine, hors périmètre d'un correctif
   ponctuel.
