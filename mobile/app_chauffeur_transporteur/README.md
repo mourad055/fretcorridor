@@ -165,13 +165,12 @@ Traité avant le S4 (capacité) dans cette série de commits : la déclaration
 de capacité a besoin d'un `vehiculeId` réel, donc le registre doit exister
 avant que l'écran capacité puisse compiler/fonctionner (voir S4 ci-dessous).
 
-## État (S11 — tournée multi-étapes) — ⚠️ MOCK, pas de backend réel
+## État (S11 — tournée multi-étapes) — branché sur le backend réel (20 août)
 
-Phase 2, Sprint 11 ("Consolidation LTL, moteur V1") : écran de démonstration
-d'une tournée à étapes multiples (plusieurs enlèvements et/ou livraisons
-consécutifs, ex. groupage) — `lib/providers/mission_multi_etapes_provider.dart`,
-`lib/screens/mission_multi_etapes_screen.dart`. Accessible depuis l'accueil
-(icône dédiée « Tournée groupée (démo) »), séparé du flux S7 existant
+Phase 2, Sprint 11 ("Consolidation LTL, moteur V1") : écran de tournée à
+étapes multiples (plusieurs enlèvements et/ou livraisons consécutifs, ex.
+groupage) — `lib/providers/mission_multi_etapes_provider.dart`,
+`lib/screens/mission_multi_etapes_screen.dart`. Séparé du flux S7 existant
 (`mission_provider.dart`/`missions_screen.dart`/`mission_detail_screen.dart`)
 qui n'est pas modifié.
 
@@ -179,14 +178,22 @@ N'affiche qu'**une seule action à la fois** (l'étape en cours), avec la
 chronologie des étapes déjà terminées en dessous — même principe que
 l'écran S7, généralisé à N étapes au lieu d'un statut linéaire fixe.
 
-**🧪 Entièrement mocké, aucun appel réseau** : `service-opt` (Moteur)
-n'expose pas encore le multi-étapes côté serveur. Le topic Kafka
-`EtapeExecutee` est en cours de spec côté Moteur pour le S12
-(`missionId` = celui d'`AffectationConfirmeeEvent`, confirmé) — à
-brancher sur le vrai backend dès qu'il sera disponible, même contrat que
-`MissionExecutionController` (S7) généralisé à N étapes. Le mock est
-isolé dans `MissionMultiEtapesNotifier` (commentaire explicite en tête
-du fichier).
+**Réel** : `service-opt` publie `TourneeConstituee` (uniquement pour une
+tournée LTL consolidée, jamais pour une affectation FTL simple) ;
+`service-exe` la consomme (`TourneeConstitueeListener`), rattache les
+Missions concernées à un `tourneeId` commun et expose
+`GET /missions/tournees/{tourneeId}` (étapes ordonnées + statut réel de
+chaque Mission) ; la gateway proxifie vers
+`GET /api/v1/missions/tournees/{tourneeId}`. Plus d'écran "démo" : accessible
+depuis "Mes missions" via un bandeau "Fait partie d'une tournée groupée" sur
+toute mission dont `tourneeId != null`. La confirmation d'une étape réutilise
+l'endpoint S7 existant (`POST /missions/{id}/etapes`), pas de nouvel endpoint
+dédié — ENLEVEMENT→`PRISE_EN_CHARGE`, LIVRAISON→`LIVRAISON`.
+
+Contrat encore marqué **BROUILLON** côté
+`shared-contracts/asyncapi/events/tournee-constituee.yaml` (à revalider au
+point de synchro hebdo Moteur/Mobile) — implémentation volontairement
+tolérante à une évolution du contrat.
 
 ## État (S12 — retour à vide & replanification) — branché sur le backend réel
 
@@ -204,20 +211,27 @@ locale à `service-not`** : aucun contrat n'existe à ce jour pour la
 relayer au Moteur — à revoir si un jour le Moteur a besoin de savoir si le
 chauffeur a accepté.
 
-## État (S14 — affichage du mode de règlement) — ⚠️ MOCK, pas de backend réel
+Rien à changer côté app pour ce point, mais à savoir : l'audit CDC du
+2026-08-19 a trouvé que `etape-executee` (le signal qui déclenche
+réellement `proposerRetourAVide` côté `service-opt`) n'avait **aucun
+producteur nulle part** — la chaîne était donc câblée bout en bout mais
+jamais déclenchée en pratique. `service-exe` publie désormais cet
+événement à chaque `PRISE_EN_CHARGE`/`LIVRAISON` confirmée.
+
+## État (S14 — affichage du mode de règlement) — ⚠️ MOCK, backend prêt côté serveur
 
 Phase 2, Sprint 14 ("Paiements Mobile Money étendus"), Volet Chauffeur.
 Sur l'écran solde et gains (`lib/screens/paiement_screen.dart`), chaque
 encaissement affiche désormais le moyen de règlement utilisé par le client
 (MTN MoMo / Orange Money / Espèces) — lecture seule.
 
-**🧪 Entièrement mocké** : `Ecriture` (grand livre miroir de service-pay,
-S8) ne porte aujourd'hui aucun champ "moyen de règlement" — service-pay
-(Web) ne l'expose pas encore par écriture. Le mock est isolé dans
-`lib/mock/moyen_reglement_mock.dart`, dérivé du `missionId` déjà connu,
-aucun appel réseau supplémentaire. N'affecte que les écritures de nature
-`ENCAISSEMENT` (seules pertinentes côté paiement client) ; le reste de
-l'écran (S8) est inchangé.
+**Toujours mocké côté app** (`lib/mock/moyen_reglement_mock.dart`), mais
+**le backend existe désormais** : `service-pay` expose
+`POST /api/v1/pay/missions/{id}/moyen-paiement` (Client, choix) et
+`GET .../moyen-paiement` (Chauffeur, lecture) — livré par Web le 18 août.
+Il manque encore le proxy gateway (aucune route `moyen-paiement` côté
+`MissionExecutionPort`/`PaiementReadController` à ce jour) avant de pouvoir
+remplacer ce mock par un vrai appel.
 
 ## État (S15 — sélecteur d'axe) — branché sur le backend réel
 

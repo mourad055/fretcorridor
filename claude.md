@@ -1,8 +1,10 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 18 août 2026)
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
-> la version du 7 août 2026, largement obsolète : Phase 2 entière a été
-> codée, mergée, et une partie déjà rebranchée sur le vrai backend depuis.
+> la version du 18 août 2026 : S11 et S12 sont passés en réel depuis
+> (PR #81, #82, #84, #85), un audit complet du CDC a été mené (voir
+> `AUDIT_CDC_v4_complet_2026-08-19.md` à la racine) et son bloquant #1
+> (build Web cassé, `@ngx-translate/core`) corrigé (PR #83).
 
 ---
 
@@ -16,13 +18,23 @@ Le test bout-en-bout Docker du fix S7 (condition qui figurait ici au
 17 août) **a été fait, en dehors d'une session Claude Code** — voir §5.1
 pour le résultat détaillé. Ne plus le traiter comme "en attente".
 
-**Exception déjà actée** : S15 (sélecteur d'axe, Chauffeur + Client) est
-sorti du mode mock — `service-geo` était confirmé prêt par le Moteur
-(2 axes réels en base, `GET /api/geo/axes?tenantId=` filtré réellement)
-et le câblage a été fait avec accord explicite de l'utilisateur. Ce n'est
-pas un modèle à reproduire automatiquement pour les autres sprints — ne
-sortir un sprint du mock que sur demande explicite, après confirmation
-du backend concerné.
+**Exceptions actées** :
+- **S15** (sélecteur d'axe, Chauffeur + Client) — `service-geo` confirmé
+  prêt par le Moteur (2 axes réels en base, filtrage réel), câblé avec
+  accord explicite de l'utilisateur.
+- **S11** (tournée multi-étapes, Chauffeur) — le Moteur a construit et
+  testé `TourneeConstituee` (20 août), câblé de bout en bout côté Mobile
+  le jour même. Voir §5.4 pour le détail (solution différente de ce qui
+  était envisagé le 18 août).
+- **S12** (retour à vide, Chauffeur) — déjà réel depuis le 18 août, mais
+  un gap silencieux (`etape-executee` sans producteur) empêchait le
+  déclenchement effectif ; corrigé le 20 août (PR #85). Voir §5.2.
+
+Ce n'est pas un modèle à reproduire automatiquement pour les autres
+sprints — ne sortir un sprint du mock que sur demande explicite, après
+confirmation du backend concerné. **S14 reste partiellement mocké** (le
+backend existe désormais côté serveur pour Item B, mais ni la gateway ni
+le mobile ne sont câblés) — voir §5.5.
 
 ---
 
@@ -45,6 +57,14 @@ l'utilisateur après la 3e fois. Ne pas traiter comme un oubli ponctuel :
 si un futur changement côté Moteur apparaît dans `dev` sans commit de
 merge de PR associé, c'est probablement lui — le signaler explicitement
 à l'utilisateur plutôt que de le documenter comme un merge normal.
+
+**Protocole confirmé en usage (20 août)** : branche `backend-stevetelecom`
+poussée en PR (#81) plutôt que commitée directement cette fois — bon
+signe. Le mot **PULL REQUEST** a été demandé et reçu avant chaque merge
+(#81 à #85) ; `gh pr merge` reste bloqué par le classificateur auto-mode
+de l'outil dans certains cas malgré la confirmation reçue — dans ce cas,
+rendre la main à l'utilisateur pour qu'il merge lui-même sur GitHub,
+jamais chercher à contourner.
 
 ---
 
@@ -77,15 +97,15 @@ Redis, MinIO. Phase 1 = Sprints 1 à 10. Phase 2 = Sprints 11, 12, 14, 15
 | `service-ida` | Identité, KYC, RBAC | Mobile | ✅ |
 | `service-mkt` | Marketplace (demandes client) | Mobile | ✅ Pipeline Kafka complet — `DemandePubliee` publié, `proposition-emise` consommé (voir §3, ancienne "tâche concrète" du 7 août, **résolue**) |
 | `service-flt` | Positions GPS | Mobile | ✅ Fix "exempte lookup véhicule interne" mergé (PR #58, débloque S7) |
-| `service-exe` | Exécution de mission | Mobile | ✅ Consomme `AffectationConfirmee`, expose `GET /missions/mes`, `POST /missions/{id}/etapes` |
+| `service-exe` | Exécution de mission | Mobile | ✅ Consomme `AffectationConfirmee` + `TourneeConstituee` (20 août), expose `GET /missions/mes`, `POST /missions/{id}/etapes`, `GET /missions/tournees/{id}`, publie `MissionLivree` + `EtapeExecutee` (20 août) |
 | `service-not` | Notifications in-app | Mobile | ✅ |
 | `service-cap` | Capacité (déclaration véhicule) | Mobile | ✅ Dockerfile + docker-compose ajoutés (n'existaient pas au 7 août) |
 | `service-geo` | Axes, zonage H3 | Moteur | ✅ `GET /api/geo/axes?tenantId=` filtre réellement en base (ENF-MUL-01, correctif du 2026-08-09) — **2 axes réels actifs en base** (Douala-Yaoundé, Douala-Bafoussam) |
 | `service-mat` | Coût composite matching | Moteur | ✅ Avancé |
-| `service-opt` | Moteur de matching + séquencement tournées | Moteur | ✅ Avancé — Kuhn-Munkres, + séquencement ALNS (Sprint 11/12), consomme `EtapeExecutee`, publie `PropositionRetourAVideEvent` |
+| `service-opt` | Moteur de matching + séquencement tournées | Moteur | ✅ Avancé — Kuhn-Munkres, + séquencement ALNS (Sprint 11/12), consomme `EtapeExecutee` (producteur réel côté `service-exe` depuis le 20 août), publie `PropositionRetourAVideEvent`, `TourneeConstituee` (S11, 20 août), oracle chargement S16 |
 | `service-trk` | Suivi/ETA temps réel | Moteur | ✅ |
 | `gateway` | Point d'entrée Web (Bureau/Transporteur/Admin) | Web | ✅ Architecture hexagonale, 2 fixes de ports mergés (service-adm, service-pay — PR #59) |
-| `service-pay` | Paiement, grand livre miroir | Web | ✅ |
+| `service-pay` | Paiement, grand livre miroir | Web | ✅ `ModePaiementChoisi` (S14 Item B, 18 août) : `POST`/`GET .../moyen-paiement` — pas encore de proxy gateway (voir §5.5) |
 | `service-bur` | Agrégation Bureau (missions) | Web | ✅ |
 | `service-adm` | Back-office (KYC, tenants, config, audit) | Web | ✅ |
 
@@ -115,57 +135,50 @@ raison de penser que ça a régressé.
 
 ## 3. Phase 2 (Sprints 11, 12, 14, 15) — état détaillé
 
-Toute la Phase 2 est mergée dans `dev`, **mode mocké par défaut** (le
-backend Moteur n'était pas prêt au moment du développement) :
+Toute la Phase 2 est mergée dans `dev` :
 
 | Sprint | Chauffeur/Transporteur | Client |
 |---|---|---|
-| S11 — Consolidation LTL | ⚠️ mocké, **bloqué** (voir ci-dessous) | ⚠️ mocké, **bloqué** |
-| S12 — Retour à vide | ✅ **branché sur le vrai backend** (PR #76, #77 — 18 août) | — (rien pour Client) |
+| S11 — Consolidation LTL | ✅ **branché sur le vrai backend** (PR #81/#82/#84 — 20 août) | ⚠️ mocké, Volet B (indicateur "envoi consolidé") non traité dans ce lot |
+| S12 — Retour à vide | ✅ **branché sur le vrai backend, chaîne complète** (PR #76/#77 — 18 août, gap `etape-executee` comblé PR #85 — 20 août) | — (rien pour Client) |
 | S13 | — (backend/Web uniquement) | — |
-| S14 — Paiement Mobile Money | ⚠️ mocké, **bloqué** (voir ci-dessous) | ⚠️ mocké, **bloqué** |
+| S14 — Paiement Mobile Money | 🟡 **backend réel côté serveur (Item B, 18 août), gateway et mobile encore mockés** (voir §5.5) | ⚠️ mocké |
 | S15 — Second axe | ✅ **branché sur le vrai backend** (PR #56 puis re-câblage réel PR #60) | ✅ **branché sur le vrai backend** (PR #57 puis re-câblage réel PR #61) |
 
-**S12 et S15 sont réels. S11 et S14 sont bloqués, pas par manque de
-temps mais parce que la pièce nécessaire n'existe nulle part dans le
-dépôt** — voir §5.4/§5.5, chacun nécessite un accord avec une équipe
-externe (Moteur pour S11, Web pour S14) avant tout code Mobile.
+**S11, S12 et S15 sont réels de bout en bout. S14 est à mi-chemin** : le
+domaine financier existe désormais côté `service-pay` (Item B, `Mode
+Paiement Choisi`), mais aucune route gateway ni écran mobile ne le
+consomme encore — voir §5.5.
 
 ---
 
-## 4. Contrats Kafka S11/S12 — mergés dans `shared-contracts/` mais pas figés
-
-Depuis le merge des PR #60/#61 (17 août), `dev` contient aussi le travail
-du Moteur sur le séquencement ALNS et deux nouveaux contrats :
+## 4. Contrats Kafka S11/S12 — mergés dans `shared-contracts/`, deux encore en BROUILLON
 
 - **`shared-contracts/asyncapi/events/etape-executee.yaml`** — toujours
-  marqué **BROUILLON** dans le fichier lui-même ("à valider avec Mobile
-  avant toute implémentation côté EXE"). `missionId` = `Affectation.id`,
-  confirmé par le Moteur oralement et dans le fichier. **Ne pas coder en
-  dur dessus côté app tant que le Moteur n'a pas donné le feu vert
-  explicite** (mot du Moteur attendu, pas juste "c'est sur dev").
+  marqué **BROUILLON** dans le fichier lui-même, mais **le producteur
+  existe et fonctionne désormais** (`service-exe`, PR #85, 20 août) :
+  publié à chaque `PRISE_EN_CHARGE`/`LIVRAISON` confirmée par le
+  chauffeur. `missionId` = `Affectation.id`, confirmé. Le statut BROUILLON
+  du fichier n'a donc plus valeur de blocage — implémentation faite en
+  écrivant volontairement une copie locale du contrat côté `service-exe`
+  (tolérante à une évolution ultérieure), pas en important le fichier.
+- **`shared-contracts/asyncapi/events/tournee-constituee.yaml`** (nouveau,
+  20 août, PR #81) — même statut BROUILLON assumé, même approche : copie
+  locale côté `service-exe`/gateway, pas d'import direct. Publié par
+  `service-opt` uniquement pour une Tournée LTL consolidée.
 - **`shared-contracts/asyncapi/events/proposition-retour-a-vide.yaml`** —
-  incohérence du 17 août **résolue et mergée dans `dev`** le 18 août :
-  `tourneeId` et `affectationId` sont désormais tous deux `nullable: true`
-  et mutuellement exclusifs (documenté explicitement dans le fichier),
-  couvrant bien le cas FTL simple (`affectationId` rempli, `tourneeId`
-  null) en plus du cas Tournee consolidée (LTL). Version 1.0.0, plus un
-  brouillon.
-- **Bug de sérialisation transversal (dates OPT en epoch flottant au lieu
-  d'ISO-8601)** — trouvé par le Moteur le 17 août en testant le contrat
-  ci-dessus, touchait tous les événements publiés par `service-opt`
-  (`PropositionEmise`, `AffectationConfirmee`, `PropositionRetourAVide`).
-  **Corrigé et mergé** (`backend/service-opt/.../config/KafkaProducerConfig.java`
-  — `JavaTimeModule` + `WRITE_DATES_AS_TIMESTAMPS` désactivé). Vérifié :
-  aucun impact réel n'avait eu lieu côté Mobile, `AffectationConfirmeeEvent.horodatageConfirmation`
-  n'étant utilisé nulle part dans `service-exe`.
+  résolu et mergé le 18 août : `tourneeId`/`affectationId` nullable et
+  mutuellement exclusifs, couvre FTL simple et LTL consolidé. Version
+  1.0.0, plus un brouillon.
+- **Bug de sérialisation transversal (dates OPT en epoch flottant)** —
+  trouvé et corrigé le 17 août (`JavaTimeModule` + `WRITE_DATES_AS_TIMESTAMPS`
+  désactivé, `service-opt`). Sans impact réel côté Mobile.
 
-**`etape-executee.yaml` reste le seul contrat encore en BROUILLON non
-validé** — ne pas coder en dur dessus côté app tant que le Moteur n'a pas
-donné le feu vert explicite. `proposition-retour-a-vide.yaml` est
-maintenant utilisable pour une implémentation réelle côté S12 (Chauffeur)
-si demandé explicitement — voir §5.2 pour ce qui manque encore côté
-Mobile avant de pouvoir le faire (aucun consommateur n'existe à ce jour).
+**Aucun contrat ne bloque plus S11/S12 aujourd'hui** — les deux
+BROUILLON (`etape-executee`, `tournee-constituee`) ont un producteur et
+un consommateur réels et fonctionnels malgré leur statut de fichier ; à
+faire valider formellement au prochain point de synchro hebdo Moteur/Mobile,
+sans urgence bloquante.
 
 ---
 
@@ -209,7 +222,7 @@ réel (déclaration de capacité via la gateway, deux essais successifs) a
   pendant la session) — repose sur compilation + tests unitaires
   uniquement pour l'instant.
 
-### 5.2 S12 réel (Chauffeur) — FAIT (18 août)
+### 5.2 S12 réel (Chauffeur) — FAIT (18 août), chaîne complétée (20 août)
 
 `proposition-retour-a-vide.yaml` corrigé et mergé, backend construit de
 zéro (`service-not` : première consommation Kafka de ce service,
@@ -218,6 +231,18 @@ zéro (`service-not` : première consommation Kafka de ce service,
 route gateway (PR #77). **La réponse accepter/refuser reste locale à
 `service-not`** : aucun contrat n'existe pour la relayer au Moteur à ce
 jour — à revoir si besoin plus tard.
+
+**Gap trouvé par l'audit CDC du 19 août, corrigé le 20 (PR #85)** : toute
+cette chaîne (`service-opt` → `service-not` → Mobile) était réelle et
+mergée, mais **jamais déclenchée en pratique**. `EtapeExecuteeListener`
+(`service-opt`) attend l'événement `etape-executee` pour figer l'exécuté
+(EF-MAT-09) et appeler `proposerRetourAVide` — **aucun producteur
+n'existait nulle part dans le dépôt**. `service-exe.MissionService.ajouterEtape()`
+publie désormais cet événement à chaque `PRISE_EN_CHARGE`
+(→`ENLEVEMENT`)/`LIVRAISON` confirmée. La leçon : un "branché sur le vrai
+backend" mergé et testé unitairement peut quand même rester mort en
+pratique si un maillon Kafka intermédiaire n'a pas de producteur —
+vérifier la chaîne complète, pas seulement chaque bout séparément.
 
 ### 5.3 Test Docker bout-en-bout — bloqué (réseau, pas le code)
 
@@ -229,50 +254,60 @@ fonctionnent instantanément). Abandonné après plusieurs tentatives sur
 plusieurs dizaines de minutes. **Pas un problème de code** — juste pas
 revalidé en conditions Docker réelles depuis.
 
-### 5.4 S11 réel (Chauffeur) — bloqué, aucune donnée de tournée exposée
+### 5.4 S11 réel (Chauffeur) — FAIT (20 août)
 
-Pas seulement `etape-executee.yaml` (toujours BROUILLON). Vérifié dans
-`OptEventPublisher.java` : `service-opt` ne publie que 3 événements
-(`proposition-emise`, `affectation-confirmee`, `proposition-retour-a-vide`).
-`Tournee`/`EtapeTournee` (séquencement multi-étapes) sont **entièrement
-internes** à `service-opt`, jamais exposés sur Kafka —
-`AffectationConfirmeeEvent` n'a aucun `tourneeId`. Concrètement,
-`service-exe` n'a **aucun moyen** de savoir que plusieurs missions
-reçues appartiennent à la même tournée, ni dans quel ordre — pas un
-contrat pas encore validé, une donnée qui n'existe nulle part.
+Le blocage du 18 août (aucune donnée de tournée exposée par
+`service-opt`) est levé, mais **pas par la voie envisagée à l'époque**
+(`tourneeId`/liste d'étapes portée par `AffectationConfirmeeEvent`) — le
+Moteur a tranché pour un **événement séparé**, `TourneeConstituee`,
+publié uniquement quand une Tournée LTL consolidée est confirmée (jamais
+pour une affectation FTL simple, qui reste entièrement décrite par son
+propre `AffectationConfirmeeEvent`). `missionId` par étape = même UUID
+qu'`AffectationConfirmeeEvent.missionId` — clé de corrélation avec les
+Missions déjà créées côté `service-exe`.
 
-**Message envoyé au Moteur (18 août)** : demande d'exposer `tourneeId`
-(nullable) + un moyen de connaître le rang/ordre des étapes sur
-`AffectationConfirmeeEvent` (même pattern que `proposition-retour-a-vide`).
-**En attente de sa réponse — ne rien coder côté S11 avant.**
+Écart de modélisation assumé par le Moteur (à noter, pas à corriger) :
+le CDC §13 prévoit une Mission unique portant plusieurs Étapes liées à
+plusieurs Demandes ; côté implémentation réelle, chaque Affectation
+génère sa propre Mission — `TourneeConstituee` les regroupe *a
+posteriori* sous un `tourneeId` commun plutôt que de fusionner les
+entités Mission. Le Moteur suggère qu'un ADR documente ce choix côté
+`service-exe` si jugé structurant — pas fait à ce jour.
 
-**Proposition affinée par l'utilisateur (18 août)**, vérifiée solide
-contre les documents sources (`docs/CDC_FretCorridor_v4_FSE2026004_lecture.pdf`
-§13, `docs/FretCorridor_Plan_Execution_V4_2.docx`) : plutôt qu'un
-`tourneeId` isolé, exposer directement une liste d'étapes sur
-`AffectationConfirmeeEvent` (`etapes: List<EtapeDto>` — `rang`, `type`,
-`demandeId`, point, fenêtre), conforme au modèle CDC où **Mission porte
-`n-n Demande`** et où `Étape` est l'entité de rang/point/fenêtre. Le
-Plan d'exécution confirme aussi qu'`AffectationConfirmee` *"déclenche
-la création de la mission"* — cohérent avec l'idée de porter les
-étapes sur ce même événement plutôt qu'un event séparé. **Nuance à
-faire trancher par le Moteur** : `AffectationConfirmeeEvent` porte déjà
-un `demandeId` unique au niveau racine — ambigu si une tournée groupe
-plusieurs demandes, à clarifier (gardé pour le cas FTL simple
-seulement, ou déprécié au profit de la liste).
+**Chaîne complète, mergée le 20 août** :
+- `service-opt` publie `TourneeConstituee` (PR #81).
+- `service-exe` la consomme (`TourneeConstitueeListener`), persiste
+  l'ordre planifié (`EtapeTournee`), rattache les Missions à leur
+  `tourneeId`, expose `GET /missions/tournees/{tourneeId}` (PR #82).
+- La gateway proxifie vers `GET /api/v1/missions/tournees/{tourneeId}`
+  (PR #82).
+- L'app Chauffeur consomme cet endpoint réel, navigation depuis "Mes
+  missions" (bandeau sur toute mission dont `tourneeId != null`) — plus
+  d'écran "démo" (PR #84).
 
-### 5.5 S14 réel (Chauffeur + Client) — bloqué, domaine financier absent
+Contrat `tournee-constituee.yaml` toujours marqué BROUILLON dans le
+fichier — voir §4, pas bloquant en pratique.
 
-`EcritureMiroir` (service-pay) n'a **aucun champ moyen de paiement**
-nulle part dans le domaine — pas un endpoint manquant, le concept
-n'existe pas. Plus bloquant côté Client : `PayReadPort`/
-`PaiementReadController` (gateway) sont **lecture seule** — le code
-documente explicitement *"ENF-FIN-01 : aucune écriture depuis le
-mobile"*, règle architecturale délibérée. `POST /missions/{id}/cloture`
-(service-pay) n'est appelé par rien dans le dépôt (ni gateway ni
-mobile) ; même `ClotureMissionRequest` n'a pas de champ `moyenPaiement`.
+### 5.5 S14 réel (Chauffeur + Client) — backend livré (18 août), gateway et mobile restent à faire
 
-Toucherait le domaine financier de `service-pay`, qui appartient à
-Personne 2 (Web), pas à Mobile. **Décision utilisateur (18 août) : reste
-mocké pour l'instant**, pas de message envoyé à Personne 2 — à
-reconsidérer plus tard si besoin.
+Le blocage du 18 août ("le concept moyen de paiement n'existe nulle
+part dans le domaine service-pay") est levé côté Web : Item B
+(`docs/DEPENDANCES_MOBILE_PHASE4.md`) a été conçu et livré par Personne 2
+le 18 août — `ModePaiementChoisi` (un choix par mission, "moyen
+choisi/prévu" distinct du "moyen effectivement encaissé", volontairement
+non recoupés), `POST`/`GET /api/v1/pay/missions/{id}/moyen-paiement`.
+
+**Reste à faire, deux couches, aucune commencée à ce jour** :
+1. **Gateway** : aucune route `moyen-paiement` n'existe ni côté
+   `PaiementReadController` (lecture seule, ENF-FIN-01) ni ailleurs — il
+   faudrait un port d'écriture dédié pour le `POST` (Client), la lecture
+   seule actuelle du gateway ne suffit pas pour ce cas précis (le client
+   choisit son moyen, ce n'est pas une consultation).
+2. **Mobile** : `lib/mock/moyen_reglement_mock.dart` (Chauffeur, lecture)
+   et `choix_paiement_provider.dart` (Client, écriture) restent mockés,
+   à remplacer une fois la gateway prête.
+
+Domaine financier de `service-pay`, propriété de Personne 2 (Web) —
+gateway et mobile sont en revanche du ressort Mobile. Pas de blocage
+externe restant, contrairement au 18 août : à faire sur demande
+explicite.
