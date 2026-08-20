@@ -47,25 +47,38 @@ public class NotificationService {
         return notificationRepository.countByDestinataireActeurIdAndTenantIdAndLueFalse(acteurId, tenantId);
     }
 
+    // IDOR corrigé (audit CDC du 19 août, §3) : n'importe quel acteur
+    // authentifié pouvait marquer/répondre à la notification de n'importe
+    // qui en devinant un UUID. Une seule exception pour "introuvable" et
+    // "pas la sienne" — ne pas distinguer les deux cas évite de confirmer
+    // à un attaquant qu'un UUID existe (même principe que
+    // missionAppartenantA côté service-exe).
     @Transactional
-    public void marquerCommeLue(UUID notificationId) {
-        notificationRepository.findById(notificationId).ifPresent(n -> {
-            n.setLue(true);
-            notificationRepository.save(n);
-        });
+    public void marquerCommeLue(UUID notificationId, UUID acteurId) {
+        Notification n = notificationAppartenantA(notificationId, acteurId);
+        n.setLue(true);
+        notificationRepository.save(n);
     }
 
     // S12 — réponse du chauffeur à une proposition de retour à vide.
     // Purement locale : aucun contrat pour relayer cette réponse au Moteur
     // à ce jour (voir Notification.reponseAcceptee).
     @Transactional
-    public void repondre(UUID notificationId, boolean accepte) {
-        notificationRepository.findById(notificationId).ifPresent(n -> {
-            n.setReponseAcceptee(accepte);
-            n.setDateReponse(java.time.LocalDateTime.now());
-            n.setLue(true);
-            notificationRepository.save(n);
-        });
+    public void repondre(UUID notificationId, UUID acteurId, boolean accepte) {
+        Notification n = notificationAppartenantA(notificationId, acteurId);
+        n.setReponseAcceptee(accepte);
+        n.setDateReponse(java.time.LocalDateTime.now());
+        n.setLue(true);
+        notificationRepository.save(n);
+    }
+
+    private Notification notificationAppartenantA(UUID notificationId, UUID acteurId) {
+        Notification n = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new NotificationIntrouvableException());
+        if (!n.getDestinataireActeurId().equals(acteurId)) {
+            throw new NotificationIntrouvableException();
+        }
+        return n;
     }
 
     // Enregistrement du token FCM — préparé, pas encore exploité (voir README)
