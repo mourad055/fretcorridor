@@ -1,25 +1,76 @@
 import 'dart:async';
+import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dio_provider.dart';
 
 const _intervalleEnvoi = Duration(seconds: 30);
+const _keyFilePositionsOffline = 'positions_file_offline';
+
+// Bloquant audit CDC du 19 août : aucune file locale pour le suivi GPS,
+// contrairement au patron déjà en place pour l'enrôlement agent
+// (idempotencyKey + retry + flutter_secure_storage, cf.
+// agent_enrolement_provider.dart) — une coupure réseau prolongée perdait
+// silencieusement toutes les positions capturées pendant la coupure.
+class PositionAEnvoyer {
+  final String missionId;
+  final double latitude;
+  final double longitude;
+  final String horodatage;
+
+  const PositionAEnvoyer({
+    required this.missionId,
+    required this.latitude,
+    required this.longitude,
+    required this.horodatage,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'missionId': missionId,
+        'latitude': latitude,
+        'longitude': longitude,
+        'horodatage': horodatage,
+      };
+
+  factory PositionAEnvoyer.fromJson(Map<String, dynamic> json) => PositionAEnvoyer(
+        missionId: json['missionId'] as String,
+        latitude: json['latitude'] as double,
+        longitude: json['longitude'] as double,
+        horodatage: json['horodatage'] as String,
+      );
+}
 
 class PositionState {
   final bool suiviActif;
   final String? missionId;
   final DateTime? dernierEnvoi;
   final String? erreur;
+  final int fileAttenteTaille;
 
-  const PositionState({this.suiviActif = false, this.missionId, this.dernierEnvoi, this.erreur});
+  const PositionState({
+    this.suiviActif = false,
+    this.missionId,
+    this.dernierEnvoi,
+    this.erreur,
+    this.fileAttenteTaille = 0,
+  });
 
-  PositionState copyWith({bool? suiviActif, String? missionId, DateTime? dernierEnvoi, String? erreur}) {
+  PositionState copyWith({
+    bool? suiviActif,
+    String? missionId,
+    DateTime? dernierEnvoi,
+    String? erreur,
+    int? fileAttenteTaille,
+  }) {
     return PositionState(
       suiviActif: suiviActif ?? this.suiviActif,
       missionId: missionId ?? this.missionId,
       dernierEnvoi: dernierEnvoi ?? this.dernierEnvoi,
       erreur: erreur,
+      fileAttenteTaille: fileAttenteTaille ?? this.fileAttenteTaille,
     );
   }
 }
@@ -31,9 +82,35 @@ class PositionState {
 // disponible ; en attendant, l'écran expose une saisie manuelle du missionId.
 class PositionNotifier extends StateNotifier<PositionState> {
   final Dio _dio;
+  static const _storage = FlutterSecureStorage();
   Timer? _timer;
+  List<PositionAEnvoyer> _fileAttente = [];
 
-  PositionNotifier(this._dio) : super(const PositionState());
+  PositionNotifier(this._dio) : super(const PositionState()) {
+    _chargerFileDepuisDisque();
+    Connectivity().onConnectivityChanged.listen((results) {
+      if (!results.contains(ConnectivityResult.none)) {
+        _synchroniserFileAttente();
+      }
+    });
+  }
+
+  Future<void> _chargerFileDepuisDisque() async {
+    final brut = await _storage.read(key: _keyFilePositionsOffline);
+    if (brut == null) return;
+    _fileAttente = (jsonDecode(brut) as List<dynamic>)
+        .map((e) => PositionAEnvoyer.fromJson(e as Map<String, dynamic>))
+        .toList();
+    state = state.copyWith(fileAttenteTaille: _fileAttente.length);
+    if (_fileAttente.isNotEmpty) _synchroniserFileAttente();
+  }
+
+  Future<void> _sauvegarderFile() async {
+    await _storage.write(
+      key: _keyFilePositionsOffline,
+      value: jsonEncode(_fileAttente.map((p) => p.toJson()).toList()),
+    );
+  }
 
   void demarrerSuivi(String missionId) {
     _timer?.cancel();
@@ -65,18 +142,68 @@ class PositionNotifier extends StateNotifier<PositionState> {
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       );
-      await _dio.post('/positions', data: {
-        'missionId': missionId,
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'horodatage': DateTime.now().toIso8601String(),
-      });
-      state = state.copyWith(dernierEnvoi: DateTime.now(), erreur: null);
+      final capture = PositionAEnvoyer(
+        missionId: missionId,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        horodatage: DateTime.now().toIso8601String(),
+      );
+
+      final envoyee = await _envoyer(capture);
+      if (envoyee) {
+        state = state.copyWith(dernierEnvoi: DateTime.now(), erreur: null);
+        return;
+      }
+
+      // Pas de réseau (ou service indisponible) : mise en file, jamais perdue.
+      _fileAttente = [..._fileAttente, capture];
+      await _sauvegarderFile();
+      state = state.copyWith(
+        erreur: 'Hors ligne — position mise en file, sera envoyée au retour du réseau.',
+        fileAttenteTaille: _fileAttente.length,
+      );
     } on DioException catch (e) {
       state = state.copyWith(erreur: _messageErreur(e));
     } catch (_) {
       state = state.copyWith(erreur: 'Position GPS indisponible.');
     }
+  }
+
+  /// Envoie une position ; retourne false si l'échec est réseau (à mettre en
+  /// file), relance une DioException pour tout refus métier (ex. mission
+  /// inconnue) que l'appelant doit afficher, pas mettre en file.
+  Future<bool> _envoyer(PositionAEnvoyer capture) async {
+    try {
+      await _dio.post('/positions', data: capture.toJson());
+      return true;
+    } on DioException catch (e) {
+      if (_estErreurReseau(e)) return false;
+      rethrow;
+    }
+  }
+
+  bool _estErreurReseau(DioException e) {
+    return e.type == DioExceptionType.connectionError ||
+        e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.response?.statusCode == 503;
+  }
+
+  Future<void> _synchroniserFileAttente() async {
+    if (_fileAttente.isEmpty) return;
+    final restantes = <PositionAEnvoyer>[];
+    for (final capture in _fileAttente) {
+      try {
+        final envoyee = await _envoyer(capture);
+        if (!envoyee) restantes.add(capture); // toujours pas de réseau
+      } on DioException {
+        // Refus métier (ex. mission close entretemps) : on retire quand même
+        // de la file, pas la peine de la rejouer indéfiniment.
+      }
+    }
+    _fileAttente = restantes;
+    await _sauvegarderFile();
+    state = state.copyWith(fileAttenteTaille: _fileAttente.length);
   }
 
   String _messageErreur(DioException e) {
