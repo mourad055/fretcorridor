@@ -42,6 +42,7 @@ public class AffectationConfirmeeListener {
                 .id(event.missionId())
                 .demandeId(event.demandeId())
                 .transporteurId(event.transporteurId())
+                .vehiculeId(event.vehiculeId())
                 .axeId(event.axeId())
                 .origineNom(event.origineNom())
                 .destinationNom(event.destinationNom())
