@@ -35,6 +35,11 @@ public class Mission {
     private String origineNom;
     private String destinationNom;
 
+    // S11 (EF-MAT-05/06) : renseigné par TourneeConstitueeListener quand
+    // cette Mission fait partie d'une Tournée consolidée (LTL) — null pour
+    // une affectation FTL simple, jamais regroupée par service-opt.
+    private UUID tourneeId;
+
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private StatutMission statut = StatutMission.EN_ATTENTE;
