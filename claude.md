@@ -1,16 +1,21 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, nuit)
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, matin)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
-> la version du 20 août (soir) : **une passe de correction systématique
-> sur `AUDIT_CDC_v4_complet_2026-08-19.md` a eu lieu dans la nuit du 20
-> août**, en plus de la Phase 2 (S11/S12/S14/S15, déjà réelle de bout en
-> bout depuis le soir même). **14 bloquants/majeurs de l'audit sont
-> désormais corrigés et mergés** (PR #91 à #104) sur les 18
-> bloquants + un sous-ensemble des 35 majeurs recensés — voir §6, entièrement
-> réécrit, pour le détail précis de ce qui est fait vs. ce qui reste
-> ouvert. **Ne pas supposer l'audit clos** : plusieurs points structurants
-> restent explicitement en attente (RG-039, `tenantId` lu du corps de
-> requête, multi-pays).
+> la version du 20 août (nuit) : **la passe de correction systématique
+> sur `AUDIT_CDC_v4_complet_2026-08-19.md` s'est poursuivie le matin du
+> 20 août** — le point structurant laissé explicitement ouvert la nuit
+> précédente (`tenantId`/`acteurId` lus du corps de requête plutôt que du
+> JWT) est désormais **traité sur les trois services concernés**
+> (`service-pay`, `service-adm`, `service-bur` — PR #107 à #110), plus un
+> constat étendu trouvé en cours de route sur `service-bur` (4 contrôleurs
+> internes, hors liste initiale de l'audit). **Java 21 installé** (via
+> `apt`, `openjdk-21-jdk`) — les 4 services Moteur (`service-geo`/`mat`/
+> `opt`/`trk`) sont désormais compilables et testables dans ce sandbox,
+> ce qui n'était pas le cas jusqu'ici (voir §6, section Java 21). **19
+> PR** au total sont mergées depuis le début de cette passe (#91 à #110,
+> #112 — voir §6 pour le détail complet). **Ne pas supposer l'audit
+> clos** : RG-039 et le multi-pays restent explicitement hors périmètre,
+> voir §6.
 
 ---
 
@@ -393,16 +398,15 @@ supprimé (PR #89).
 `AUDIT_CDC_v4_complet_2026-08-19.md` (racine du dépôt) reste la référence
 complète : 18 bloquants, 35 majeurs, 29 mineurs, ~50 % de conformité CDC
 globale au moment de sa rédaction. **Une passe de correction systématique
-a eu lieu dans la nuit du 20 août**, à la demande explicite de
-l'utilisateur ("corrige les bugs bloquants restants de l'audit"),
+a eu lieu dans la nuit puis le matin du 20 août**, à la demande explicite
+de l'utilisateur ("corrige les bugs bloquants restants de l'audit"),
 service par service, dans l'ordre le plus sûr (mécaniques d'abord, puis
-authentification). **15 PR** (#91 à #104, plus une 16e — le fix
-`environment.development.ts` ci-dessous — poussée mais pas encore
-mergée au moment de la rédaction, bloquée par une coupure réseau locale)
-ont chacune suivi la discipline habituelle : branche dédiée, compilation
-+ tests avant commit, mot **PULL REQUEST** explicite avant merge.
+authentification, puis confiance mal placée dans le corps de requête).
+**19 PR** (#91 à #110, plus #112 — #111 n'est pas de cette session) ont
+chacune suivi la discipline habituelle : branche dédiée, compilation +
+tests avant commit, mot **PULL REQUEST** explicite avant merge.
 
-### Corrigés et mergés dans `dev` cette nuit (14 PR, #91→#104)
+### Corrigés et mergés dans `dev` (bloquants/majeurs mécaniques + authentification, PR #91→#105)
 
 | # | Service(s) | Correctif |
 |---|---|---|
@@ -420,19 +424,38 @@ ont chacune suivi la discipline habituelle : branche dédiée, compilation
 | #102 | `service-bur`, `gateway` | Authentification JWT — dernier des 4 services **Web** (gateway/pay/adm/bur) sans authentification. `OptPort`/`TrkPort` (gateway) transmettent désormais le token vers `service-bur`, qu'ils appellent en réalité malgré leur nom (`ServiceBurMissionAppparieeAdapter`/`ServiceBurPositionAdapter`) |
 | #103 | `service-adm` | IDOR sur `GET /api/v1/dossiers/{id}` (§7.2) — `FileTravailService.consulter()` vérifie désormais le tenant, même exception "introuvable" pour les deux cas |
 | #104 | `app_chauffeur_transporteur` | File locale pour le suivi GPS hors ligne — même patron que l'enrôlement agent (`flutter_secure_storage` + retry à la reconnexion) |
+| #105 | `web` (Angular) | `environment.development.ts` pointait vers `service-pay` (8088) au lieu de la gateway (8082) (majeur, §4 de l'audit) — poussée après une coupure réseau locale (`Destination Net Unreachable`, pas un problème GitHub) |
 
 **Bonus incident, PR #94** : découverte en cours de route, pas dans la
 liste initiale de l'audit — l'utilisateur, consulté explicitement, a
 choisi de la traiter immédiatement plutôt que de la différer.
 
-### En attente de merge (réseau coupé au moment de la rédaction)
+### `tenantId`/`acteurId` lus du corps de requête plutôt que du JWT — traité (matin du 20 août, PR #107→#110)
 
-- **`environment.development.ts` pointait vers `service-pay` (8088) au
-  lieu de la gateway (8082)** (majeur, §4 de l'audit) — branche
-  `fix/web/environment-dev-pointe-vers-gateway` poussée localement,
-  commit `f5102d3`, **push vers `origin` a échoué** (coupure réseau
-  locale, `Destination Net Unreachable` — pas un problème GitHub). À
-  repousser et ouvrir la PR dès que le réseau revient.
+Point laissé explicitement ouvert la nuit précédente (voir version
+antérieure de ce document) : l'authentification (#100-#102) vérifiait
+qu'un JWT valide était présent, mais pas que le `tenantId`/`acteurId`
+porté par le corps de la requête correspondait bien à celui du JWT — un
+acteur authentifié pouvait agir pour n'importe quel tenant en le
+choisissant simplement dans le payload. Traité à la demande explicite de
+l'utilisateur ("attaque le tenantId lu du corps de requête").
+
+| # | Service(s) | Correctif |
+|---|---|---|
+| #107 | `service-pay` | `PaiementController` (cloture, confirmerLivraison, souscrireGarantie, choisirModePaiement, declarerPaiementEspeces, reversement) : tenantId/acteurId extraits du JWT. `rapportTenant`/`paiementsEspecesTenant`/`ecrituresTransporteur` : IDOR corrigé (403 `AccesRefuseException` cross-tenant, override `ADMINISTRATION` conservé, même principe que `rapportFinancierAdmin` déjà existant) |
+| #108 | `service-adm` | `DossierController` (ouvrir/prise-en-charge/decision) + `TenantController.creer` : même traitement. `fileDeTravail` (GET) : IDOR corrigé (403 cross-tenant, override `ADMINISTRATION`) — comble aussi le point "IDOR sur les endpoints de mutation service-adm" resté ouvert la nuit précédente |
+| #109 | `service-adm` | `JournalAuditController` : comble le point "export du journal d'audit cross-tenant si tenantId omis" resté ouvert la nuit précédente — sans `ADMINISTRATION`, tenantId omis retombe désormais sur celui du JWT (plus "tous les tenants") ; tenantId différent du JWT → 403 |
+| #110 | `service-bur` | **Constat étendu, hors des 18 bloquants de l'audit initial** : en vérifiant systématiquement les autres services pour la même classe de bug, les 4 contrôleurs REST internes (`AlerteSeuilController`, `MissionAppparieeController`, `PositionController`, `BureauAgregatController`) se sont révélés avoir le même problème, sous une docstring trompeuse ("pas de RBAC ici, le gateway filtre déjà par tenant") — le `SecurityConfig` exigeait bien un JWT valide, mais ne vérifiait jamais que son tenantId correspondait à celui du corps/query. Même traitement (tenantId/acteurId du JWT). Le gateway n'a pas eu besoin d'être modifié (il calculait déjà les bonnes valeurs, juste envoyées à un endroit qui ne les vérifiait pas) |
+
+Pattern de fix commun aux 4 PR : extraction via
+`@RequestHeader("Authorization") String authHeader` +
+`jwtService.extraireTenantId(...)`/`extraireActeurId(...)`, champ
+correspondant retiré du DTO de requête (Jackson/Spring ignorent
+silencieusement un champ ou paramètre inconnu — vérifié empiriquement,
+aucun appelant réel cassé). Tests d'intégration : pattern
+`token(tenantId)` / `token(tenantId, acteurId)` (JWT dont le claim
+correspond à ce que le test doit vérifier), répliqué identiquement sur
+les 4 PR.
 
 ### Explicitement pas traités — à ne pas croire résolus
 
@@ -440,24 +463,8 @@ choisi de la traiter immédiatement plutôt que de la différer.
   un vrai algorithme de sélection, mis de côté d'un commun accord dès le
   début de cette passe. Ne pas improviser un correctif superficiel si ce
   point revient.
-- **`tenantId` lu du corps de requête plutôt que du JWT** — corrigé
-  *authentification* sur `service-pay`/`service-adm`/`service-bur`
-  (#100-#102), mais **pas** cette confiance mal placée : `PaiementController`
-  (cloture, confirmerLivraison, rapportTenant, ecrituresTransporteur,
-  paiement-especes, reversement) et `DossierController.ouvrir/decision/prise-en-charge`
-  (`service-adm`) continuent de faire confiance au `tenantId`/`acteurId`
-  du corps plutôt que du token. Nécessite une décision endpoint par
-  endpoint (quel rôle peut légitimement agir pour un tenant différent du
-  sien — ex. Admin cross-tenant) avant de coder quoi que ce soit ici.
-- **IDOR sur les endpoints de mutation `service-adm`** (`prise-en-charge`,
-  `decision`) — même absence de vérification tenant que le bug corrigé
-  en #103, mais sur le chemin d'écriture, pas nommément cité par l'audit
-  (qui ne citait que le `GET`). Probablement plus grave en pratique
-  (mutation vs. lecture) — à confirmer et traiter séparément.
 - **Consultation de dossier ADM non journalisée** (gateway
   `DossierController.consolide()`, ENF-SEC-02) — pas touché.
-- **Export du journal d'audit cross-tenant si `tenantId` omis**
-  (`service-adm`) — pas touché.
 - **Multi-pays / conventions bilatérales** (`service-geo`, EF-GEO-05) —
   fonctionnalité absente du domaine, hors périmètre d'un correctif
   ponctuel.
@@ -465,6 +472,29 @@ choisi de la traiter immédiatement plutôt que de la différer.
   par `FRETCORRIDOR_PAY_WEBHOOK_SECRET` (fallback dev uniquement dans le
   code) ; l'action réelle relève du déploiement (positionner la variable
   en prod), pas d'un changement de code.
+
+### Vérifié et jugé non concerné — service-geo/mat/opt/trk (Moteur)
+
+En profitant de Java 21 (voir ci-dessous) pour vérifier si les 4
+services Moteur avaient le même problème que `service-bur` (#110) :
+**non, architecture différente et délibérée**, déjà revue par l'audit
+du 19 août lui-même (les `SecurityConfig` de ces 4 services citent
+explicitement cet audit dans leur javadoc, contrairement à `service-bur`
+dont la docstring était juste trompeuse) :
+- `service-geo` : lectures `permitAll` (appels synchrones internes L0
+  ~50ms sans JWT + cartes Web en lecture), écritures sensibles
+  (`POST`/`PATCH` sur `/api/geo/axes`) restreintes à
+  `ROLE_ADMINISTRATION`.
+- `service-mat`/`service-opt`/`service-trk` : `permitAll` total —
+  endpoints purement internes qui ne transportent jamais de JWT
+  (`CoutController` appelé par `ServiceMatClient` sans header
+  Authorization), ou endpoints de test manuel (flux nominal réel via
+  Kafka), ou (pour `service-trk`) aucun endpoint HTTP exposé du tout.
+
+Ne pas retravailler ces 4 `SecurityConfig` en pensant reproduire le fix
+`service-bur` — ce serait casser le budget de latence L0/L1 documenté
+sans bénéfice de sécurité réel (l'appelant interne ne transporte de
+toute façon aucune identité à vérifier).
 
 ### Déjà corrigé par le Moteur, indépendamment de cette passe
 
@@ -475,20 +505,38 @@ choisi de la traiter immédiatement plutôt que de la différer.
   et son commentaire "BUG CORRIGE (audit du 2026-08-19)" — ne pas
   retravailler ce fichier en pensant le bug encore présent.
 
-### Contrainte d'environnement rencontrée (Java 21)
+### Contrainte d'environnement Java 21 — résolue (matin du 20 août)
 
-Ce sandbox n'a que **Java 17** installé ; `service-geo`/`service-mat`/
-`service-opt`/`service-trk` et `common-libs` exigent Java 21. Aucune CI
-ne couvre non plus ces services Moteur (`backend-web-scope.yml` se
-limite à gateway/pay/bur/adm). Une tentative d'installer Java 21 via
-SDKMAN a échoué (téléchargement corrompu, 136 Mo au lieu des ~190 Mo
-attendus) — abandonnée plutôt que de s'acharner. **Conséquence
-pratique** : tout changement touchant un service Moteur (comme
-`AxeResponse.java` dans PR #98) ne peut être vérifié que par relecture
-manuelle ligne à ligne contre le code source réel (getters, signatures),
-jamais par une compilation réelle dans cet environnement — à signaler
-explicitement à chaque fois plutôt que de prétendre à une vérification
-équivalente à celle des services Java 17.
+Ce sandbox n'avait que **Java 17** installé ; `service-geo`/`service-mat`/
+`service-opt`/`service-trk` et `common-libs` exigent Java 21. Une
+première tentative d'installer Java 21 via SDKMAN avait échoué
+(téléchargement corrompu, 136 Mo au lieu des ~190 Mo attendus) —
+abandonnée à l'époque plutôt que de s'acharner (**conséquence pratique
+documentée alors** : tout changement Moteur, comme `AxeResponse.java`
+dans PR #98, ne pouvait être vérifié que par relecture manuelle ligne à
+ligne, jamais par compilation réelle).
+
+**Résolu** : `sudo apt-get install -y openjdk-21-jdk` (paquet Ubuntu
+standard, `21.0.11+10`) — installé par l'utilisateur lui-même (`sudo`
+demande un mot de passe interactif, hors de portée de l'agent). `java`
+par défaut bascule automatiquement sur 21 ; Maven nécessite en revanche
+`export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64` explicite à chaque
+commande (l'état du shell ne persiste pas entre deux appels Bash dans
+cet environnement — JAVA_HOME doit être réexporté systématiquement pour
+tout `mvn` touchant Moteur/`common-libs`).
+
+**Première exécution réelle de `mvn test`** sur les 4 modules Moteur
+dans cette session : 2 échecs, tous deux des **tests eux-mêmes**, jamais
+revérifiés depuis leur écriture faute de Java 21 — corrigés en PR #112
+(`CoutCompositeServiceTest` côté `service-mat` : stub Mockito manquant
+sur `saveAll` ; `KuhnMunkresSolverTest.matriceVide` côté `service-opt` :
+attendait un comportement contraire à la précondition documentée du
+solveur, jamais atteint en pratique). Aucun changement de code de
+production. Les 4 modules sont maintenant entièrement verts.
+
+Aucune CI ne couvre ces services Moteur (`backend-web-scope.yml` se
+limite à gateway/pay/bur/adm) — toujours vrai, Java 21 disponible en
+local ne change rien à ça côté GitHub Actions.
 
 **Tout le reste de l'audit (majeurs/mineurs non cités ci-dessus) n'a pas
 été vérifié ni corrigé** dans cette session — ne pas supposer qu'un point
