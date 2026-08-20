@@ -31,6 +31,13 @@ const String _apiBaseFlt = String.fromEnvironment(
   defaultValue: 'http://localhost:8092/api',
 );
 
+// S14 (EF-PAY-06) — service-pay (Web), même raisonnement que les autres
+// clients directs : aucune route gateway pour le rôle Chargeur.
+const String _apiBasePay = String.fromEnvironment(
+  'API_BASE_PAY',
+  defaultValue: 'http://localhost:8088/api/v1/pay',
+);
+
 const String keyAccessToken = 'access_token';
 const String keyRefreshToken = 'refresh_token';
 
@@ -112,3 +119,6 @@ final exeDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseExe));
 
 /// service-flt (8092 hôte / 8083 conteneur) — dernière position connue.
 final fltDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseFlt));
+
+/// service-pay (8088) — choix du moyen de paiement (S14 Item B).
+final payDioProvider = Provider<Dio>((ref) => _creerClient(_apiBasePay));
