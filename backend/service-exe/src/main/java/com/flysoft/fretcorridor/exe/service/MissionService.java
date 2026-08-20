@@ -2,10 +2,12 @@ package com.flysoft.fretcorridor.exe.service;
 
 import com.flysoft.fretcorridor.exe.dto.MissionDto;
 import com.flysoft.fretcorridor.exe.entity.EtapeMission;
+import com.flysoft.fretcorridor.exe.entity.EtapeTournee;
 import com.flysoft.fretcorridor.exe.entity.Mission;
 import com.flysoft.fretcorridor.exe.messaging.MissionEventPublisher;
 import com.flysoft.fretcorridor.exe.messaging.MissionLivreeEvent;
 import com.flysoft.fretcorridor.exe.repository.EtapeMissionRepository;
+import com.flysoft.fretcorridor.exe.repository.EtapeTourneeRepository;
 import com.flysoft.fretcorridor.exe.repository.MissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -24,6 +27,7 @@ public class MissionService {
 
     private final MissionRepository missionRepository;
     private final EtapeMissionRepository etapeMissionRepository;
+    private final EtapeTourneeRepository etapeTourneeRepository;
     private final MissionEventPublisher missionEventPublisher;
 
     // Consommé par l'app Client (S7) — absent tant qu'aucune mission n'a été
@@ -93,6 +97,33 @@ public class MissionService {
                 etapeLivraison.getId().toString(),
                 etapeLivraison.getHorodatageCapture().atZone(ZoneId.systemDefault()).toInstant()
         ));
+    }
+
+    // S11 : ordre planifié d'une Tournée consolidée, réservé au transporteur
+    // qui possède au moins une des Missions qu'elle regroupe — même
+    // discipline d'accès que missionAppartenantA, adaptée au fait qu'une
+    // tournée porte plusieurs Missions (potentiellement d'autres
+    // transporteurs si un jour la consolidation cross-transporteur existe,
+    // hors périmètre S11 actuel).
+    @Transactional(readOnly = true)
+    public MissionDto.TourneeResponse getTournee(UUID tourneeId, UUID transporteurId, String tenantId) {
+        List<EtapeTournee> etapes = etapeTourneeRepository.findByTourneeIdOrderByRangAsc(tourneeId);
+        if (etapes.isEmpty()) {
+            throw new RuntimeException("MISSION_INTROUVABLE");
+        }
+
+        List<UUID> missionIds = etapes.stream().map(EtapeTournee::getMissionId).distinct().toList();
+        List<Mission> missions = missionRepository.findAllById(missionIds);
+
+        boolean transporteurConcerne = missions.stream().anyMatch(m ->
+                tenantId.equals(m.getTenantId()) && transporteurId.equals(m.getTransporteurId()));
+        if (!transporteurConcerne) {
+            throw new RuntimeException("ACCES_REFUSE");
+        }
+
+        Map<UUID, String> statutParMission = missions.stream()
+                .collect(Collectors.toMap(Mission::getId, m -> m.getStatut().name()));
+        return MissionDto.TourneeResponse.of(tourneeId, etapes, statutParMission);
     }
 
     private Mission missionAppartenantA(UUID missionId, UUID transporteurId, String tenantId) {

@@ -19,4 +19,7 @@ public interface MissionExecutionPort {
 
     Mono<MissionExecutionDetail> ajouterEtape(String delegationToken, String missionId, String type,
                                                String libelle, String horodatageCapture);
+
+    // S11 : ordre planifié de la tournée (multi-étapes, LTL consolidé).
+    Mono<TourneeDetail> tournee(String delegationToken, String tourneeId);
 }

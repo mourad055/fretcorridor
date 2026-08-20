@@ -6,6 +6,7 @@ import com.flysoft.fretcorridor.exe.entity.Mission;
 import com.flysoft.fretcorridor.exe.messaging.MissionEventPublisher;
 import com.flysoft.fretcorridor.exe.messaging.MissionLivreeEvent;
 import com.flysoft.fretcorridor.exe.repository.EtapeMissionRepository;
+import com.flysoft.fretcorridor.exe.repository.EtapeTourneeRepository;
 import com.flysoft.fretcorridor.exe.repository.MissionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ class MissionServiceTest {
 
     @Mock private MissionRepository missionRepository;
     @Mock private EtapeMissionRepository etapeMissionRepository;
+    @Mock private EtapeTourneeRepository etapeTourneeRepository;
     @Mock private MissionEventPublisher missionEventPublisher;
 
     private MissionService service;
@@ -36,7 +38,7 @@ class MissionServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new MissionService(missionRepository, etapeMissionRepository, missionEventPublisher);
+        service = new MissionService(missionRepository, etapeMissionRepository, etapeTourneeRepository, missionEventPublisher);
         missionId = UUID.randomUUID();
         transporteurId = UUID.randomUUID();
         when(etapeMissionRepository.findByMissionIdOrderByHorodatageTransmissionAsc(any())).thenReturn(List.of());
