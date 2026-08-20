@@ -33,6 +33,11 @@ spring:
 fretcorridor:
   jwt:
     secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  # Même clé que service-cap (fretcorridor.internal.service-key) --
+  # transmise en X-Internal-Service-Key par ServiceCapClient pour
+  # GET /api/cap/capacites/{id} (appel Kafka-déclenché, sans JWT).
+  internal:
+    service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
   not:
     # Même hypothèse mono-tenant Phase 1 que service-exe (ADR 0011) — même
     # valeur que fretcorridor.exe.tenant-id-phase1, pour que les notifications

@@ -4,8 +4,22 @@
 > la version du 20 août (fin d'après-midi) : **les 18 bloquants initiaux
 > de `AUDIT_CDC_v4_complet_2026-08-19.md` sont désormais tous traités**
 > — 17 résolus sans réserve, le 18e (RG-039) traité avec une limitation
-> explicitement documentée (voir ci-dessous et §6). **28 PR** au total
-> mergées depuis le début de cette passe (#91 à #122, sauf #111).
+> explicitement documentée (voir ci-dessous et §6). **29 PR** au total
+> mergées depuis le début de cette passe (#91 à #124, sauf #111).
+>
+> **Audit de suivi périmètre Mobile reçu des coéquipiers (dev@727410b)
+> — vérifié et traité (PR #124, #125)** : 3 constats confirmés réels et
+> corrigés — secret JWT non paramétrable (en réalité 5 services
+> concernés, pas seulement service-ida comme rapporté) ; refresh token
+> contournant le verrouillage de compte (`AuthService.rafraichir()`) ;
+> `GET /api/cap/capacites/{id}` public sans aucune vérification (clé
+> interne partagée service-not↔service-cap, PR #125 — décision explicite
+> de l'utilisateur de le corriger plutôt que de le laisser comme
+> service-geo/mat/opt/trk, vérifié conforme CDC/Plan d'Exécution §4.3
+> avant de coder). **3 points de ce rapport sont faux/obsolètes** (RG-101,
+> RG-070, endpoint véhicule service-flt donnés "toujours ouverts") —
+> leur audit a été fait sur un commit ~12 merges avant mes correctifs
+> du soir, pas une erreur de leur part. Détail complet §6.
 >
 > **RG-070 (preuve de livraison) est maintenant fermé de bout en bout** :
 > backend (photo + signature tactile, PR #118) **et UI mobile app
@@ -589,6 +603,60 @@ ne produit qu'une seule proposition. `DemandeServiceTest` -- accepter
 marque bien les autres EXPIREE, refuse une proposition déjà traitée.
 Vérifié : `mvn -o test` service-opt (9 tests, Java 21) + service-mkt (4
 tests), 0 échec.
+
+### Audit de suivi périmètre Mobile (coéquipiers, dev@727410b) — PR #124, #125
+
+Rapport reçu en soirée, vérifié point par point contre le code réel de
+`dev` (jamais de confiance aveugle, ni dans mes propres PR ni dans un
+rapport externe) avant d'agir.
+
+**3 constats confirmés réels, tous absents des 18 bloquants originaux :**
+
+- **Secret JWT non paramétrable via variable d'environnement** (PR
+  #124) — le rapport ne citait que `service-ida`, vérification élargie
+  à tout le dépôt : en réalité **5 services** concernés
+  (`service-ida`, `service-exe`, `service-flt`, `service-mkt`,
+  `service-not`), tous alignés sur `${FRETCORRIDOR_JWT_SECRET:...}`.
+- **`AuthService.rafraichir()` (service-ida) ne vérifiait jamais
+  `acteur.getActif()`** (PR #124), contrairement à `login()` — un
+  compte verrouillé après 3 échecs de PIN pouvait continuer à
+  rafraîchir son token indéfiniment. Même garde ajoutée. Nouveau
+  `AuthServiceTest` (aucun test n'existait avant pour cette classe).
+- **`GET /api/cap/capacites/{id}` totalement public** (PR #125) —
+  d'abord laissé de côté (même architecture que service-geo/mat/opt/trk,
+  appelant Kafka sans JWT disponible), puis **corrigé sur demande
+  explicite de l'utilisateur** ("corrige une fois c'est pas mieux ?").
+  Vérifié conforme CDC/Plan d'Exécution avant de coder : §4.3 du Plan
+  d'Exécution autorise explicitement l'appel synchrone entre
+  service-not et service-cap (même porteur Mobile) ; ENF-SEC-05
+  ("secrets centralisés... rotation périodique") couvre la nouvelle clé.
+  Fix : clé interne partagée (`X-Internal-Service-Key`,
+  `fretcorridor.internal.service-key`, même mécanisme de rotation par
+  variable d'environnement que le secret JWT) -- `ServiceCapClient`
+  (service-not) l'envoie, `CapaciteController.obtenir` (service-cap) la
+  vérifie, 401 si absente/incorrecte. `SecurityConfig` reste
+  `permitAll()` au niveau Spring Security (rien ne change à cette
+  couche, la clé est vérifiée au niveau du contrôleur) -- documenté
+  explicitement pour ne pas reproduire l'ancien raisonnement "permitAll
+  = pas de contrôle". Nouveau `CapaciteControllerTest` (aucun test HTTP
+  n'existait avant pour ce contrôleur, comme relevé par le rapport).
+
+**1 point du rapport confirmé réel, resté hors périmètre** : absence de
+tests `@SpringBootTest`/`MockMvc` sur `service-ida`/`service-cap` au-delà
+de ce qui a été ajouté ci-dessus -- construire une vraie suite
+HTTP/Spring Security complète pour ces deux modules serait un chantier
+à part, pas traité cette nuit.
+
+**3 points du rapport vérifiés et FAUX/obsolètes** : RG-101, RG-070, et
+l'endpoint véhicule `service-flt` donnés "toujours ouverts" sont en
+réalité déjà corrigés sur `dev` (PR #117/#118/#115). Le rapport a été
+produit sur le commit `727410b` (PR #111), ~12 merges avant ces
+correctifs -- pas une erreur de méthode des coéquipiers, juste un
+instantané pris trop tôt dans la soirée.
+
+Vérification : `mvn -o test` sur les 5 services touchés par PR #124
+(ida 15 tests, exe 12, flt 5, mkt 4, not 3) + service-cap/service-not
+pour PR #125 (cap 9 tests, not 3 tests) -- 0 échec partout.
 
 ### Autres points hors périmètre — à ne pas croire résolus
 
