@@ -1,17 +1,16 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, soir)
+# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, nuit)
 
 > Document de suivi/handoff, versionné dans le dépôt à la racine. Remplace
-> la version du 18 août 2026 : **toute la Phase 2 (S11, S12, S14, S15) est
-> désormais réelle de bout en bout, Chauffeur ET Client** — S11 et S12
-> passés en réel dans l'après-midi (PR #81, #82, #84, #85), S14 dans la
-> foulée (PR #87), S11 Volet B Client en dernier (PR #89). Un audit
-> complet du CDC a été mené entre-temps (voir
-> `AUDIT_CDC_v4_complet_2026-08-19.md` à la racine) — son bloquant #1
-> (build Web cassé, `@ngx-translate/core`) est corrigé (PR #83), le reste
-> de ses 18 bloquants / 35 majeurs / 29 mineurs **n'a pas été traité
-> systématiquement** (hors périmètre de cette session, ciblée sur S11/S12/S14) —
-> voir §6 pour le détail de ce qui a été corrigé incidemment vs. ce qui
-> reste ouvert.
+> la version du 20 août (soir) : **une passe de correction systématique
+> sur `AUDIT_CDC_v4_complet_2026-08-19.md` a eu lieu dans la nuit du 20
+> août**, en plus de la Phase 2 (S11/S12/S14/S15, déjà réelle de bout en
+> bout depuis le soir même). **14 bloquants/majeurs de l'audit sont
+> désormais corrigés et mergés** (PR #91 à #104) sur les 18
+> bloquants + un sous-ensemble des 35 majeurs recensés — voir §6, entièrement
+> réécrit, pour le détail précis de ce qui est fait vs. ce qui reste
+> ouvert. **Ne pas supposer l'audit clos** : plusieurs points structurants
+> restent explicitement en attente (RG-039, `tenantId` lu du corps de
+> requête, multi-pays).
 
 ---
 
@@ -70,13 +69,42 @@ merge de PR associé, c'est probablement lui — le signaler explicitement
 **Protocole confirmé en usage (20 août)** : branche `backend-stevetelecom`
 poussée en PR (#81) plutôt que commitée directement cette fois — bon
 signe. Le mot **PULL REQUEST** a été demandé et reçu avant chaque merge
-(#81 à #87, 7 PR consécutives) ; `gh pr merge` reste bloqué par le
-classificateur auto-mode de l'outil dans certains cas malgré la
-confirmation reçue — dans ce cas, rendre la main à l'utilisateur pour
-qu'il merge lui-même sur GitHub, jamais chercher à contourner. Sur #87,
-`gh pr checks` a d'abord montré des checks `pending` (gateway) : attendre
-qu'ils passent avant de merger plutôt que de merger sur un statut
-incomplet — quelques cycles de sondage (~10s) ont suffi.
+(#81 à #104, plus de 20 PR consécutives au total sur la journée). Sur
+#87, `gh pr checks` a d'abord montré des checks `pending` (gateway) :
+attendre qu'ils passent avant de merger plutôt que de merger sur un
+statut incomplet — quelques cycles de sondage (~10s) ont suffi.
+
+**`gh pr merge` bloqué par le classificateur auto-mode — résolu (20
+août, nuit)** : la commande était refusée par le classificateur malgré
+le mot PULL REQUEST reçu. Cause : aucune règle de permission Bash
+explicite pour `gh pr merge`/`gh pr create`/`gh pr checks` dans
+`.claude/settings.local.json`. **Corrigé en ajoutant ces trois patterns
+à `permissions.allow`** (avec l'accord explicite de l'utilisateur, qui a
+choisi cette option plutôt que la fusion manuelle) — `gh pr merge`
+fonctionne normalement depuis. Si le blocage réapparaît malgré la règle
+présente, c'est un signal différent (mode d'exécution de la session, pas
+un problème de settings) — rendre la main à l'utilisateur dans ce cas
+précis, jamais chercher à contourner autrement.
+
+**Fusions de PR dans la même branche : conflits attendus, pas une
+anomalie.** Sur cette session, plusieurs correctifs indépendants
+touchaient les mêmes fichiers (ex. `AdmPort`/`PayReadPort` côté gateway,
+modifiés par PR #98, #100, #101, #102 quasi simultanément) — chaque
+`gh pr merge` suivant a produit `GraphQL: Pull Request has merge
+conflicts`. Résolution systématique : `git fetch origin <branche
+source>`, checkout de cette branche, `git merge origin/dev`, résoudre
+(généralement additif — combiner les deux signatures de méthode élargies
+plutôt que choisir un côté), recompiler + retester le module concerné,
+push, puis `gh pr merge` repasse.
+
+**Contention de ressources entre suites Testcontainers lancées en
+parallèle** : deux `mvn test` simultanés (ex. gateway + service-bur, deux
+suites Testcontainers/PostgreSQL) ont produit des échecs qui
+ressemblaient à de vraies régressions (timeouts 5s, crash de fork JVM
+"VM terminated without properly saying goodbye"). Confirmé non-lié en
+réexécutant chaque suite **séquentiellement** — toujours revalider
+isolément avant de conclure à une régression quand des tests tournent en
+parallèle dans le même sandbox.
 
 ---
 
@@ -364,48 +392,105 @@ supprimé (PR #89).
 
 `AUDIT_CDC_v4_complet_2026-08-19.md` (racine du dépôt) reste la référence
 complète : 18 bloquants, 35 majeurs, 29 mineurs, ~50 % de conformité CDC
-globale. **Cette session n'a pas fait de passe de correction systématique
-sur l'audit** — son mandat était de sortir S11/S12/S14 du mock, pas de
-remédier à l'audit. Plusieurs corrections sont quand même arrivées, soit
-en amont (PR #81, travail du Moteur lui-même) soit en aval (mon propre
-travail S12). Statut réel, pour ne pas laisser croire que l'audit est
-clos :
+globale au moment de sa rédaction. **Une passe de correction systématique
+a eu lieu dans la nuit du 20 août**, à la demande explicite de
+l'utilisateur ("corrige les bugs bloquants restants de l'audit"),
+service par service, dans l'ordre le plus sûr (mécaniques d'abord, puis
+authentification). **15 PR** (#91 à #104, plus une 16e — le fix
+`environment.development.ts` ci-dessous — poussée mais pas encore
+mergée au moment de la rédaction, bloquée par une coupure réseau locale)
+ont chacune suivi la discipline habituelle : branche dédiée, compilation
++ tests avant commit, mot **PULL REQUEST** explicite avant merge.
 
-**Bloquants corrigés (2 sur 18)** :
-- `etape-executee` jamais produit (§7.1) — **corrigé PR #85** (cette
-  session, voir §5.2).
-- EF-MAT-10 détour jamais borné en production (§3) — **corrigé PR #81**
-  (Moteur).
+### Corrigés et mergés dans `dev` cette nuit (14 PR, #91→#104)
 
-**Bloquants partiellement corrigés (1 sur 18)** :
-- Zéro authentification sur 8 services (§1.1) — **4 sur 8 corrigés**
-  (`service-geo`/`service-mat`/`service-opt`/`service-trk`, PR #81, JWT
-  émis par `service-ida`). **`service-pay`, `service-adm`, `service-bur`,
-  `service-cap` restent sans authentification applicative.** Point
-  d'attention direct : le câblage S14 Client (§5.5) appelle `service-pay`
-  sans authentification, cohérent avec l'état actuel du dépôt mais hérite
-  du même risque — `POST /moyen-paiement` reste forgeable par quiconque
-  connaît un `missionId`, exactement comme les endpoints déjà signalés
-  par l'audit sur ce service.
+| # | Service(s) | Correctif |
+|---|---|---|
+| #91 | `service-not` | IDOR sur `/notifications/{id}/lue` et `/repondre` — vérification tenant ajoutée |
+| #92 | `service-ida` | Activation d'enrôlement agent rendue accessible (`permitAll` explicite sur l'endpoint, sans compte encore créé) |
+| #93 | `service-cap` | Poids taxable — 3e terme LDM ajouté (RG-100) |
+| #94 | `service-cap` | Perte d'écriture sous concurrence (EF-CAP-07) — **bug trouvé en cours de route, hors liste initiale de l'audit** ; savepoint JDBC natif remplace `REQUIRES_NEW` (qui commitait l'idempotency-log même quand le decrement échouait) |
+| #95 | `service-cap`, `gateway` | Authentification JWT + IDOR sur `POST /decrement` ; `tenantId` ajouté à `Capacite` (migration V3) ; gateway transmet désormais le `delegationToken` |
+| #96 | `service-exe` | Précédence des étapes imposée (RG-062/070) — `LIVRAISON` sans `PRISE_EN_CHARGE` préalable désormais rejetée (`ETAPE_HORS_SEQUENCE`) ; un test existant qui codifiait le bug a été corrigé, pas juste complété |
+| #97 | `service-flt` | Contrainte d'unicité sur l'immatriculation (RG-088) |
+| #98 | `service-mkt`, `service-geo` | Pipeline marketplace → matching mort (§1.2) — `DemandeService.publier()` ne renseignait jamais `axeId`/`valeursCriteres` ; nouveau `ServiceGeoClient` résout l'axe par nom de ville. **Côté `service-geo` (Java 21, Moteur) non compilé localement** (sandbox limité à Java 17, voir note ci-dessous) — revu manuellement champ par champ |
+| #99 | `service-exe`, `service-flt`, `service-not` | Canaux Kafka morts `position-brute`/`alerte-ecart` (§7.1) fermés — `Mission.vehiculeId` ajouté (peuplé depuis `AffectationConfirmeeEvent`, jamais persisté avant), `service-flt` publie désormais `position-brute`, `service-not` consomme `alerte-ecart` |
+| #100 | `service-pay`, `gateway` | Authentification JWT — analyse des appelants réels faite **avant** implémentation (discutée avec l'utilisateur, service financier sensible) : seul `/moyen-paiement` avait un vrai appelant (app Client, envoie déjà un token) ; `/webhooks/**` reste `permitAll` (signature HMAC, pas de JWT possible côté prestataire externe) |
+| #101 | `service-adm`, `gateway` | Authentification JWT — dernier des « 8 services sans authentification » côté Mobile/Moteur/Web restants après #95/#100 |
+| #102 | `service-bur`, `gateway` | Authentification JWT — dernier des 4 services **Web** (gateway/pay/adm/bur) sans authentification. `OptPort`/`TrkPort` (gateway) transmettent désormais le token vers `service-bur`, qu'ils appellent en réalité malgré leur nom (`ServiceBurMissionAppparieeAdapter`/`ServiceBurPositionAdapter`) |
+| #103 | `service-adm` | IDOR sur `GET /api/v1/dossiers/{id}` (§7.2) — `FileTravailService.consulter()` vérifie désormais le tenant, même exception "introuvable" pour les deux cas |
+| #104 | `app_chauffeur_transporteur` | File locale pour le suivi GPS hors ligne — même patron que l'enrôlement agent (`flutter_secure_storage` + retry à la reconnexion) |
 
-**Bloquants non touchés (15 sur 18)**, notamment : pipeline marketplace →
-matching mort (`service-mkt`) ; une seule proposition au lieu de 3
-(RG-039) ; livraison sans preuve ni précédence libère le séquestre
-(`service-exe`, touché par cette session pour S11/S12 mais **ce bug
-précis n'a pas été corrigé** — RG-062/070 toujours absents
-d'`ajouterEtape()`) ; IDOR notifications (`service-not`) ; poids taxable
-incomplet + 0 authentification (`service-cap`) ; activation enrôlement
-agent inaccessible (`service-ida`) ; endpoint véhicule public sans
-filtre tenant + immatriculation sans unicité (`service-flt`) ; perte de
-position en coupure réseau (Mobile).
+**Bonus incident, PR #94** : découverte en cours de route, pas dans la
+liste initiale de l'audit — l'utilisateur, consulté explicitement, a
+choisi de la traiter immédiatement plutôt que de la différer.
 
-**Majeurs corrigés incidemment (PR #81, Moteur)** : perte silencieuse de
-demandes non affectées (`MatchingCycleService`) ; confusion doublon
-Kafka / contrainte violée (`CapaciteDeclareeListener`) ; fausses alertes
-`AnomalieDetector` (`service-trk`) ; endpoints sensibles `AxeController`
-(gel d'axe, override risque) désormais restreints à `ROLE_ADMINISTRATION`.
+### En attente de merge (réseau coupé au moment de la rédaction)
 
-**Tout le reste (33 majeurs, 29 mineurs) n'a pas été vérifié ni corrigé**
-dans cette session — ne pas supposer qu'un point de l'audit est réglé
-sans le revérifier dans le code, ce document ne liste que ce qui a été
-touché explicitement.
+- **`environment.development.ts` pointait vers `service-pay` (8088) au
+  lieu de la gateway (8082)** (majeur, §4 de l'audit) — branche
+  `fix/web/environment-dev-pointe-vers-gateway` poussée localement,
+  commit `f5102d3`, **push vers `origin` a échoué** (coupure réseau
+  locale, `Destination Net Unreachable` — pas un problème GitHub). À
+  repousser et ouvrir la PR dès que le réseau revient.
+
+### Explicitement pas traités — à ne pas croire résolus
+
+- **RG-039** (3 propositions au lieu d'une seule, EF-MKT-07) — nécessite
+  un vrai algorithme de sélection, mis de côté d'un commun accord dès le
+  début de cette passe. Ne pas improviser un correctif superficiel si ce
+  point revient.
+- **`tenantId` lu du corps de requête plutôt que du JWT** — corrigé
+  *authentification* sur `service-pay`/`service-adm`/`service-bur`
+  (#100-#102), mais **pas** cette confiance mal placée : `PaiementController`
+  (cloture, confirmerLivraison, rapportTenant, ecrituresTransporteur,
+  paiement-especes, reversement) et `DossierController.ouvrir/decision/prise-en-charge`
+  (`service-adm`) continuent de faire confiance au `tenantId`/`acteurId`
+  du corps plutôt que du token. Nécessite une décision endpoint par
+  endpoint (quel rôle peut légitimement agir pour un tenant différent du
+  sien — ex. Admin cross-tenant) avant de coder quoi que ce soit ici.
+- **IDOR sur les endpoints de mutation `service-adm`** (`prise-en-charge`,
+  `decision`) — même absence de vérification tenant que le bug corrigé
+  en #103, mais sur le chemin d'écriture, pas nommément cité par l'audit
+  (qui ne citait que le `GET`). Probablement plus grave en pratique
+  (mutation vs. lecture) — à confirmer et traiter séparément.
+- **Consultation de dossier ADM non journalisée** (gateway
+  `DossierController.consolide()`, ENF-SEC-02) — pas touché.
+- **Export du journal d'audit cross-tenant si `tenantId` omis**
+  (`service-adm`) — pas touché.
+- **Multi-pays / conventions bilatérales** (`service-geo`, EF-GEO-05) —
+  fonctionnalité absente du domaine, hors périmètre d'un correctif
+  ponctuel.
+- **Secret webhook par défaut prévisible** (`service-pay`) — déjà piloté
+  par `FRETCORRIDOR_PAY_WEBHOOK_SECRET` (fallback dev uniquement dans le
+  code) ; l'action réelle relève du déploiement (positionner la variable
+  en prod), pas d'un changement de code.
+
+### Déjà corrigé par le Moteur, indépendamment de cette passe
+
+- **Fausses alertes `AnomalieDetector`** (`service-trk`, EF-TRK-03) —
+  **déjà corrigé** par `stevetelecom` (commit `33818d3`, hors de cette
+  session) : fenêtre glissante de 15 min au lieu de comparer à la toute
+  première position de l'historique complet. Vérifié en lisant le code
+  et son commentaire "BUG CORRIGE (audit du 2026-08-19)" — ne pas
+  retravailler ce fichier en pensant le bug encore présent.
+
+### Contrainte d'environnement rencontrée (Java 21)
+
+Ce sandbox n'a que **Java 17** installé ; `service-geo`/`service-mat`/
+`service-opt`/`service-trk` et `common-libs` exigent Java 21. Aucune CI
+ne couvre non plus ces services Moteur (`backend-web-scope.yml` se
+limite à gateway/pay/bur/adm). Une tentative d'installer Java 21 via
+SDKMAN a échoué (téléchargement corrompu, 136 Mo au lieu des ~190 Mo
+attendus) — abandonnée plutôt que de s'acharner. **Conséquence
+pratique** : tout changement touchant un service Moteur (comme
+`AxeResponse.java` dans PR #98) ne peut être vérifié que par relecture
+manuelle ligne à ligne contre le code source réel (getters, signatures),
+jamais par une compilation réelle dans cet environnement — à signaler
+explicitement à chaque fois plutôt que de prétendre à une vérification
+équivalente à celle des services Java 17.
+
+**Tout le reste de l'audit (majeurs/mineurs non cités ci-dessus) n'a pas
+été vérifié ni corrigé** dans cette session — ne pas supposer qu'un point
+de l'audit est réglé sans le revérifier dans le code, ce document ne
+liste que ce qui a été touché explicitement.
