@@ -1,5 +1,6 @@
 package com.fretcorridor.pay.infrastructure.rest;
 
+import com.fretcorridor.pay.domain.AccesRefuseException;
 import com.fretcorridor.pay.domain.DeclarationEspecesInvalideException;
 import com.fretcorridor.pay.domain.GarantieInvalideException;
 import com.fretcorridor.pay.domain.ModePaiementDejaChoisiException;
@@ -63,6 +64,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleReversementSuspenduPourLitige(ReversementSuspenduPourLitigeException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Reversement suspendu (EF-PAY-08)");
+        return problem;
+    }
+
+    @ExceptionHandler(AccesRefuseException.class)
+    public ProblemDetail handleAccesRefuse(AccesRefuseException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Accès refusé");
         return problem;
     }
 

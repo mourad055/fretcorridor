@@ -52,10 +52,15 @@ class WebhookPrestataireControllerIntegrationTest {
     // /webhooks/prestataire reste permitAll (le prestataire externe n'a pas de
     // JWT), mais GET /tenants/{id}/rapport (utilisé ici pour vérifier l'état
     // écrit) exige désormais une authentification comme tout autre endpoint.
-    private String token() {
+    // Le tenantId créé par le webhook étant dynamique (généré par test), on
+    // consulte avec un rôle ADMINISTRATION (consultation transverse
+    // légitime, audit CDC §Transverse) plutôt que de faire correspondre le
+    // tenant du token - ces tests portent sur l'idempotence/la signature,
+    // pas sur le filtrage tenant.
+    private String tokenAdmin() {
         return Jwts.builder()
                 .subject(UUID.randomUUID().toString())
-                .claim("roles", List.of("BUREAU"))
+                .claim("roles", List.of("ADMINISTRATION"))
                 .claim("tenantId", "tenant-jwt-test")
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .compact();
@@ -75,7 +80,7 @@ class WebhookPrestataireControllerIntegrationTest {
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
-                        .header("Authorization", "Bearer " + token()))
+                        .header("Authorization", "Bearer " + tokenAdmin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].nature").value("ENCAISSEMENT"))
@@ -96,7 +101,7 @@ class WebhookPrestataireControllerIntegrationTest {
                 .andExpect(status().isUnauthorized());
 
         mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
-                        .header("Authorization", "Bearer " + token()))
+                        .header("Authorization", "Bearer " + tokenAdmin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
@@ -124,7 +129,7 @@ class WebhookPrestataireControllerIntegrationTest {
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/v1/pay/tenants/{tenantId}/rapport", tenantId)
-                        .header("Authorization", "Bearer " + token()))
+                        .header("Authorization", "Bearer " + tokenAdmin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1));
     }

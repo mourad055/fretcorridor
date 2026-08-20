@@ -10,7 +10,6 @@ import jakarta.validation.constraints.NotBlank;
  * couvre le cas où seule la livraison doit être actée.
  */
 public record ConfirmationLivraisonRequest(
-        @NotBlank String tenantId,
         @NotBlank String transporteurId,
         @NotBlank String preuveLivraisonReference
 ) {
