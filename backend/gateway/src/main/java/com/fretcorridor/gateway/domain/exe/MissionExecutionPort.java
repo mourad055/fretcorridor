@@ -1,7 +1,10 @@
 package com.fretcorridor.gateway.domain.exe;
 
+import org.springframework.http.codec.multipart.FilePart;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 /**
  * Exécution de mission côté chauffeur/transporteur (S7, EF-EXE-02/04) —
@@ -19,6 +22,12 @@ public interface MissionExecutionPort {
 
     Mono<MissionExecutionDetail> ajouterEtape(String delegationToken, String missionId, String type,
                                                String libelle, String horodatageCapture);
+
+    // RG-070/EF-EXE-03 : PRISE_EN_CHARGE/LIVRAISON avec preuve minimale
+    // obligatoire (photo(s) + signature tactile du tiers).
+    Mono<MissionExecutionDetail> ajouterEtapeAvecPreuve(String delegationToken, String missionId, String type,
+                                                         String libelle, String horodatageCapture,
+                                                         List<FilePart> photos, FilePart signature);
 
     // S11 : ordre planifié de la tournée (multi-étapes, LTL consolidé).
     Mono<TourneeDetail> tournee(String delegationToken, String tourneeId);

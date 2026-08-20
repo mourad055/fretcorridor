@@ -3,16 +3,20 @@ package com.flysoft.fretcorridor.exe.service;
 import com.flysoft.fretcorridor.exe.dto.MissionDto;
 import com.flysoft.fretcorridor.exe.entity.EtapeMission;
 import com.flysoft.fretcorridor.exe.entity.Mission;
+import com.flysoft.fretcorridor.exe.entity.PreuveEtape;
 import com.flysoft.fretcorridor.exe.messaging.MissionEventPublisher;
 import com.flysoft.fretcorridor.exe.messaging.MissionLivreeEvent;
 import com.flysoft.fretcorridor.exe.repository.EtapeMissionRepository;
 import com.flysoft.fretcorridor.exe.repository.EtapeTourneeRepository;
 import com.flysoft.fretcorridor.exe.repository.MissionRepository;
+import com.flysoft.fretcorridor.exe.repository.PreuveEtapeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +32,8 @@ class MissionServiceTest {
     @Mock private MissionRepository missionRepository;
     @Mock private EtapeMissionRepository etapeMissionRepository;
     @Mock private EtapeTourneeRepository etapeTourneeRepository;
+    @Mock private PreuveEtapeRepository preuveEtapeRepository;
+    @Mock private PreuveStorageService preuveStorageService;
     @Mock private MissionEventPublisher missionEventPublisher;
 
     private MissionService service;
@@ -35,10 +41,19 @@ class MissionServiceTest {
     private UUID transporteurId;
     private static final String TENANT = "tenant-bgft-douala";
 
+    private MultipartFile unePhoto() {
+        return new MockMultipartFile("photo", "photo.jpg", "image/jpeg", "contenu-photo".getBytes());
+    }
+
+    private MultipartFile uneSignature() {
+        return new MockMultipartFile("signature", "signature.png", "image/png", "contenu-signature".getBytes());
+    }
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new MissionService(missionRepository, etapeMissionRepository, etapeTourneeRepository, missionEventPublisher);
+        service = new MissionService(missionRepository, etapeMissionRepository, preuveEtapeRepository,
+                preuveStorageService, etapeTourneeRepository, missionEventPublisher);
         missionId = UUID.randomUUID();
         transporteurId = UUID.randomUUID();
         when(etapeMissionRepository.findByMissionIdOrderByHorodatageTransmissionAsc(any())).thenReturn(List.of());
@@ -48,6 +63,9 @@ class MissionServiceTest {
             if (e.getId() == null) e.setId(UUID.randomUUID());
             return e;
         });
+        when(preuveStorageService.deposer(any(), any(), any(), any()))
+                .thenReturn(new PreuveStorageService.ResultatDepot("cle-objet", "empreinte-sha256"));
+        when(preuveEtapeRepository.save(any(PreuveEtape.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     private Mission missionDuTransporteur() {
@@ -74,11 +92,50 @@ class MissionServiceTest {
         requete.setType(EtapeMission.TypeEtape.PRISE_EN_CHARGE);
         requete.setLibelle("Prise en charge à Douala");
 
-        var reponse = service.ajouterEtape(missionId, transporteurId, TENANT, requete);
+        var reponse = service.ajouterEtape(missionId, transporteurId, TENANT, requete,
+                List.of(unePhoto()), uneSignature());
 
         assertThat(reponse.getStatut()).isEqualTo("PRISE_EN_CHARGE");
         verify(etapeMissionRepository).save(any(EtapeMission.class));
+        verify(preuveEtapeRepository).save(any(PreuveEtape.class));
         verify(missionEventPublisher, never()).publierMissionLivree(any());
+    }
+
+    // RG-070/EF-EXE-03 (audit CDC du 19 août, bloquant corrigé) : une preuve
+    // minimale (photo + signature tierce) est désormais exigée pour toute
+    // PRISE_EN_CHARGE/LIVRAISON.
+    @Test
+    void a_pickup_stage_without_proof_is_refused() {
+        when(missionRepository.findById(missionId)).thenReturn(Optional.of(missionDuTransporteur()));
+
+        var requete = new MissionDto.AjouterEtapeRequest();
+        requete.setType(EtapeMission.TypeEtape.PRISE_EN_CHARGE);
+        requete.setLibelle("Prise en charge à Douala");
+
+        assertThatThrownBy(() -> service.ajouterEtape(missionId, transporteurId, TENANT, requete, null, null))
+                .hasMessage("PREUVE_MANQUANTE");
+        assertThatThrownBy(() -> service.ajouterEtape(missionId, transporteurId, TENANT, requete,
+                List.of(unePhoto()), null))
+                .hasMessage("PREUVE_MANQUANTE");
+        assertThatThrownBy(() -> service.ajouterEtape(missionId, transporteurId, TENANT, requete,
+                List.of(), uneSignature()))
+                .hasMessage("PREUVE_MANQUANTE");
+        verify(etapeMissionRepository, never()).save(any());
+    }
+
+    // Le chemin JSON (sans preuve) reste valable pour EN_TRANSIT/INCIDENT
+    // (EF-EXE-03 ne les concerne pas), mais PRISE_EN_CHARGE/LIVRAISON y sont
+    // désormais rejetées -- le mobile doit passer par l'endpoint multipart.
+    @Test
+    void the_json_only_overload_refuses_pickup_without_proof() {
+        when(missionRepository.findById(missionId)).thenReturn(Optional.of(missionDuTransporteur()));
+
+        var requete = new MissionDto.AjouterEtapeRequest();
+        requete.setType(EtapeMission.TypeEtape.PRISE_EN_CHARGE);
+        requete.setLibelle("Prise en charge à Douala");
+
+        assertThatThrownBy(() -> service.ajouterEtape(missionId, transporteurId, TENANT, requete))
+                .hasMessage("PREUVE_MANQUANTE");
     }
 
     @Test
@@ -91,9 +148,11 @@ class MissionServiceTest {
         requete.setType(EtapeMission.TypeEtape.LIVRAISON);
         requete.setLibelle("Livraison à Yaoundé");
 
-        var reponse = service.ajouterEtape(missionId, transporteurId, TENANT, requete);
+        var reponse = service.ajouterEtape(missionId, transporteurId, TENANT, requete,
+                List.of(unePhoto()), uneSignature());
 
         assertThat(reponse.getStatut()).isEqualTo("LIVREE");
+        verify(preuveEtapeRepository).save(any(PreuveEtape.class));
         ArgumentCaptor<MissionLivreeEvent> captor = ArgumentCaptor.forClass(MissionLivreeEvent.class);
         verify(missionEventPublisher).publierMissionLivree(captor.capture());
         assertThat(captor.getValue().missionId()).isEqualTo(missionId);
