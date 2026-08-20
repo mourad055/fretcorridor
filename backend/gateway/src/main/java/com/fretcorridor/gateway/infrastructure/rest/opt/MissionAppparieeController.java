@@ -53,7 +53,7 @@ public class MissionAppparieeController {
             @AuthenticationPrincipal AuthenticatedActor actor,
             @PathVariable String missionId) {
         return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_MISSION_DETAIL", "mission:" + missionId, actor.delegationToken())
-                .then(optPort.listerMissionsParTenant(actor.tenantId())
+                .then(optPort.listerMissionsParTenant(actor.tenantId(), actor.delegationToken())
                         .filter(mission -> mission.id().equals(missionId))
                         .next()
                         .map(mission -> ResponseEntity.ok(MissionAppparieeResponse.from(mission)))
@@ -65,7 +65,7 @@ public class MissionAppparieeController {
     public Mono<ObservatoireAxeResponse> observatoire(
             @AuthenticationPrincipal AuthenticatedActor actor,
             @PathVariable String axeId) {
-        return optPort.observatoirePourAxe(actor.tenantId(), axeId).map(ObservatoireAxeResponse::from);
+        return optPort.observatoirePourAxe(actor.tenantId(), axeId, actor.delegationToken()).map(ObservatoireAxeResponse::from);
     }
 
     /** EF-BUR-05, RG-087 : un agent Bureau déclare l'estimation de marché d'un axe — acteurId/tenantId toujours du JWT (ENF-MUL-01). */
@@ -75,7 +75,7 @@ public class MissionAppparieeController {
             @PathVariable String axeId,
             @Valid @RequestBody DefinirEstimationMarcheRequest request) {
         return optPort.definirEstimationMarche(actor.tenantId(), axeId, request.volumeMensuelEstime(),
-                        request.source(), actor.actorId())
+                        request.source(), actor.actorId(), actor.delegationToken())
                 .thenReturn(ResponseEntity.noContent().<Void>build());
     }
 
@@ -93,7 +93,7 @@ public class MissionAppparieeController {
     }
 
     private Flux<MissionAppariee> missionsFiltrees(AuthenticatedActor actor, StatutMission statut, String axeId) {
-        return optPort.listerMissionsParTenant(actor.tenantId())
+        return optPort.listerMissionsParTenant(actor.tenantId(), actor.delegationToken())
                 .filter(mission -> statut == null || mission.statut() == statut)
                 .filter(mission -> axeId == null || axeId.isBlank() || mission.axeId().equals(axeId));
     }

@@ -5,6 +5,7 @@ import com.fretcorridor.gateway.domain.opt.EtatAlerteVue;
 import com.fretcorridor.gateway.domain.opt.MissionAppariee;
 import com.fretcorridor.gateway.domain.opt.ObservatoireAxeVue;
 import com.fretcorridor.gateway.domain.opt.OptPort;
+import com.fretcorridor.gateway.domain.opt.OptServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.opt.StatutMission;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -45,11 +46,15 @@ public class ServiceBurMissionAppparieeAdapter implements OptPort {
     }
 
     @Override
-    public Flux<MissionAppariee> listerMissionsParTenant(String tenantId) {
+    public Flux<MissionAppariee> listerMissionsParTenant(String tenantId, String delegationToken) {
+        if (delegationToken == null) {
+            return Flux.error(new OptServiceIndisponibleException());
+        }
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/missions-appariees")
                         .queryParam("tenantId", tenantId)
                         .build())
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .retrieve()
                 .bodyToFlux(MissionAppparieeBurResponse.class)
                 .map(dto -> new MissionAppariee(
@@ -65,21 +70,29 @@ public class ServiceBurMissionAppparieeAdapter implements OptPort {
     }
 
     @Override
-    public Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId) {
+    public Mono<ObservatoireAxeVue> observatoirePourAxe(String tenantId, String axeId, String delegationToken) {
+        if (delegationToken == null) {
+            return Mono.error(new OptServiceIndisponibleException());
+        }
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/observatoire")
                         .queryParam("tenantId", tenantId)
                         .queryParam("axeId", axeId)
                         .build())
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .retrieve()
                 .bodyToMono(ObservatoireAxeVue.class);
     }
 
     @Override
     public Mono<Void> definirEstimationMarche(String tenantId, String axeId, BigDecimal volumeMensuelEstime,
-                                               String source, String acteurId) {
+                                               String source, String acteurId, String delegationToken) {
+        if (delegationToken == null) {
+            return Mono.error(new OptServiceIndisponibleException());
+        }
         return webClient.put()
                 .uri("/api/v1/bur/estimation-marche")
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .bodyValue(new DefinirEstimationMarcheBurRequest(tenantId, axeId, volumeMensuelEstime, source, acteurId))
                 .retrieve()
                 .bodyToMono(Void.class);
@@ -87,34 +100,50 @@ public class ServiceBurMissionAppparieeAdapter implements OptPort {
 
     @Override
     public Mono<AlerteSeuilVue> configurerAlerte(String tenantId, String axeId, String indicateur, String comparateur,
-                                                  BigDecimal seuil, String acteurId) {
+                                                  BigDecimal seuil, String acteurId, String delegationToken) {
+        if (delegationToken == null) {
+            return Mono.error(new OptServiceIndisponibleException());
+        }
         return webClient.post()
                 .uri("/api/v1/bur/alertes")
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .bodyValue(new ConfigurerAlerteBurRequest(tenantId, axeId, indicateur, comparateur, seuil, acteurId))
                 .retrieve()
                 .bodyToMono(AlerteSeuilVue.class);
     }
 
     @Override
-    public Flux<AlerteSeuilVue> listerAlertes(String tenantId) {
+    public Flux<AlerteSeuilVue> listerAlertes(String tenantId, String delegationToken) {
+        if (delegationToken == null) {
+            return Flux.error(new OptServiceIndisponibleException());
+        }
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/alertes").queryParam("tenantId", tenantId).build())
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .retrieve()
                 .bodyToFlux(AlerteSeuilVue.class);
     }
 
     @Override
-    public Flux<EtatAlerteVue> etatAlertes(String tenantId) {
+    public Flux<EtatAlerteVue> etatAlertes(String tenantId, String delegationToken) {
+        if (delegationToken == null) {
+            return Flux.error(new OptServiceIndisponibleException());
+        }
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/alertes/etat").queryParam("tenantId", tenantId).build())
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .retrieve()
                 .bodyToFlux(EtatAlerteVue.class);
     }
 
     @Override
-    public Mono<Void> supprimerAlerte(String id, String tenantId) {
+    public Mono<Void> supprimerAlerte(String id, String tenantId, String delegationToken) {
+        if (delegationToken == null) {
+            return Mono.error(new OptServiceIndisponibleException());
+        }
         return webClient.delete()
                 .uri(uriBuilder -> uriBuilder.path("/api/v1/bur/alertes/{id}").queryParam("tenantId", tenantId).build(id))
+                .headers(h -> h.setBearerAuth(delegationToken))
                 .retrieve()
                 .bodyToMono(Void.class);
     }

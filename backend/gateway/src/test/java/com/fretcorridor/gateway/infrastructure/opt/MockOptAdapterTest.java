@@ -11,7 +11,7 @@ class MockOptAdapterTest {
 
     @Test
     void returns_only_the_missions_of_the_requested_tenant() {
-        StepVerifier.create(adapter.listerMissionsParTenant("tenant-bgft-douala").collectList())
+        StepVerifier.create(adapter.listerMissionsParTenant("tenant-bgft-douala", "delegation-token-1").collectList())
                 .assertNext(missions -> assertThat(missions)
                         .hasSize(2)
                         .allMatch(m -> m.tenantId().equals("tenant-bgft-douala")))
@@ -20,7 +20,7 @@ class MockOptAdapterTest {
 
     @Test
     void returns_a_different_set_for_a_different_tenant() {
-        StepVerifier.create(adapter.listerMissionsParTenant("tenant-bnft-ndjamena").collectList())
+        StepVerifier.create(adapter.listerMissionsParTenant("tenant-bnft-ndjamena", "delegation-token-1").collectList())
                 .assertNext(missions -> assertThat(missions)
                         .hasSize(2)
                         .allMatch(m -> m.tenantId().equals("tenant-bnft-ndjamena")))

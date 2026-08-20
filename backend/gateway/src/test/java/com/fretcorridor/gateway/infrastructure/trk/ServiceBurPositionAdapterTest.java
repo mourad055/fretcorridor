@@ -1,6 +1,7 @@
 package com.fretcorridor.gateway.infrastructure.trk;
 
 import com.fretcorridor.gateway.domain.trk.PositionVehicule;
+import com.fretcorridor.gateway.domain.trk.TrkServiceIndisponibleException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -42,7 +43,7 @@ class ServiceBurPositionAdapterTest {
                         [{"missionId":"%s","vehiculeId":"%s","latitude":4.05,"longitude":9.76,"capturedLe":"2026-08-10T12:00:00Z"}]
                         """.formatted(MISSION_ID, VEHICULE_ID)));
 
-        StepVerifier.create(adapter.listerPositionsParTenant("tenant-bgft-douala").collectList())
+        StepVerifier.create(adapter.listerPositionsParTenant("tenant-bgft-douala", "delegation-token-1").collectList())
                 .assertNext(positions -> {
                     assertThat(positions).hasSize(1);
                     PositionVehicule position = positions.get(0);
@@ -62,9 +63,19 @@ class ServiceBurPositionAdapterTest {
                 .setHeader("Content-Type", "application/json")
                 .setBody("[]"));
 
-        adapter.listerPositionsParTenant("tenant-bnft-ndjamena").collectList().block();
+        adapter.listerPositionsParTenant("tenant-bnft-ndjamena", "delegation-token-1").collectList().block();
 
         var requete = serviceBur.takeRequest();
         assertThat(requete.getPath()).isEqualTo("/api/v1/bur/positions?tenantId=tenant-bnft-ndjamena");
+        assertThat(requete.getHeader("Authorization")).isEqualTo("Bearer delegation-token-1");
+    }
+
+    @Test
+    void refuses_to_call_service_bur_without_a_delegation_token() {
+        StepVerifier.create(adapter.listerPositionsParTenant("tenant-bgft-douala", null))
+                .expectError(TrkServiceIndisponibleException.class)
+                .verify();
+
+        assertThat(serviceBur.getRequestCount()).isZero();
     }
 }
