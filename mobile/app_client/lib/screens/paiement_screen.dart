@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/auth_provider.dart';
 import '../providers/choix_paiement_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -7,16 +8,19 @@ import '../theme/app_theme.dart';
 // séquestre) appartient à service-pay, module de Personne 2 (Web), pas
 // construit ici. Pas de fausse logique financière — état d'attente honnête.
 //
-// S14 (Sprint 14, "Paiements Mobile Money étendus") — ⚠️ MOCK, voir
-// choix_paiement_provider.dart. Sélecteur de moyen de règlement (MoMo /
-// Orange Money / Espèces) construit dès maintenant pour valider l'écran ;
-// la confirmation reste entièrement locale, aucun appel à service-pay.
+// S14 (Sprint 14, "Paiements Mobile Money étendus") — branché sur le vrai
+// backend (service-pay, appelé directement, voir choix_paiement_provider.dart).
+// Sélecteur de moyen de règlement (MoMo / Orange Money / Espèces) rattaché
+// à une mission précise.
 class PaiementScreen extends ConsumerWidget {
-  const PaiementScreen({super.key});
+  final String missionId;
+
+  const PaiementScreen({super.key, required this.missionId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(choixPaiementProvider);
+    final tenantId = ref.watch(authProvider).tenantId;
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -35,12 +39,12 @@ class PaiementScreen extends ConsumerWidget {
                   border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
                 ),
                 child: const Row(children: [
-                  Icon(Icons.science_outlined, color: AppColors.accent, size: 16),
+                  Icon(Icons.info_outline, color: AppColors.accent, size: 16),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Démonstration — le paiement s\'effectuera via un prestataire agréé '
-                      'dès que cette étape sera finalisée côté service-pay.',
+                      'Ce choix indique votre intention de règlement — l\'encaissement '
+                      'effectif se fait séparément via le prestataire agréé.',
                       style: TextStyle(color: AppColors.accent, fontSize: 12),
                     ),
                   ),
@@ -54,6 +58,22 @@ class PaiementScreen extends ConsumerWidget {
                 const SizedBox(height: 10),
               ],
               const SizedBox(height: 12),
+              if (state.erreur != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.erreur.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.erreur.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.error_outline, color: AppColors.erreur, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(state.erreur!, style: const TextStyle(color: AppColors.erreur, fontSize: 12))),
+                  ]),
+                ),
+                const SizedBox(height: 12),
+              ],
               if (state.confirme)
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -78,14 +98,17 @@ class PaiementScreen extends ConsumerWidget {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: state.moyenSelectionne == null
+                    onPressed: state.moyenSelectionne == null || state.chargement
                         ? null
-                        : () => ref.read(choixPaiementProvider.notifier).confirmerMock(),
+                        : () => ref.read(choixPaiementProvider.notifier).confirmer(missionId, tenantId),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.accent,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    child: const Text('Confirmer', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+                    child: state.chargement
+                        ? const SizedBox(
+                            width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.texteBouton))
+                        : const Text('Confirmer', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
                   ),
                 ),
             ],

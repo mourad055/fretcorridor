@@ -19,18 +19,23 @@ du `missionId` déjà connu par la chronologie existante — aucun appel
 réseau supplémentaire. Le rendu par défaut (envoi non consolidé, ou avant
 prise en charge) reste identique à avant ce sprint.
 
-## État (S14 — choix du moyen de paiement) — ⚠️ MOCK, pas de backend réel
+## État (S14 — choix du moyen de paiement) — branché sur le backend réel (20 août)
 
 Phase 2, Sprint 14 ("Paiements Mobile Money étendus"), Volet Client.
 L'écran `lib/screens/paiement_screen.dart` (jusqu'ici un simple état
-d'attente honnête, S8) propose désormais un sélecteur MoMo / Orange
-Money / Espèces avec confirmation — `lib/providers/choix_paiement_provider.dart`.
+d'attente honnête, S8) propose un sélecteur MoMo / Orange Money / Espèces,
+rattaché à une mission précise (accessible depuis "Suivi" —
+`suivi_screen.dart`, bouton "Choisir le moyen de paiement") —
+`lib/providers/choix_paiement_provider.dart`.
 
-**🧪 Entièrement mocké** : le prestataire Mobile Money agréé n'est pas
-encore intégré côté service-pay (Web). La sélection et la confirmation
-restent entièrement locales, aucun appel réseau. À remplacer par une
-vraie initiation de paiement dès que service-pay l'exposera — voir
-commentaire en tête de `choix_paiement_provider.dart`.
+**Réel pour MoMo/Orange Money** : `POST /missions/{id}/moyen-paiement` sur
+`service-pay` (Item B, EF-PAY-06/07, livré 18 août) — appelé directement,
+pas de gateway unifiée pour ce rôle (même principe que les autres
+providers de ce dépôt). Les deux options envoient toutes deux
+`MONNAIE_ELECTRONIQUE`, seule granularité connue du backend.
+**Espèces reste confirmé localement** : hors périmètre volontaire de ce
+choix a priori — mode dégradé décidé à l'enlèvement par le chauffeur
+(EF-PAY-07), jamais planifié en amont dans l'app.
 
 ## État (S15 — sélecteur d'axe) — branché sur le backend réel
 

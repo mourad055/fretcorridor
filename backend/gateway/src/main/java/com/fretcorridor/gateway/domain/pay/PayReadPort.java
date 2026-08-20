@@ -1,6 +1,7 @@
 package com.fretcorridor.gateway.domain.pay;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Port hexagonal vers service-pay — contrairement aux autres périmètres
@@ -15,4 +16,9 @@ public interface PayReadPort {
     Flux<EcritureVue> rapportDuTenant(String tenantId);
 
     Flux<DeclarationEspecesVue> paiementsEspecesDuTenant(String tenantId);
+
+    // S14 Item B (Volet A, Chauffeur) : erreur MissionIntrouvableException si
+    // le chargeur n'a pas encore choisi de moyen pour cette mission (404 côté
+    // service-pay).
+    Mono<ModePaiementChoisi> modePaiementChoisi(String missionId);
 }
