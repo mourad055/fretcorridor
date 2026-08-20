@@ -19,7 +19,7 @@ public record AxeResponse(
         boolean matchingActif,
         boolean paiementActif,
         Map<String, Object> parametres,
-        UUID tenantId,
+        String tenantId,
         Instant dateCreation
 ) {
     public static AxeResponse from(Axe axe) {

@@ -35,12 +35,12 @@ import java.util.UUID;
 @RequestMapping("/api/geo/axes")
 public class AxeController {
 
-    // Tenant unique de la Phase 1 (BGFT, client-ancre) - meme UUID fixe que
-    // celui applique par la migration V4 sur les donnees existantes. Utilise
+    // Tenant unique de la Phase 1 (BGFT, client-ancre) - meme identifiant que
+    // celui applique par la migration V7 sur les donnees existantes. Utilise
     // comme defaut a la creation quand aucun tenantId n'est fourni, pour ne
-    // jamais laisser une ligne orpheline sans tenant.
-    private static final UUID TENANT_PHASE1_PAR_DEFAUT =
-            UUID.fromString("00000000-0000-0000-0000-000000000001");
+    // jamais laisser une ligne orpheline sans tenant. String (pas UUID) :
+    // c'est le format utilise partout ailleurs (JWT, gateway) pour ce champ.
+    private static final String TENANT_PHASE1_PAR_DEFAUT = "tenant-bgft-douala";
 
     private final AxeRepository axeRepository;
     private final HubRepository hubRepository;
@@ -67,7 +67,7 @@ public class AxeController {
                     "un axe doit relier deux hubs distincts");
         }
 
-        UUID tenantId = requete.tenantId() != null ? requete.tenantId() : TENANT_PHASE1_PAR_DEFAUT;
+        String tenantId = requete.tenantId() != null ? requete.tenantId() : TENANT_PHASE1_PAR_DEFAUT;
         Axe axe = new Axe(requete.nom(), hubOrigine, hubDestination, tenantId);
         if (requete.visibiliteActive() != null) {
             axe.setVisibiliteActive(requete.visibiliteActive());
@@ -93,7 +93,7 @@ public class AxeController {
      * pour ne pas casser le filtre L0 d'OPT.
      */
     @GetMapping
-    public List<AxeResponse> listerAxes(@RequestParam(required = false) UUID tenantId) {
+    public List<AxeResponse> listerAxes(@RequestParam(required = false) String tenantId) {
         List<Axe> axes = tenantId != null
                 ? axeRepository.findByTenantId(tenantId)
                 : axeRepository.findAll();
