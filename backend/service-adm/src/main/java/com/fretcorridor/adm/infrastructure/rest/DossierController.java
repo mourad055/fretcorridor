@@ -9,6 +9,7 @@ import com.fretcorridor.adm.infrastructure.rest.dto.DossierResponse;
 import com.fretcorridor.adm.infrastructure.rest.dto.OuvrirDossierRequest;
 import com.fretcorridor.adm.infrastructure.rest.dto.OuvrirRecoursRequest;
 import com.fretcorridor.adm.infrastructure.rest.dto.PriseEnChargeRequest;
+import com.fretcorridor.adm.infrastructure.security.JwtService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,12 +30,14 @@ public class DossierController {
     private final FileTravailService fileTravailService;
     private final DecisionService decisionService;
     private final EscaladeService escaladeService;
+    private final JwtService jwtService;
 
     public DossierController(FileTravailService fileTravailService, DecisionService decisionService,
-                              EscaladeService escaladeService) {
+                              EscaladeService escaladeService, JwtService jwtService) {
         this.fileTravailService = fileTravailService;
         this.decisionService = decisionService;
         this.escaladeService = escaladeService;
+        this.jwtService = jwtService;
     }
 
     @PostMapping
@@ -52,8 +55,10 @@ public class DossierController {
     }
 
     @GetMapping("/{dossierId}")
-    public DossierResponse parId(@PathVariable String dossierId) {
-        return DossierResponse.from(fileTravailService.consulter(dossierId));
+    public DossierResponse parId(@PathVariable String dossierId,
+                                  @RequestHeader("Authorization") String authHeader) {
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        return DossierResponse.from(fileTravailService.consulter(dossierId, tenantId));
     }
 
     @PostMapping("/{dossierId}/prise-en-charge")
