@@ -8,11 +8,9 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record DefinirEstimationMarcheRequest(
-        @NotBlank(message = "tenantId est obligatoire") String tenantId,
         @NotNull(message = "axeId est obligatoire") UUID axeId,
         @NotNull(message = "volumeMensuelEstime est obligatoire")
         @Positive(message = "volumeMensuelEstime doit être strictement positif") BigDecimal volumeMensuelEstime,
-        @NotBlank(message = "source est obligatoire") String source,
-        @NotBlank(message = "acteurId est obligatoire") String acteurId
+        @NotBlank(message = "source est obligatoire") String source
 ) {
 }

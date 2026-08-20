@@ -34,11 +34,11 @@ class PositionControllerTest {
     @Value("${fretcorridor.jwt.secret}")
     private String jwtSecret;
 
-    private String token() {
+    private String token(String tenantId) {
         return Jwts.builder()
                 .subject(UUID.randomUUID().toString())
                 .claim("roles", List.of("BUREAU"))
-                .claim("tenantId", "tenant-jwt-test")
+                .claim("tenantId", tenantId)
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .compact();
     }
@@ -53,7 +53,7 @@ class PositionControllerTest {
         when(service.listerParTenant("tenant-bgft-douala")).thenReturn(List.of(position));
 
         mockMvc.perform(get("/api/v1/bur/positions")
-                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-bgft-douala"))
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].latitude").value(4.05))
@@ -65,7 +65,7 @@ class PositionControllerTest {
         when(service.listerParTenant("tenant-inconnu")).thenReturn(List.of());
 
         mockMvc.perform(get("/api/v1/bur/positions")
-                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-inconnu"))
+                        .header("Authorization", "Bearer " + token("tenant-inconnu")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }

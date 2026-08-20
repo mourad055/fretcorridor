@@ -42,11 +42,15 @@ class AlerteSeuilControllerTest {
     @Value("${fretcorridor.jwt.secret}")
     private String jwtSecret;
 
-    private String token() {
+    private String token(String tenantId) {
+        return token(tenantId, UUID.randomUUID().toString());
+    }
+
+    private String token(String tenantId, String acteurId) {
         return Jwts.builder()
-                .subject(UUID.randomUUID().toString())
+                .subject(acteurId)
                 .claim("roles", List.of("BUREAU"))
-                .claim("tenantId", "tenant-jwt-test")
+                .claim("tenantId", tenantId)
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .compact();
     }
@@ -63,11 +67,11 @@ class AlerteSeuilControllerTest {
                 Comparateur.SUPERIEUR, new BigDecimal("25000"), "actor-bureau-1")).thenReturn(alerte);
 
         mockMvc.perform(post("/api/v1/bur/alertes")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala", "actor-bureau-1"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tenantId": "tenant-bgft-douala", "axeId": "%s", "indicateur": "PRIX_MEDIANE",
-                                 "comparateur": "SUPERIEUR", "seuil": 25000, "acteurId": "actor-bureau-1"}
+                                {"axeId": "%s", "indicateur": "PRIX_MEDIANE",
+                                 "comparateur": "SUPERIEUR", "seuil": 25000}
                                 """.formatted(axeId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value("alerte-1"))
@@ -84,7 +88,7 @@ class AlerteSeuilControllerTest {
         ));
 
         mockMvc.perform(get("/api/v1/bur/alertes/etat")
-                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-bgft-douala"))
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].evaluable").value(true))
@@ -95,7 +99,7 @@ class AlerteSeuilControllerTest {
     @Test
     void supprime_une_alerte() throws Exception {
         mockMvc.perform(delete("/api/v1/bur/alertes/alerte-1")
-                        .header("Authorization", "Bearer " + token()).param("tenantId", "tenant-bgft-douala"))
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala")))
                 .andExpect(status().isNoContent());
 
         verify(service).supprimer("alerte-1", "tenant-bgft-douala");
@@ -104,11 +108,11 @@ class AlerteSeuilControllerTest {
     @Test
     void refuse_une_configuration_sans_indicateur() throws Exception {
         mockMvc.perform(post("/api/v1/bur/alertes")
-                        .header("Authorization", "Bearer " + token())
+                        .header("Authorization", "Bearer " + token("tenant-bgft-douala"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"tenantId": "tenant-bgft-douala", "axeId": "%s",
-                                 "comparateur": "SUPERIEUR", "seuil": 25000, "acteurId": "actor-bureau-1"}
+                                {"axeId": "%s",
+                                 "comparateur": "SUPERIEUR", "seuil": 25000}
                                 """.formatted(UUID.randomUUID())))
                 .andExpect(status().isBadRequest());
     }
