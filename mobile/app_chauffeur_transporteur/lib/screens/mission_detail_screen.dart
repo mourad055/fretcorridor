@@ -1,11 +1,22 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/mission_provider.dart';
 import '../providers/position_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/signature_pad.dart';
 import 'plan_chargement_screen.dart';
+
+// RG-070/EF-EXE-03 (audit CDC du 19 août) : ce que le formulaire de preuve
+// (_FormulairePreuve, plus bas) doit renvoyer pour que _avancer() puisse
+// appeler ajouterEtapeAvecPreuve.
+class _Preuve {
+  final List<Uint8List> photos;
+  final Uint8List signature;
+  const _Preuve({required this.photos, required this.signature});
+}
 
 const _categoriesIncident = [
   'Retard',
@@ -48,8 +59,32 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
     Future.microtask(() => ref.read(missionProvider.notifier).chargerDetail(widget.mission.missionId));
   }
 
+  // RG-070/EF-EXE-03 : PRISE_EN_CHARGE/LIVRAISON exigent une preuve minimale
+  // (photo(s) + signature tactile du tiers) — EN_TRANSIT n'est ni un
+  // enlèvement ni une livraison, reste sur le chemin JSON sans preuve.
+  bool _exigePreuve(String typeEtape) => typeEtape == 'PRISE_EN_CHARGE' || typeEtape == 'LIVRAISON';
+
   Future<void> _avancer(String typeEtape, String libelle) async {
-    final succes = await ref.read(missionProvider.notifier).ajouterEtape(widget.mission.missionId, typeEtape, libelle);
+    bool succes;
+    if (_exigePreuve(typeEtape)) {
+      final preuve = await showModalBottomSheet<_Preuve>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: AppColors.fond,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+        builder: (_) => _FormulairePreuve(typeEtape: typeEtape),
+      );
+      if (preuve == null || !mounted) return;
+      succes = await ref.read(missionProvider.notifier).ajouterEtapeAvecPreuve(
+            widget.mission.missionId,
+            typeEtape,
+            libelle,
+            preuve.photos,
+            preuve.signature,
+          );
+    } else {
+      succes = await ref.read(missionProvider.notifier).ajouterEtape(widget.mission.missionId, typeEtape, libelle);
+    }
     if (!succes || !mounted) return;
 
     final positionNotifier = ref.read(positionProvider.notifier);
@@ -334,6 +369,130 @@ class _FormulaireIncidentState extends State<_FormulaireIncident> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               child: const Text('Envoyer le signalement', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// RG-070/EF-EXE-03 (audit CDC du 19 août, bloquant §1.3 "livraison sans
+// preuve libère le séquestre") : au moins une photo + une signature tactile
+// du tiers, obligatoires pour PRISE_EN_CHARGE et LIVRAISON (backend rejette
+// désormais ces deux étapes sans preuve — PREUVE_MANQUANTE). Le second mode
+// de validation tiers prévu par le CDC (code SMS) reste hors périmètre côté
+// backend (destinataireTelephone non propagé jusqu'à service-exe) — signature
+// uniquement pour l'instant.
+class _FormulairePreuve extends StatefulWidget {
+  final String typeEtape;
+  const _FormulairePreuve({required this.typeEtape});
+
+  @override
+  State<_FormulairePreuve> createState() => _FormulairePreuveState();
+}
+
+class _FormulairePreuveState extends State<_FormulairePreuve> {
+  final _picker = ImagePicker();
+  final _photos = <File>[];
+  final _signatureKey = GlobalKey<SignaturePadState>();
+  bool _envoiEnCours = false;
+
+  Future<void> _ajouterPhoto() async {
+    if (_photos.length >= 3) return;
+    final image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 1600);
+    if (image == null) return;
+    setState(() => _photos.add(File(image.path)));
+  }
+
+  Future<void> _valider() async {
+    final padState = _signatureKey.currentState;
+    if (_photos.isEmpty || padState == null || padState.estVide) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Une photo et une signature sont obligatoires.')),
+      );
+      return;
+    }
+    setState(() => _envoiEnCours = true);
+    final signaturePng = await padState.capturerPng();
+    if (signaturePng == null) {
+      setState(() => _envoiEnCours = false);
+      return;
+    }
+    final photosBytes = await Future.wait(_photos.map((f) => f.readAsBytes()));
+    if (!mounted) return;
+    Navigator.pop(context, _Preuve(photos: photosBytes, signature: signaturePng));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final titre = widget.typeEtape == 'PRISE_EN_CHARGE' ? 'Preuve de prise en charge' : 'Preuve de livraison';
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(titre, style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          const Text(
+            'Photo(s) de la marchandise + signature du destinataire — obligatoire (RG-070).',
+            style: TextStyle(color: AppColors.texteMuet, fontSize: 11.5),
+          ),
+          const SizedBox(height: 20),
+          const Text('PHOTOS (au moins 1)', style: TextStyle(fontSize: 11, letterSpacing: 1.1,
+              color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final photo in _photos)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(photo, width: 72, height: 72, fit: BoxFit.cover),
+                ),
+              if (_photos.length < 3)
+                InkWell(
+                  onTap: _ajouterPhoto,
+                  child: Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.bordure),
+                    ),
+                    child: const Icon(Icons.camera_alt_outlined, color: AppColors.texteMuet),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          const Text('SIGNATURE DU DESTINATAIRE', style: TextStyle(fontSize: 11, letterSpacing: 1.1,
+              color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          SignaturePad(key: _signatureKey),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => setState(() => _signatureKey.currentState?.effacer()),
+              child: const Text('Effacer'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _envoiEnCours ? null : _valider,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.accent,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: _envoiEnCours
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Valider', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
             ),
           ),
         ],
