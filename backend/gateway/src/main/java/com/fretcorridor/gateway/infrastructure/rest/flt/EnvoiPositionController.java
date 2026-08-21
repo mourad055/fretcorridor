@@ -26,7 +26,8 @@ public class EnvoiPositionController {
     @PostMapping("/api/v1/positions")
     public Mono<ResponseEntity<Void>> envoyer(@Valid @RequestBody EnvoyerPositionRequest request,
                                                @AuthenticationPrincipal AuthenticatedActor actor) {
-        var position = new PositionEnvoi(request.missionId(), request.latitude(), request.longitude(), request.horodatage());
+        var position = new PositionEnvoi(request.missionId(), request.latitude(), request.longitude(),
+                request.horodatage(), request.eventId(), request.sourceCapture(), request.precisionMetres());
         return positionPort.envoyer(actor.delegationToken(), position)
                 .then(Mono.just(ResponseEntity.status(HttpStatus.CREATED).<Void>build()));
     }

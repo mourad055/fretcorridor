@@ -17,15 +17,19 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * reseau n'est pas un controle technique (ENF-SEC-01, moindre privilege).
  *
  * Seul CoutController.calculerLot (POST /api/mat/couts/calculer-lot) reste
- * exempte : il est appele en synchrone interne par ServiceMatClient
+ * exempte du JWT : il est appele en synchrone interne par ServiceMatClient
  * (OPT -> MAT, meme porteur, budget L0/L1 ~50ms) et ce client ne transporte
  * aucun Authorization header aujourd'hui - le proteger casserait le cycle
- * L1 en production. C'est le seul endpoint HTTP reel expose par ce service
- * (confirme par grep sur les annotations @*Mapping, aucun autre).
+ * L1 en production. FIX audit 21/08 (E2) : ce write n'est plus ouvert a
+ * quiconque - le controleur verifie desormais la cle interne partagee
+ * X-Internal-Service-Key (meme pattern que GET /api/cap/capacites/{id},
+ * PR #125), seul service-opt connait la valeur. C'est le seul endpoint HTTP
+ * reel expose par ce service (confirme par grep sur les annotations
+ * @*Mapping, aucun autre).
  *
  * Tout le reste (endpoints futurs inclus) exige desormais un JWT valide.
- * Si un jour ServiceMatClient porte un secret/token service-a-service,
- * cette exemption pourra etre retiree.
+ * Si un jour ServiceMatClient porte un JWT service-a-service, cette
+ * exemption pourra etre retiree au profit d'une regle hasRole.
  */
 @Configuration
 @EnableWebSecurity

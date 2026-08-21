@@ -50,7 +50,7 @@ public class RealGeoAdapter implements GeoPort {
                         tenantId,
                         dto.hubOrigineNom(),
                         dto.hubDestinationNom(),
-                        0.0,
+                        dto.distanceKm(),
                         dto.visibiliteActive(),
                         dto.matchingActif(),
                         dto.paiementActif()
@@ -63,7 +63,8 @@ public class RealGeoAdapter implements GeoPort {
             String hubDestinationNom,
             boolean visibiliteActive,
             boolean matchingActif,
-            boolean paiementActif
+            boolean paiementActif,
+            double distanceKm
     ) {
     }
 }

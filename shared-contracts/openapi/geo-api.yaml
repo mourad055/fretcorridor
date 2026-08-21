@@ -31,7 +31,7 @@ paths:
         - name: tenantId
           in: query
           required: false
-          schema: { type: string, format: uuid }
+          schema: { type: string, maxLength: 100 }
           description: Si absent, retourne tous les axes (usage interne OPT/filtre L0)
       responses:
         '200':
@@ -298,7 +298,7 @@ components:
           description: JSONB libre (EF-GEO-02) — ex. fenetreMatchingMs, rayonAppariementKm
         tenantId:
           type: string
-          format: uuid
+          maxLength: 100
           nullable: true
           description: "Optionnel. Si absent, le tenant BGFT (Phase 1 par defaut) est applique.
 
@@ -319,10 +319,11 @@ components:
           additionalProperties: true
         tenantId:
           type: string
-          format: uuid
+          maxLength: 100
           nullable: true
           description: |
-            ENF-MUL-01. Nullable pour les donnees anterieures a la migration
+            ENF-MUL-01. String depuis la migration V8 (plus jamais UUID,
+            PR #126). Nullable pour les donnees anterieures a la migration
             V4 (pre-remplies avec le tenant BGFT par defaut en pratique).
         dateCreation: { type: string, format: date-time }
 

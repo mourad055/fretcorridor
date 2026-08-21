@@ -21,20 +21,36 @@ import java.util.Map;
  * API interne de calcul de cout composite (EF-MAT-04), consommee en synchrone
  * REST par service-opt (meme porteur, budget L0 ~50ms) pour construire la
  * matrice de couts avant l'affectation Kuhn-Munkres (L1).
+ *
+ * FIX audit 21/08 (E2) : ce endpoint est un WRITE (persiste un CycleMatching
+ * par candidat) et son port est publie sur l'hote - il n'etait protege par
+ * AUCUN controle (ni JWT ni cle service-a-service, cf SecurityConfig avant
+ * correctif). Cle interne partagee X-Internal-Service-Key en remplacement,
+ * meme pattern que GET /api/cap/capacites/{id} (PR #125) : seul service-opt
+ * (le seul appelant legitime) connait la valeur configuree.
  */
 @RestController
 @RequestMapping("/api/mat/couts")
 public class CoutController {
 
     private final CoutCompositeService coutCompositeService;
+    private final String cleInterneAttendue;
 
-    public CoutController(CoutCompositeService coutCompositeService) {
+    public CoutController(CoutCompositeService coutCompositeService,
+                          @org.springframework.beans.factory.annotation.Value(
+                                  "${fretcorridor.internal.service-key}") String cleInterneAttendue) {
         this.coutCompositeService = coutCompositeService;
+        this.cleInterneAttendue = cleInterneAttendue;
     }
 
     @PostMapping("/calculer-lot")
     @ResponseStatus(HttpStatus.OK)
-    public CoutLotResponse calculerLot(@Valid @RequestBody CoutLotRequest request) {
+    public CoutLotResponse calculerLot(@Valid @RequestBody CoutLotRequest request,
+                                       @org.springframework.web.bind.annotation.RequestHeader(
+                                               value = "X-Internal-Service-Key", required = false) String cleInterne) {
+        if (!cleInterneAttendue.equals(cleInterne)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Cle interne invalide ou absente");
+        }
         validerValeursCriteres(request);
 
         List<CandidatCout> candidats = request.candidats().stream()
