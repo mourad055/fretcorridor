@@ -2,77 +2,66 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import '../providers/auth_provider.dart';
-import '../providers/tenant_selection_provider.dart';
 import '../theme/app_theme.dart';
-import 'inscription_screen.dart';
 import 'kyc_screen.dart';
-import 'tenant_selection_screen.dart';
 
-// FE-WEB-01/S1 : écran de connexion unique, aucune indication de rôle avant
-// authentification réussie — le rôle (CHAUFFEUR/TRANSPORTEUR/AGENT/
-// CHAUFFEUR_PROPRIETAIRE) est résolu depuis le JWT retourné par le gateway,
-// jamais choisi côté client.
-//
-// Carte blanche flottante sur l'illustration de fond (même identité que
-// welcome_screen.dart) plutôt qu'un simple fond blanc plat.
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+enum _TypeCompte { chauffeur, transporteur, chauffeurProprietaire }
 
-  @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+extension on _TypeCompte {
+  String get valeurApi => switch (this) {
+        _TypeCompte.chauffeur => 'CHAUFFEUR',
+        _TypeCompte.transporteur => 'TRANSPORTEUR',
+        _TypeCompte.chauffeurProprietaire => 'CHAUFFEUR_PROPRIETAIRE',
+      };
+
+  String get libelle => switch (this) {
+        _TypeCompte.chauffeur => 'Chauffeur',
+        _TypeCompte.transporteur => 'Transporteur',
+        _TypeCompte.chauffeurProprietaire => 'Les deux',
+      };
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+// Même carte flottante sur l'illustration de fond que login_screen.dart —
+// identité visuelle continue entre accueil / connexion / inscription.
+class InscriptionScreen extends ConsumerStatefulWidget {
+  const InscriptionScreen({super.key});
+
+  @override
+  ConsumerState<InscriptionScreen> createState() => _InscriptionScreenState();
+}
+
+class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _codeCtrl = TextEditingController();
+  final _nomCtrl = TextEditingController();
+  final _prenomCtrl = TextEditingController();
+  final _raisonSocialeCtrl = TextEditingController();
   String _telephoneComplet = '';
+  _TypeCompte _type = _TypeCompte.chauffeur;
   bool _codeVisible = false;
 
   @override
   void dispose() {
     _codeCtrl.dispose();
+    _nomCtrl.dispose();
+    _prenomCtrl.dispose();
+    _raisonSocialeCtrl.dispose();
     super.dispose();
   }
 
-  static const _rolesAutorises = ['CHAUFFEUR', 'TRANSPORTEUR', 'CHAUFFEUR_PROPRIETAIRE', 'AGENT'];
-
-  Future<void> _login() async {
+  Future<void> _creerCompte() async {
     if (!_formKey.currentState!.validate() || _telephoneComplet.isEmpty) return;
-    final succes = await ref.read(authProvider.notifier).login(
-      _telephoneComplet,
-      _codeCtrl.text.trim(),
-    );
-    if (!succes || !mounted) return;
-
-    // Le gateway authentifie tous les rôles connus (CHARGEUR compris, pour
-    // l'app Client) — cette app reste réservée à Chauffeur/Transporteur/Agent,
-    // un compte d'un autre rôle est refusé ici plutôt que d'atterrir sur un
-    // accueil vide sans explication.
-    final role = ref.read(authProvider).role;
-    if (!_rolesAutorises.contains(role)) {
-      await ref.read(authProvider.notifier).logout();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ce compte est un compte client — utilisez l\'app FretCorridor Client.'),
-          backgroundColor: AppColors.erreur,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
+    final succes = await ref.read(authProvider.notifier).register(
+          telephone: _telephoneComplet,
+          code: _codeCtrl.text.trim(),
+          type: _type.valeurApi,
+          nom: _type == _TypeCompte.transporteur ? null : _nomCtrl.text.trim(),
+          prenom: _type == _TypeCompte.transporteur ? null : _prenomCtrl.text.trim(),
+          raisonSociale: _type == _TypeCompte.transporteur ? _raisonSocialeCtrl.text.trim() : null,
+        );
+    if (succes && mounted) {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const KycScreen()));
     }
-
-    // S18 — sélection de tenant seulement si le compte en a plusieurs
-    // (MOCK) ; sinon comportement inchangé, on va directement au KYC.
-    final tenantIdReel = ref.read(authProvider).tenantId ?? '';
-    final besoinSelectionTenant =
-        ref.read(tenantSelectionProvider.notifier).resoudrePourCompte(_telephoneComplet, tenantIdReel);
-    if (!mounted) return;
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => besoinSelectionTenant ? const TenantSelectionScreen() : const KycScreen()),
-    );
   }
 
   @override
@@ -99,7 +88,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             alignment: Alignment.bottomCenter,
             child: Container(
               width: double.infinity,
-              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.82),
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
               padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
               decoration: const BoxDecoration(
                 color: AppColors.surface,
@@ -111,26 +100,73 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Center(child: Image.asset('assets/images/logo_fretcorridor.jpeg', height: 36)),
-                      const SizedBox(height: 16),
-                      Text('Se connecter', textAlign: TextAlign.center,
+                      Center(child: Image.asset('assets/images/logo_fretcorridor.jpeg', height: 32)),
+                      const SizedBox(height: 12),
+                      Text('Créer un compte', textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 4),
+                      const Text('Vous compléterez votre profil juste après.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                      const SizedBox(height: 20),
 
-                      const Text('TÉLÉPHONE', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
+                      const Text('JE SUIS', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
                           color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Wrap(spacing: 8, runSpacing: 8, children: _TypeCompte.values.map((t) {
+                        final selectionne = t == _type;
+                        return ChoiceChip(
+                          label: Text(t.libelle),
+                          selected: selectionne,
+                          onSelected: (_) => setState(() => _type = t),
+                          selectedColor: AppColors.accent,
+                          backgroundColor: AppColors.fond,
+                          labelStyle: TextStyle(color: selectionne ? Colors.white : AppColors.texte),
+                          side: BorderSide(color: selectionne ? AppColors.accent : AppColors.bordure),
+                        );
+                      }).toList()),
+                      const SizedBox(height: 20),
+
+                      if (_type == _TypeCompte.transporteur) ...[
+                        _label('RAISON SOCIALE'),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _raisonSocialeCtrl,
+                          decoration: _decoration('Ex : Transport Fotso SARL'),
+                          validator: (v) => (v == null || v.isEmpty) ? 'Raison sociale obligatoire' : null,
+                        ),
+                        const SizedBox(height: 16),
+                      ] else ...[
+                        _label('PRÉNOM'),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _prenomCtrl,
+                          decoration: _decoration('Ex : Paul'),
+                          validator: (v) => (v == null || v.isEmpty) ? 'Prénom obligatoire' : null,
+                        ),
+                        const SizedBox(height: 16),
+                        _label('NOM'),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _nomCtrl,
+                          decoration: _decoration('Ex : Kamga'),
+                          validator: (v) => (v == null || v.isEmpty) ? 'Nom obligatoire' : null,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+
+                      _label('TÉLÉPHONE'),
                       const SizedBox(height: 8),
                       IntlPhoneField(
                         initialCountryCode: 'CM',
+                        decoration: _decoration(null),
                         dropdownTextStyle: const TextStyle(color: AppColors.texte),
                         style: const TextStyle(color: AppColors.texte, fontSize: 15),
-                        decoration: _decoration(),
                         onChanged: (phone) => _telephoneComplet = phone.completeNumber,
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
-                      const Text('CODE', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
-                          color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+                      _label('CODE (4 à 6 chiffres)'),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _codeCtrl,
@@ -138,7 +174,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         keyboardType: TextInputType.number,
                         maxLength: 6,
                         style: const TextStyle(color: AppColors.texte, fontSize: 20, letterSpacing: 8),
-                        decoration: _decoration(hint: '••••').copyWith(
+                        decoration: _decoration('••••').copyWith(
                           counterText: '',
                           prefixIcon: const Icon(Icons.lock, color: AppColors.texteMuet),
                           suffixIcon: IconButton(
@@ -174,7 +210,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       SizedBox(
                         height: 52,
                         child: ElevatedButton(
-                          onPressed: authState.chargement ? null : _login,
+                          onPressed: authState.chargement ? null : _creerCompte,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.accent,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -182,16 +218,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: authState.chargement
                               ? const SizedBox(height: 22, width: 22,
                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                              : const Text('Se connecter',
+                              : const Text('Créer mon compte',
                                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Center(
-                        child: TextButton(
-                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InscriptionScreen())),
-                          child: const Text('Créer un compte',
-                              style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ],
@@ -205,7 +233,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  InputDecoration _decoration({String? hint}) => InputDecoration(
+  Widget _label(String text) => Text(text,
+      style: const TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600));
+
+  InputDecoration _decoration(String? hint) => InputDecoration(
         hintText: hint,
         filled: true,
         fillColor: AppColors.fond,

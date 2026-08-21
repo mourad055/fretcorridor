@@ -35,6 +35,16 @@ public class AuthController {
         }
     }
 
+    // ── POST /api/auth/inscription-transporteur ──────────────
+    @PostMapping("/inscription-transporteur")
+    public ResponseEntity<?> inscrireTransporteur(@Valid @RequestBody AuthDto.InscriptionTransporteurRequest request) {
+        try {
+            return ResponseEntity.status(201).body(authService.inscrireTransporteur(request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     // ── POST /api/auth/refresh ───────────────────────────────
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@RequestBody java.util.Map<String, String> body) {

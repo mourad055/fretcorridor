@@ -149,7 +149,7 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
                 TextFormField(
                   controller: _poidsCtrl,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  decoration: _decoration(hint: 'Ex : 9500'),
+                  decoration: _decoration(hint: 'Ex : 9500', suffixe: 'kg'),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Champ obligatoire';
                     final n = double.tryParse(v);
@@ -203,8 +203,10 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
   Widget _label(String text) => Text(text,
       style: const TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600));
 
-  InputDecoration _decoration({String? hint}) => InputDecoration(
+  InputDecoration _decoration({String? hint, String? suffixe}) => InputDecoration(
         hintText: hint,
+        suffixText: suffixe,
+        suffixStyle: const TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.w600),
         filled: true,
         fillColor: AppColors.surface,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),

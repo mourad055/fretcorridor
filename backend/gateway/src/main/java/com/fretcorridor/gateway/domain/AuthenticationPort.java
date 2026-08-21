@@ -10,4 +10,6 @@ import reactor.core.publisher.Mono;
 public interface AuthenticationPort {
 
     Mono<Actor> authenticate(String phone, String code);
+
+    Mono<Actor> register(String phone, String code, String type, String nom, String prenom, String raisonSociale);
 }

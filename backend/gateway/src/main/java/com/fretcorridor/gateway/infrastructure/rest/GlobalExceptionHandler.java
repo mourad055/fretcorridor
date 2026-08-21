@@ -2,6 +2,7 @@ package com.fretcorridor.gateway.infrastructure.rest;
 
 import com.fretcorridor.gateway.domain.AuthenticationServiceUnavailableException;
 import com.fretcorridor.gateway.domain.InvalidCredentialsException;
+import com.fretcorridor.gateway.domain.RegistrationRefuseeException;
 import com.fretcorridor.gateway.domain.agent.AgentServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.agent.EnrolementIntrouvableException;
 import com.fretcorridor.gateway.domain.agent.EnrolementRefuseException;
@@ -37,6 +38,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleInvalidCredentials(InvalidCredentialsException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
         problem.setTitle("Authentification refusée");
+        return problem;
+    }
+
+    @ExceptionHandler(RegistrationRefuseeException.class)
+    public ProblemDetail handleRegistrationRefusee(RegistrationRefuseeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Inscription refusée");
         return problem;
     }
 
