@@ -16,7 +16,7 @@ spring:
 
 fretcorridor:
   jwt:
-    secret: ${FRETCORRIDOR_JWT_SECRET:dev-secret-change-me-in-production-min-32-bytes}
+    secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
     validity-minutes: 60
   service-pay:
     # service-pay est réellement implémenté (contrairement aux autres services

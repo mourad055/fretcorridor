@@ -106,6 +106,23 @@ public class EtatSolution {
     }
 
     /**
+     * Retire de la sequence toutes les positions (enlevement + livraison)
+     * des affectations dont l'id figure dans affectationIds - operateur de
+     * destruction ALNS (CDC S8.6.2, cf OperateurRetrait). Un retrait pur ne
+     * peut jamais violer la capacite (elle ne fait que baisser a chaque
+     * etape) ni produire une charge negative si la sequence d'origine etait
+     * valide - le resultat n'est donc jamais null par construction, mais on
+     * repasse par recalculerChargeOuNull() pour re-synchroniser chargeApres
+     * sur chaque position restante (impactee par le retrait).
+     */
+    public EtatSolution sansAffectations(java.util.Set<UUID> affectationIds) {
+        List<PositionPlanifiee> filtree = sequence.stream()
+                .filter(p -> !affectationIds.contains(p.affectationId()))
+                .toList();
+        return recalculerChargeOuNull(filtree);
+    }
+
+    /**
      * Recalcule la charge dynamique de TOUTE la sequence a partir de
      * chargeInitiale (jamais zero fixe) - chaque position porte deja son
      * propre poids, plus de reconstruction approximative par affectationId

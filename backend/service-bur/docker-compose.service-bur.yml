@@ -19,5 +19,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fretcorridor
       SPRING_DATASOURCE_USERNAME: fretcorridor
       SPRING_DATASOURCE_PASSWORD: fretcorridor
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      # Manquait - service-bur tournait avec le defaut localhost:9092
+      # (invalide en reseau Docker), boucle de reconnexion infinie sur
+      # les 2 consumers Kafka. kafka:29092 = listener interne du reseau
+      # Docker (cf infra/docker-compose.yml, KAFKA_ADVERTISED_LISTENERS).
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     ports:
       - "8083:8083"
