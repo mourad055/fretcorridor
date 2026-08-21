@@ -169,8 +169,21 @@ public class MatchingCycleService {
         // n'a plus de sens a envoyer a Kuhn-Munkres (AffectationL1Service
         // exige des candidats non vides par demande) - filtree du lot plutot
         // que de faire planter le L1 sur une liste vide.
+        //
+        // BUG CORRIGE (audit de suivi) : une demande sans coordonnees
+        // (origine/destination null, ex. donnee de test incomplete) etait
+        // laissee dans le lot envoye a Kuhn-Munkres. Les couts MAT etant
+        // aujourd'hui des placeholders identiques pour tout candidat, rien
+        // ne distinguait cette demande "morte" d'une demande valide : le
+        // solveur pouvait tres bien lui affecter une capacite reelle de
+        // maniere optimale (cout egal), que AffectationL1Service rejetait
+        // ensuite (coordonnees manquantes pour persister l'Affectation) --
+        // gaspillant cette capacite pour tout le cycle au lieu de la laisser
+        // a une demande valide du meme lot. Filtree ici, en amont du
+        // solveur, plutot que rejetee apres coup.
         List<DemandeAvecCandidats> lotNonVide = lot.stream()
                 .filter(d -> !d.candidats().isEmpty())
+                .filter(d -> d.origineDemande() != null && d.destinationDemande() != null)
                 .toList();
 
         if (lotNonVide.isEmpty()) {
