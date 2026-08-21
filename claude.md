@@ -1,4 +1,109 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 21 août 2026)
+# FretCorridor v4 — Transmission d'état (mise à jour 21 août 2026, nuit)
+
+> **Session pipeline matching bout-en-bout (21 août, soir/nuit)** — suite
+> directe de la session UI/UX du même jour (ci-dessous). Cette fois : le
+> vrai chemin critique marketplace (publier → matcher → proposer →
+> accepter → mission) testé de bout en bout en conditions réelles sur le
+> téléphone, plusieurs bugs bloquants réels trouvés et corrigés. Tout
+> commité directement sur `dev` (même précédent que le 20 août).
+>
+> **Bloquants réels corrigés (vérifiés par test, pas juste relus)** :
+> - **`service-mkt` ne renseignait jamais les coordonnées d'une demande à
+>   la publication** — `Demande.origineLatitude/...` existaient déjà sur
+>   l'entité et étaient déjà lus par `publierEvenement()`, mais rien ne
+>   les remplissait jamais. Le moteur de matching n'avait donc **aucune**
+>   position exploitable pour **aucune** demande, jamais. `AxeResponse`
+>   (service-geo) expose désormais les coordonnées réelles des hubs,
+>   reprises par service-mkt à la résolution de l'axe (granularité hub,
+>   donnée réelle).
+> - **Une demande sans coordonnées faisait planter tout le cycle
+>   Kuhn-Munkres** (`AffectationL1Service`, NullPointerException) — une
+>   seule demande de test incomplète bloquait aussi les demandes valides
+>   du même lot. Puis, une fois ce crash corrigé au mauvais endroit
+>   (après le solveur), découverte du vrai bug : le solveur pouvait
+>   quand même affecter une capacité réelle à cette demande morte (coûts
+>   MAT identiques entre candidats, aucun signal pour la disqualifier) —
+>   gaspillant la capacité pour tout le cycle. Filtrée en amont
+>   (`MatchingCycleService.lotNonVide`), avant le solveur.
+> - **`origineNom`/`destinationNom` partaient en dur à `null`** dans
+>   `AffectationConfirmeeEvent` → `Mission.origineNom/destinationNom`
+>   (service-exe) toujours vides, alors que l'app Chauffeur affichait déjà
+>   ces deux champs sans jamais rien avoir à montrer. `AxeActifDto`
+>   récupère désormais les noms de villes des hubs, propagés via une
+>   surcharge de `calculerAffectationOptimale` (signature existante
+>   conservée pour l'endpoint de vérif manuelle + les tests).
+> - **Infos marchandise (type/quantité/poids) jamais propagées** au-delà
+>   de service-mkt — ni l'app Chauffeur (missions) ni l'app Client
+>   (suivi) ne savaient ce qui était réellement transporté. Même
+>   principe que le fix précédent, propagé de bout en bout
+>   (`DemandePublieeEvent` → `DemandeEnAttente`/`DemandeAvecCandidats`
+>   → `AffectationConfirmeeEvent` → `Mission` → DTOs → UI des deux apps).
+>   Migration `V18__add_marchandise_demande_en_attente.sql` (service-opt).
+> - **`SecurityConfig` bloquait les appels internes AVANT le controller**
+>   (`service-cap` `POST /decrement`, `service-flt` `GET /vehicules/{id}`)
+>   — les deux controllers savent déjà accepter la clé interne partagée
+>   en plus du JWT, mais restaient sous `.anyRequest().authenticated()`
+>   côté Spring Security → 403 systématique pour tout appelant sans JWT,
+>   *avant même* d'atteindre le code qui gère la clé interne. Piège à
+>   revérifier systématiquement pour tout nouvel endpoint interne : un
+>   controller qui "accepte la clé interne" ne suffit pas, il faut aussi
+>   un `permitAll()` explicite au niveau du filtre Spring Security (même
+>   pattern que le `GET` déjà en place à côté).
+> - **EF-MKT-08 (réservation réelle à l'acceptation d'une proposition)**
+>   construit de zéro — `accepterProposition()` marquait ACCEPTEE en base
+>   locale sans jamais réserver la capacité côté transporteur. Nouveau
+>   `ServiceCapClient` (service-mkt), pont cross-tenant via clé interne.
+> - **`copyWith(champ: null, ...)` ne vide jamais un champ en Dart** —
+>   `null ?? ancienneValeur` retombe sur l'ancienne valeur. Repéré sur
+>   `SuiviState` (app_client) : ouvrir le suivi d'une demande sans mission
+>   affichait le suivi de la DERNIÈRE demande consultée qui, elle, en
+>   avait un. Piège générique à surveiller partout où `copyWith` sert à
+>   *effacer* un champ plutôt qu'à le laisser inchangé — repartir d'un
+>   objet neuf dans ce cas, pas de `copyWith`.
+>
+> **Pièges opérationnels pour la suite** :
+> - **L'IP du laptop a changé en cours de session** (réseau WiFi, pas
+>   hotspot fixe cette fois) — les deux apps mobiles ont l'IP baked-in au
+>   build (`--dart-define`), donc un changement d'IP casse tout
+>   silencieusement ("catalogue indisponible", "erreur réseau") sans
+>   rapport avec les données. Vérifier `ip -4 addr show` en cas de
+>   symptôme réseau généralisé après un moment d'inactivité/reconnexion.
+> - **`service-mat`, `service-opt`, `service-exe` ne sont PAS dans la
+>   liste de démarrage "standard" héritée du 20 août** (qui ne couvrait
+>   que ida/geo/cap/mkt/gateway) — sans eux, aucun matching ne se
+>   déclenche jamais, silencieusement (une demande publiée reste
+>   PUBLIEE pour toujours). Les 10 services à démarrer pour un test de
+>   bout en bout : ida, geo, cap, mkt, flt, not, exe, opt, mat, gateway.
+> - **Une capacité déclarée est "consommée" par le matching dès qu'elle
+>   sert à une affectation**, même si son poids résiduel reste énorme —
+>   ce n'est pas un pool réutilisable pour plusieurs demandes dans le
+>   même cycle. Une nouvelle demande sans nouvelle capacité disponible
+>   restera sans proposition indéfiniment (comportement normal, pas un
+>   bug) ; la queue traite en priorité la plus ANCIENNE demande en
+>   attente dès qu'une capacité se libère, pas la plus récente.
+> - **Aucun barème de tarification n'existait en base** (`opt.bareme_tarification`
+>   vide) — `TarificationL4Service` tombe en mode dégradé sans ça, aucune
+>   affectation ne se termine. Deux barèmes de test insérés manuellement
+>   (axe Douala↔Yaoundé, régime `FORFAITAIRE_VEHICULE`, 50000 XAF socle,
+>   10% commission) — **données de démo, pas des valeurs métier
+>   validées**, à ne pas confondre avec une vraie config Moteur.
+> - **10 JVM simultanées (~500-700 Mo chacune malgré `-Xmx256m`, overhead
+>   hors-tas) saturent facilement les 7,5 Go de la machine** — l'OOM-killer
+>   a tué le démon Gradle à plusieurs reprises pendant les builds mobiles.
+>   Toujours couper tout le backend avant un `flutter run`/build, le
+>   relancer juste après.
+>
+> **Non fait, connu et documenté au fil de la session** (pas retesté
+> depuis, ne pas supposer résolu) : wizard de publication graduée
+> (photo, déclaration N1→N5), fidélité pixel-perfect au mockup pour les
+> 2 premiers écrans chauffeur (profil/accueil), vraie carte pour le
+> suivi position (actuellement juste "véhicule en mouvement" + horodatage,
+> mieux que des coordonnées brutes mais pas une carte), i18n anglais
+> (aucune infrastructure de traduction dans le code).
+
+---
+
+# Historique (mise à jour 21 août 2026, matin/après-midi)
 
 > **Session UI/UX mobile (21 août)** — suite directe de la session de
 > test du 20 août (Pixel 6a physique, hotspot téléphone). Corrections
