@@ -27,7 +27,10 @@ class AlnsSolverTest {
 
     private final DetourValidator detourValidator = new DetourValidator();
     private final OperateurInsertion operateurInsertion = new OperateurInsertion(detourValidator);
-    private final AlnsSolver solver = new AlnsSolver(operateurInsertion);
+    // Seed fixe (fix audit 21/08, reproductibilite EF-MAT-11/12) : les
+    // invariants testes ici doivent tenir quel que soit le tirage - un seed
+    // deterministe rend en plus chaque run de test reproductible.
+    private final AlnsSolver solver = new AlnsSolver(operateurInsertion, 42L);
 
     /**
      * Affectation.id est @GeneratedValue (JPA) - null hors contexte de
@@ -107,18 +110,29 @@ class AlnsSolverTest {
 
     @Test
     void capaciteDepassee_auMoinsUneAffectationResteNonInseree() {
-        // Deux affectations dont la somme des poids depasse strictement la
-        // capacite du vehicule (EF-CAP) : impossible d'inserer les deux,
-        // quel que soit l'ordre ou le nombre d'iterations destroy/repair -
-        // EtatSolution.recalculerChargeOuNull DOIT rejeter le depassement.
+        // FIX audit 21/08 : la version precedente de ce test etait fausse -
+        // elle supposait une capacite STATIQUE (somme des poids <= capacite),
+        // alors que EtatSolution implemente la capacite DYNAMIQUE du CDC
+        // (S8.6.1 point 3 : "simulation complete, jamais une somme globale").
+        // Deux affectations de 400 kg sur un vehicule de 500 kg sont
+        // parfaitement consolidables SEQUENTIELLEMENT (livraison de la
+        // premiere avant enlevement de la seconde : charge max 400, jamais
+        // 800) - le solveur avait raison d'inserer les deux, le test echouait
+        // de maniere deterministe des son commit.
+        //
+        // Pour tester reellement le rejet capacite, on rend le depassement
+        // inevitable a TOUTE position : charge initiale 300 kg (marchandise
+        // deja a bord, Sprint 12) + affectation de 400 kg sur capacite 500 -
+        // 300+400=700 > 500 ou que l'on insere, y compris seule dans la
+        // sequence.
         Affectation a1 = creerAffectation(400, 4.05, 9.70, 4.06, 9.72);
-        Affectation a2 = creerAffectation(400, 4.06, 9.71, 4.07, 9.73);
 
         AlnsSolver.ResultatSequencement resultat = solver.resoudre(
-                List.of(a1, a2), BigDecimal.valueOf(500), BigDecimal.ZERO, Map.of());
+                List.of(a1), BigDecimal.valueOf(500), BigDecimal.valueOf(300), Map.of());
 
         assertFalse(resultat.affectationsNonInserees().isEmpty(),
-                "Capacite 500kg pour 800kg de demande : au moins une affectation doit rester non inseree");
+                "Charge initiale 300kg + affectation 400kg sur capacite 500kg : "
+                        + "l'affectation doit rester non inseree");
 
         // Verifie aussi que la solution retournee ne viole jamais la
         // capacite a aucun etat intermediaire (double controle : la
@@ -130,6 +144,31 @@ class AlnsSolverTest {
                 .orElse(BigDecimal.ZERO);
         assertTrue(chargeMax.compareTo(BigDecimal.valueOf(500)) <= 0,
                 "La charge ne doit jamais depasser la capacite a aucun point de la sequence");
+    }
+
+    @Test
+    void consolidationSequentielle_deuxPoidsSuperieursALaCapaciteStatique_sontInsertables() {
+        // Complement du fix ci-dessus : verifie le comportement CORRECT du
+        // solveur sur le cas qui cassait l'ancien test - deux affectations
+        // de 400 kg sur capacite 500 kg doivent etre consolidees (l'une
+        // livree avant que l'autre soit enlevee), c'est precisement ce qui
+        // fait exister le groupage (CDC S8.5.3, gain de remplissage).
+        Affectation a1 = creerAffectation(400, 4.05, 9.70, 4.06, 9.72);
+        Affectation a2 = creerAffectation(400, 4.06, 9.71, 4.07, 9.73);
+
+        AlnsSolver.ResultatSequencement resultat = solver.resoudre(
+                List.of(a1, a2), BigDecimal.valueOf(500), BigDecimal.ZERO, Map.of());
+
+        assertEquals(2, resultat.affectationsInserees().size(),
+                "Consolidation sequentielle : les deux affectations doivent etre inserees");
+        assertTrue(resultat.affectationsNonInserees().isEmpty());
+
+        BigDecimal chargeMax = resultat.solutionFinale().getSequence().stream()
+                .map(EtatSolution.PositionPlanifiee::chargeApres)
+                .max(BigDecimal::compareTo)
+                .orElse(BigDecimal.ZERO);
+        assertTrue(chargeMax.compareTo(BigDecimal.valueOf(500)) <= 0,
+                "La charge dynamique ne doit jamais depasser la capacite");
     }
 
     @Test
