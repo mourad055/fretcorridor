@@ -24,7 +24,11 @@ public final class KuhnMunkresSolver {
     // Superieur a toute somme ponderee plausible (les couts MAT sont bornes
     // dans [0,1] par candidat/critere, cf validation CoutController cote
     // service-mat) - jamais choisi tant qu'une paire reelle reste disponible.
-    private static final double COUT_SENTINELLE = 1_000_000.0;
+    // Publique : AffectationL1Service reutilise cette meme valeur pour ses
+    // propres cases sentinelles (candidat hors rayon RG-046 pour une demande
+    // donnee mais dans le lot pour une autre) - une seule source de verite,
+    // jamais deux constantes qui pourraient diverger silencieusement.
+    public static final double COUT_SENTINELLE = 1_000_000.0;
 
     private KuhnMunkresSolver() {
         // Utilitaire statique, pas d'instanciation.
