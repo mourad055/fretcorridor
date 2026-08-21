@@ -1,4 +1,71 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 20 août 2026, nuit)
+# FretCorridor v4 — Transmission d'état (mise à jour 21 août 2026)
+
+> **Session UI/UX mobile (21 août)** — suite directe de la session de
+> test du 20 août (Pixel 6a physique, hotspot téléphone). Corrections
+> menées sur les deux apps (Client, Chauffeur/Transporteur), commitées
+> directement sur `dev` (pas de PR — précédent déjà posé le 20 août pour
+> ce type de changement mobile-only, solo, sans autre développeur
+> concerné) :
+>
+> - **Menu latéral (hamburger) à moitié mort** : 5 des 7 liens (Langue,
+>   Centre d'aide, Politique & confidentialité, Conditions
+>   d'utilisation, Paramètres) avaient `onTap: null` — grisés, ne
+>   menaient nulle part, dans les deux apps. 6 nouveaux écrans créés
+>   (`aide_screen.dart`, `conditions_utilisation_screen.dart`,
+>   `langue_screen.dart`, `parametres_screen.dart`,
+>   `politique_confidentialite_screen.dart`, `simple_page_screen.dart`
+>   comme gabarit commun) et branchés dans `menu_drawer.dart` des deux
+>   apps. Contenu FAQ adapté au rôle (chargeur côté Client,
+>   capacités/missions côté Chauffeur) ; Politique/CGU en placeholder
+>   raisonnable, pas un vrai texte juridique validé.
+> - **Bouton "Enregistrer" mal placé sur l'écran de complétion de
+>   profil** (`completer_profil_screen.dart` Client,
+>   `kyc_screen.dart` Chauffeur) : il appartenait à la carte "1.
+>   Identité", donc affiché **au-dessus** de la carte "2. Pièce
+>   d'identité" — déroutant visuellement. Extrait en bouton commun,
+>   replacé après les deux étapes (bas d'écran), dans les deux apps.
+> - **Fausse alerte "perte de données"** : après un rebuild+reinstall
+>   pendant que le backend était encore coupé (pause RAM habituelle
+>   avant tout build), l'app Client affichait un état vide (catalogue
+>   d'emballages + "Mes demandes"), lu par l'utilisatrice comme une
+>   suppression en base. Vérifié directement en Postgres
+>   (`service_mkt.demandes`, `service_mkt.catalogue_emballages`) :
+>   aucune perte, tout intact. Cause réelle : `DemandeNotifier` charge
+>   catalogue + demandes une seule fois à la création du provider, sans
+>   retry automatique si l'appel échoue (backend pas encore levé).
+>   Ajout d'un état "Catalogue indisponible + bouton Réessayer" dans
+>   `publier_demande_screen.dart` pour ne plus reproduire la confusion.
+> - **Petits correctifs UX supplémentaires côté Client**
+>   (`publier_demande_screen.dart`) : sections du formulaire renommées
+>   (Où→Lieu, Quoi→Marchandise, Quand/Comment→Modalités) ; bandeau
+>   "prix estimatif" figé remplacé par une notification transitoire ;
+>   libellé de quantité désormais dynamique selon le type de
+>   marchandise choisi + suffixe d'unité ; téléphone destinataire
+>   basculé sur le même sélecteur pays/indicatif (`IntlPhoneField`) que
+>   partout ailleurs ; récapitulatif poids/volume enrichi d'un
+>   "véhicule adapté" suggéré par palier de poids (camionnette → semi-
+>   remorque) pour rendre un chiffre brut en kg compréhensible.
+>   `propositions_screen.dart` entièrement redessiné — affichait
+>   littéralement `Map.toString()` brut par proposition, remplacé par
+>   de vraies cartes (rang, prix, motif de classement, badge de
+>   statut).
+>
+> **⚠️ Piège de commande à connaître** : les deux apps mobiles n'ont
+> **pas** le même schéma de variables `--dart-define`. App Client
+> attend 5 variables séparées par service
+> (`API_BASE_IDA`/`API_BASE_MKT`/`API_BASE_NOT`/`API_BASE_EXE`/
+> `API_BASE_FLT`, voir `dio_provider.dart`), App Chauffeur attend une
+> **seule** `API_BASE` pointant la gateway (`http://<IP>:8082/api/v1`,
+> voir `dio_provider.dart` de cette app). Utiliser le mauvais schéma ne
+> fait pas planter le build — l'app compile et se lance avec l'URL par
+> défaut (`localhost`), silencieusement inutilisable sur téléphone
+> physique. Toujours relire `mobile/*/scripts/run.sh` (source de
+> vérité) avant de composer la commande à la main plutôt que de la
+> deviner par analogie entre les deux apps.
+
+---
+
+# Historique (mise à jour 20 août 2026, nuit)
 
 > **Session de test mobile de bout en bout (20 août, soir/nuit)** — les
 > deux apps mobiles (Client, Chauffeur/Transporteur) ont été installées

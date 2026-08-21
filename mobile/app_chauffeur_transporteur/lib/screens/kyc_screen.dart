@@ -270,10 +270,15 @@ class _KycScreenState extends ConsumerState<KycScreen> {
           _etape(numero: 1, titre: 'Identité', fait: identiteDeclaree,
               contenu: identiteDeclaree
                   ? _resumeIdentite(profil!)
-                  : _formulaireIdentite(kycState)),
+                  : _formulaireIdentite(kycState, avecBouton: false)),
           const SizedBox(height: 16),
           _etape(numero: 2, titre: 'Pièce d\'identité', fait: pieceDeposee,
               contenu: pieceDeposee ? _resumePieces(profil!) : _boutonDepot(kycState)),
+
+          if (!identiteDeclaree) ...[
+            const SizedBox(height: 16),
+            _boutonEnregistrer(kycState),
+          ],
 
           if (kycState.erreur != null) ...[
             const SizedBox(height: 16),
@@ -362,7 +367,26 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     );
   }
 
-  Widget _formulaireIdentite(KycState kycState) {
+  Widget _boutonEnregistrer(KycState kycState) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: kycState.chargement ? null : _enregistrerIdentite,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.accent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        child: kycState.chargement
+            ? const SizedBox(
+                height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+            : const Text('Enregistrer',
+                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+      ),
+    );
+  }
+
+  Widget _formulaireIdentite(KycState kycState, {bool avecBouton = true}) {
     return Form(
       key: _formKey,
       child: Column(
@@ -379,24 +403,11 @@ class _KycScreenState extends ConsumerState<KycScreen> {
           const SizedBox(height: 16),
 
           if (_type == _TypeProfil.particulier) ..._champsParticulier() else ..._champsEntreprise(),
-          const SizedBox(height: 16),
 
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: kycState.chargement ? null : _enregistrerIdentite,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: kycState.chargement
-                  ? const SizedBox(
-                      height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                  : const Text('Enregistrer',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
-            ),
-          ),
+          if (avecBouton) ...[
+            const SizedBox(height: 16),
+            _boutonEnregistrer(kycState),
+          ],
         ],
       ),
     );

@@ -3,17 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'aide_screen.dart';
+import 'completer_profil_screen.dart';
 import 'conditions_utilisation_screen.dart';
-import 'kyc_screen.dart';
 import 'langue_screen.dart';
 import 'login_screen.dart';
 import 'notifications_screen.dart';
 import 'parametres_screen.dart';
 import 'politique_confidentialite_screen.dart';
 
-// Menu latéral (accessible depuis l'icône hamburger de l'accueil) — regroupe
-// les réglages/annexes qui ne méritent pas une carte sur l'accueil (profil y
-// reste aussi, en accès rapide, comme dans la plupart des apps mobiles).
+// Menu latéral (icône hamburger de l'accueil) — même structure que l'app
+// Chauffeur/Transporteur pour une identité cohérente entre les deux apps.
 class MenuDrawer extends ConsumerWidget {
   const MenuDrawer({super.key});
 
@@ -57,7 +56,7 @@ class MenuDrawer extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   _item(context, Icons.person_outline, 'Profil',
-                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen()))),
+                      () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CompleterProfilScreen()))),
                   _item(context, Icons.notifications_none, 'Notifications',
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
                   _item(context, Icons.language, 'Langue (Français)',
