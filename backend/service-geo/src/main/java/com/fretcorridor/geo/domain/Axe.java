@@ -63,7 +63,7 @@ public class Axe {
     // ENF-MUL-01 : isolation stricte par tenant. Nullable en base (migration
     // V4, donnees anciennes pre-remplies avec le tenant BGFT par defaut) mais
     // toujours renseigne a la creation via le constructeur ci-dessous.
-    // String (pas UUID, migration V7) : le tenantId circule partout ailleurs
+    // String (pas UUID, migration V8) : le tenantId circule partout ailleurs
     // dans le systeme (JWT, gateway, RealGeoAdapter) comme un identifiant
     // texte libre (ex. "tenant-bgft-douala"), jamais comme un UUID.
     @Column(name = "tenant_id")

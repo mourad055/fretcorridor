@@ -80,9 +80,21 @@ public class AlnsSolver {
     private final OperateurRetrait operateurRetrait;
     private final Random random;
 
-    public AlnsSolver(OperateurInsertion operateurInsertion) {
+    /**
+     * FIX audit 21/08 (reproductibilité EF-MAT-11/12) : le Random n'était
+     * jamais seedé - deux exécutions sur les mêmes entrées pouvaient
+     * produire des tournées différentes, en tension avec la traçabilité des
+     * décisions (une décision doit pouvoir être reconstituée). Le seed est
+     * configurable (fretcorridor.opt.alns-seed) : valeur fixe par défaut =>
+     * exécutions reproductibles ; un déploiement qui préfère la diversité
+     * de recherche peut surcharger la propriété (ex. horodatage au
+     * démarrage).
+     */
+    public AlnsSolver(OperateurInsertion operateurInsertion,
+                      @org.springframework.beans.factory.annotation.Value(
+                              "${fretcorridor.opt.alns-seed:42}") long seed) {
         this.operateurInsertion = operateurInsertion;
-        this.random = new Random();
+        this.random = new Random(seed);
         // OperateurRetrait n'est pas un bean Spring (prend un Random en
         // constructeur) - instancie ici, seul point d'utilisation actuel.
         this.operateurRetrait = new OperateurRetrait(this.random);

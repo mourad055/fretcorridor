@@ -36,7 +36,7 @@ import java.util.UUID;
 public class AxeController {
 
     // Tenant unique de la Phase 1 (BGFT, client-ancre) - meme identifiant que
-    // celui applique par la migration V7 sur les donnees existantes. Utilise
+    // celui applique par la migration V8 sur les donnees existantes. Utilise
     // comme defaut a la creation quand aucun tenantId n'est fourni, pour ne
     // jamais laisser une ligne orpheline sans tenant. String (pas UUID) :
     // c'est le format utilise partout ailleurs (JWT, gateway) pour ce champ.

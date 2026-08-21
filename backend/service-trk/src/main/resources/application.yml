@@ -59,6 +59,19 @@ spring:
 fretcorridor:
   jwt:
     secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  # FIX audit 21/08 (anti-patron CDC S12.4) : seuils de detection d'anomalies
+  # externalises (AnomalieDetector) - ajustables par deploiement sans
+  # recompilation. Defauts : arret <0.1 km sur 30 min ; absence >2 h ;
+  # ecart corridor >35 km en 15 min (=140 km/h soutenus, au-dessus de tout
+  # roulage legal - l'ancien defaut 50 km exigeait ~200 km/h et ne pouvait
+  # jamais declencher) ; saut aberrant >50 km entre 2 positions.
+  trk:
+    seuil-distance-arret-km: 0.1
+    seuil-duree-arret-minutes: 30
+    seuil-absence-position-heures: 2
+    seuil-ecart-corridor-km: 35
+    fenetre-ecart-corridor-minutes: 15
+    seuil-saut-aberrant-km: 50
 
 logging:
   level:
