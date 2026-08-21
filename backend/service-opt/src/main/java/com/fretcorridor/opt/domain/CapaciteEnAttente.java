@@ -162,4 +162,7 @@ public class CapaciteEnAttente {
     public String getTypeVehicule() { return typeVehicule; }
     public BigDecimal getCapaciteResiduelleKg() { return capaciteResiduelleKg; }
     public BigDecimal getVolumeResiduelM3() { return volumeResiduelM3; }
+    // RG-105 : age de la capacite dans la file - conditionne son eligibilite
+    // a la fenetre de traitement de l'axe (fenetre adaptative par axe).
+    public Instant getDateReception() { return dateReception; }
 }

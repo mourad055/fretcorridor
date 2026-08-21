@@ -50,6 +50,20 @@ fretcorridor:
   # (PR #125).
   internal:
     service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  # RG-105 (fenetre adaptative) : la duree de la fenetre de traitement est
+  # un PARAMETRE D'AXE ("fenetreTraitementSecondes" dans Axe.parametres,
+  # EF-GEO-02) - ces proprietes ne sont que les filets globaux : defaut
+  # quand l'axe ne definit rien (0 = comportement historique, matching des
+  # qu'un lot est formable), bornes de l'adaptation et facteur multiplicatif
+  # applique selon le volume observe (lot d'un element -> fenetre x facteur,
+  # lot riche -> fenetre / facteur). Borne max 3600 s = "jusqu'a un cycle
+  # horaire sur un axe peu dense" (CDC S8.5.2).
+  opt:
+    matching:
+      fenetre-defaut-secondes: 0
+      fenetre-min-secondes: 0
+      fenetre-max-secondes: 3600
+      facteur-adaptation-fenetre: 2.0
 
 logging:
   level:
