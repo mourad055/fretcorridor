@@ -55,6 +55,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/geo/**").permitAll()
                 // Actions de configuration versionnee/auditee : ADMINISTRATION uniquement.
                 .requestMatchers(HttpMethod.POST, "/api/geo/axes").hasRole("ADMINISTRATION")
+                // FIX audit 21/08 : la creation de hub est elle aussi une
+                // action de configuration referentielle (meme nature que la
+                // creation d'axe) - elle tombait jusque-la dans
+                // anyRequest().authenticated(), accessible a tout role.
+                .requestMatchers(HttpMethod.POST, "/api/geo/hubs").hasRole("ADMINISTRATION")
                 .requestMatchers(HttpMethod.PATCH, "/api/geo/axes/*/etats/*").hasRole("ADMINISTRATION")
                 .requestMatchers(HttpMethod.PATCH, "/api/geo/axes/*/risque-securitaire").hasRole("ADMINISTRATION")
                 .requestMatchers(HttpMethod.PATCH, "/api/geo/axes/*/convention-repartition").hasRole("ADMINISTRATION")

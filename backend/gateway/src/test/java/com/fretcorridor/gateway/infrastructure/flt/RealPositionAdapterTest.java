@@ -36,7 +36,7 @@ class RealPositionAdapterTest {
     void sends_a_position_with_the_delegation_token() throws InterruptedException {
         serviceFlt.enqueue(new MockResponse().setResponseCode(201));
 
-        var position = new PositionEnvoi("mission-1", 4.05, 9.7, "2026-08-12T10:00:00");
+        var position = new PositionEnvoi("mission-1", 4.05, 9.7, "2026-08-12T10:00:00", null, "GPS_NATIF", null);
         StepVerifier.create(adapter.envoyer("delegation-token-1", position)).verifyComplete();
 
         var requete = serviceFlt.takeRequest();
@@ -49,7 +49,7 @@ class RealPositionAdapterTest {
     void maps_a_400_to_a_refused_error() {
         serviceFlt.enqueue(new MockResponse().setResponseCode(400).setBody("MISSION_INTROUVABLE"));
 
-        var position = new PositionEnvoi("mission-inconnue", 4.05, 9.7, "2026-08-12T10:00:00");
+        var position = new PositionEnvoi("mission-inconnue", 4.05, 9.7, "2026-08-12T10:00:00", null, "GPS_NATIF", null);
         StepVerifier.create(adapter.envoyer("delegation-token-1", position))
                 .expectError(PositionRefuseeException.class)
                 .verify();
@@ -57,7 +57,7 @@ class RealPositionAdapterTest {
 
     @Test
     void refuses_to_call_service_flt_without_a_delegation_token() {
-        var position = new PositionEnvoi("mission-1", 4.05, 9.7, "2026-08-12T10:00:00");
+        var position = new PositionEnvoi("mission-1", 4.05, 9.7, "2026-08-12T10:00:00", null, "GPS_NATIF", null);
         StepVerifier.create(adapter.envoyer(null, position))
                 .expectError(FltServiceIndisponibleException.class)
                 .verify();

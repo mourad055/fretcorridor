@@ -23,20 +23,30 @@ public class ServiceMatClient {
     private static final Logger log = LoggerFactory.getLogger(ServiceMatClient.class);
 
     private final RestClient restClient;
+    private final String cleInterne;
 
-    public ServiceMatClient(@org.springframework.beans.factory.annotation.Qualifier("serviceMatRestClient") RestClient serviceMatRestClient) {
+    public ServiceMatClient(@org.springframework.beans.factory.annotation.Qualifier("serviceMatRestClient") RestClient serviceMatRestClient,
+                            @org.springframework.beans.factory.annotation.Value(
+                                    "${fretcorridor.internal.service-key}") String cleInterne) {
         this.restClient = serviceMatRestClient;
+        this.cleInterne = cleInterne;
     }
 
     /**
      * Calcule le cout composite de chaque candidat du lot face a une meme
      * demande - un seul appel HTTP pour tout le lot (meme raison que cote
      * service-mat : rester dans le budget de latence).
+     *
+     * FIX audit 21/08 (E2) : transporte la cle interne partagee
+     * (X-Internal-Service-Key) - service-mat verifie desormais cette cle sur
+     * ce endpoint de write (meme pattern que ServiceCapClient cote not,
+     * PR #125).
      */
     public CoutLotResponseDto calculerCoutsLot(CoutLotRequestDto requete) {
         try {
             return restClient.post()
                     .uri("/api/mat/couts/calculer-lot")
+                    .header("X-Internal-Service-Key", cleInterne)
                     .body(requete)
             .accept(org.springframework.http.MediaType.APPLICATION_JSON)
                     .retrieve()

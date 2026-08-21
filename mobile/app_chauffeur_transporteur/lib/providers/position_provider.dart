@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:uuid/uuid.dart';
 import 'dio_provider.dart';
 
 const _intervalleEnvoi = Duration(seconds: 30);
@@ -21,11 +22,24 @@ class PositionAEnvoyer {
   final double longitude;
   final String horodatage;
 
+  // FIX audit 21/08 (position-brute.yaml:38-45, ENF-SEC-03) : clé
+  // d'idempotence générée À LA CAPTURE et conservée dans la file offline —
+  // un même ré-envoi après coupure réseau porte toujours le même eventId et
+  // est dédupliqué côté service-trk (UNIQUE(event_id)) au lieu de créer un
+  // doublon. sourceCapture respecte l'enum du contrat (la valeur historique
+  // "MOBILE_CHAUFFEUR" était rejetée par la CHECK de service-trk).
+  final String eventId;
+  final String sourceCapture;
+  final double? precisionMetres;
+
   const PositionAEnvoyer({
     required this.missionId,
     required this.latitude,
     required this.longitude,
     required this.horodatage,
+    required this.eventId,
+    this.sourceCapture = 'GPS_NATIF',
+    this.precisionMetres,
   });
 
   Map<String, dynamic> toJson() => {
@@ -33,6 +47,9 @@ class PositionAEnvoyer {
         'latitude': latitude,
         'longitude': longitude,
         'horodatage': horodatage,
+        'eventId': eventId,
+        'sourceCapture': sourceCapture,
+        if (precisionMetres != null) 'precisionMetres': precisionMetres,
       };
 
   factory PositionAEnvoyer.fromJson(Map<String, dynamic> json) => PositionAEnvoyer(
@@ -40,6 +57,9 @@ class PositionAEnvoyer {
         latitude: json['latitude'] as double,
         longitude: json['longitude'] as double,
         horodatage: json['horodatage'] as String,
+        eventId: json['eventId'] as String? ?? const Uuid().v4(),
+        sourceCapture: json['sourceCapture'] as String? ?? 'GPS_NATIF',
+        precisionMetres: json['precisionMetres'] as double?,
       );
 }
 
@@ -147,6 +167,8 @@ class PositionNotifier extends StateNotifier<PositionState> {
         latitude: position.latitude,
         longitude: position.longitude,
         horodatage: DateTime.now().toIso8601String(),
+        eventId: const Uuid().v4(),
+        precisionMetres: position.accuracy,
       );
 
       final envoyee = await _envoyer(capture);
