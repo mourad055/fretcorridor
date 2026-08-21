@@ -103,7 +103,7 @@ public class KycService {
             return;
         }
         boolean identiteDeclaree = (acteur.getNom() != null && acteur.getPrenom() != null)
-                || acteur.getRaisonSociale() != null;
+                || (acteur.getRaisonSociale() != null && !acteur.getRaisonSociale().isBlank());
         boolean pieceDeposee = !pieceJustificativeRepository.findByActeurId(acteur.getId()).isEmpty();
         if (identiteDeclaree && pieceDeposee) {
             acteur.setNiveauKyc(Acteur.NiveauKyc.NIVEAU_1);

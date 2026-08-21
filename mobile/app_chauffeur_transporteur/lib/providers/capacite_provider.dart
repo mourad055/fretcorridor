@@ -11,6 +11,9 @@ class CapaciteDeclaree {
   final double poidsKg;
   final double poidsTaxableKg;
   final bool publiee;
+  final bool expiree;
+  final DateTime? dateDepart;
+  final DateTime? dateCreation;
 
   const CapaciteDeclaree({
     required this.id,
@@ -19,6 +22,9 @@ class CapaciteDeclaree {
     required this.poidsKg,
     required this.poidsTaxableKg,
     required this.publiee,
+    this.expiree = false,
+    this.dateDepart,
+    this.dateCreation,
   });
 
   factory CapaciteDeclaree.fromJson(Map<String, dynamic> json) => CapaciteDeclaree(
@@ -28,6 +34,9 @@ class CapaciteDeclaree {
         poidsKg: (json['poidsKg'] as num).toDouble(),
         poidsTaxableKg: (json['poidsTaxableKg'] as num).toDouble(),
         publiee: json['publiee'] as bool,
+        expiree: json['expiree'] as bool? ?? false,
+        dateDepart: json['dateDepart'] != null ? DateTime.tryParse(json['dateDepart'] as String)?.toLocal() : null,
+        dateCreation: json['dateCreation'] != null ? DateTime.tryParse(json['dateCreation'] as String)?.toLocal() : null,
       );
 }
 
@@ -35,14 +44,16 @@ class CapaciteState {
   final bool chargement;
   final String? erreur;
   final CapaciteDeclaree? derniereCapacite;
+  final List<CapaciteDeclaree> mesCapacites;
 
-  const CapaciteState({this.chargement = false, this.erreur, this.derniereCapacite});
+  const CapaciteState({this.chargement = false, this.erreur, this.derniereCapacite, this.mesCapacites = const []});
 
-  CapaciteState copyWith({bool? chargement, String? erreur, CapaciteDeclaree? derniereCapacite}) {
+  CapaciteState copyWith({bool? chargement, String? erreur, CapaciteDeclaree? derniereCapacite, List<CapaciteDeclaree>? mesCapacites}) {
     return CapaciteState(
       chargement: chargement ?? this.chargement,
       erreur: erreur,
       derniereCapacite: derniereCapacite ?? this.derniereCapacite,
+      mesCapacites: mesCapacites ?? this.mesCapacites,
     );
   }
 }
@@ -87,6 +98,28 @@ class CapaciteNotifier extends StateNotifier<CapaciteState> {
       state = state.copyWith(chargement: false, derniereCapacite: CapaciteDeclaree.fromJson(response.data));
     } on DioException catch (e) {
       state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+    }
+  }
+
+  Future<void> chargerMesCapacites() async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final response = await _dio.get('/capacites/mes');
+      final liste = (response.data as List).map((e) => CapaciteDeclaree.fromJson(e)).toList();
+      state = state.copyWith(chargement: false, mesCapacites: liste);
+    } on DioException catch (e) {
+      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+    }
+  }
+
+  Future<bool> supprimer(String capaciteId) async {
+    try {
+      await _dio.delete('/capacites/$capaciteId');
+      state = state.copyWith(mesCapacites: state.mesCapacites.where((c) => c.id != capaciteId).toList());
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(erreur: _messageErreur(e));
+      return false;
     }
   }
 

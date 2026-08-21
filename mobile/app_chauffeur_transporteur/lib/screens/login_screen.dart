@@ -4,6 +4,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tenant_selection_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/top_notification.dart';
 import 'inscription_screen.dart';
 import 'kyc_screen.dart';
 import 'tenant_selection_screen.dart';
@@ -52,12 +53,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_rolesAutorises.contains(role)) {
       await ref.read(authProvider.notifier).logout();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Ce compte est un compte client — utilisez l\'app FretCorridor Client.'),
-          backgroundColor: AppColors.erreur,
-          behavior: SnackBarBehavior.floating,
-        ),
+      afficherNotification(
+        context,
+        message: 'Ce compte est un compte client — utilisez l\'app FretCorridor Client.',
+        couleur: AppColors.erreur,
+        icone: Icons.error_outline,
       );
       return;
     }

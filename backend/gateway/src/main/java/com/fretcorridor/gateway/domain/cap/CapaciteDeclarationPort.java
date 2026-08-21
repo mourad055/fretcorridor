@@ -1,5 +1,6 @@
 package com.fretcorridor.gateway.domain.cap;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -9,4 +10,9 @@ import reactor.core.publisher.Mono;
  */
 public interface CapaciteDeclarationPort {
     Mono<CapaciteDeclaree> declarer(DeclarationCapacite requete, String delegationToken);
+
+    // "Mes capacités" — liste des déclarations du transporteur connecté.
+    Flux<CapaciteDeclaree> mesCapacites(String delegationToken);
+
+    Mono<Void> supprimer(String capaciteId, String delegationToken);
 }

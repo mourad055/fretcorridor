@@ -8,6 +8,7 @@ import com.flysoft.fretcorridor.flt.entity.Vehicule;
 import com.flysoft.fretcorridor.flt.repository.VehiculeRepository;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,12 +18,21 @@ import java.util.UUID;
 /** S10 : console de flotte simplifiée (mode transporteur étendu). */
 @RestController
 @RequestMapping("/api/flt/vehicules")
-@RequiredArgsConstructor
 public class VehiculeController {
 
     private final VehiculeService vehiculeService;
     private final JwtService jwtService;
     private final VehiculeRepository vehiculeRepository;
+    private final String cleInterneAttendue;
+
+    public VehiculeController(VehiculeService vehiculeService, JwtService jwtService,
+                               VehiculeRepository vehiculeRepository,
+                               @Value("${fretcorridor.internal.service-key}") String cleInterneAttendue) {
+        this.vehiculeService = vehiculeService;
+        this.jwtService = jwtService;
+        this.vehiculeRepository = vehiculeRepository;
+        this.cleInterneAttendue = cleInterneAttendue;
+    }
 
     @PostMapping
     public ResponseEntity<?> declarer(
@@ -56,14 +66,30 @@ public class VehiculeController {
     // secret partage service-ida) au lieu d'un appel anonyme -- meme
     // exception "introuvable" pour "n'existe pas" et "pas votre tenant"
     // (meme principe que DossierController cote service-adm).
+    // Deux appelants legitimes (audit de suivi Mobile, canal alerte-ecart
+    // mort) : un utilisateur authentifie (JWT, filtre par son tenant) OU
+    // service-not resolvant le proprietaire d'un vehicule pour une
+    // AlerteEcart Kafka -- aucun tenant particulier a filtrer dans ce cas
+    // (meme principe que CapaciteController.obtenir cote service-cap).
     @GetMapping("/{id}")
-    public ResponseEntity<VehiculeDto.VehiculeResponse> consulter(@PathVariable UUID id,
-                                                                    @RequestHeader("Authorization") String authHeader) {
-        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
-        Vehicule vehicule = vehiculeRepository.findById(id)
-                .filter(v -> tenantId.equals(v.getTenantId()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Vehicule introuvable : " + id));
+    public ResponseEntity<VehiculeDto.VehiculeResponse> consulter(
+            @PathVariable UUID id,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
+            @RequestHeader(value = "X-Internal-Service-Key", required = false) String cleInterne) {
+        Vehicule vehicule;
+        if (cleInterneAttendue.equals(cleInterne)) {
+            vehicule = vehiculeRepository.findById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Vehicule introuvable : " + id));
+        } else if (authHeader != null) {
+            String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+            vehicule = vehiculeRepository.findById(id)
+                    .filter(v -> tenantId.equals(v.getTenantId()))
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Vehicule introuvable : " + id));
+        } else {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentification requise");
+        }
         return ResponseEntity.ok(VehiculeDto.VehiculeResponse.fromEntity(vehicule));
     }
 }

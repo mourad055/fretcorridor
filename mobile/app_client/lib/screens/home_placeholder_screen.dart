@@ -9,6 +9,7 @@ import 'menu_drawer.dart';
 import 'mes_demandes_screen.dart';
 import 'notifications_screen.dart';
 import 'promo_carousel.dart';
+import '../widgets/top_notification.dart';
 
 class HomePlaceholderScreen extends ConsumerWidget {
   const HomePlaceholderScreen({super.key});
@@ -33,16 +34,11 @@ class HomePlaceholderScreen extends ConsumerWidget {
       final etaitComplet = previous != null && previous.niveauKyc != 'NIVEAU_0';
       final estComplet = next.niveauKyc != 'NIVEAU_0';
       if (!etaitComplet && estComplet) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text('Profil complété ✅ — vous pouvez publier une demande.'),
-            ]),
-            backgroundColor: AppColors.succes,
-            behavior: SnackBarBehavior.floating,
-          ),
+        afficherNotification(
+          context,
+          message: 'Profil complété ✅ — vous pouvez publier une demande.',
+          couleur: AppColors.succes,
+          icone: Icons.check_circle,
         );
       }
     });

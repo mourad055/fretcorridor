@@ -3,6 +3,7 @@ package com.flysoft.fretcorridor.not.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -27,15 +28,24 @@ public class ServiceFltClient {
     private static final Logger log = LoggerFactory.getLogger(ServiceFltClient.class);
 
     private final RestClient restClient;
+    private final String cleInterne;
 
-    public ServiceFltClient(@Qualifier("serviceFltRestClient") RestClient serviceFltRestClient) {
+    public ServiceFltClient(@Qualifier("serviceFltRestClient") RestClient serviceFltRestClient,
+                             @Value("${fretcorridor.internal.service-key}") String cleInterne) {
         this.restClient = serviceFltRestClient;
+        this.cleInterne = cleInterne;
     }
 
     public Optional<UUID> resoudreProprietaire(UUID vehiculeId) {
         try {
+            // Audit de suivi Mobile : cet appel partait sans aucun header
+            // d'authentification alors que l'endpoint exige un JWT ou cette
+            // cle interne depuis la fermeture du bloquant "vehicule public,
+            // sans filtre tenant" (VehiculeController) -- 401 systematique,
+            // canal alerte-ecart silencieusement mort en pratique.
             VehiculeDto vehicule = restClient.get()
                     .uri("/api/flt/vehicules/{id}", vehiculeId)
+                    .header("X-Internal-Service-Key", cleInterne)
                     .retrieve()
                     .body(VehiculeDto.class);
 

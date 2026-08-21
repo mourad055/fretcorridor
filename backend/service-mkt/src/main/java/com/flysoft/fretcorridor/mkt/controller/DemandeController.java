@@ -1,5 +1,6 @@
 package com.flysoft.fretcorridor.mkt.controller;
 
+import com.flysoft.fretcorridor.mkt.client.ReservationCapaciteException;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
 import com.flysoft.fretcorridor.mkt.security.JwtService;
 import com.flysoft.fretcorridor.mkt.service.DemandeService;
@@ -70,6 +71,8 @@ public class DemandeController {
             String token = authHeader.substring(7);
             String tenantId = jwtService.extraireTenantId(token);
             return ResponseEntity.ok(demandeService.accepterProposition(id, propositionId, tenantId));
+        } catch (ReservationCapaciteException e) {
+            return ResponseEntity.status(503).body(e.getMessage());
         } catch (RuntimeException e) {
             if ("DEMANDE_INTROUVABLE".equals(e.getMessage()) || "PROPOSITION_INTROUVABLE".equals(e.getMessage())) {
                 return ResponseEntity.status(404).build();

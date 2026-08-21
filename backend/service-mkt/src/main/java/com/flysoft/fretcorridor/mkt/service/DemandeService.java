@@ -1,5 +1,6 @@
 package com.flysoft.fretcorridor.mkt.service;
 
+import com.flysoft.fretcorridor.mkt.client.ServiceCapClient;
 import com.flysoft.fretcorridor.mkt.client.ServiceGeoClient;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
 import com.flysoft.fretcorridor.mkt.entity.CatalogueEmballage;
@@ -31,6 +32,7 @@ public class DemandeService {
     private final MktEventPublisher eventPublisher;
     private final PropositionRepository propositionRepository;
     private final ServiceGeoClient serviceGeoClient;
+    private final ServiceCapClient serviceCapClient;
 
     // RG-038 : publication exige le niveau KYC 1 minimum
     @Transactional
@@ -131,11 +133,13 @@ public class DemandeService {
 
     // RG-039/EF-MKT-08 : le chargeur choisit une des au plus 3 propositions
     // reçues (EF-MKT-07) -- marque celle-ci ACCEPTEE et les autres de la même
-    // demande EXPIREE. La réservation atomique de capacité (autre volet
-    // d'EF-MKT-08) reste hors périmètre ici -- voir javadoc Proposition.statut.
+    // demande EXPIREE. La réservation atomique de capacité est désormais
+    // réelle (ServiceCapClient, audit de suivi Mobile) -- si elle échoue,
+    // toute la transaction est annulée (aucune Proposition marquée ACCEPTEE
+    // sans réservation effective côté transporteur).
     @Transactional
     public DemandeDto.PropositionResponse accepterProposition(UUID demandeId, UUID propositionId, String tenantId) {
-        demandeRepository.findByIdAndTenantId(demandeId, tenantId)
+        Demande demande = demandeRepository.findByIdAndTenantId(demandeId, tenantId)
                 .orElseThrow(() -> new RuntimeException("DEMANDE_INTROUVABLE"));
 
         Proposition proposition = propositionRepository.findByIdAndDemandeId(propositionId, demandeId)
@@ -143,6 +147,13 @@ public class DemandeService {
 
         if (proposition.getStatut() != Proposition.Statut.EN_ATTENTE) {
             throw new RuntimeException("PROPOSITION_DEJA_TRAITEE");
+        }
+
+        if (proposition.getCapaciteId() != null && demande.getPoidsTaxableKg() != null) {
+            serviceCapClient.reserver(
+                    proposition.getCapaciteId(),
+                    java.math.BigDecimal.valueOf(demande.getPoidsTaxableKg()),
+                    propositionId.toString());
         }
 
         List<Proposition> propositionsDeLaDemande = propositionRepository.findByDemandeIdOrderByRangAsc(demandeId);

@@ -85,6 +85,16 @@ class KycNotifier extends StateNotifier<KycState> {
     chargerProfil();
   }
 
+  // Ce provider est un singleton créé une seule fois pour toute la durée du
+  // process app — sans cet appel explicite après login/inscription/logout,
+  // il continue d'afficher le profil du COMPTE PRÉCÉDENT tant que l'app
+  // n'est pas relancée (repéré : nouveau compte créé, écran affiche encore
+  // l'ancien profil). À appeler après tout changement d'identité.
+  void reinitialiser() {
+    state = const KycState();
+    chargerProfil();
+  }
+
   @override
   void dispose() {
     _effacementErreur?.cancel();

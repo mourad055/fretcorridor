@@ -7,6 +7,7 @@ import '../providers/mission_provider.dart';
 import '../providers/position_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/signature_pad.dart';
+import '../widgets/top_notification.dart';
 import 'plan_chargement_screen.dart';
 
 // RG-070/EF-EXE-03 (audit CDC du 19 août) : ce que le formulaire de preuve
@@ -408,9 +409,7 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
   Future<void> _valider() async {
     final padState = _signatureKey.currentState;
     if (_photos.isEmpty || padState == null || padState.estVide) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Une photo et une signature sont obligatoires.')),
-      );
+      afficherNotification(context, message: 'Une photo et une signature sont obligatoires.', couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     setState(() => _envoiEnCours = true);

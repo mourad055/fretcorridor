@@ -30,12 +30,22 @@ spring:
       # jamais rester bloquee pour resoudre l'axe.
       connect-timeout-ms: 500
       read-timeout-ms: 1000
+    service-cap:
+      base-url: http://localhost:8096
+      # PAS best-effort (EF-MKT-08) : contrairement a service-geo, un echec
+      # ici doit faire echouer l'acceptation elle-meme (ServiceCapClient).
+      connect-timeout-ms: 500
+      read-timeout-ms: 1500
 
 # ⚠️ Même secret que service-ida — obligatoire pour que service-mkt puisse
 # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).
 fretcorridor:
   jwt:
     secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  internal:
+    # Meme cle que service-cap/service-not/service-flt (EF-MKT-08,
+    # ServiceCapClient -> POST /api/cap/capacites/{id}/decrement).
+    service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
 
 logging:
   level:

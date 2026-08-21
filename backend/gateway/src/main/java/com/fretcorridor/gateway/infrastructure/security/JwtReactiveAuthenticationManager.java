@@ -35,10 +35,30 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
             return Mono.error(new BadCredentialsException("Jeton invalide ou expiré"));
         }
         Claims c = claims.get();
-        Role role = Role.valueOf(c.get("role", String.class));
+        Role role = Role.valueOf(extraireRole(c));
         var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
         var principal = new AuthenticatedActor(c.getSubject(), role, c.get("tenantId", String.class), JwtService.delegationTokenOf(c));
         var authenticated = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         return Mono.just(authenticated);
+    }
+
+    // Les jetons emis par la gateway elle-meme portent une claim "role" au
+    // singulier (String) ; ceux emis directement par service-ida portent
+    // "roles" au pluriel (List<String>, cf JwtService.java:37 cote ida) --
+    // jusqu'ici jamais interoperables (audit CDC, la gateway plantait en
+    // NullPointerException sur un jeton ida brut). Tolerance des deux
+    // formats : "role" prioritaire si present, sinon premier element de
+    // "roles".
+    @SuppressWarnings("unchecked")
+    private String extraireRole(Claims c) {
+        String roleSingulier = c.get("role", String.class);
+        if (roleSingulier != null) {
+            return roleSingulier;
+        }
+        List<String> roles = c.get("roles", List.class);
+        if (roles != null && !roles.isEmpty()) {
+            return roles.get(0);
+        }
+        throw new BadCredentialsException("Jeton sans claim role/roles exploitable");
     }
 }
