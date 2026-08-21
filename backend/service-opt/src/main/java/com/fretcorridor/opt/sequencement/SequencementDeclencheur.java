@@ -186,7 +186,16 @@ public class SequencementDeclencheur {
             // EF-MAT-07 (CDC S8.7) : verifie CHAQUE etat intermediaire avant toute
             // confirmation - flux E1, jamais de confirmation optimiste sur un
             // profil vehicule incomplet ou une charge par essieu depassee.
-            boolean chargementFaisable = oracleChargementService.verifierTournee(tournee, profilCamion);
+            // INCREMENT 21/08 : la map affectationId -> demandeId permet a
+            // l'oracle de retrouver les lots a bord a chaque etat (verifications
+            // volumiques/gabarit EF-MAT-05/13).
+            Map<java.util.UUID, java.util.UUID> demandeIdParAffectation =
+                    resultat.affectationsInserees().stream()
+                            .collect(java.util.stream.Collectors.toMap(
+                                    com.fretcorridor.opt.domain.Affectation::getId,
+                                    com.fretcorridor.opt.domain.Affectation::getDemandeId));
+            boolean chargementFaisable = oracleChargementService.verifierTournee(
+                    tournee, profilCamion, demandeIdParAffectation);
             if (!chargementFaisable) {
                 log.warn("Tournee {} NON confirmee (EF-MAT-07, oracle de chargement) - "
                         + "capacite={}, {} etape(s) - cf opt.plan_chargement pour le detail des rejets.",

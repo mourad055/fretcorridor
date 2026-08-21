@@ -41,14 +41,46 @@ public class MatchingCycleService {
     private final DemandeEnAttenteRepository demandeEnAttenteRepository;
     private final AffectationL1Service affectationL1Service;
 
+    // RG-105 (fenetre adaptative) : fenetre courante par axe, ajustee apres
+    // chaque cycle traite selon le volume observe (taille du lot). Cle absente
+    // = la base (parametre d'axe ou defaut global) sera utilisee au premier
+    // tour de l'axe. En memoire uniquement : un redemarrage reinitialise
+    // l'adaptation sur la base - acceptable, l'adaptation converge en quelques
+    // cycles et aucune decision de matching n'en depend retroactivement.
+    private final java.util.concurrent.ConcurrentHashMap<java.util.UUID, Double> fenetreAdaptiveParAxe =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    // RG-105 : "La duree de la fenetre de traitement est un parametre d'axe,
+    // ajuste en fonction du volume observe, avec une borne inferieure
+    // garantissant qu'un lot contient en esperance plusieurs elements."
+    // Defaut 0 = comportement historique (matching des qu'un lot est formable)
+    // pour ne pas changer la demo sans configuration explicite ; les axes
+    // denses doivent porter "fenetreTraitementSecondes" dans Axe.parametres.
+    private final double fenetreDefautSecondes;
+    private final double fenetreMinSecondes;
+    private final double fenetreMaxSecondes;
+    private final double facteurAdaptationFenetre;
+
     public MatchingCycleService(ServiceGeoClient serviceGeoClient,
                                  CapaciteEnAttenteRepository capaciteEnAttenteRepository,
                                  DemandeEnAttenteRepository demandeEnAttenteRepository,
-                                 AffectationL1Service affectationL1Service) {
+                                 AffectationL1Service affectationL1Service,
+                                 @org.springframework.beans.factory.annotation.Value(
+                                         "${fretcorridor.opt.matching.fenetre-defaut-secondes:0}") double fenetreDefautSecondes,
+                                 @org.springframework.beans.factory.annotation.Value(
+                                         "${fretcorridor.opt.matching.fenetre-min-secondes:0}") double fenetreMinSecondes,
+                                 @org.springframework.beans.factory.annotation.Value(
+                                         "${fretcorridor.opt.matching.fenetre-max-secondes:3600}") double fenetreMaxSecondes,
+                                 @org.springframework.beans.factory.annotation.Value(
+                                         "${fretcorridor.opt.matching.facteur-adaptation-fenetre:2.0}") double facteurAdaptationFenetre) {
         this.serviceGeoClient = serviceGeoClient;
         this.capaciteEnAttenteRepository = capaciteEnAttenteRepository;
         this.demandeEnAttenteRepository = demandeEnAttenteRepository;
         this.affectationL1Service = affectationL1Service;
+        this.fenetreDefautSecondes = fenetreDefautSecondes;
+        this.fenetreMinSecondes = fenetreMinSecondes;
+        this.fenetreMaxSecondes = fenetreMaxSecondes;
+        this.facteurAdaptationFenetre = facteurAdaptationFenetre;
     }
 
     @Scheduled(fixedDelayString = "${spring.matching.cycle-interval-ms:15000}")
@@ -72,6 +104,33 @@ public class MatchingCycleService {
         if (capacites.isEmpty() || demandes.isEmpty()) {
             // Rien a apparier ce tour sur cet axe - reste en attente pour le prochain.
             return;
+        }
+
+        // RG-105 (fenetre adaptative par axe) : un element fraichement arrive
+        // n'est eligible que once la fenetre de traitement de l'axe est ecoulee
+        // depuis sa reception - c'est ce qui laisse les lots se former au lieu
+        // de dispatcher en glouton desguise (le CDC vise explicitement "les lots
+        // d'un element" comme le comportement a eviter sur les axes peu denses).
+        java.time.Instant maintenant = java.time.Instant.now();
+        double fenetreSecondes = fenetreEffective(axe);
+        if (fenetreSecondes > 0) {
+            int demandesAvant = demandes.size();
+            int capacitesAvant = capacites.size();
+            demandes = demandes.stream()
+                    .filter(d -> ageFenetreAtteint(d.getDateReception(), maintenant, fenetreSecondes))
+                    .toList();
+            capacites = capacites.stream()
+                    .filter(c -> ageFenetreAtteint(c.getDateReception(), maintenant, fenetreSecondes))
+                    .toList();
+            if (demandes.size() < demandesAvant || capacites.size() < capacitesAvant) {
+                log.debug("Axe {} : {} demande(s)/{} capacite(s) encore dans la fenetre de traitement "
+                                + "({} s) - exclus de ce cycle (RG-105).",
+                        axe.nom(), demandesAvant - demandes.size(), capacitesAvant - capacites.size(),
+                        fenetreSecondes);
+            }
+            if (capacites.isEmpty() || demandes.isEmpty()) {
+                return; // tout le monde attend la fin de sa fenetre - prochain tour
+            }
         }
 
         // Volet A Phase 4 (README_PHASE4_MOTEUR S2.2) : RISQUE_AXE, un des 7
@@ -170,6 +229,86 @@ public class MatchingCycleService {
                             + "que de capacites disponibles), laissee(s) en attente pour le prochain cycle.",
                     axe.nom(), demandesNonAffecteesCeCycle);
         }
+
+        // RG-105 : ajuste la fenetre de l'axe selon le volume observe - un lot
+        // d'un element est precisement le "dispatch glouton deguise" que le
+        // CDC ordonne d'eviter, on attend donc plus la fois suivante ; un lot
+        // riche montre que la fenetre peut se raccourcir sans degrade le
+        // remplissage. Trace a chaque ajustement (EF-MAT-11).
+        double fenetreAvant = fenetreSecondes;
+        double fenetreApres = ajusterFenetre(fenetreSecondes, lotNonVide.size(),
+                facteurAdaptationFenetre, fenetreMinSecondes, fenetreMaxSecondes);
+        if (fenetreApres != fenetreAvant) {
+            fenetreAdaptiveParAxe.put(axe.id(), fenetreApres);
+            log.info("RG-105 axe {} : fenetre de traitement ajustee {} s -> {} s "
+                            + "(lot observe de {} element(s)).",
+                    axe.nom(), fenetreAvant, fenetreApres, lotNonVide.size());
+        }
+    }
+
+    /**
+     * Fenetre de traitement effective d'un axe (RG-105), en secondes :
+     * parametre d'axe "fenetreTraitementSecondes" si present dans
+     * Axe.parametres (EF-GEO-02, meme pattern que rayonAppariementKm),
+     * sinon defaut global configure ; la valeur adaptative courante (si
+     * deja ajustee sur cet axe) est bornee aux bornes configurees.
+     */
+    private double fenetreEffective(AxeActifDto axe) {
+        Double parametreAxe = extraireFenetreParametreAxe(axe.parametres());
+        double base = parametreAxe != null ? parametreAxe : fenetreDefautSecondes;
+        return bornerFenetre(fenetreAdaptiveParAxe.getOrDefault(axe.id(), base));
+    }
+
+    /**
+     * Lit "fenetreTraitementSecondes" dans Axe.parametres. Absente ou de type
+     * inattendu = null, comme rayonAppariementKm - pas de defaut invente au
+     * niveau de l'axe, le defaut global configure prend le relais.
+     */
+    static Double extraireFenetreParametreAxe(Map<String, Object> parametres) {
+        if (parametres == null) {
+            return null;
+        }
+        Object valeur = parametres.get("fenetreTraitementSecondes");
+        if (valeur instanceof Number nombre) {
+            return nombre.doubleValue();
+        }
+        return null;
+    }
+
+    /**
+     * Un element est eligible au matching once son age dans la file atteint
+     * la fenetre de traitement. dateReception null ne doit theoriquement pas
+     * arriver (colonne NOT NULL) - defensivement, on n'exclut jamais un
+     * element sur une donnee manquante (on ne veut pas de file qui se vide
+     * par bug de donnee).
+     */
+    static boolean ageFenetreAtteint(java.time.Instant dateReception,
+                                      java.time.Instant maintenant, double fenetreSecondes) {
+        if (dateReception == null || fenetreSecondes <= 0) {
+            return true;
+        }
+        return java.time.Duration.between(dateReception, maintenant).getSeconds() >= fenetreSecondes;
+    }
+
+    /**
+     * Ajustement multiplicatif de la fenetre selon le volume observe (RG-105)
+     * : lot d'un seul element -> fenetre x facteur (les arrivees etaient trop
+     * isolees, il faut accumuler plus longtemps) ; lot de plusieurs elements
+     * -> fenetre / facteur (le remplissage est au rendez-vous, on reagit plus
+     * vite). Toujours borne [min, max].
+     */
+    static double ajusterFenetre(double fenetreActuelle, int tailleLotObservee,
+                                  double facteur, double min, double max) {
+        double ajustee = tailleLotObservee <= 1 ? fenetreActuelle * facteur : fenetreActuelle / facteur;
+        return bornerFenetreStatic(ajustee, min, max);
+    }
+
+    static double bornerFenetreStatic(double valeur, double min, double max) {
+        return Math.max(min, Math.min(max, valeur));
+    }
+
+    private double bornerFenetre(double valeur) {
+        return bornerFenetreStatic(valeur, fenetreMinSecondes, fenetreMaxSecondes);
     }
 
     /**
