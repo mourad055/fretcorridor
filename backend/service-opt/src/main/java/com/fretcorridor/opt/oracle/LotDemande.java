@@ -78,6 +78,12 @@ public class LotDemande {
     public String getTypeCatalogue() { return typeCatalogue; }
     public Integer getQuantite() { return quantite; }
     public BigDecimal getPoidsKg() { return poidsKg; }
+    // Dimensions (m) - consommees par OracleChargementService pour les
+    // verifications volumiques/gabarit (EF-MAT-05/13). Null = donnee
+    // manquante, verification sautee mais tracee, jamais devinee.
+    public Double getLongueurM() { return longueurM; }
+    public Double getLargeurM() { return largeurM; }
+    public Double getHauteurM() { return hauteurM; }
     public boolean isGerbable() { return gerbable; }
     public boolean isFragile() { return fragile; }
     public String getClasseDanger() { return classeDanger; }

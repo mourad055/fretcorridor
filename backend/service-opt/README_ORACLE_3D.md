@@ -1,5 +1,18 @@
 # Oracle de chargement 3D — MAT/OPT V2 (Phase 3, Sprint 16)
 
+> **MISE A JOUR 21/08/2026 (audit)** : incrément volumique/gabarit livré —
+> l'oracle vérifie désormais, en plus du poids/essieu : le **volume dynamique
+> à bord à chaque état intermédiaire** (somme L×l×H×quantité des lots embarqués,
+> même sémantique dynamique que la charge) et le **gabarit** (chaque type de lot
+> rentre dans la caisse, toutes rotations essayées), dès lors que les données
+> dimensionnelles existent (`LotDemande.longueurM/largeurM/hauteurM` +
+> `ProfilCamionDto.hauteur/largeur/longueurMetres`). Données manquantes =
+> vérification sautée mais **tracée explicitement** dans
+> `PlanChargement.positionsColis` (`verificationsDimensionnelles:
+> NON_VERIFIEES_DONNEES_MANQUANTES`) — jamais présent comme vérifié. Le vrai
+> bin-packing 3D (positions/orientations colis par colis) reste hors de portée
+> tant que le contrat colis Mobile n'est pas validé (cf §6).
+
 ## 1. Périmètre exact (CDC + Plan d'exécution)
 
 Référence CDC : §8.7 (Oracle de chargement 3D), UC-MAT-01 flux nominal étape 5,
