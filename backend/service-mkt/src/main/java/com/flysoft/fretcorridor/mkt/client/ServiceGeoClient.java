@@ -10,7 +10,6 @@ import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 /**
  * Appel synchrone vers service-geo (autre porteur, Moteur, meme principe que
@@ -41,7 +40,7 @@ public class ServiceGeoClient {
         this.restClient = serviceGeoRestClient;
     }
 
-    public Optional<UUID> resoudreAxe(String villeDepart, String villeArrivee) {
+    public Optional<AxeDto> resoudreAxe(String villeDepart, String villeArrivee) {
         try {
             List<AxeDto> axes = restClient.get()
                     .uri("/api/geo/axes/actifs-matching")
@@ -55,8 +54,7 @@ public class ServiceGeoClient {
             return axes.stream()
                     .filter(axe -> correspond(axe.hubOrigineVille(), villeDepart)
                             && correspond(axe.hubDestinationVille(), villeArrivee))
-                    .findFirst()
-                    .map(AxeDto::id);
+                    .findFirst();
 
         } catch (RestClientException exception) {
             log.warn("Echec appel service-geo (resolution axe, {} -> {}) - "

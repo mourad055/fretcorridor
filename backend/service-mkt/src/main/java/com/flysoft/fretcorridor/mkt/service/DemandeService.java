@@ -56,7 +56,17 @@ public class DemandeService {
         // valeursCriteres reste volontairement une map vide (pas de barème en
         // dur invente ici) : seule sa non-nullite conditionne la publication,
         // l'enrichissement reel des criteres restant a la charge du Moteur.
-        Optional<UUID> axeId = serviceGeoClient.resoudreAxe(request.getVilleDepart(), request.getVilleArrivee());
+        // Coordonnees de la demande (BUG CORRIGE, audit de suivi) : jamais
+        // renseignees jusqu'ici -- Demande.origineLatitude/... existaient
+        // deja sur l'entite et etaient deja lues par publierEvenement()
+        // ci-dessous, mais rien ne les remplissait jamais, laissant le
+        // moteur de matching (service-opt) sans position exploitable pour
+        // TOUTE demande. Granularite hub (position reelle du hub resolu),
+        // pas une coordonnee inventee -- coherente avec le fait qu'un axe
+        // relie deux hubs, pas deux points arbitraires.
+        Optional<com.flysoft.fretcorridor.mkt.client.AxeDto> axe =
+                serviceGeoClient.resoudreAxe(request.getVilleDepart(), request.getVilleArrivee());
+        Optional<UUID> axeId = axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::id);
 
         Demande demande = Demande.builder()
                 .clientActeurId(clientActeurId)
@@ -78,6 +88,10 @@ public class DemandeService {
                 .destinataireTelephone(request.getDestinataireTelephone())
                 .tenantId(tenantId)
                 .axeId(axeId.orElse(null))
+                .origineLatitude(axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::hubOrigineLatitude).orElse(null))
+                .origineLongitude(axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::hubOrigineLongitude).orElse(null))
+                .destinationLatitude(axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::hubDestinationLatitude).orElse(null))
+                .destinationLongitude(axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::hubDestinationLongitude).orElse(null))
                 .valeursCriteres(axeId.isPresent() ? Map.of() : null)
                 .statut(axeId.isPresent() ? Demande.StatutDemande.PUBLIEE : Demande.StatutDemande.AXE_NON_DESSERVI)
                 .build();

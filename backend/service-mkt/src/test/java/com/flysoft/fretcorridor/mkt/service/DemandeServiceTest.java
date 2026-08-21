@@ -1,5 +1,6 @@
 package com.flysoft.fretcorridor.mkt.service;
 
+import com.flysoft.fretcorridor.mkt.client.AxeDto;
 import com.flysoft.fretcorridor.mkt.client.ServiceCapClient;
 import com.flysoft.fretcorridor.mkt.client.ServiceGeoClient;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
@@ -81,7 +82,8 @@ class DemandeServiceTest {
     @Test
     void publishing_a_request_on_a_covered_axis_resolves_the_axis_and_publishes_the_event() {
         UUID axeId = UUID.randomUUID();
-        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde")).thenReturn(Optional.of(axeId));
+        AxeDto axe = new AxeDto(axeId, "Douala", "Yaounde", 4.05, 9.7, 3.87, 11.52);
+        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde")).thenReturn(Optional.of(axe));
 
         service.publier(requeteValide(), clientActeurId, TENANT, "NIVEAU_1");
 

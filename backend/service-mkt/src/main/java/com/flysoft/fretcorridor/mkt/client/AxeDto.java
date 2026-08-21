@@ -8,5 +8,9 @@ import java.util.UUID;
  * entre modules, meme principe que ServiceFltClient/VehiculeDto cote
  * service-cap).
  */
-public record AxeDto(UUID id, String hubOrigineVille, String hubDestinationVille) {
+public record AxeDto(
+        UUID id, String hubOrigineVille, String hubDestinationVille,
+        double hubOrigineLatitude, double hubOrigineLongitude,
+        double hubDestinationLatitude, double hubDestinationLongitude
+) {
 }

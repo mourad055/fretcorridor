@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/demande_provider.dart';
 import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/top_notification.dart';
 
 // UC-MKT-02 : au plus 3 propositions, ordonnées, avec motif de classement.
 // Tant que service-mat/service-opt (Moteur) ne sont pas branchés, l'API
@@ -18,6 +19,7 @@ class PropositionsScreen extends ConsumerStatefulWidget {
 class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
   List<Map<String, dynamic>> _propositions = [];
   bool _chargement = true;
+  String? _propositionEnCoursAcceptation;
 
   @override
   void initState() {
@@ -28,6 +30,19 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
   Future<void> _charger() async {
     final props = await ref.read(demandeProvider.notifier).getPropositions(widget.demande.id);
     if (mounted) setState(() { _propositions = props; _chargement = false; });
+  }
+
+  Future<void> _accepter(String propositionId) async {
+    setState(() => _propositionEnCoursAcceptation = propositionId);
+    final erreur = await ref.read(demandeProvider.notifier).accepterProposition(widget.demande.id, propositionId);
+    if (!mounted) return;
+    setState(() => _propositionEnCoursAcceptation = null);
+    if (erreur != null) {
+      afficherNotification(context, message: erreur, couleur: AppColors.erreur, icone: Icons.error_outline);
+      return;
+    }
+    afficherNotification(context, message: 'Proposition acceptée ✅', couleur: AppColors.succes, icone: Icons.check_circle);
+    await _charger();
   }
 
   @override
@@ -79,7 +94,11 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
                     ),
                   )
                 else
-                  ..._propositions.map((p) => _CarteProposition(proposition: p)),
+                  ..._propositions.map((p) => _CarteProposition(
+                        proposition: p,
+                        enCoursAcceptation: _propositionEnCoursAcceptation == p['id'],
+                        surAccepter: () => _accepter(p['id'] as String),
+                      )),
               ],
             ),
     );
@@ -88,7 +107,13 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
 
 class _CarteProposition extends StatelessWidget {
   final Map<String, dynamic> proposition;
-  const _CarteProposition({required this.proposition});
+  final bool enCoursAcceptation;
+  final VoidCallback surAccepter;
+  const _CarteProposition({
+    required this.proposition,
+    required this.enCoursAcceptation,
+    required this.surAccepter,
+  });
 
   Color _couleurStatut(String statut) {
     switch (statut) {
@@ -166,6 +191,27 @@ class _CarteProposition extends StatelessWidget {
                 if (motif != null && motif.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(motif, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                ],
+                if (statut == 'EN_ATTENTE') ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 40,
+                    child: ElevatedButton(
+                      onPressed: enCoursAcceptation ? null : surAccepter,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: enCoursAcceptation
+                          ? const SizedBox(
+                              width: 18, height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text('Accepter cette proposition'),
+                    ),
+                  ),
                 ],
               ],
             ),

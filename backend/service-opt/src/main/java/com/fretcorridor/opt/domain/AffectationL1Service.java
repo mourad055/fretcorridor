@@ -127,6 +127,21 @@ public class AffectationL1Service {
                 continue;
             }
 
+            // Affectation.origineLatitude/destinationLatitude sont des
+            // primitives double non-nullables (colonnes NOT NULL) -- une
+            // demande publiee sans coordonnees (donnee de test incomplete,
+            // geocodage jamais branche a la publication) ne peut pas y etre
+            // persistee sans fabriquer une position inventee. On la laisse
+            // non affectee ce cycle plutot que de planter tout le lot
+            // (BUG CORRIGE : plantait ici auparavant, bloquant aussi les
+            // autres demandes valides du meme axe).
+            if (demande.origineDemande() == null || demande.destinationDemande() == null) {
+                log.warn("Demande {} sans coordonnees origine/destination - non affectee ce cycle "
+                        + "(mode degrade, cf. javadoc).", demande.demandeId());
+                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null, null));
+                continue;
+            }
+
             UUID capaciteId = capacitesReference.get(indiceCapacite);
             CandidatCoutDto candidatRetenu = demande.candidats().get(indiceCapacite);
 
