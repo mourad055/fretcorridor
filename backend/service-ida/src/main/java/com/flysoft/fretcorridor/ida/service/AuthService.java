@@ -73,6 +73,45 @@ public class AuthService {
         return AuthDto.AuthResponse.of(access, refresh, acteur);
     }
 
+    // Meme principe que inscrireChargeur (S1, sans KYC bloquant) - le tenant
+    // fixe correspond au meme mono-tenant Phase 1 (ADR 0011) utilise par
+    // service-exe/service-not/service-mkt pour ce corridor.
+    private static final String TENANT_BGFT_PHASE1 = "tenant-bgft-douala";
+
+    @Transactional
+    public AuthDto.AuthResponse inscrireTransporteur(AuthDto.InscriptionTransporteurRequest request) {
+        if (acteurRepository.existsByTelephone(request.getTelephone())) {
+            throw new RuntimeException("TELEPHONE_DEJA_UTILISE");
+        }
+
+        RoleActeur role;
+        try {
+            role = RoleActeur.valueOf(request.getType());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("TYPE_INVALIDE");
+        }
+        if (role != RoleActeur.CHAUFFEUR && role != RoleActeur.TRANSPORTEUR
+                && role != RoleActeur.CHAUFFEUR_PROPRIETAIRE) {
+            throw new RuntimeException("TYPE_INVALIDE");
+        }
+
+        Acteur acteur = Acteur.builder()
+                .telephone(request.getTelephone())
+                .codePin(passwordEncoder.encode(request.getCodePin()))
+                .roles(Set.of(role))
+                .nom(request.getNom())
+                .prenom(request.getPrenom())
+                .raisonSociale(request.getRaisonSociale())
+                .tenantId(TENANT_BGFT_PHASE1)
+                .build();
+
+        acteur = acteurRepository.save(acteur);
+
+        String access = jwtService.genererAccessToken(acteur);
+        String refresh = jwtService.genererRefreshToken(acteur);
+        return AuthDto.AuthResponse.of(access, refresh, acteur);
+    }
+
     @Transactional(readOnly = true)
     public AuthDto.AuthResponse rafraichir(String refreshToken) {
         if (refreshToken == null) throw new RuntimeException("REFRESH_TOKEN_MANQUANT");

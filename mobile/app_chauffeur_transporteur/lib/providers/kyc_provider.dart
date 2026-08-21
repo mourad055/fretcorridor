@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -79,8 +80,25 @@ class KycState {
 // pièces) n'existe pas encore côté service-ida.
 class KycNotifier extends StateNotifier<KycState> {
   final Dio _dio;
+  Timer? _effacementErreur;
 
   KycNotifier(this._dio) : super(const KycState());
+
+  @override
+  void dispose() {
+    _effacementErreur?.cancel();
+    super.dispose();
+  }
+
+  // Un message d'erreur affiché indéfiniment finit par sembler figé — il
+  // s'efface tout seul après quelques secondes (même pattern qu'auth_provider).
+  void _afficherErreurTemporaire(String erreur) {
+    _effacementErreur?.cancel();
+    state = state.copyWith(chargement: false, depotEnCours: false, erreur: erreur);
+    _effacementErreur = Timer(const Duration(seconds: 5), () {
+      if (mounted) state = state.copyWith(erreur: null);
+    });
+  }
 
   Future<void> chargerProfil() async {
     state = state.copyWith(chargement: true, erreur: null);
@@ -88,7 +106,7 @@ class KycNotifier extends StateNotifier<KycState> {
       final response = await _dio.get('/kyc/profil');
       state = state.copyWith(chargement: false, profil: Profil.fromJson(response.data));
     } on DioException catch (e) {
-      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      _afficherErreurTemporaire(_messageErreur(e));
     }
   }
 
@@ -102,7 +120,7 @@ class KycNotifier extends StateNotifier<KycState> {
       state = state.copyWith(chargement: false, profil: Profil.fromJson(response.data));
       return true;
     } on DioException catch (e) {
-      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      _afficherErreurTemporaire(_messageErreur(e));
       return false;
     }
   }
@@ -118,7 +136,7 @@ class KycNotifier extends StateNotifier<KycState> {
       state = state.copyWith(chargement: false, profil: Profil.fromJson(response.data));
       return true;
     } on DioException catch (e) {
-      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      _afficherErreurTemporaire(_messageErreur(e));
       return false;
     }
   }
@@ -134,7 +152,7 @@ class KycNotifier extends StateNotifier<KycState> {
       state = state.copyWith(depotEnCours: false, profil: Profil.fromJson(response.data));
       return true;
     } on DioException catch (e) {
-      state = state.copyWith(depotEnCours: false, erreur: _messageErreur(e));
+      _afficherErreurTemporaire(_messageErreur(e));
       return false;
     }
   }

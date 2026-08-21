@@ -4,6 +4,7 @@ import com.fretcorridor.gateway.domain.Actor;
 import com.fretcorridor.gateway.domain.AuthenticationPort;
 import com.fretcorridor.gateway.domain.AuthenticationServiceUnavailableException;
 import com.fretcorridor.gateway.domain.InvalidCredentialsException;
+import com.fretcorridor.gateway.domain.RegistrationRefuseeException;
 import com.fretcorridor.gateway.domain.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -73,8 +74,51 @@ public class ServiceIdaAuthenticationAdapter implements AuthenticationPort {
                 .onErrorMap(e -> !(e instanceof InvalidCredentialsException), e -> new AuthenticationServiceUnavailableException());
     }
 
+    @Override
+    public Mono<Actor> register(String phone, String code, String type, String nom, String prenom, String raisonSociale) {
+        return webClient.post()
+                .uri("/api/auth/inscription-transporteur")
+                .bodyValue(Map.of(
+                        "telephone", phone,
+                        "codePin", code,
+                        "type", type,
+                        "nom", nom == null ? "" : nom,
+                        "prenom", prenom == null ? "" : prenom,
+                        "raisonSociale", raisonSociale == null ? "" : raisonSociale))
+                .retrieve()
+                .bodyToMono(RegisterResponse.class)
+                .flatMap(response -> versActeurInscription(phone, response)
+                        .map(Mono::just)
+                        .orElseGet(() -> Mono.error(new RegistrationRefuseeException("TYPE_INVALIDE"))))
+                .onErrorMap(this::estRequeteInvalide, this::versRegistrationRefusee)
+                .onErrorMap(e -> !(e instanceof RegistrationRefuseeException), e -> new AuthenticationServiceUnavailableException());
+    }
+
     private boolean estNonAutorise(Throwable e) {
         return e instanceof WebClientResponseException wcre && wcre.getStatusCode().value() == 401;
+    }
+
+    private boolean estRequeteInvalide(Throwable e) {
+        return e instanceof WebClientResponseException wcre && wcre.getStatusCode().value() == 400;
+    }
+
+    private RegistrationRefuseeException versRegistrationRefusee(Throwable e) {
+        String detail = ((WebClientResponseException) e).getResponseBodyAsString();
+        if (detail != null && detail.contains("TELEPHONE_DEJA_UTILISE")) {
+            return new RegistrationRefuseeException("Ce numéro de téléphone est déjà utilisé.");
+        }
+        return new RegistrationRefuseeException("Inscription refusée.");
+    }
+
+    private Optional<Actor> versActeurInscription(String phone, RegisterResponse response) {
+        return response.roles().stream()
+                .filter(ROLES_GATEWAY_CONNUS::contains)
+                .findFirst()
+                .map(this::mapperRole)
+                .map(role -> new Actor(response.acteurId(), phone, role, response.tenantId(), response.accessToken()));
+    }
+
+    private record RegisterResponse(String accessToken, String refreshToken, String acteurId, List<String> roles, String tenantId) {
     }
 
     /**

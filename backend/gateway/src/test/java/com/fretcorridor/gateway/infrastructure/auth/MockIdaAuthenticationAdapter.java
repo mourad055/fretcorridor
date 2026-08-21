@@ -52,4 +52,12 @@ public class MockIdaAuthenticationAdapter implements AuthenticationPort {
         }
         return Mono.just(actor);
     }
+
+    @Override
+    public Mono<Actor> register(String phone, String code, String type, String nom, String prenom, String raisonSociale) {
+        if (actorsByPhone.containsKey(phone)) {
+            return Mono.error(new com.fretcorridor.gateway.domain.RegistrationRefuseeException("Ce numéro de téléphone est déjà utilisé."));
+        }
+        return Mono.just(new Actor(phone, phone, Role.valueOf(type), "tenant-bgft-douala", JETON_IDA_FACTICE));
+    }
 }

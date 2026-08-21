@@ -24,6 +24,19 @@ public class AuthDto {
         private String raisonSociale; // optionnel si personne physique
     }
 
+    // Inscription légère chauffeur/transporteur (app Chauffeur/Transporteur,
+    // même principe que InscriptionChargeurRequest) - le profil complet (KYC,
+    // véhicules) vient après, cet écran ne fait que créer le compte.
+    @Data
+    public static class InscriptionTransporteurRequest {
+        @NotBlank private String telephone;
+        @NotBlank private String codePin;
+        @NotBlank private String type; // CHAUFFEUR, TRANSPORTEUR ou CHAUFFEUR_PROPRIETAIRE
+        private String nom;
+        private String prenom;
+        private String raisonSociale; // pertinent seulement pour TRANSPORTEUR
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
