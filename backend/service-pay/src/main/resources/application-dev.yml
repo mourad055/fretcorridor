@@ -1,0 +1,10 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=dev — jamais en
+# production. Charge data-dev.sql (écritures/séquestres de démonstration)
+# après que Hibernate ait créé le schéma (defer-datasource-initialization).
+spring:
+  jpa:
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data-dev.sql

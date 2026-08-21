@@ -17,6 +17,11 @@ spring:
     properties:
       hibernate:
         default_schema: service_ida
+        # Sans ce flag, Hibernate 6 tente de créer les tables du schéma
+        # service_ida avant que le schéma lui-même n'existe sur une base
+        # neuve ("schema does not exist") — premier démarrage toujours en
+        # échec sinon, contournable seulement par un second essai manuel.
+        hbm2ddl.create_namespaces: true
     open-in-view: false
   servlet:
     multipart:
