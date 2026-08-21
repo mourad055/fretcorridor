@@ -83,4 +83,22 @@ public class DemandeController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // ── DELETE /api/demandes/{id} — annulation (CRUD demande, audit de suivi) ─
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> annuler(@PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.substring(7);
+            String tenantId = jwtService.extraireTenantId(token);
+            return ResponseEntity.ok(demandeService.annuler(id, tenantId));
+        } catch (RuntimeException e) {
+            if ("DEMANDE_INTROUVABLE".equals(e.getMessage())) {
+                return ResponseEntity.status(404).build();
+            }
+            if ("DEMANDE_DEJA_ACCEPTEE".equals(e.getMessage()) || "DEMANDE_DEJA_ANNULEE".equals(e.getMessage())) {
+                return ResponseEntity.status(409).body(e.getMessage());
+            }
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

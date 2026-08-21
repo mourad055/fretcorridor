@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/demande_model.dart';
 import '../providers/suivi_provider.dart';
 import '../theme/app_theme.dart';
 import 'litige_screen.dart';
@@ -11,7 +12,12 @@ import 'paiement_screen.dart';
 // (matching V0 encore un stub côté Moteur — voir README).
 class SuiviScreen extends ConsumerStatefulWidget {
   final String demandeId;
-  const SuiviScreen({super.key, required this.demandeId});
+  // Optionnel : quand disponible côté appelant (ex. MesDemandesScreen, qui
+  // a déjà l'objet complet), affiche toutes les infos du formulaire de
+  // publication en haut de l'écran — pas seulement l'axe/la marchandise
+  // déjà connus de la Mission (audit de suivi Mobile).
+  final DemandeModel? demande;
+  const SuiviScreen({super.key, required this.demandeId, this.demande});
 
   @override
   ConsumerState<SuiviScreen> createState() => _SuiviScreenState();
@@ -51,30 +57,34 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
           ),
         ],
       ),
-      body: suivi.chargement
-          ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
-          : suivi.chronologie == null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.hourglass_empty, color: AppColors.bordure, size: 48),
-                        const SizedBox(height: 12),
-                        const Text('Suivi pas encore disponible',
-                            style: TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Le suivi démarre dès qu\'un transporteur prend en charge votre demande.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.texteMuet, fontSize: 12),
+      body: Column(
+        children: [
+          if (widget.demande != null) _carteDemande(widget.demande!),
+          Expanded(
+            child: suivi.chargement
+                ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
+                : suivi.chronologie == null
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.hourglass_empty, color: AppColors.bordure, size: 48),
+                              const SizedBox(height: 12),
+                              const Text('Suivi pas encore disponible',
+                                  style: TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 6),
+                              const Text(
+                                'Le suivi démarre dès qu\'un transporteur prend en charge votre demande.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: AppColors.texteMuet, fontSize: 12),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                )
-              : ListView(
+                      )
+                    : ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
                     if (suivi.chronologie!.typeEmballageNom != null) ...[
@@ -242,6 +252,33 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                     ),
                   ],
                 ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _carteDemande(DemandeModel d) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.bordure),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${d.villeDepart} → ${d.villeArrivee}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          const SizedBox(height: 4),
+          Text('${d.typeEmballageNom} × ${d.quantite} — ${d.poidsTotalKg.toStringAsFixed(0)} kg',
+              style: const TextStyle(color: AppColors.texteMuet, fontSize: 13)),
+          const SizedBox(height: 4),
+          Text('Destinataire : ${d.destinataireNom} · ${d.destinataireTelephone}',
+              style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+        ],
+      ),
     );
   }
 }

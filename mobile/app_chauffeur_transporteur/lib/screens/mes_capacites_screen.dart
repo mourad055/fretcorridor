@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/axes_provider.dart';
 import '../providers/capacite_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/top_notification.dart';
@@ -18,7 +19,10 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(capaciteProvider.notifier).chargerMesCapacites());
+    Future.microtask(() {
+      ref.read(capaciteProvider.notifier).chargerMesCapacites();
+      ref.read(axesProvider.notifier).charger();
+    });
   }
 
   Future<void> _supprimer(CapaciteDeclaree capacite) async {
@@ -55,6 +59,7 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(capaciteProvider);
+    final axes = ref.watch(axesProvider).axes;
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -80,6 +85,10 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                       final c = state.mesCapacites[i];
                       final statutCouleur = c.expiree ? AppColors.texteMuet : (c.publiee ? AppColors.succes : AppColors.accent);
                       final statutLibelle = c.expiree ? 'Expirée' : (c.publiee ? 'Publiée' : 'En attente');
+                      Axe? axe;
+                      for (final a in axes) {
+                        if (a.id == c.axeId) { axe = a; break; }
+                      }
                       return Container(
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
@@ -94,8 +103,18 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text('${c.poidsKg.toStringAsFixed(0)} kg disponibles',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (axe != null)
+                                        Text('${axe.origine} → ${axe.destination}',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.accent)),
+                                      Text('${c.poidsKg.toStringAsFixed(0)} kg disponibles',
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                    ],
+                                  ),
+                                ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                   decoration: BoxDecoration(color: statutCouleur.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),

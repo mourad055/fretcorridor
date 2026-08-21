@@ -129,6 +129,31 @@ public class DemandeService {
                 .stream().map(DemandeDto.DemandeResponse::fromEntity).toList();
     }
 
+    // "Annuler" plutot qu'une suppression physique : StatutDemande.ANNULEE
+    // existait deja dans l'enum mais n'etait jusqu'ici jamais atteint par
+    // aucun code (audit de suivi Mobile, demande CRUD "modifier/supprimer").
+    // Refusee si une proposition a deja ete acceptee (RG-039) - annuler a
+    // ce stade laisserait une reservation de capacite fantome cote
+    // transporteur, deja engagee.
+    @Transactional
+    public DemandeDto.DemandeResponse annuler(UUID demandeId, String tenantId) {
+        Demande demande = demandeRepository.findByIdAndTenantId(demandeId, tenantId)
+                .orElseThrow(() -> new RuntimeException("DEMANDE_INTROUVABLE"));
+
+        boolean propositionAcceptee = propositionRepository.findByDemandeIdOrderByRangAsc(demandeId).stream()
+                .anyMatch(p -> p.getStatut() == Proposition.Statut.ACCEPTEE);
+        if (propositionAcceptee) {
+            throw new RuntimeException("DEMANDE_DEJA_ACCEPTEE");
+        }
+        if (demande.getStatut() == Demande.StatutDemande.ANNULEE) {
+            throw new RuntimeException("DEMANDE_DEJA_ANNULEE");
+        }
+
+        demande.setStatut(Demande.StatutDemande.ANNULEE);
+        demande = demandeRepository.save(demande);
+        return DemandeDto.DemandeResponse.fromEntity(demande);
+    }
+
     // S5 — plus un stub : lit les Proposition persistees par
     // PropositionEmiseListener (Kafka, evenement publie par service-opt).
     @Transactional(readOnly = true)

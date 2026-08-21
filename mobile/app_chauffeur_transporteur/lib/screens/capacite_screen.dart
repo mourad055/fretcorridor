@@ -77,6 +77,24 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
           poidsKg: double.parse(_poidsCtrl.text),
           dateDepart: _dateDepart!,
         );
+    if (!mounted) return;
+    // BUG CORRIGE : l'ancienne bannière restait affichée indéfiniment
+    // (liée à capaciteProvider.derniereCapacite, jamais réinitialisé —
+    // même piège copyWith(champ: null) que suivi_provider.dart). Une
+    // notification transitoire ne pose pas ce problème par construction.
+    final capacite = ref.read(capaciteProvider).derniereCapacite;
+    if (capacite != null) {
+      afficherNotification(
+        context,
+        message: capacite.publiee
+            ? 'Capacité publiée — ${capacite.poidsTaxableKg.round()} kg taxables.'
+            : 'Capacité enregistrée.',
+        couleur: AppColors.succes,
+        icone: Icons.check_circle,
+      );
+      _poidsCtrl.clear();
+      setState(() { _axeId = null; _vehiculeId = null; _dateDepart = null; });
+    }
   }
 
   @override
@@ -105,7 +123,6 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (state.derniereCapacite != null) _carteSucces(state.derniereCapacite!),
                 if (state.erreur != null) _bandeauErreur(state.erreur!),
                 const SizedBox(height: 8),
 
@@ -224,30 +241,6 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
         focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.accent)),
       );
-
-  Widget _carteSucces(CapaciteDeclaree capacite) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.succes.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.succes.withValues(alpha: 0.4)),
-      ),
-      child: Row(children: [
-        const Icon(Icons.check_circle, color: AppColors.succes),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            capacite.publiee
-                ? 'Capacité publiée — ${capacite.poidsTaxableKg.round()} kg taxables.'
-                : 'Capacité enregistrée.',
-            style: const TextStyle(color: AppColors.succes, fontSize: 13),
-          ),
-        ),
-      ]),
-    );
-  }
 
   Widget _bandeauErreur(String message) {
     return Container(

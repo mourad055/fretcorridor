@@ -148,6 +148,25 @@ class DemandeNotifier extends StateNotifier<DemandeState> {
       return 'Erreur de connexion. Vérifiez votre réseau.';
     }
   }
+
+  // CRUD demande (audit de suivi Mobile) : annulation plutôt que
+  // suppression physique — StatutDemande.ANNULEE existe côté backend
+  // depuis le début mais n'était jamais atteint par aucun code.
+  Future<String?> annulerDemande(String demandeId) async {
+    try {
+      await _dio.delete('/demandes/$demandeId');
+      await chargerMesDemandes();
+      return null;
+    } on DioException catch (e) {
+      final status = e.response?.statusCode;
+      if (status == 409) {
+        return (e.response?.data is String ? e.response?.data as String : null) == 'DEMANDE_DEJA_ACCEPTEE'
+            ? 'Impossible d\'annuler — une proposition a déjà été acceptée.'
+            : 'Cette demande est déjà annulée.';
+      }
+      return 'Erreur de connexion. Vérifiez votre réseau.';
+    }
+  }
 }
 
 final demandeProvider = StateNotifierProvider<DemandeNotifier, DemandeState>((ref) {

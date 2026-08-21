@@ -68,8 +68,25 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
                       Text('${widget.demande.villeDepart} → ${widget.demande.villeArrivee}',
                           style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 4),
-                      Text('${widget.demande.typeEmballageNom} × ${widget.demande.quantite}',
-                          style: const TextStyle(color: AppColors.texteMuet, fontSize: 13)),
+                      Text(
+                        '${widget.demande.typeEmballageNom} × ${widget.demande.quantite} — '
+                        '${widget.demande.poidsTotalKg.toStringAsFixed(0)} kg',
+                        style: const TextStyle(color: AppColors.texteMuet, fontSize: 13),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Destinataire : ${widget.demande.destinataireNom} · ${widget.demande.destinataireTelephone}',
+                        style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
+                      ),
+                      if (widget.demande.fragile || widget.demande.perissable || widget.demande.dangereuse || widget.demande.grandeValeur) ...[
+                        const SizedBox(height: 6),
+                        Wrap(spacing: 6, runSpacing: 4, children: [
+                          if (widget.demande.fragile) _badgeDemande('Fragile'),
+                          if (widget.demande.perissable) _badgeDemande('Périssable'),
+                          if (widget.demande.dangereuse) _badgeDemande('Dangereuse'),
+                          if (widget.demande.grandeValeur) _badgeDemande('Grande valeur'),
+                        ]),
+                      ],
                     ],
                   ),
                 ),
@@ -103,6 +120,15 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
             ),
     );
   }
+
+  Widget _badgeDemande(String texte) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: AppColors.erreur.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(texte, style: const TextStyle(fontSize: 10, color: AppColors.erreur, fontWeight: FontWeight.bold)),
+      );
 }
 
 class _CarteProposition extends StatelessWidget {
