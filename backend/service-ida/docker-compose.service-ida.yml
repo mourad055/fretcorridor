@@ -7,7 +7,11 @@ services:
       context: ../backend/service-ida
     container_name: fretcorridor-service-ida
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      # "docker,dev" par defaut : active aussi le profil dev (data-dev.sql,
+      # comptes de demonstration) - c'est ce profil que consomme le
+      # conteneur de demo Web. Surchargeable (SPRING_PROFILES_ACTIVE=docker
+      # seul) pour un environnement sans donnees de demo.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker,dev}
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
