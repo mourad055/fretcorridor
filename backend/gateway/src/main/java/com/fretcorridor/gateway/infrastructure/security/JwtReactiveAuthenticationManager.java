@@ -35,7 +35,10 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
             return Mono.error(new BadCredentialsException("Jeton invalide ou expiré"));
         }
         Claims c = claims.get();
-        Role role = Role.valueOf(c.get("role", String.class));
+        // FIX 21/08 : passe par JwtService.roleOf - accepte le claim singulier
+        // "role" (tokens gateway) ET le tableau "roles" (tokens service-ida),
+        // cf javadoc roleOf. Role.valueOf direct = NPE sur token ida.
+        Role role = JwtService.roleOf(c);
         var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
         var principal = new AuthenticatedActor(c.getSubject(), role, c.get("tenantId", String.class), JwtService.delegationTokenOf(c));
         var authenticated = new UsernamePasswordAuthenticationToken(principal, token, authorities);
