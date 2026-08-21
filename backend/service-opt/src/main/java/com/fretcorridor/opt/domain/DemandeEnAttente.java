@@ -105,6 +105,9 @@ public class DemandeEnAttente {
     public BigDecimal getPoidsTaxableKg() { return poidsTaxableKg; }
     public Instant getFenetreDebut() { return fenetreDebut; }
     public Instant getFenetreFin() { return fenetreFin; }
+    // RG-105 : age de la demande dans la file - conditionne son eligibilite
+    // a la fenetre de traitement de l'axe (fenetre adaptative par axe).
+    public Instant getDateReception() { return dateReception; }
 
     public PointGeoDto getOrigine() {
         return (origineLatitude == null || origineLongitude == null)

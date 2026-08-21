@@ -67,8 +67,31 @@ public class JwtService {
         }
     }
 
+    /**
+     * FIX 21/08 (carte Bureau invisible) : deux formats de jeton coexistent
+     * et seuls les tokens EMIS par le gateway portaient le claim singulier
+     * "role" - un token emis par service-ida porte "roles" (tableau, ex.
+     * ["BUREAU"]). Le gateway ne lisait que "role" -> null ->
+     * Role.valueOf(null) -> NullPointerException "Name is null" ->
+     * HTTP 500 sur TOUTE requete authentifiee via la gateway avec un token
+     * ida (axes, missions, chronologie... d'ou la carte jamais affichee).
+     *
+     * Accepte donc les deux formats, plus l'alias "ADMINISTRATION" (nom du
+     * role cote ida/base) -> Role.ADMIN, meme convention que
+     * ServiceIdaAuthenticationAdapter.
+     */
     public static Role roleOf(Claims claims) {
-        return Role.valueOf(claims.get("role", String.class));
+        String valeur = claims.get("role", String.class);
+        if (valeur == null || valeur.isBlank()) {
+            Object roles = claims.get("roles");
+            if (roles instanceof java.util.List<?> liste && !liste.isEmpty() && liste.get(0) != null) {
+                valeur = String.valueOf(liste.get(0));
+            }
+        }
+        if (valeur == null || valeur.isBlank()) {
+            throw new IllegalArgumentException("Aucun claim de rôle ('role' ou 'roles') dans le jeton");
+        }
+        return "ADMINISTRATION".equals(valeur) ? Role.ADMIN : Role.valueOf(valeur);
     }
 
     /** Token service-ida retransmis, ou null si l'acteur ne s'est pas authentifié via service-ida. */

@@ -3,16 +3,26 @@ package com.fretcorridor.gateway.infrastructure.security;
 import com.fretcorridor.gateway.domain.Actor;
 import com.fretcorridor.gateway.domain.Role;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import org.junit.jupiter.api.Test;
 
+import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtServiceTest {
 
     private final JwtService jwtService =
             new JwtService("dev-secret-change-me-in-production-min-32-bytes", 60);
+
+    /** Meme cle de signature que JwtService - pour forger des tokens style service-ida. */
+    private javax.crypto.SecretKey jwtServiceSigningKey() {
+        return io.jsonwebtoken.security.Keys.hmacShaKeyFor(
+                "dev-secret-change-me-in-production-min-32-bytes".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
 
     @Test
     void issues_a_token_carrying_role_and_tenant_claims() {
@@ -61,5 +71,53 @@ class JwtServiceTest {
     @Test
     void rejects_a_malformed_token() {
         assertThat(jwtService.parse("not-a-jwt")).isEmpty();
+    }
+
+    // ---- FIX 21/08 : tokens emis par service-ida (claim pluriel "roles") --
+
+    @Test
+    void roleOf_accepts_the_service_ida_plural_roles_claim() {
+        String tokenIda = Jwts.builder()
+                .subject("actor-ida-1")
+                .claim("telephone", "+237600000001")
+                .claim("roles", List.of("BUREAU"))
+                .claim("tenantId", "MARKETPLACE_CM")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(jwtServiceSigningKey())
+                .compact();
+
+        Claims claims = jwtService.parse(tokenIda).orElseThrow();
+        assertThat(JwtService.roleOf(claims)).isEqualTo(Role.BUREAU);
+    }
+
+    @Test
+    void roleOf_maps_the_ida_administration_alias_to_admin() {
+        String tokenIda = Jwts.builder()
+                .subject("actor-ida-admin")
+                .claim("roles", List.of("ADMINISTRATION"))
+                .claim("tenantId", "MARKETPLACE_CM")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(jwtServiceSigningKey())
+                .compact();
+
+        Claims claims = jwtService.parse(tokenIda).orElseThrow();
+        assertThat(JwtService.roleOf(claims)).isEqualTo(Role.ADMIN);
+    }
+
+    @Test
+    void roleOf_rejects_a_token_without_any_role_claim() {
+        String tokenSansRole = Jwts.builder()
+                .subject("actor-sans-role")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 60_000))
+                .signWith(jwtServiceSigningKey())
+                .compact();
+
+        Claims claims = jwtService.parse(tokenSansRole).orElseThrow();
+        assertThatThrownBy(() -> JwtService.roleOf(claims))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("rôle");
     }
 }
