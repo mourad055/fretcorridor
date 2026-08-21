@@ -70,6 +70,19 @@ public class AffectationL1Service {
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
+        return calculerAffectationOptimale(demandes, null, null);
+    }
+
+    // BUG CORRIGE (audit de suivi Mobile) : origineNom/destinationNom
+    // partaient toujours en dur a null dans AffectationConfirmeeEvent plus
+    // bas -- Mission.origineNom/destinationNom (service-exe) restaient donc
+    // systematiquement vides, et l'app Chauffeur (qui affiche pourtant deja
+    // ces deux champs sur la liste des missions et le detail) ne montrait
+    // jamais l'axe. Surcharge plutot que modifier la signature existante :
+    // AffectationL1Controller (endpoint de verification manuelle, Sprint 5)
+    // et les tests existants n'ont pas de nom d'axe a fournir.
+    public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes,
+                                                                String origineNom, String destinationNom) {
         if (demandes == null || demandes.isEmpty()) {
             return new AffectationLotResultat(false, List.of());
         }
@@ -224,10 +237,10 @@ public class AffectationL1Service {
                         demande.axeId(),
                         demande.origineDemande() != null ? demande.origineDemande().latitude() : 0,
                         demande.origineDemande() != null ? demande.origineDemande().longitude() : 0,
-                        null,
+                        origineNom,
                         demande.destinationDemande() != null ? demande.destinationDemande().latitude() : 0,
                         demande.destinationDemande() != null ? demande.destinationDemande().longitude() : 0,
-                        null,
+                        destinationNom,
                         itineraire != null ? itineraire.distanceMetres() : null,
                         itineraire != null ? (long) itineraire.dureeSecondes() : null,
                         itineraire != null ? (long) itineraire.intervalleConfianceSecondes() : null,

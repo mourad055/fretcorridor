@@ -196,7 +196,8 @@ public class MatchingCycleService {
                         + "(rayon={} km)",
                 axe.nom(), demandes.size(), capacites.size(), rayonMatchingKm);
 
-        AffectationLotResultat resultat = affectationL1Service.calculerAffectationOptimale(lotNonVide);
+        AffectationLotResultat resultat = affectationL1Service.calculerAffectationOptimale(
+                lotNonVide, axe.hubOrigineVille(), axe.hubDestinationVille());
 
         if (resultat.modeDegrade()) {
             log.warn("Cycle en mode degrade sur l'axe {} - service-mat injoignable, "

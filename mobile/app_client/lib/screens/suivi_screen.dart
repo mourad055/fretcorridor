@@ -118,12 +118,14 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  '${suivi.position!.latitude.toStringAsFixed(4)}, ${suivi.position!.longitude.toStringAsFixed(4)}',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                const Text(
+                                  'Véhicule en mouvement',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                 ),
                                 Text(
-                                  'Position mise à jour il y a ${suivi.position!.ageSecondes ~/ 60} min',
+                                  suivi.position!.ageSecondes < 60
+                                      ? 'Position mise à jour à l\'instant'
+                                      : 'Position mise à jour il y a ${suivi.position!.ageSecondes ~/ 60} min',
                                   style: const TextStyle(color: AppColors.texteMuet, fontSize: 11),
                                 ),
                               ],

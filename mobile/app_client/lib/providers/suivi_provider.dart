@@ -31,12 +31,19 @@ class SuiviNotifier extends StateNotifier<SuiviState> {
   // S7 puis S6 : la chronologie donne le missionId, nécessaire pour la position.
   // Tant qu'aucune mission n'existe encore pour cette demande (matching pas
   // encore actif — S5 est un stub), les deux resteront simplement vides.
+  //
+  // BUG CORRIGE : copyWith(chronologie: null, ...) ne vide jamais le champ —
+  // `null ?? this.chronologie` retombe sur l'ancienne valeur (copyWith ne
+  // distingue pas "non fourni" de "explicitement null"). Résultat : ouvrir
+  // le suivi d'une demande sans mission encore affichait le suivi de la
+  // DERNIÈRE demande consultée qui, elle, en avait un. État repartI à zéro
+  // ici (nouvel objet, pas copyWith) au tout début de chaque chargement.
   Future<void> charger(String demandeId) async {
-    state = state.copyWith(chargement: true, erreur: null);
+    state = const SuiviState(chargement: true);
     try {
       final response = await _dioExe.get('/missions/demande/$demandeId/chronologie');
       if (response.statusCode == 204 || response.data == null) {
-        state = state.copyWith(chargement: false, chronologie: null, position: null);
+        state = const SuiviState(chargement: false);
         return;
       }
       final chronologie = ChronologieModel.fromJson(response.data);
@@ -44,9 +51,9 @@ class SuiviNotifier extends StateNotifier<SuiviState> {
       await _chargerPosition(chronologie.missionId);
     } on DioException catch (e) {
       if (e.response?.statusCode == 204) {
-        state = state.copyWith(chargement: false, chronologie: null);
+        state = const SuiviState(chargement: false);
       } else {
-        state = state.copyWith(chargement: false, erreur: 'Impossible de charger le suivi.');
+        state = SuiviState(chargement: false, erreur: 'Impossible de charger le suivi.');
       }
     }
   }
