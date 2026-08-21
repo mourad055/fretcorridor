@@ -96,22 +96,6 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceClaire,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.accent.withValues(alpha: 0.3)),
-                ),
-                child: const Row(children: [
-                  Icon(Icons.info_outline, color: AppColors.accent, size: 18),
-                  SizedBox(width: 10),
-                  Expanded(child: Text(
-                    'Inscription rapide — vous pourrez compléter votre profil plus tard.',
-                    style: TextStyle(color: AppColors.texteMuet, fontSize: 12),
-                  )),
-                ]),
-              ),
               const SizedBox(height: 24),
 
               Row(

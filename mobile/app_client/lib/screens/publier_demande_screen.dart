@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import '../providers/demande_provider.dart';
 import '../providers/axes_provider.dart';
 import '../models/catalogue_emballage_model.dart';
@@ -18,7 +19,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   final _villeArriveeCtrl = TextEditingController();
   final _quantiteCtrl = TextEditingController(text: '1');
   final _destinataireNomCtrl = TextEditingController();
-  final _destinataireTelCtrl = TextEditingController();
+  String _destinataireTelephone = '';
 
   CatalogueEmballageModel? _emballageSelectionne;
   String? _axeSelectionneId;
@@ -35,7 +36,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   @override
   void dispose() {
     _villeDepartCtrl.dispose(); _villeArriveeCtrl.dispose();
-    _quantiteCtrl.dispose(); _destinataireNomCtrl.dispose(); _destinataireTelCtrl.dispose();
+    _quantiteCtrl.dispose(); _destinataireNomCtrl.dispose();
     super.dispose();
   }
 
@@ -51,6 +52,17 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
     return _emballageSelectionne!.volumeUnitaireM3 * q;
   }
 
+  // Donne un repère concret (type de véhicule) au client plutôt qu'un
+  // chiffre brut en kg qu'il ne sait pas interpréter (ex : "2500 kg" seul).
+  String _vehiculeSuggere(double poidsKg) {
+    if (poidsKg <= 500) return 'Camionnette (jusqu\'à 500 kg)';
+    if (poidsKg <= 1500) return 'Fourgon (jusqu\'à 1,5 t)';
+    if (poidsKg <= 3500) return 'Camion léger 3T5 (jusqu\'à 3,5 t)';
+    if (poidsKg <= 8000) return 'Camion moyen 8T (jusqu\'à 8 t)';
+    if (poidsKg <= 20000) return 'Camion lourd 20T (jusqu\'à 20 t)';
+    return 'Semi-remorque (plus de 20 t)';
+  }
+
   Future<void> _publier() async {
     if (!_formKey.currentState!.validate()) return;
     if (_emballageSelectionne == null) {
@@ -59,6 +71,20 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       );
       return;
     }
+    if (_destinataireTelephone.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Renseignez le téléphone du destinataire'), backgroundColor: AppColors.erreur),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Le prix affiché sera une estimation — le prix ferme viendra avec la proposition acceptée.'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 4),
+      ),
+    );
 
     final succes = await ref.read(demandeProvider.notifier).publier(
       villeDepart: _villeDepartCtrl.text.trim(),
@@ -72,7 +98,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       typeDisponibilite: _typeDisponibilite,
       modeCollecte: _modeCollecte,
       destinataireNom: _destinataireNomCtrl.text.trim(),
-      destinataireTelephone: _destinataireTelCtrl.text.trim(),
+      destinataireTelephone: _destinataireTelephone,
     );
 
     if (succes && mounted) Navigator.pop(context);
@@ -96,6 +122,36 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
             color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
       );
 
+  // Regroupe les champs d'une même étape dans une carte distincte (au lieu
+  // d'un long formulaire à plat) — plus facile à parcourir visuellement.
+  Widget _section({required IconData icone, required String titre, required List<Widget> enfants}) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.bordure),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Container(
+              width: 32, height: 32,
+              decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(8)),
+              child: Icon(icone, color: AppColors.accent, size: 17),
+            ),
+            const SizedBox(width: 10),
+            Text(titre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          ]),
+          ...enfants,
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final demandeState = ref.watch(demandeProvider);
@@ -111,8 +167,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Où ──────────────────────────────────────
-              Text('Où', style: Theme.of(context).textTheme.titleMedium),
+              _section(icone: Icons.map_outlined, titre: 'Lieu', enfants: [
               // S15 — sélecteur d'axe (GET /api/geo/axes?tenantId=...),
               // remplit les villes ci-dessous mais reste facultatif — la
               // saisie libre fonctionne toujours (ex. axe non couvert).
@@ -155,11 +210,33 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                 decoration: _decoration('Ex : Douala', Icons.place),
                 validator: (v) => v!.isEmpty ? 'Obligatoire' : null,
               ),
+              ]),
 
-              // ── Quoi / Combien ────────────────────────────
-              const SizedBox(height: 8),
-              Text('Quoi', style: Theme.of(context).textTheme.titleMedium),
+              _section(icone: Icons.inventory_2_outlined, titre: 'Marchandise', enfants: [
               _label('TYPE DE MARCHANDISE'),
+              if (demandeState.catalogue.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceClaire,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.wifi_off, color: AppColors.texteMuet, size: 18),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text('Catalogue indisponible pour le moment',
+                            style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                      ),
+                      TextButton(
+                        onPressed: () => ref.read(demandeProvider.notifier).chargerCatalogue(),
+                        child: const Text('Réessayer'),
+                      ),
+                    ],
+                  ),
+                )
+              else
               Wrap(
                 spacing: 8, runSpacing: 8,
                 children: demandeState.catalogue.map((e) {
@@ -181,11 +258,13 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                 }).toList(),
               ),
 
-              _label('QUANTITÉ'),
+              _label(_emballageSelectionne == null
+                  ? 'QUANTITÉ (NOMBRE D\'UNITÉS)'
+                  : 'QUANTITÉ (NOMBRE DE "${_emballageSelectionne!.nom.toUpperCase()}")'),
               TextFormField(
                 controller: _quantiteCtrl,
                 keyboardType: TextInputType.number,
-                decoration: _decoration('Ex : 10', Icons.numbers),
+                decoration: _decoration('Ex : 10', Icons.numbers).copyWith(suffixText: 'unité(s)'),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Obligatoire';
@@ -202,11 +281,35 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                     color: AppColors.surfaceClaire,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _ChiffreCalcule('Poids total', '${_poidsTotal.toStringAsFixed(0)} kg'),
-                      _ChiffreCalcule('Volume total', '${_volumeTotal.toStringAsFixed(2)} m³'),
+                      Text(
+                        '${_quantiteCtrl.text.isEmpty ? 0 : _quantiteCtrl.text} × ${_emballageSelectionne!.nom} '
+                        '(${_emballageSelectionne!.poidsUnitaireKg.toStringAsFixed(0)} kg/unité)',
+                        style: const TextStyle(fontSize: 12, color: AppColors.texteMuet, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _ChiffreCalcule('Poids total', '${_poidsTotal.toStringAsFixed(0)} kg'),
+                          _ChiffreCalcule('Volume total', '${_volumeTotal.toStringAsFixed(2)} m³'),
+                        ],
+                      ),
+                      const Divider(height: 20),
+                      Row(
+                        children: [
+                          const Icon(Icons.local_shipping_outlined, size: 16, color: AppColors.accent),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              'Véhicule adapté : ${_vehiculeSuggere(_poidsTotal)}',
+                              style: const TextStyle(fontSize: 12, color: AppColors.texte, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -220,8 +323,9 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                 _Commutateur('Dangereuse', _dangereuse, (v) => setState(() => _dangereuse = v)),
                 _Commutateur('Grande valeur', _grandeValeur, (v) => setState(() => _grandeValeur = v)),
               ]),
+              ]),
 
-              // ── Quand ───────────────────────────────────
+              _section(icone: Icons.schedule_outlined, titre: 'Modalités', enfants: [
               _label('DISPONIBILITÉ'),
               DropdownButtonFormField<String>(
                 initialValue: _typeDisponibilite,
@@ -245,10 +349,9 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                 ],
                 onChanged: (v) => setState(() => _modeCollecte = v!),
               ),
+              ]),
 
-              // ── Qui reçoit ──────────────────────────────
-              const SizedBox(height: 8),
-              Text('Destinataire', style: Theme.of(context).textTheme.titleMedium),
+              _section(icone: Icons.person_pin_circle_outlined, titre: 'Destinataire', enfants: [
               _label('NOM'),
               TextFormField(
                 controller: _destinataireNomCtrl,
@@ -256,25 +359,13 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                 validator: (v) => v!.isEmpty ? 'Obligatoire' : null,
               ),
               _label('TÉLÉPHONE'),
-              TextFormField(
-                controller: _destinataireTelCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: _decoration('+237 6XX XXX XXX', Icons.phone),
-                validator: (v) => v!.isEmpty ? 'Obligatoire' : null,
+              IntlPhoneField(
+                initialCountryCode: 'CM',
+                decoration: _decoration('', Icons.phone).copyWith(hintText: null),
+                dropdownTextStyle: const TextStyle(color: AppColors.texte),
+                onChanged: (phone) => _destinataireTelephone = phone.completeNumber,
               ),
-
-              const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceClaire,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'Le prix affiché après publication est une estimation. Le prix ferme sera connu à l\'acceptation d\'une proposition.',
-                  style: TextStyle(color: AppColors.texteMuet, fontSize: 11.5),
-                ),
-              ),
+              ]),
 
               if (demandeState.erreur != null) ...[
                 const SizedBox(height: 12),

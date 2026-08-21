@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -78,9 +79,24 @@ class KycState {
 class KycNotifier extends StateNotifier<KycState> {
   final Dio _dio;
   static const _storage = FlutterSecureStorage();
+  Timer? _effacementErreur;
 
   KycNotifier(this._dio) : super(const KycState()) {
     chargerProfil();
+  }
+
+  @override
+  void dispose() {
+    _effacementErreur?.cancel();
+    super.dispose();
+  }
+
+  void _afficherErreurTemporaire(String erreur) {
+    _effacementErreur?.cancel();
+    state = state.copyWith(chargement: false, depotEnCours: false, erreur: erreur);
+    _effacementErreur = Timer(const Duration(seconds: 5), () {
+      if (mounted) state = state.copyWith(erreur: null);
+    });
   }
 
   Future<void> chargerProfil() async {
@@ -110,7 +126,7 @@ class KycNotifier extends StateNotifier<KycState> {
       _appliquerProfil(response.data['profil'], succes: 'Identité enregistrée ✅');
       return true;
     } on DioException catch (e) {
-      state = state.copyWith(chargement: false, erreur: 'Erreur : ${e.response?.data ?? e.message}');
+      _afficherErreurTemporaire('Erreur : ${e.response?.data ?? e.message}');
       return false;
     }
   }
@@ -126,7 +142,7 @@ class KycNotifier extends StateNotifier<KycState> {
       _appliquerProfil(response.data['profil'], succes: 'Identité enregistrée ✅');
       return true;
     } on DioException catch (e) {
-      state = state.copyWith(chargement: false, erreur: 'Erreur : ${e.response?.data ?? e.message}');
+      _afficherErreurTemporaire('Erreur : ${e.response?.data ?? e.message}');
       return false;
     }
   }
@@ -144,7 +160,7 @@ class KycNotifier extends StateNotifier<KycState> {
       _appliquerProfil(response.data['profil'], succes: 'Pièce déposée ✅');
       return true;
     } on DioException catch (e) {
-      state = state.copyWith(depotEnCours: false, erreur: 'Erreur : ${e.response?.data ?? e.message}');
+      _afficherErreurTemporaire('Erreur : ${e.response?.data ?? e.message}');
       return false;
     }
   }

@@ -79,18 +79,99 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
                     ),
                   )
                 else
-                  ..._propositions.map((p) => Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.bordure),
-                        ),
-                        child: Text(p.toString()),
-                      )),
+                  ..._propositions.map((p) => _CarteProposition(proposition: p)),
               ],
             ),
+    );
+  }
+}
+
+class _CarteProposition extends StatelessWidget {
+  final Map<String, dynamic> proposition;
+  const _CarteProposition({required this.proposition});
+
+  Color _couleurStatut(String statut) {
+    switch (statut) {
+      case 'ACCEPTEE':
+        return AppColors.succes;
+      case 'EXPIREE':
+        return AppColors.erreur;
+      default:
+        return AppColors.accent;
+    }
+  }
+
+  String _libelleStatut(String statut) {
+    switch (statut) {
+      case 'ACCEPTEE':
+        return 'Acceptée';
+      case 'EXPIREE':
+        return 'Expirée';
+      default:
+        return 'En attente';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rang = proposition['rang']?.toString() ?? '?';
+    final motif = proposition['motifClassement'] as String?;
+    final prix = proposition['prixEstime'] as String?;
+    final statut = proposition['statut'] as String? ?? 'EN_ATTENTE';
+    final couleur = _couleurStatut(statut);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.bordure),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40, height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceClaire,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text('#$rang', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.accent)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      prix != null ? '$prix XAF' : 'Prix en cours de calcul',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: couleur.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(_libelleStatut(statut),
+                          style: TextStyle(color: couleur, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+                if (motif != null && motif.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(motif, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

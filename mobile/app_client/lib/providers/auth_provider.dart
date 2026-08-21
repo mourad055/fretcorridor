@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dio_provider.dart';
+
+const String keyTelephone = 'telephone';
 
 class AuthState {
   final bool estConnecte;
@@ -9,6 +12,7 @@ class AuthState {
   final String? erreur;
   final List<String> roles;
   final String? tenantId;
+  final String? telephone;
 
   const AuthState({
     this.estConnecte = false,
@@ -16,6 +20,7 @@ class AuthState {
     this.erreur,
     this.roles = const [],
     this.tenantId,
+    this.telephone,
   });
 
   AuthState copyWith({
@@ -24,6 +29,7 @@ class AuthState {
     String? erreur,
     List<String>? roles,
     String? tenantId,
+    String? telephone,
   }) {
     return AuthState(
       estConnecte: estConnecte ?? this.estConnecte,
@@ -31,6 +37,7 @@ class AuthState {
       erreur: erreur,
       roles: roles ?? this.roles,
       tenantId: tenantId ?? this.tenantId,
+      telephone: telephone ?? this.telephone,
     );
   }
 }
@@ -38,16 +45,34 @@ class AuthState {
 class AuthNotifier extends StateNotifier<AuthState> {
   final Dio _dio;
   static const _storage = FlutterSecureStorage();
+  Timer? _effacementErreur;
 
   AuthNotifier(this._dio) : super(const AuthState()) {
     _verifierSession();
   }
 
+  @override
+  void dispose() {
+    _effacementErreur?.cancel();
+    super.dispose();
+  }
+
+  // Un message d'erreur affiché indéfiniment finit par sembler figé — il
+  // s'efface tout seul après quelques secondes plutôt que de rester tant
+  // qu'aucune nouvelle action ne le remplace.
+  void _afficherErreurTemporaire(String erreur) {
+    _effacementErreur?.cancel();
+    state = state.copyWith(chargement: false, erreur: erreur);
+    _effacementErreur = Timer(const Duration(seconds: 5), () {
+      if (mounted) state = state.copyWith(erreur: null);
+    });
+  }
+
   Future<void> _verifierSession() async {
     final token = await _storage.read(key: keyAccessToken);
     if (token != null) {
-      // Pas de KYC/profil à recharger au S1 — la session est juste "présente"
-      state = state.copyWith(estConnecte: true);
+      final telephone = await _storage.read(key: keyTelephone);
+      state = state.copyWith(estConnecte: true, telephone: telephone);
     }
   }
 
@@ -58,12 +83,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         'telephone': telephone,
         'codePin': codePin,
       });
-      await _enregistrerSession(response.data);
+      await _enregistrerSession(response.data, telephone);
       state = state.copyWith(
         chargement: false,
         estConnecte: true,
         roles: List<String>.from(response.data['roles']),
         tenantId: response.data['tenantId'],
+        telephone: telephone,
       );
       return true;
     } on DioException catch (e) {
@@ -76,7 +102,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else if (message.contains('ACTEUR_INTROUVABLE')) {
         erreur = 'Numéro non reconnu.';
       }
-      state = state.copyWith(chargement: false, erreur: erreur);
+      _afficherErreurTemporaire(erreur);
       return false;
     }
   }
@@ -97,12 +123,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         if (prenom != null) 'prenom': prenom,
         if (raisonSociale != null) 'raisonSociale': raisonSociale,
       });
-      await _enregistrerSession(response.data);
+      await _enregistrerSession(response.data, telephone);
       state = state.copyWith(
         chargement: false,
         estConnecte: true,
         roles: List<String>.from(response.data['roles']),
         tenantId: response.data['tenantId'],
+        telephone: telephone,
       );
       return true;
     } on DioException catch (e) {
@@ -111,19 +138,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
       if (message.contains('TELEPHONE_DEJA_UTILISE')) {
         erreur = 'Ce numéro a déjà un compte — connectez-vous plutôt.';
       }
-      state = state.copyWith(chargement: false, erreur: erreur);
+      _afficherErreurTemporaire(erreur);
       return false;
     }
   }
 
-  Future<void> _enregistrerSession(Map<String, dynamic> data) async {
+  Future<void> _enregistrerSession(Map<String, dynamic> data, String telephone) async {
     await _storage.write(key: keyAccessToken, value: data['accessToken']);
     await _storage.write(key: keyRefreshToken, value: data['refreshToken']);
+    await _storage.write(key: keyTelephone, value: telephone);
   }
 
   Future<void> logout() async {
     await _storage.delete(key: keyAccessToken);
     await _storage.delete(key: keyRefreshToken);
+    await _storage.delete(key: keyTelephone);
     state = const AuthState();
   }
 }
