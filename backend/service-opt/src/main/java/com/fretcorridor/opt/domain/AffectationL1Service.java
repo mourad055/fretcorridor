@@ -287,7 +287,11 @@ public class AffectationL1Service {
         }
         List<CandidatAlternatif> autres = new ArrayList<>();
         for (int j = 0; j < coutsLigne.length; j++) {
-            if (j != indiceRetenu) {
+            // FIX (audit CDC 20/08) : exclut les cases sentinelles - une
+            // capacite hors du rayon RG-046 de CETTE demande ne doit jamais
+            // etre presentee comme "2e/3e meilleur prix", meme si son cout
+            // brut trie plus bas que d'autres sentinelles.
+            if (j != indiceRetenu && coutsLigne[j] < KuhnMunkresSolver.COUT_SENTINELLE) {
                 autres.add(new CandidatAlternatif(j, coutsLigne[j]));
             }
         }

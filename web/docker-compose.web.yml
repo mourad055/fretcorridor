@@ -1,0 +1,13 @@
+# Bloc Docker Compose du web (Angular buildé, servi via Nginx).
+# Ne contient PAS l'infra partagee : ce fichier s'empile TOUJOURS sur
+# infra/docker-compose.yml + backend/gateway/docker-compose.gateway.yml
+# (le proxy Nginx /api/ depend du gateway etant sur le meme reseau).
+services:
+  web:
+    build:
+      context: ../web
+    container_name: fretcorridor-web
+    ports:
+      - "8098:80"
+    depends_on:
+      - gateway

@@ -64,6 +64,7 @@ public class SecurityConfig {
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:4200",
                 "http://localhost:4201",
+                "http://localhost:8099", // build Docker demo (Dockerfile.demo), test local des comptes demo hors ng serve
                 "https://fretcorridor-web.netlify.app"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Idempotency-Key"));

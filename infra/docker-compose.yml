@@ -7,6 +7,11 @@ services:
     # déjà d'autres services nommés/portés ainsi (cf. docs/adr/0006, même
     # principe appliqué ici pour Postgres).
     container_name: fretcorridor-web-postgres
+    # max_connections releve de 100 a 300 : 14 services + pgAdmin, chacun
+    # avec un pool HikariCP par defaut (10 connexions), peuvent saturer la
+    # limite par defaut des qu'ils tournent tous simultanement (constate le
+    # 20/08, veille de presentation - "too many clients already").
+    command: postgres -c max_connections=300
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
