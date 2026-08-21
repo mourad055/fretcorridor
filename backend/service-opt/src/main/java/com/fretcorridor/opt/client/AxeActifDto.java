@@ -13,5 +13,6 @@ import java.util.UUID;
  * borne par axe"). Cle absente = pas de borne appliquee ce cycle (a
  * documenter comme limitation, pas une valeur par defaut inventee ici).
  */
-public record AxeActifDto(UUID id, String nom, Map<String, Object> parametres) {
+public record AxeActifDto(UUID id, String nom, String hubOrigineVille, String hubDestinationVille,
+                           Map<String, Object> parametres) {
 }
