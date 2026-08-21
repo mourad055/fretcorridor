@@ -4,6 +4,8 @@ import '../providers/axes_provider.dart';
 import '../providers/capacite_provider.dart';
 import '../providers/vehicule_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/top_notification.dart';
+import 'mes_capacites_screen.dart';
 import 'vehicules_screen.dart';
 
 // S4 (EF-CAP-03/07) : déclaration de capacité (véhicule, trajet, créneau).
@@ -56,15 +58,15 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
   Future<void> _declarer(List<VehiculeFlotte> vehicules) async {
     if (!_formKey.currentState!.validate()) return;
     if (_axeId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choisissez un axe.')));
+      afficherNotification(context, message: 'Choisissez un axe.', couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     if (_vehiculeId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choisissez un véhicule.')));
+      afficherNotification(context, message: 'Choisissez un véhicule.', couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     if (_dateDepart == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choisissez une date de départ.')));
+      afficherNotification(context, message: 'Choisissez une date de départ.', couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
 
@@ -85,7 +87,16 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Déclarer une capacité')),
+      appBar: AppBar(
+        title: const Text('Déclarer une capacité'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.list_alt),
+            tooltip: 'Mes capacités',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MesCapacitesScreen())),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),

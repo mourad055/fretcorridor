@@ -1,5 +1,6 @@
 package com.flysoft.fretcorridor.mkt.service;
 
+import com.flysoft.fretcorridor.mkt.client.ServiceCapClient;
 import com.flysoft.fretcorridor.mkt.client.ServiceGeoClient;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
 import com.flysoft.fretcorridor.mkt.entity.CatalogueEmballage;
@@ -34,6 +35,7 @@ class DemandeServiceTest {
     @Mock private MktEventPublisher eventPublisher;
     @Mock private PropositionRepository propositionRepository;
     @Mock private ServiceGeoClient serviceGeoClient;
+    @Mock private ServiceCapClient serviceCapClient;
 
     private DemandeService service;
     private UUID clientActeurId;
@@ -43,7 +45,7 @@ class DemandeServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new DemandeService(demandeRepository, catalogueRepository, eventPublisher, propositionRepository, serviceGeoClient);
+        service = new DemandeService(demandeRepository, catalogueRepository, eventPublisher, propositionRepository, serviceGeoClient, serviceCapClient);
         clientActeurId = UUID.randomUUID();
         typeEmballageId = UUID.randomUUID();
 
@@ -132,6 +134,50 @@ class DemandeServiceTest {
         assertThat(p1.getStatut()).isEqualTo(Proposition.Statut.EXPIREE);
         assertThat(p2.getStatut()).isEqualTo(Proposition.Statut.ACCEPTEE);
         assertThat(p3.getStatut()).isEqualTo(Proposition.Statut.EXPIREE);
+    }
+
+    // EF-MKT-08 (audit de suivi Mobile) : accepter une proposition liee a
+    // une capacite doit reellement reserver cette capacite cote transporteur,
+    // pas seulement marquer un statut local.
+    @Test
+    void accepting_a_proposal_linked_to_a_capacity_reserves_it_for_real() {
+        UUID demandeId = UUID.randomUUID();
+        UUID propositionId = UUID.randomUUID();
+        UUID capaciteId = UUID.randomUUID();
+        when(demandeRepository.findByIdAndTenantId(demandeId, TENANT))
+                .thenReturn(Optional.of(Demande.builder().id(demandeId).tenantId(TENANT).poidsTaxableKg(2500.0).build()));
+        Proposition p = proposition(propositionId, demandeId, 1, new BigDecimal("50000"));
+        p.setCapaciteId(capaciteId);
+        when(propositionRepository.findByIdAndDemandeId(propositionId, demandeId)).thenReturn(Optional.of(p));
+        when(propositionRepository.findByDemandeIdOrderByRangAsc(demandeId)).thenReturn(List.of(p));
+        when(propositionRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        service.accepterProposition(demandeId, propositionId, TENANT);
+
+        verify(serviceCapClient).reserver(capaciteId, new BigDecimal("2500.0"), propositionId.toString());
+    }
+
+    // Un echec de reservation reelle ne doit jamais laisser croire que la
+    // proposition a ete acceptee -- l'exception doit remonter avant tout
+    // changement de statut, exactement le bug que ce correctif ferme.
+    @Test
+    void a_reservation_failure_prevents_the_proposal_from_being_marked_accepted() {
+        UUID demandeId = UUID.randomUUID();
+        UUID propositionId = UUID.randomUUID();
+        UUID capaciteId = UUID.randomUUID();
+        when(demandeRepository.findByIdAndTenantId(demandeId, TENANT))
+                .thenReturn(Optional.of(Demande.builder().id(demandeId).tenantId(TENANT).poidsTaxableKg(2500.0).build()));
+        Proposition p = proposition(propositionId, demandeId, 1, new BigDecimal("50000"));
+        p.setCapaciteId(capaciteId);
+        when(propositionRepository.findByIdAndDemandeId(propositionId, demandeId)).thenReturn(Optional.of(p));
+        doThrow(new com.flysoft.fretcorridor.mkt.client.ReservationCapaciteException("indisponible", null))
+                .when(serviceCapClient).reserver(any(), any(), any());
+
+        assertThatThrownBy(() -> service.accepterProposition(demandeId, propositionId, TENANT))
+                .isInstanceOf(com.flysoft.fretcorridor.mkt.client.ReservationCapaciteException.class);
+
+        assertThat(p.getStatut()).isEqualTo(Proposition.Statut.EN_ATTENTE);
+        verify(propositionRepository, never()).saveAll(any());
     }
 
     @Test

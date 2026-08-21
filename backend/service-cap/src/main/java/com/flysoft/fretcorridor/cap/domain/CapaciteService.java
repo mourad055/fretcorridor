@@ -115,6 +115,21 @@ public class CapaciteService {
                 .orElseThrow(() -> new IllegalArgumentException("Capacite introuvable : " + capaciteId));
     }
 
+    // "Mes capacites" (app Chauffeur/Transporteur) - liste des declarations
+    // du transporteur connecte, avec date/heure, pour pouvoir les consulter
+    // et les supprimer (jusqu'ici seule la derniere declaration etait visible
+    // cote app).
+    @Transactional(readOnly = true)
+    public java.util.List<Capacite> listerMesCapacites(UUID transporteurId, String tenantId) {
+        return capaciteRepository.findByTransporteurIdAndTenantIdOrderByDateCreationDesc(transporteurId, tenantId);
+    }
+
+    @Transactional
+    public void supprimer(UUID capaciteId, String tenantId) {
+        Capacite capacite = capaciteAppartenantA(capaciteId, tenantId);
+        capaciteRepository.delete(capacite);
+    }
+
     /**
      * EF-CAP-07 : decrement atomique et idempotent. Le verrou optimiste
      * (@Version sur Capacite) garantit l'atomicite contre les acces
@@ -125,6 +140,25 @@ public class CapaciteService {
     @Transactional
     public Capacite decrementer(UUID capaciteId, String tenantId, BigDecimal montantKg, String cleIdempotence) {
         Capacite capacite = capaciteAppartenantA(capaciteId, tenantId);
+        return decrementerCapacite(capacite, montantKg, cleIdempotence);
+    }
+
+    // EF-MKT-08/RG-039 : pont cross-tenant pour la reservation reelle de
+    // capacite a l'acceptation d'une proposition par le chargeur (service-mkt,
+    // ServiceCapClient) - l'appelant n'a jamais le JWT du transporteur
+    // proprietaire de cette capacite (tenant different), donc pas de tenant a
+    // verifier ici. Meme principe de confiance que GET /{id} (cle interne
+    // partagee, ENF-SEC-05) plutot qu'un JWT utilisateur inexistant dans ce
+    // flux.
+    @Transactional
+    public Capacite decrementerParAppelInterne(UUID capaciteId, BigDecimal montantKg, String cleIdempotence) {
+        Capacite capacite = capaciteRepository.findById(capaciteId)
+                .orElseThrow(() -> new IllegalArgumentException("Capacite introuvable : " + capaciteId));
+        return decrementerCapacite(capacite, montantKg, cleIdempotence);
+    }
+
+    private Capacite decrementerCapacite(Capacite capacite, BigDecimal montantKg, String cleIdempotence) {
+        UUID capaciteId = capacite.getId();
 
         // INSERT immediat plutot qu'un SELECT prealable : la contrainte unique
         // fait le travail d'exclusion mutuelle, evite une fenetre de course

@@ -9,9 +9,13 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /** S4 (EF-CAP-03/07) : déclaration de capacité par le chauffeur/transporteur. */
@@ -37,5 +41,17 @@ public class CapaciteDeclarationController {
 
         return capaciteDeclarationPort.declarer(requete, actor.delegationToken())
                 .map(c -> ResponseEntity.status(HttpStatus.CREATED).body(CapaciteDeclareeResponse.from(c)));
+    }
+
+    @GetMapping("/api/v1/capacites/mes")
+    public Flux<CapaciteDeclareeResponse> mesCapacites(@AuthenticationPrincipal AuthenticatedActor actor) {
+        return capaciteDeclarationPort.mesCapacites(actor.delegationToken())
+                .map(CapaciteDeclareeResponse::from);
+    }
+
+    @DeleteMapping("/api/v1/capacites/{id}")
+    public Mono<ResponseEntity<Void>> supprimer(@PathVariable String id, @AuthenticationPrincipal AuthenticatedActor actor) {
+        return capaciteDeclarationPort.supprimer(id, actor.delegationToken())
+                .then(Mono.just(ResponseEntity.noContent().<Void>build()));
     }
 }

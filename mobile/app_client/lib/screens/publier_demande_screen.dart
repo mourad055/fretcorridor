@@ -5,6 +5,7 @@ import '../providers/demande_provider.dart';
 import '../providers/axes_provider.dart';
 import '../models/catalogue_emballage_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/top_notification.dart';
 
 class PublierDemandeScreen extends ConsumerStatefulWidget {
   const PublierDemandeScreen({super.key});
@@ -52,6 +53,12 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
     return _emballageSelectionne!.volumeUnitaireM3 * q;
   }
 
+  void _changerQuantite(int delta) {
+    final q = int.tryParse(_quantiteCtrl.text) ?? 1;
+    final nouvelle = (q + delta).clamp(1, 9999);
+    setState(() => _quantiteCtrl.text = '$nouvelle');
+  }
+
   // Donne un repère concret (type de véhicule) au client plutôt qu'un
   // chiffre brut en kg qu'il ne sait pas interpréter (ex : "2500 kg" seul).
   String _vehiculeSuggere(double poidsKg) {
@@ -66,24 +73,18 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   Future<void> _publier() async {
     if (!_formKey.currentState!.validate()) return;
     if (_emballageSelectionne == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choisissez un type de marchandise'), backgroundColor: AppColors.erreur),
-      );
+      afficherNotification(context, message: 'Choisissez un type de marchandise', couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     if (_destinataireTelephone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Renseignez le téléphone du destinataire'), backgroundColor: AppColors.erreur),
-      );
+      afficherNotification(context, message: 'Renseignez le téléphone du destinataire', couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Le prix affiché sera une estimation — le prix ferme viendra avec la proposition acceptée.'),
-        behavior: SnackBarBehavior.floating,
-        duration: Duration(seconds: 4),
-      ),
+    afficherNotification(
+      context,
+      message: 'Le prix affiché sera une estimation — le prix ferme viendra avec la proposition acceptée.',
+      duree: const Duration(seconds: 4),
     );
 
     final succes = await ref.read(demandeProvider.notifier).publier(
@@ -113,6 +114,38 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.accent)),
+    );
+  }
+
+  Widget _stepperQuantite() {
+    final q = int.tryParse(_quantiteCtrl.text) ?? 1;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.bordure),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () => _changerQuantite(-1),
+            icon: const Icon(Icons.remove_circle_outline, color: AppColors.accent),
+          ),
+          Expanded(
+            child: Text('$q', textAlign: TextAlign.center,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ),
+          IconButton(
+            onPressed: () => _changerQuantite(1),
+            icon: const Icon(Icons.add_circle_outline, color: AppColors.accent),
+          ),
+          const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: Text('unité(s)', style: TextStyle(color: AppColors.texteMuet, fontSize: 13)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -237,40 +270,34 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                   ),
                 )
               else
-              Wrap(
-                spacing: 8, runSpacing: 8,
-                children: demandeState.catalogue.map((e) {
-                  final selectionne = _emballageSelectionne?.id == e.id;
-                  return GestureDetector(
-                    onTap: () => setState(() => _emballageSelectionne = e),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: selectionne ? AppColors.accent : AppColors.surface,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: selectionne ? AppColors.accent : AppColors.bordure),
-                      ),
-                      child: Text(e.nom, style: TextStyle(
-                        color: selectionne ? Colors.white : AppColors.texte, fontSize: 13,
-                      )),
-                    ),
-                  );
-                }).toList(),
+              DropdownButtonFormField<CatalogueEmballageModel>(
+                initialValue: _emballageSelectionne,
+                decoration: _decoration('Sélectionner le type'),
+                hint: const Text('Sélectionner le type'),
+                items: demandeState.catalogue
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e.nom)))
+                    .toList(),
+                onChanged: (e) => setState(() => _emballageSelectionne = e),
+                validator: (v) => v == null ? 'Choisissez un type de marchandise' : null,
               ),
 
               _label(_emballageSelectionne == null
                   ? 'QUANTITÉ (NOMBRE D\'UNITÉS)'
                   : 'QUANTITÉ (NOMBRE DE "${_emballageSelectionne!.nom.toUpperCase()}")'),
-              TextFormField(
-                controller: _quantiteCtrl,
-                keyboardType: TextInputType.number,
-                decoration: _decoration('Ex : 10', Icons.numbers).copyWith(suffixText: 'unité(s)'),
-                onChanged: (_) => setState(() {}),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Obligatoire';
-                  if (int.tryParse(v) == null || int.parse(v) <= 0) return 'Nombre invalide';
-                  return null;
-                },
+              _stepperQuantite(),
+
+              // Champ caché : conserve le comportement de validation existant
+              // (obligatoire, entier positif) sans dupliquer la logique.
+              Offstage(
+                offstage: true,
+                child: TextFormField(
+                  controller: _quantiteCtrl,
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Obligatoire';
+                    if (int.tryParse(v) == null || int.parse(v) <= 0) return 'Nombre invalide';
+                    return null;
+                  },
+                ),
               ),
 
               if (_emballageSelectionne != null) ...[

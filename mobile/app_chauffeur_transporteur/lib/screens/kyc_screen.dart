@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/top_notification.dart';
 import 'home_screen.dart';
 
 enum _TypeProfil { particulier, entreprise }
@@ -30,6 +32,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   final _picker = ImagePicker();
   _TypeProfil _type = _TypeProfil.particulier;
   bool _modeEdition = false;
+  bool _verificationEnCours = false;
 
   @override
   void initState() {
@@ -69,7 +72,47 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   Future<void> _deposerPiece() async {
     final image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 1600);
     if (image == null) return;
+
+    setState(() => _verificationEnCours = true);
+    final estUnePiece = await _ressemblePieceIdentite(image.path);
+    if (mounted) setState(() => _verificationEnCours = false);
+
+    if (!estUnePiece) {
+      if (mounted) {
+        afficherNotification(
+          context,
+          message: 'Cette photo ne ressemble pas à une pièce d\'identité — cadrez bien le document (texte lisible) et réessayez.',
+          couleur: AppColors.erreur,
+          icone: Icons.error_outline,
+        );
+      }
+      return;
+    }
+
     await ref.read(kycProvider.notifier).deposerDocument('CNI', File(image.path));
+  }
+
+  // Vérification légère côté appareil : une vraie pièce d'identité contient
+  // toujours BEAUCOUP de texte imprimé sur plusieurs lignes (nom, prénom,
+  // numéro, dates) — un simple seuil de longueur (12 caractères) laissait
+  // passer des photos quelconques contenant un peu de texte parasite.
+  // Triple condition : assez de texte, sur plusieurs lignes distinctes,
+  // avec quelques chiffres (numéro/dates, quasi systématiques sur une
+  // pièce). Échec technique de l'OCR → refus par sécurité (fail-closed).
+  Future<bool> _ressemblePieceIdentite(String chemin) async {
+    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final resultat = await recognizer.processImage(InputImage.fromFilePath(chemin));
+      final texte = resultat.text;
+      final texteUtile = texte.replaceAll(RegExp(r'\s'), '');
+      final lignes = texte.split('\n').where((l) => l.trim().length >= 2).length;
+      final chiffres = RegExp(r'\d').allMatches(texte).length;
+      return texteUtile.length >= 25 && lignes >= 3 && chiffres >= 2;
+    } catch (_) {
+      return false;
+    } finally {
+      await recognizer.close();
+    }
   }
 
   @override
@@ -84,16 +127,11 @@ class _KycScreenState extends ConsumerState<KycScreen> {
       final etaitComplet = previous?.profil != null && previous!.profil!.niveauKyc != 'NIVEAU_0';
       final estComplet = next.profil != null && next.profil!.niveauKyc != 'NIVEAU_0';
       if (!etaitComplet && estComplet) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Row(children: [
-              Icon(Icons.check_circle, color: Colors.white, size: 20),
-              SizedBox(width: 10),
-              Text('Profil complété ✅'),
-            ]),
-            backgroundColor: AppColors.succes,
-            behavior: SnackBarBehavior.floating,
-          ),
+        afficherNotification(
+          context,
+          message: 'Profil complété ✅',
+          couleur: AppColors.succes,
+          icone: Icons.check_circle,
         );
         Future.delayed(const Duration(milliseconds: 600), () {
           if (context.mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const HomeScreen()));
@@ -349,15 +387,17 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   }
 
   Widget _boutonDepot(KycState kycState) {
+    final occupe = kycState.depotEnCours || _verificationEnCours;
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: OutlinedButton.icon(
-        onPressed: kycState.depotEnCours ? null : _deposerPiece,
-        icon: kycState.depotEnCours
+        onPressed: occupe ? null : _deposerPiece,
+        icon: occupe
             ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2.5))
             : const Icon(Icons.camera_alt_outlined, color: AppColors.accent),
-        label: Text(kycState.depotEnCours ? 'Envoi…' : 'Prendre en photo ma pièce d\'identité',
+        label: Text(
+            _verificationEnCours ? 'Vérification…' : (kycState.depotEnCours ? 'Envoi…' : 'Prendre en photo ma pièce d\'identité'),
             style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.accent),

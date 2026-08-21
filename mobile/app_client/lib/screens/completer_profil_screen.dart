@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/top_notification.dart';
 import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -29,6 +31,7 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
   final _picker = ImagePicker();
   _TypeProfil _type = _TypeProfil.particulier;
   bool _modeEdition = false;
+  bool _verificationEnCours = false;
 
   @override
   void dispose() {
@@ -62,7 +65,53 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
   Future<void> _deposerPiece() async {
     final image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 1600);
     if (image == null) return;
+
+    setState(() => _verificationEnCours = true);
+    final estUnePiece = await _ressemblePieceIdentite(image.path);
+    if (mounted) setState(() => _verificationEnCours = false);
+
+    if (!estUnePiece) {
+      if (mounted) {
+        afficherNotification(
+          context,
+          message: 'Cette photo ne ressemble pas à une pièce d\'identité — cadrez bien le document (texte lisible) et réessayez.',
+          couleur: AppColors.erreur,
+          icone: Icons.error_outline,
+        );
+      }
+      return;
+    }
+
     await ref.read(kycProvider.notifier).deposerDocument('CNI', File(image.path));
+  }
+
+  // Vérification légère côté appareil : une vraie pièce d'identité contient
+  // toujours BEAUCOUP de texte imprimé sur plusieurs lignes (nom, prénom,
+  // numéro, dates de naissance/délivrance...) — un simple seuil de longueur
+  // de texte (12 caractères) laissait passer des photos quelconques (un
+  // panneau, un objet avec une étiquette) qui contiennent un peu de texte
+  // parasite. Triple condition plus stricte : assez de texte au total, sur
+  // plusieurs lignes distinctes, avec au moins quelques chiffres (numéro de
+  // pièce / dates, quasi systématiques sur une CNI/passeport). Pas une
+  // lecture fiable à 100% du contenu, mais rejette nettement mieux les
+  // photos manifestement hors sujet, sans dépendre d'un service externe.
+  Future<bool> _ressemblePieceIdentite(String chemin) async {
+    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    try {
+      final resultat = await recognizer.processImage(InputImage.fromFilePath(chemin));
+      final texte = resultat.text;
+      final texteUtile = texte.replaceAll(RegExp(r'\s'), '');
+      final lignes = texte.split('\n').where((l) => l.trim().length >= 2).length;
+      final chiffres = RegExp(r'\d').allMatches(texte).length;
+      return texteUtile.length >= 25 && lignes >= 3 && chiffres >= 2;
+    } catch (_) {
+      // Échec technique de l'OCR : par sécurité, on refuse plutôt que
+      // d'accepter à l'aveugle (le dépôt d'une pièce non vérifiée est plus
+      // grave qu'un dépôt légitime à refaire).
+      return false;
+    } finally {
+      await recognizer.close();
+    }
   }
 
   InputDecoration _decoration(String hint, IconData icon) {
@@ -328,15 +377,17 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
   }
 
   Widget _boutonDepot(KycState kycState) {
+    final occupe = kycState.depotEnCours || _verificationEnCours;
     return SizedBox(
       width: double.infinity,
       height: 48,
       child: OutlinedButton.icon(
-        onPressed: kycState.depotEnCours ? null : _deposerPiece,
-        icon: kycState.depotEnCours
+        onPressed: occupe ? null : _deposerPiece,
+        icon: occupe
             ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2.5))
             : const Icon(Icons.camera_alt_outlined, color: AppColors.accent),
-        label: Text(kycState.depotEnCours ? 'Envoi…' : 'Prendre en photo ma pièce d\'identité',
+        label: Text(
+            _verificationEnCours ? 'Vérification…' : (kycState.depotEnCours ? 'Envoi…' : 'Prendre en photo ma pièce d\'identité'),
             style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.accent),

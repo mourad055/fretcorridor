@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/auth_provider.dart';
+import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
 import 'aide_screen.dart';
 import 'completer_profil_screen.dart';
@@ -75,6 +76,7 @@ class MenuDrawer extends ConsumerWidget {
             const Divider(height: 1),
             _item(context, Icons.logout, 'Se déconnecter', () async {
               await ref.read(authProvider.notifier).logout();
+              ref.read(kycProvider.notifier).reinitialiser();
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);
               }

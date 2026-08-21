@@ -36,13 +36,22 @@ public class KycDto {
         private List<PieceResponse> pieces = List.of();
 
         public static ProfilResponse fromEntity(Acteur a, List<PieceResponse> pieces) {
-            boolean estEntreprise = a.getOrganisation() != null;
+            // L'inscription Transporteur (AuthService.inscrireTransporteur) enregistre
+            // la raison sociale directement sur Acteur.raisonSociale, sans créer
+            // d'Organisation dédiée (cf. commentaire de ce champ sur l'entité) — ne
+            // vérifier que l'Organisation faisait perdre cette raison sociale tant
+            // que le profil n'était pas recomplété via completerProfilEntreprise.
+            boolean estEntreprise = a.getOrganisation() != null
+                    || (a.getRaisonSociale() != null && !a.getRaisonSociale().isBlank());
+            String raisonSociale = a.getOrganisation() != null
+                    ? a.getOrganisation().getRaisonSociale()
+                    : a.getRaisonSociale();
             return ProfilResponse.builder()
                     .acteurId(a.getId())
                     .type(estEntreprise ? "ENTREPRISE" : "PARTICULIER")
                     .nom(a.getNom())
                     .prenom(a.getPrenom())
-                    .raisonSociale(estEntreprise ? a.getOrganisation().getRaisonSociale() : null)
+                    .raisonSociale(estEntreprise ? raisonSociale : null)
                     .niveauKyc(a.getNiveauKyc().name())
                     .pieces(pieces)
                     .build();

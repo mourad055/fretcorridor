@@ -62,7 +62,7 @@ public class AuthService {
                 .roles(Set.of(RoleActeur.CHARGEUR))
                 .nom(request.getNom())
                 .prenom(request.getPrenom())
-                .raisonSociale(request.getRaisonSociale())
+                .raisonSociale(normaliser(request.getRaisonSociale()))
                 .tenantId(TENANT_MARKETPLACE_PUBLIC)
                 .build();
 
@@ -101,7 +101,7 @@ public class AuthService {
                 .roles(Set.of(role))
                 .nom(request.getNom())
                 .prenom(request.getPrenom())
-                .raisonSociale(request.getRaisonSociale())
+                .raisonSociale(normaliser(request.getRaisonSociale()))
                 .tenantId(TENANT_BGFT_PHASE1)
                 .build();
 
@@ -110,6 +110,17 @@ public class AuthService {
         String access = jwtService.genererAccessToken(acteur);
         String refresh = jwtService.genererRefreshToken(acteur);
         return AuthDto.AuthResponse.of(access, refresh, acteur);
+    }
+
+    // Le gateway convertit systematiquement une raisonSociale absente en ""
+    // avant de relayer l'inscription (ServiceIdaAuthenticationAdapter.register,
+    // Map.of n'accepte pas de valeur null) - sans cette normalisation, toute
+    // inscription Chauffeur (sans raison sociale) etait persistee avec ""
+    // plutot que null, et "" != null faisait passer le compte pour une
+    // Entreprise partout ou le code teste juste != null (KycDto, evaluation
+    // du niveau KYC).
+    private String normaliser(String valeur) {
+        return (valeur == null || valeur.isBlank()) ? null : valeur;
     }
 
     @Transactional(readOnly = true)

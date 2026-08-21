@@ -10,6 +10,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
@@ -51,6 +52,33 @@ public class RealCapaciteDeclarationAdapter implements CapaciteDeclarationPort {
                 .bodyToMono(CapaciteDeclaree.class)
                 .onErrorMap(this::estRefus, e -> new CapaciteRefuseeException(messageDe(e)))
                 .onErrorMap(e -> !(e instanceof CapaciteRefuseeException), e -> new CapServiceIndisponibleException());
+    }
+
+    @Override
+    public Flux<CapaciteDeclaree> mesCapacites(String delegationToken) {
+        if (delegationToken == null) {
+            return Flux.error(new CapServiceIndisponibleException());
+        }
+        return webClient.get()
+                .uri("/api/cap/capacites/mes")
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .retrieve()
+                .bodyToFlux(CapaciteDeclaree.class)
+                .onErrorMap(e -> new CapServiceIndisponibleException());
+    }
+
+    @Override
+    public Mono<Void> supprimer(String capaciteId, String delegationToken) {
+        if (delegationToken == null) {
+            return Mono.error(new CapServiceIndisponibleException());
+        }
+        return webClient.delete()
+                .uri("/api/cap/capacites/{id}", capaciteId)
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .retrieve()
+                .toBodilessEntity()
+                .then()
+                .onErrorMap(e -> new CapServiceIndisponibleException());
     }
 
     private boolean estRefus(Throwable e) {

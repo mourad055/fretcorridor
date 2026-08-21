@@ -39,15 +39,54 @@ public class CapaciteController {
         return CapaciteResponse.from(capacite);
     }
 
+    // "Mes capacites" : liste des declarations du transporteur connecte
+    // (date/heure, statut) — jusqu'ici seule la derniere declaration de la
+    // session en cours etait visible cote app, rien de persistant.
+    @GetMapping("/mes")
+    public java.util.List<CapaciteResponse> mesCapacites(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        UUID transporteurId = jwtService.extraireActeurId(token);
+        String tenantId = jwtService.extraireTenantId(token);
+        return capaciteService.listerMesCapacites(transporteurId, tenantId).stream()
+                .map(CapaciteResponse::from)
+                .toList();
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void supprimer(@PathVariable UUID id, @RequestHeader("Authorization") String authHeader) {
+        try {
+            String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+            capaciteService.supprimer(id, tenantId);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
+        }
+    }
+
     // IDOR corrige (audit CDC du 19 aout) : le tenant vient desormais du
     // JWT, jamais du corps de requete - DecrementRequest ne porte plus
     // aucune notion de tenant.
+    //
+    // EF-MKT-08/RG-039 (audit de suivi Mobile) : service-mkt (ServiceCapClient)
+    // appelle cet endpoint avec la cle interne partagee plutot qu'un JWT --
+    // aucun JWT utilisateur disponible pour ce flux, le chargeur qui accepte
+    // une proposition n'est jamais du meme tenant que le transporteur
+    // proprietaire de la capacite (limitation precedemment documentee comme
+    // non construite, desormais fermee).
     @PostMapping("/{id}/decrement")
     public CapaciteResponse decrementer(@PathVariable UUID id, @Valid @RequestBody DecrementRequest requete,
-                                         @RequestHeader("Authorization") String authHeader) {
+                                         @RequestHeader(value = "Authorization", required = false) String authHeader,
+                                         @RequestHeader(value = "X-Internal-Service-Key", required = false) String cleInterne) {
         try {
-            String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
-            Capacite capacite = capaciteService.decrementer(id, tenantId, requete.montantKg(), requete.cleIdempotence());
+            Capacite capacite;
+            if (cleInterneAttendue.equals(cleInterne)) {
+                capacite = capaciteService.decrementerParAppelInterne(id, requete.montantKg(), requete.cleIdempotence());
+            } else if (authHeader != null) {
+                String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+                capacite = capaciteService.decrementer(id, tenantId, requete.montantKg(), requete.cleIdempotence());
+            } else {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentification requise");
+            }
             return CapaciteResponse.from(capacite);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());

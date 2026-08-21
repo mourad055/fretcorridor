@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import '../providers/auth_provider.dart';
+import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
 import 'inscription_screen.dart';
 import 'home_placeholder_screen.dart';
@@ -32,6 +33,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _pinCtrl.text.trim(),
     );
     if (succes && mounted) {
+      ref.read(kycProvider.notifier).reinitialiser();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const HomePlaceholderScreen()),

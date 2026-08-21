@@ -11,9 +11,11 @@ import 'menu_drawer.dart';
 import 'missions_screen.dart';
 import 'notifications_screen.dart';
 import 'paiement_screen.dart';
+import 'promo_carousel.dart';
 import 'suivi_gps_screen.dart';
 import 'vehicules_screen.dart';
 import '../providers/notification_provider.dart';
+import '../widgets/top_notification.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -41,6 +43,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final nomAffiche = _nomAffiche(profil, authState.role);
     final initiale = nomAffiche.isNotEmpty ? nomAffiche[0].toUpperCase() : '?';
+    final niveauValide = profil != null && profil.niveauKyc != 'NIVEAU_0';
+
+    // Passage à un profil complet : notification brève plutôt qu'un bandeau
+    // affiché en permanence sur l'accueil (même patron que l'app Client).
+    ref.listen(kycProvider, (previous, next) {
+      final etaitComplet = previous?.profil != null && previous!.profil!.niveauKyc != 'NIVEAU_0';
+      final estComplet = next.profil != null && next.profil!.niveauKyc != 'NIVEAU_0';
+      if (!etaitComplet && estComplet) {
+        afficherNotification(
+          context,
+          message: 'Profil complété ✅ — vous pouvez déclarer une capacité.',
+          couleur: AppColors.succes,
+          icone: Icons.check_circle,
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -114,6 +132,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             padding: const EdgeInsets.all(20),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
+                const PromoCarousel(),
+                const SizedBox(height: 24),
+
+                if (!niveauValide) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceClaire,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.accent, width: 1),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: AppColors.accent),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Profil à compléter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text('Complétez votre profil pour déclarer une capacité ou accepter une mission.',
+                                  style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen())),
+                          child: const Text('Compléter'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
                 if (estTransporteur) ...[
                   _CarteAction(
                     icone: Icons.assignment_outlined,

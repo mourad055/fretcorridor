@@ -12,12 +12,27 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties(ServiceGeoClientProperties.class)
+@EnableConfigurationProperties({ServiceGeoClientProperties.class, ServiceCapClientProperties.class})
 public class RestClientConfig {
 
     @Bean
     @Qualifier("serviceGeoRestClient")
     public RestClient serviceGeoRestClient(ServiceGeoClientProperties properties) {
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+                .withConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
+                .withReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));
+
+        ClientHttpRequestFactory requestFactory = ClientHttpRequestFactories.get(settings);
+
+        return RestClient.builder()
+                .baseUrl(properties.getBaseUrl())
+                .requestFactory(requestFactory)
+                .build();
+    }
+
+    @Bean
+    @Qualifier("serviceCapRestClient")
+    public RestClient serviceCapRestClient(ServiceCapClientProperties properties) {
         ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
                 .withConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
                 .withReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));
