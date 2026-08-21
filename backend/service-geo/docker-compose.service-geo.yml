@@ -24,7 +24,11 @@ services:
       dockerfile: service-geo/Dockerfile
     container_name: fretcorridor-service-geo
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      # "docker,dev" par defaut : active aussi le profil dev (data-dev.sql,
+      # hubs/axes de demonstration) - c'est ce profil que consomme le
+      # conteneur de demo Web. Surchargeable (SPRING_PROFILES_ACTIVE=docker
+      # seul) pour un environnement sans donnees de demo.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker,dev}
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
     ports:
       - "8084:8084"
