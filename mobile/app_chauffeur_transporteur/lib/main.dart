@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
 import 'providers/auth_provider.dart';
-import 'screens/login_screen.dart';
+import 'screens/welcome_screen.dart';
 import 'screens/home_screen.dart';
 
 void main() {
@@ -20,7 +20,7 @@ class FretCorridorChauffeurApp extends ConsumerWidget {
       title: 'FretCorridor — Chauffeur/Transporteur',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
-      home: authState.estConnecte ? const HomeScreen() : const LoginScreen(),
+      home: authState.estConnecte ? const HomeScreen() : const WelcomeScreen(),
     );
   }
 }

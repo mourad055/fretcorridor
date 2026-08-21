@@ -13,6 +13,7 @@ const String baseUrl = String.fromEnvironment(
 const String keyAccessToken = 'access_token';
 const String keyRole = 'role';
 const String keyTenantId = 'tenant_id';
+const String keyTelephone = 'telephone';
 
 final dioProvider = Provider<Dio>((ref) {
   const storage = FlutterSecureStorage();
