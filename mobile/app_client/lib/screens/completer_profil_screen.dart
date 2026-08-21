@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../providers/auth_provider.dart';
 import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -27,6 +28,7 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
   final _rccmCtrl = TextEditingController();
   final _picker = ImagePicker();
   _TypeProfil _type = _TypeProfil.particulier;
+  bool _modeEdition = false;
 
   @override
   void dispose() {
@@ -40,12 +42,21 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
   Future<void> _enregistrerIdentite() async {
     if (!_formKey.currentState!.validate()) return;
     final notifier = ref.read(kycProvider.notifier);
-    _type == _TypeProfil.particulier
+    final succes = _type == _TypeProfil.particulier
         ? await notifier.completerParticulier(nom: _nomCtrl.text.trim(), prenom: _prenomCtrl.text.trim())
         : await notifier.completerEntreprise(
             raisonSociale: _raisonSocialeCtrl.text.trim(),
             numeroRegistreCommerce: _rccmCtrl.text.trim().isEmpty ? null : _rccmCtrl.text.trim(),
           );
+    if (succes && mounted) setState(() => _modeEdition = false);
+  }
+
+  void _ouvrirEdition(KycState kycState) {
+    _type = kycState.type == 'ENTREPRISE' ? _TypeProfil.entreprise : _TypeProfil.particulier;
+    _nomCtrl.text = kycState.nom ?? '';
+    _prenomCtrl.text = kycState.prenom ?? '';
+    _raisonSocialeCtrl.text = kycState.raisonSociale ?? '';
+    setState(() => _modeEdition = true);
   }
 
   Future<void> _deposerPiece() async {
@@ -75,15 +86,63 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
   @override
   Widget build(BuildContext context) {
     final kycState = ref.watch(kycProvider);
+    final estComplet = kycState.niveauKyc != 'NIVEAU_0';
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Compléter mon profil')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.accent, AppColors.accentProfond],
+              ),
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => _modeEdition ? setState(() => _modeEdition = false) : Navigator.pop(context),
+                    ),
+                  ]),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    Container(
+                      width: 56, height: 56,
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                      child: const Icon(Icons.person, color: Colors.white, size: 30),
+                    ),
+                    const SizedBox(width: 14),
+                    Text('Mon profil', style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
+                  ]),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: estComplet && !_modeEdition ? _profilComplete(kycState) : _formulaireOuChecklist(kycState, estComplet),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _formulaireOuChecklist(KycState kycState, bool estComplet) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!estComplet) ...[
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -101,12 +160,13 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
               ]),
             ),
             const SizedBox(height: 24),
-
             _etape(
               numero: 1,
               titre: 'Identité',
               fait: kycState.identiteDeclaree,
-              contenu: kycState.identiteDeclaree ? _resumeIdentite(kycState) : _formulaireIdentite(kycState),
+              contenu: kycState.identiteDeclaree
+                  ? _resumeIdentite(kycState)
+                  : _formulaireIdentite(kycState, avecBouton: false),
             ),
             const SizedBox(height: 16),
             _etape(
@@ -115,31 +175,108 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
               fait: kycState.pieceDeposee,
               contenu: kycState.pieceDeposee ? _resumePieces(kycState) : _boutonDepot(kycState),
             ),
-
-            if (kycState.erreur != null) ...[
+            if (!kycState.identiteDeclaree) ...[
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.erreur.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.erreur.withValues(alpha: 0.4)),
-                ),
-                child: Text(kycState.erreur!, style: const TextStyle(color: AppColors.erreur, fontSize: 12)),
+              _boutonEnregistrer(kycState),
+            ],
+          ] else
+            _formulaireIdentite(kycState),
+
+          if (kycState.erreur != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.erreur.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AppColors.erreur.withValues(alpha: 0.4)),
               ),
-            ],
-            if (kycState.niveauKyc != 'NIVEAU_0') ...[
-              const SizedBox(height: 24),
-              Row(children: [
-                const Icon(Icons.check_circle, color: AppColors.succes),
-                const SizedBox(width: 8),
-                Text('Profil complété — ${kycState.niveauKyc}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              ]),
-            ],
-            const SizedBox(height: 24),
+              child: Text(kycState.erreur!, style: const TextStyle(color: AppColors.erreur, fontSize: 12)),
+            ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _profilComplete(KycState kycState) {
+    final nomAffiche = kycState.type == 'ENTREPRISE'
+        ? (kycState.raisonSociale ?? '—')
+        : '${kycState.prenom ?? ''} ${kycState.nom ?? ''}'.trim();
+    final telephone = ref.watch(authProvider).telephone;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  width: 84, height: 84,
+                  decoration: BoxDecoration(color: AppColors.surfaceClaire, shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.accent.withValues(alpha: 0.3), width: 2)),
+                  child: Icon(kycState.type == 'ENTREPRISE' ? Icons.apartment : Icons.person, color: AppColors.accent, size: 40),
+                ),
+                const SizedBox(height: 12),
+                Text(nomAffiche.isEmpty ? '—' : nomAffiche, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: AppColors.succes.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.verified, color: AppColors.succes, size: 14),
+                    const SizedBox(width: 4),
+                    Text(kycState.niveauKyc, style: const TextStyle(color: AppColors.succes, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ]),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 28),
+          _ligneInfo(Icons.phone_outlined, 'Téléphone', telephone ?? '—'),
+          _ligneInfo(Icons.badge_outlined, 'Type de compte', kycState.type == 'ENTREPRISE' ? 'Entreprise' : 'Particulier'),
+          if (kycState.pieces.isNotEmpty)
+            _ligneInfo(Icons.description_outlined, 'Pièce déposée', kycState.pieces.first.typeDocument),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: () => _ouvrirEdition(kycState),
+              icon: const Icon(Icons.edit_outlined, color: AppColors.accent, size: 18),
+              label: const Text('Modifier', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.accent),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _ligneInfo(IconData icone, String label, String valeur) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10), border: Border.all(color: AppColors.bordure)),
+      child: Row(
+        children: [
+          Icon(icone, color: AppColors.texteMuet, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 11, color: AppColors.texteMuet, letterSpacing: 0.5)),
+                Text(valeur, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -209,7 +346,25 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
     );
   }
 
-  Widget _formulaireIdentite(KycState kycState) {
+  Widget _boutonEnregistrer(KycState kycState) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: kycState.chargement ? null : _enregistrerIdentite,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.accent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+        child: kycState.chargement
+            ? const SizedBox(height: 20, width: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
+            : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _formulaireIdentite(KycState kycState, {bool avecBouton = true}) {
     return Form(
       key: _formKey,
       child: Column(
@@ -270,23 +425,10 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
               validator: (v) => (v == null || v.isEmpty) ? 'Nom obligatoire' : null,
             ),
           ],
-          const SizedBox(height: 16),
-
-          SizedBox(
-            width: double.infinity,
-            height: 48,
-            child: ElevatedButton(
-              onPressed: kycState.chargement ? null : _enregistrerIdentite,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: kycState.chargement
-                  ? const SizedBox(height: 20, width: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                  : const Text('Enregistrer', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-            ),
-          ),
+          if (avecBouton) ...[
+            const SizedBox(height: 16),
+            _boutonEnregistrer(kycState),
+          ],
         ],
       ),
     );
