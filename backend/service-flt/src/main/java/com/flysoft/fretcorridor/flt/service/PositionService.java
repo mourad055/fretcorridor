@@ -18,7 +18,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PositionService {
 
-    private static final String SOURCE_CAPTURE_MOBILE = "MOBILE_CHAUFFEUR";
+    // FIX bloquant audit 21/08 : la valeur historique "MOBILE_CHAUFFEUR"
+    // violait le contrat position-brute.yaml:58-60 (enum GPS_NATIF |
+    // GPS_DEGRADE | MANUEL) et la contrainte chk_source_capture de
+    // service-trk (V2__add_position.sql:26) - chaque position publiée était
+    // rejetée à l'ingestion et loguée "doublon ignoré" (catch générique),
+    // tuant tout le pipeline temps réel (ETA + anomalies). Défaut conforme.
+    private static final String SOURCE_CAPTURE_DEFAUT = "GPS_NATIF";
 
     private final PositionRepository positionRepository;
     private final ServiceExeClient serviceExeClient;
@@ -45,13 +51,16 @@ public class PositionService {
         // vers le Moteur ce tour-ci.
         Optional<UUID> vehiculeId = serviceExeClient.resoudreVehicule(request.getMissionId(), authHeader);
         vehiculeId.ifPresent(id -> eventPublisher.publierPositionBrute(new PositionBruteEvent(
-                UUID.randomUUID(),
+                // eventId du contrat : celui généré par l'app À LA CAPTURE si
+                // fourni (déduplication des ré-envois hors ligne côté trk,
+                // ENF-SEC-03), sinon généré ici - comportement historique.
+                request.getEventId() != null ? request.getEventId() : UUID.randomUUID(),
                 request.getMissionId(),
                 id,
                 request.getLatitude(),
                 request.getLongitude(),
-                SOURCE_CAPTURE_MOBILE,
-                null,
+                request.getSourceCapture() != null ? request.getSourceCapture() : SOURCE_CAPTURE_DEFAUT,
+                request.getPrecisionMetres(),
                 request.getHorodatage().atZone(ZoneId.systemDefault()).toInstant(),
                 Instant.now()
         )));

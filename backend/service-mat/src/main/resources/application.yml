@@ -29,6 +29,12 @@ spring:
 fretcorridor:
   jwt:
     secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  # FIX audit 21/08 : cle interne partagee pour les appels service-a-service
+  # sans JWT utilisateur (X-Internal-Service-Key). Meme valeur que celle
+  # configuree chez le partenaire (mat<->opt), meme pattern que cap<->not
+  # (PR #125).
+  internal:
+    service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
 
 logging:
   level:
