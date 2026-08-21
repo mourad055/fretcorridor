@@ -12,7 +12,6 @@ import 'missions_screen.dart';
 import 'notifications_screen.dart';
 import 'paiement_screen.dart';
 import 'promo_carousel.dart';
-import 'suivi_gps_screen.dart';
 import 'vehicules_screen.dart';
 import '../providers/notification_provider.dart';
 import '../widgets/top_notification.dart';
@@ -187,13 +186,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     titre: 'Ma flotte',
                     description: 'Gérer mes véhicules',
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VehiculesScreen())),
-                  ),
-                  const SizedBox(height: 12),
-                  _CarteAction(
-                    icone: Icons.gps_fixed,
-                    titre: 'Suivi GPS',
-                    description: 'Partager ma position pendant une mission',
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SuiviGpsScreen())),
                   ),
                   const SizedBox(height: 12),
                   _CarteAction(
