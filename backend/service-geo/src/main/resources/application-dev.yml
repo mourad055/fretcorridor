@@ -1,0 +1,8 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=dev — jamais en
+# production. Charge data-dev.sql (hubs/axes de démonstration) après les
+# migrations Flyway (comportement par défaut de Spring Boot SQL init).
+spring:
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data-dev.sql
