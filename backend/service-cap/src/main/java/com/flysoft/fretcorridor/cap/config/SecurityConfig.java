@@ -30,6 +30,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * fretcorridor.jwt.secret) -- seul service-not (le seul appelant legitime,
  * Plan d'Execution §4.3 : appel synchrone autorise entre deux services du
  * meme porteur Mobile) connait la valeur configuree.
+ *
+ * POST /{id}/decrement : meme principe applique au pont cross-tenant
+ * EF-MKT-08 (audit de suivi Mobile, 21 aout) -- service-mkt appelle cet
+ * endpoint avec la cle interne (le chargeur qui accepte une proposition
+ * n'a jamais le JWT du transporteur proprietaire de la capacite, tenant
+ * different). BUG CORRIGE : laisser ce chemin sous .anyRequest().authenticated()
+ * le faisait rejeter en 403 par Spring Security AVANT meme d'atteindre
+ * CapaciteController#decrementer, qui pourtant sait deja accepter soit un
+ * JWT (chemin transporteur existant), soit cette cle interne -- double
+ * controle, l'un des deux etait redondant et bloquant. permitAll ici au
+ * niveau filtre, l'autorisation reelle restant entierement geree dans le
+ * controller (meme design que le GET juste au-dessus).
  */
 @Configuration
 @EnableWebSecurity
@@ -50,6 +62,7 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/cap/capacites/*").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/cap/capacites/*/decrement").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

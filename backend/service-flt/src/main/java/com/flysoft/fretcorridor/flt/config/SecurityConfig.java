@@ -42,13 +42,18 @@ public class SecurityConfig {
                 // règle qui matche, pas la plus spécifique (contrairement au
                 // routage MVC), d'où l'ordre explicite ici.
                 .requestMatchers(HttpMethod.GET, "/api/flt/vehicules/mes").authenticated()
-                // IDOR corrige (audit CDC du 19 aout, bloquant §3) : cette
-                // route etait permitAll() pour l'appel interne service-cap
-                // -> service-flt (ServiceFltClient) ; ce dernier transmet
-                // desormais son propre JWT (cf VehiculeController.consulter),
-                // donc plus besoin de derogation ici -- retombe sur
-                // anyRequest().authenticated() ci-dessous, meme regle que le
-                // reste du service.
+                // BUG CORRIGE (audit de suivi Mobile, 21 aout) : le
+                // commentaire ci-dessus etait perime. VehiculeController.consulter
+                // accepte bien deux chemins (JWT tenant OU cle interne
+                // X-Internal-Service-Key, pour service-not/canal alerte-ecart
+                // ET desormais service-cap/EF-MKT-08), mais laisser cette
+                // route sous anyRequest().authenticated() la faisait rejeter
+                // en 403 par Spring Security AVANT meme d'atteindre le
+                // controller pour tout appelant sans JWT -- canal
+                // alerte-ecart silencieusement mort malgre le fix
+                // controller. permitAll ici, autorisation reelle geree dans
+                // le controller (meme design que service-cap/CapaciteController).
+                .requestMatchers(HttpMethod.GET, "/api/flt/vehicules/*").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
