@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'home_placeholder_screen.dart';
@@ -13,25 +14,25 @@ class InscriptionScreen extends ConsumerStatefulWidget {
 
 class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _telCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
   final _nomCtrl = TextEditingController();
   final _prenomCtrl = TextEditingController();
   final _raisonSocialeCtrl = TextEditingController();
+  String _telephoneComplet = '';
 
   bool _entreprise = false;
 
   @override
   void dispose() {
-    _telCtrl.dispose(); _pinCtrl.dispose();
+    _pinCtrl.dispose();
     _nomCtrl.dispose(); _prenomCtrl.dispose(); _raisonSocialeCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _inscrire() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _telephoneComplet.isEmpty) return;
     final succes = await ref.read(authProvider.notifier).inscrireChargeur(
-      telephone: _telCtrl.text.trim(),
+      telephone: _telephoneComplet,
       codePin: _pinCtrl.text.trim(),
       nom: _entreprise ? null : _nomCtrl.text.trim(),
       prenom: _entreprise ? null : _prenomCtrl.text.trim(),
@@ -170,15 +171,11 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
               const SizedBox(height: 16),
 
               _label('TÉLÉPHONE'),
-              TextFormField(
-                controller: _telCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: _decoration('+237 6XX XXX XXX', Icons.phone),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Téléphone obligatoire';
-                  if (!RegExp(r'^\+?[0-9]{9,15}$').hasMatch(v)) return 'Format invalide';
-                  return null;
-                },
+              IntlPhoneField(
+                initialCountryCode: 'CM',
+                dropdownTextStyle: const TextStyle(color: AppColors.texte),
+                decoration: _decoration('', Icons.phone).copyWith(hintText: null),
+                onChanged: (phone) => _telephoneComplet = phone.completeNumber,
               ),
               const SizedBox(height: 16),
 

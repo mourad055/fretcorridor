@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'inscription_screen.dart';
@@ -14,21 +15,20 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _telCtrl = TextEditingController();
   final _pinCtrl = TextEditingController();
+  String _telephoneComplet = '';
   bool _pinVisible = false;
 
   @override
   void dispose() {
-    _telCtrl.dispose();
     _pinCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _login() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _telephoneComplet.isEmpty) return;
     final succes = await ref.read(authProvider.notifier).login(
-      _telCtrl.text.trim(),
+      _telephoneComplet,
       _pinCtrl.text.trim(),
     );
     if (succes && mounted) {
@@ -76,12 +76,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 const Text('TÉLÉPHONE', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
                     color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                TextFormField(
-                  controller: _telCtrl,
-                  keyboardType: TextInputType.phone,
+                IntlPhoneField(
+                  initialCountryCode: 'CM',
+                  dropdownTextStyle: const TextStyle(color: AppColors.texte),
                   style: const TextStyle(color: AppColors.texte, fontSize: 15),
                   decoration: InputDecoration(
-                    hintText: '+237 6XX XXX XXX',
                     filled: true,
                     fillColor: AppColors.surface,
                     border: OutlineInputBorder(
@@ -93,13 +92,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                         borderSide: const BorderSide(color: AppColors.accent)),
-                    prefixIcon: const Icon(Icons.phone, color: AppColors.texteMuet),
                   ),
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return 'Téléphone obligatoire';
-                    if (!RegExp(r'^\+?[0-9]{9,15}$').hasMatch(v)) return 'Format invalide';
-                    return null;
-                  },
+                  onChanged: (phone) => _telephoneComplet = phone.completeNumber,
                 ),
                 const SizedBox(height: 20),
 
