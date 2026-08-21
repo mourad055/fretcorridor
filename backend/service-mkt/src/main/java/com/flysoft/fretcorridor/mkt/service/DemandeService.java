@@ -114,7 +114,9 @@ public class DemandeService {
                     (demande.getDestinationLatitude() != null && demande.getDestinationLongitude() != null)
                             ? new DemandePublieeEvent.PointGeo(demande.getDestinationLatitude(), demande.getDestinationLongitude())
                             : null,
-                    java.math.BigDecimal.valueOf(demande.getPoidsTaxableKg())
+                    java.math.BigDecimal.valueOf(demande.getPoidsTaxableKg()),
+                    demande.getTypeEmballage().getNom(),
+                    demande.getQuantite()
             ));
         }
 

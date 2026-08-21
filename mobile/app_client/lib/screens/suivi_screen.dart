@@ -77,6 +77,27 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
               : ListView(
                   padding: const EdgeInsets.all(20),
                   children: [
+                    if (suivi.chronologie!.typeEmballageNom != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceClaire,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.inventory_2_outlined, color: AppColors.accent, size: 20),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              '${suivi.chronologie!.quantite ?? ''} × ${suivi.chronologie!.typeEmballageNom}'
+                              '${suivi.chronologie!.poidsTaxableKg != null ? ' — ${suivi.chronologie!.poidsTaxableKg!.toStringAsFixed(0)} kg' : ''}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                        ]),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     // S11 — indicateur "envoi consolidé" : réel,
                     // tourneeId non-null signifie que service-opt a
                     // regroupé cette Mission dans une Tournée LTL

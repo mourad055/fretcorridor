@@ -25,6 +25,9 @@ public class MissionDto {
         private String destinationNom;
         private LocalDateTime dateCreation;
         private UUID tourneeId;
+        private String typeEmballageNom;
+        private Integer quantite;
+        private java.math.BigDecimal poidsTaxableKg;
 
         public static MissionResumeResponse fromEntity(Mission m) {
             return MissionResumeResponse.builder()
@@ -34,6 +37,9 @@ public class MissionDto {
                     .destinationNom(m.getDestinationNom())
                     .dateCreation(m.getDateCreation())
                     .tourneeId(m.getTourneeId())
+                    .typeEmballageNom(m.getTypeEmballageNom())
+                    .quantite(m.getQuantite())
+                    .poidsTaxableKg(m.getPoidsTaxableKg())
                     .build();
         }
     }
@@ -77,6 +83,11 @@ public class MissionDto {
         private List<EtapeResponse> etapes;
         private UUID tourneeId;
         private UUID vehiculeId;
+        private String origineNom;
+        private String destinationNom;
+        private String typeEmballageNom;
+        private Integer quantite;
+        private java.math.BigDecimal poidsTaxableKg;
 
         public static ChronologieResponse fromEntity(Mission m, List<EtapeMission> etapes) {
             return ChronologieResponse.builder()
@@ -85,6 +96,11 @@ public class MissionDto {
                     .etapes(etapes.stream().map(EtapeResponse::fromEntity).toList())
                     .tourneeId(m.getTourneeId())
                     .vehiculeId(m.getVehiculeId())
+                    .origineNom(m.getOrigineNom())
+                    .destinationNom(m.getDestinationNom())
+                    .typeEmballageNom(m.getTypeEmballageNom())
+                    .quantite(m.getQuantite())
+                    .poidsTaxableKg(m.getPoidsTaxableKg())
                     .build();
         }
     }

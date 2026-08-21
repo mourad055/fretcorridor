@@ -26,7 +26,8 @@ public class DemandePublieeListener {
             repository.save(new DemandeEnAttente(
                     event.demandeId(), event.axeId(), event.eventId(), event.valeursCriteres(),
                     event.origine(), event.destination(), event.poidsTaxableKg(),
-                    event.fenetreDebut(), event.fenetreFin()));
+                    event.fenetreDebut(), event.fenetreFin(),
+                    event.typeEmballageNom(), event.quantite()));
             log.debug("Demande mise en attente - demande={}, axe={}, eventId={}",
                     event.demandeId(), event.axeId(), event.eventId());
         } catch (DataIntegrityViolationException doublon) {

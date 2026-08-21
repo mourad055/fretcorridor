@@ -61,6 +61,11 @@ public class DemandeEnAttente {
     @Column(name = "fenetre_fin")
     private Instant fenetreFin;
 
+    @Column(name = "type_emballage_nom")
+    private String typeEmballageNom;
+
+    private Integer quantite;
+
     @Column(nullable = false)
     private boolean traitee = false;
 
@@ -73,7 +78,8 @@ public class DemandeEnAttente {
 
     public DemandeEnAttente(UUID demandeId, UUID axeId, UUID eventId, Map<String, Double> valeursCriteres,
                              PointGeoDto origine, PointGeoDto destination, BigDecimal poidsTaxableKg,
-                             Instant fenetreDebut, Instant fenetreFin) {
+                             Instant fenetreDebut, Instant fenetreFin,
+                             String typeEmballageNom, Integer quantite) {
         this.demandeId = demandeId;
         this.axeId = axeId;
         this.eventId = eventId;
@@ -89,6 +95,8 @@ public class DemandeEnAttente {
         this.poidsTaxableKg = poidsTaxableKg;
         this.fenetreDebut = fenetreDebut;
         this.fenetreFin = fenetreFin;
+        this.typeEmballageNom = typeEmballageNom;
+        this.quantite = quantite;
     }
 
     @PrePersist
@@ -105,6 +113,8 @@ public class DemandeEnAttente {
     public BigDecimal getPoidsTaxableKg() { return poidsTaxableKg; }
     public Instant getFenetreDebut() { return fenetreDebut; }
     public Instant getFenetreFin() { return fenetreFin; }
+    public String getTypeEmballageNom() { return typeEmballageNom; }
+    public Integer getQuantite() { return quantite; }
     // RG-105 : age de la demande dans la file - conditionne son eligibilite
     // a la fenetre de traitement de l'axe (fenetre adaptative par axe).
     public Instant getDateReception() { return dateReception; }

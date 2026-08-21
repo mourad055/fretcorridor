@@ -130,6 +130,26 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (widget.mission.typeEmballageNom != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceClaire,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.inventory_2_outlined, color: AppColors.accent, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            '${widget.mission.quantite ?? ''} × ${widget.mission.typeEmballageNom}'
+                            '${widget.mission.poidsTaxableKg != null ? ' — ${widget.mission.poidsTaxableKg!.toStringAsFixed(0)} kg' : ''}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ),
+                      ]),
+                    ),
                   if (positionState.suiviActif)
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),

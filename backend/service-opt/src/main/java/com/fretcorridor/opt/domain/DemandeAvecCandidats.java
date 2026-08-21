@@ -29,6 +29,13 @@ public record DemandeAvecCandidats(
         // service-cap (EF-CAP-01/02) - portee ici brute, pas recalculee.
         UUID axeId,
         java.math.BigDecimal poidsTaxableKg,
-        List<CandidatCoutDto> candidats
+        List<CandidatCoutDto> candidats,
+        // Infos marchandise (audit de suivi Mobile) : propagees jusqu'a
+        // AffectationConfirmeeEvent -> Mission, pour que l'app Chauffeur
+        // sache ce qu'elle transporte. Nullables : l'endpoint de
+        // verification manuelle (AffectationL1Controller) n'a pas a les
+        // fournir.
+        String typeEmballageNom,
+        Integer quantite
 ) {
 }

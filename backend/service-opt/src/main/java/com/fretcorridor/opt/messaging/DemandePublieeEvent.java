@@ -27,6 +27,11 @@ public record DemandePublieeEvent(
         PointGeoDto destination,
         BigDecimal poidsTaxableKg,
         Instant fenetreDebut,
-        Instant fenetreFin
+        Instant fenetreFin,
+        // Infos marchandise (audit de suivi Mobile) : desormais publiees par
+        // service-mkt, propagees jusqu'a Mission (service-exe) pour que
+        // l'app Chauffeur sache ce qu'elle transporte.
+        String typeEmballageNom,
+        Integer quantite
 ) {
 }

@@ -10,6 +10,9 @@ class Mission {
   final String? destinationNom;
   final String? dateCreation;
   final String? tourneeId;
+  final String? typeEmballageNom;
+  final int? quantite;
+  final double? poidsTaxableKg;
 
   const Mission({
     required this.missionId,
@@ -18,6 +21,9 @@ class Mission {
     this.destinationNom,
     this.dateCreation,
     this.tourneeId,
+    this.typeEmballageNom,
+    this.quantite,
+    this.poidsTaxableKg,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) => Mission(
@@ -27,6 +33,9 @@ class Mission {
         destinationNom: json['destinationNom'] as String?,
         dateCreation: json['dateCreation'] as String?,
         tourneeId: json['tourneeId'] as String?,
+        typeEmballageNom: json['typeEmballageNom'] as String?,
+        quantite: json['quantite'] as int?,
+        poidsTaxableKg: (json['poidsTaxableKg'] as num?)?.toDouble(),
       );
 }
 
@@ -50,13 +59,32 @@ class MissionDetail {
   final String missionId;
   final String statut;
   final List<Etape> etapes;
+  final String? origineNom;
+  final String? destinationNom;
+  final String? typeEmballageNom;
+  final int? quantite;
+  final double? poidsTaxableKg;
 
-  const MissionDetail({required this.missionId, required this.statut, this.etapes = const []});
+  const MissionDetail({
+    required this.missionId,
+    required this.statut,
+    this.etapes = const [],
+    this.origineNom,
+    this.destinationNom,
+    this.typeEmballageNom,
+    this.quantite,
+    this.poidsTaxableKg,
+  });
 
   factory MissionDetail.fromJson(Map<String, dynamic> json) => MissionDetail(
         missionId: json['missionId'] as String,
         statut: json['statut'] as String,
         etapes: (json['etapes'] as List<dynamic>? ?? []).map((e) => Etape.fromJson(e as Map<String, dynamic>)).toList(),
+        origineNom: json['origineNom'] as String?,
+        destinationNom: json['destinationNom'] as String?,
+        typeEmballageNom: json['typeEmballageNom'] as String?,
+        quantite: json['quantite'] as int?,
+        poidsTaxableKg: (json['poidsTaxableKg'] as num?)?.toDouble(),
       );
 }
 

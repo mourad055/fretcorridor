@@ -29,5 +29,10 @@ public record AffectationConfirmeeEvent(
         String devise,
         String modeCollecte,
         String modeRemise,
-        Instant horodatageConfirmation
+        Instant horodatageConfirmation,
+        // Infos marchandise (audit de suivi Mobile) : pour que Mission
+        // (service-exe) -> app Chauffeur sache ce qu'elle transporte.
+        String typeEmballageNom,
+        Integer quantite,
+        BigDecimal poidsTaxableKg
 ) {}
