@@ -16,6 +16,10 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      # "dev" par defaut : active data-dev.sql (ecritures/sequestres de
+      # demonstration) - c'est ce profil que consomme le conteneur de demo
+      # Web. Surchargeable pour un environnement sans donnees de demo.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fretcorridor
       SPRING_DATASOURCE_USERNAME: fretcorridor
       SPRING_DATASOURCE_PASSWORD: fretcorridor

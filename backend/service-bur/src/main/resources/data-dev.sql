@@ -1,0 +1,30 @@
+-- Données de démonstration pour service-bur — chargées UNIQUEMENT sous le
+-- profil "dev" (cf. application-dev.yml), jamais en production.
+--
+-- Missions appariées + positions temps réel pour les deux tenants de
+-- démonstration, pour que "Missions appariées" et "Suivi temps réel" côté
+-- Bureau de fret ne soient jamais vides en environnement de démo.
+--
+-- axe_id reprend les UUID d'axes définis dans
+-- backend/service-geo/src/main/resources/data-dev.sql (pas de FK
+-- inter-service, juste une cohérence d'identifiant pour l'affichage).
+-- transporteur_id reprend les comptes de
+-- backend/service-ida/src/main/resources/data-dev.sql.
+--
+-- Idempotent (ON CONFLICT DO NOTHING).
+
+INSERT INTO public.missions_appariees (id, axe_id, confirmee_le, destination_nom, devise, event_id, mission_id, origine_nom, prix_transport, tenant_id, transporteur_id)
+VALUES
+    ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', now() - interval '2 hours', 'Yaoundé',    'XAF', '40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', 'Douala',    125000.0, 'tenant-bgft-douala',   'a0000000-0000-0000-0000-000000000002'),
+    ('30000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000002', now() - interval '5 hours', 'Bafoussam',  'XAF', '40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', 'Douala',     98000.0, 'tenant-bgft-douala',   'a0000000-0000-0000-0000-000000000005'),
+    ('30000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000004', now() - interval '2 hours', 'Garoua',     'XAF', '40000000-0000-0000-0000-000000000003', '30000000-0000-0000-0000-000000000003', 'N''Djamena',210000.0, 'tenant-bnft-ndjamena', 'a0000000-0000-0000-0000-000000000006'),
+    ('30000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000005', now() - interval '5 hours', 'N''Djamena', 'XAF', '40000000-0000-0000-0000-000000000004', '30000000-0000-0000-0000-000000000004', 'Garoua',    175000.0, 'tenant-bnft-ndjamena', 'a0000000-0000-0000-0000-000000000006')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.positions (id, captured_le, latitude, longitude, mission_id, tenant_id, vehicule_id)
+VALUES
+    ('30000000-0000-0000-0000-000000000001', now() - interval '5 minutes',  3.9902, 10.2882, '30000000-0000-0000-0000-000000000001', 'tenant-bgft-douala',   '50000000-0000-0000-0000-000000000001'),
+    ('30000000-0000-0000-0000-000000000002', now() - interval '10 minutes',5.0469, 10.2227, '30000000-0000-0000-0000-000000000002', 'tenant-bgft-douala',   '50000000-0000-0000-0000-000000000002'),
+    ('30000000-0000-0000-0000-000000000003', now() - interval '5 minutes', 10.7500,14.2000, '30000000-0000-0000-0000-000000000003', 'tenant-bnft-ndjamena', '50000000-0000-0000-0000-000000000003'),
+    ('30000000-0000-0000-0000-000000000004', now() - interval '10 minutes',9.8000, 13.8000, '30000000-0000-0000-0000-000000000004', 'tenant-bnft-ndjamena', '50000000-0000-0000-0000-000000000004')
+ON CONFLICT (id) DO NOTHING;
