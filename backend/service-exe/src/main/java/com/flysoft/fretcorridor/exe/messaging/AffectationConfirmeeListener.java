@@ -46,6 +46,9 @@ public class AffectationConfirmeeListener {
                 .axeId(event.axeId())
                 .origineNom(event.origineNom())
                 .destinationNom(event.destinationNom())
+                .typeEmballageNom(event.typeEmballageNom())
+                .quantite(event.quantite())
+                .poidsTaxableKg(event.poidsTaxableKg())
                 .statut(Mission.StatutMission.EN_ATTENTE)
                 .tenantId(tenantIdPhase1)
                 .build();

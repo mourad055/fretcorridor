@@ -42,6 +42,13 @@ public class Mission {
     private String origineNom;
     private String destinationNom;
 
+    // Infos marchandise (audit de suivi Mobile) : renseigné par
+    // AffectationConfirmeeListener — l'app Chauffeur n'avait jusqu'ici
+    // aucun moyen de savoir ce qu'elle transporte pour une mission donnée.
+    private String typeEmballageNom;
+    private Integer quantite;
+    private java.math.BigDecimal poidsTaxableKg;
+
     // S11 (EF-MAT-05/06) : renseigné par TourneeConstitueeListener quand
     // cette Mission fait partie d'une Tournée consolidée (LTL) — null pour
     // une affectation FTL simple, jamais regroupée par service-opt.

@@ -26,8 +26,23 @@ class ChronologieModel {
   final String statut;
   final List<EtapeMissionModel> etapes;
   final String? tourneeId;
+  final String? origineNom;
+  final String? destinationNom;
+  final String? typeEmballageNom;
+  final int? quantite;
+  final double? poidsTaxableKg;
 
-  const ChronologieModel({required this.missionId, required this.statut, required this.etapes, this.tourneeId});
+  const ChronologieModel({
+    required this.missionId,
+    required this.statut,
+    required this.etapes,
+    this.tourneeId,
+    this.origineNom,
+    this.destinationNom,
+    this.typeEmballageNom,
+    this.quantite,
+    this.poidsTaxableKg,
+  });
 
   factory ChronologieModel.fromJson(Map<String, dynamic> json) {
     return ChronologieModel(
@@ -35,6 +50,11 @@ class ChronologieModel {
       statut: json['statut'] ?? 'EN_ATTENTE',
       etapes: (json['etapes'] as List? ?? []).map((e) => EtapeMissionModel.fromJson(e)).toList(),
       tourneeId: json['tourneeId'] as String?,
+      origineNom: json['origineNom'] as String?,
+      destinationNom: json['destinationNom'] as String?,
+      typeEmballageNom: json['typeEmballageNom'] as String?,
+      quantite: json['quantite'] as int?,
+      poidsTaxableKg: (json['poidsTaxableKg'] as num?)?.toDouble(),
     );
   }
 }

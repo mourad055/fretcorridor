@@ -251,7 +251,10 @@ public class AffectationL1Service {
                         "XAF",
                         "DEPOT",
                         "RETRAIT",
-                        Instant.now()
+                        Instant.now(),
+                        demande.typeEmballageNom(),
+                        demande.quantite(),
+                        demande.poidsTaxableKg()
                 );
                 eventPublisher.publierAffectationConfirmee(confirmation);
 

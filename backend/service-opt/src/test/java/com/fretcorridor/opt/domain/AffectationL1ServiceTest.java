@@ -67,7 +67,7 @@ class AffectationL1ServiceTest {
                 new CandidatCoutDto(capaciteIntermediaire, null, null, null, null, null, "FOURGON"));
 
         DemandeAvecCandidats demande = new DemandeAvecCandidats(demandeId,
-                new PointGeoDto(4.05, 9.7), new PointGeoDto(3.87, 11.52), axeId, BigDecimal.valueOf(1000), candidats);
+                new PointGeoDto(4.05, 9.7), new PointGeoDto(3.87, 11.52), axeId, BigDecimal.valueOf(1000), candidats, null, null);
 
         when(serviceMatClient.calculerCoutsLot(any())).thenReturn(new CoutLotResponseDto(demandeId, 1, false, List.of(
                 new CoutResponseDto(capacitePlusChere, UUID.randomUUID(), BigDecimal.valueOf(30000)),
@@ -120,7 +120,7 @@ class AffectationL1ServiceTest {
                 new CandidatCoutDto(seuleCapacite, null, null, null, null, null, "FOURGON"));
 
         DemandeAvecCandidats demande = new DemandeAvecCandidats(demandeId,
-                new PointGeoDto(4.05, 9.7), new PointGeoDto(3.87, 11.52), axeId, BigDecimal.valueOf(1000), candidats);
+                new PointGeoDto(4.05, 9.7), new PointGeoDto(3.87, 11.52), axeId, BigDecimal.valueOf(1000), candidats, null, null);
 
         when(serviceMatClient.calculerCoutsLot(any())).thenReturn(new CoutLotResponseDto(demandeId, 1, false,
                 List.of(new CoutResponseDto(seuleCapacite, UUID.randomUUID(), BigDecimal.valueOf(10000)))));

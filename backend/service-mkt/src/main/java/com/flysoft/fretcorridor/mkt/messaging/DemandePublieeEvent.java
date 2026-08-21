@@ -18,7 +18,12 @@ public record DemandePublieeEvent(
         Map<String, Double> valeursCriteres,
         PointGeo origine,
         PointGeo destination,
-        BigDecimal poidsTaxableKg
+        BigDecimal poidsTaxableKg,
+        // Infos marchandise (audit de suivi Mobile) : jusqu'ici absentes de
+        // cet evenement, le Moteur/l'app Chauffeur ne pouvaient donc jamais
+        // savoir ce qu'ils transportent une fois la Mission creee.
+        String typeEmballageNom,
+        int quantite
 ) {
     public record PointGeo(double latitude, double longitude) {
     }

@@ -101,6 +101,14 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
                     children: [
                       Text('${mission.origineNom ?? '—'} → ${mission.destinationNom ?? '—'}',
                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      if (mission.typeEmballageNom != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '${mission.quantite ?? ''} × ${mission.typeEmballageNom}'
+                          '${mission.poidsTaxableKg != null ? ' — ${mission.poidsTaxableKg!.toStringAsFixed(0)} kg' : ''}',
+                          style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
+                        ),
+                      ],
                       const SizedBox(height: 4),
                       Text(_libellesStatut[mission.statut] ?? mission.statut,
                           style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),

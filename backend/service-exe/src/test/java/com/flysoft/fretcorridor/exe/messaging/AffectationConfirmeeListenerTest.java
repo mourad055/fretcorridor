@@ -43,7 +43,8 @@ class AffectationConfirmeeListenerTest {
                 4.05, 9.7, "Douala", 3.87, 11.52, "Yaoundé",
                 300000.0, 18000L, 3600L, null,
                 BigDecimal.valueOf(50000), BigDecimal.valueOf(5000), BigDecimal.valueOf(45000),
-                "XAF", "PORTE_A_PORTE", "PORTE_A_PORTE", Instant.now());
+                "XAF", "PORTE_A_PORTE", "PORTE_A_PORTE", Instant.now(),
+                "Sac de ciment", 10, BigDecimal.valueOf(500));
     }
 
     @Test
