@@ -34,27 +34,38 @@ public class AnomalieDetector {
      * distance (en km) pendant la durée du seuil, on considère qu'il est
      * à l'arrêt. Valeur conservative : un véhicule qui se gare, décharge
      * partiellement, ou attend à un checkpoint peut rester immobile 30 min.
+     *
+     * FIX audit 21/08 (anti-patron CDC §12.4) : ces seuils étaient codés en
+     * dur - ils sont désormais externalisés (application.yml) pour pouvoir
+     * être ajustés par déploiement sans recompilation. Le constructeur sans
+     * argument conserve les valeurs historiques (compatibilité tests).
      */
-    private static final double SEUIL_DISTANCE_ARRET_KM = 0.1;
+    private final double seuilDistanceArretKm;
 
     /**
      * Durée au-delà de laquelle une immobilité est considérée comme anormale.
      */
-    private static final Duration SEUIL_DUREE_ARRET = Duration.ofMinutes(30);
+    private final Duration seuilDureeArret;
 
     /**
      * Seuil d'absence de position : si aucune nouvelle position n'est reçue
      * pendant cette durée, une alerte est levée (RG-066, EF-TRK-04).
      */
-    private static final Duration SEUIL_ABSENCE_POSITION = Duration.ofHours(2);
+    private final Duration seuilAbsencePosition;
 
     /**
      * Écart maximal toléré par rapport au corridor de l'axe (en km).
      * Au-delà, on considère que le véhicule a quitté l'axe prévu.
-     * Valeur large pour le MVP (50 km) car les déviations sont fréquentes
-     * sur un réseau peu revêtu.
+     *
+     * FIX audit 21/08 (M6) : la valeur historique 50 km sur la fenêtre de
+     * 15 min exigeait ~200 km/h soutenus - physiquement impossible pour un
+     * camion (~30 km à 120 km/h) : le détecteur ne pouvait JAMAIS déclencher,
+     * le fix du 19/08 avait supprimé les faux positifs au prix d'un détecteur
+     * mort. Défaut ramené à 35 km (= 140 km/h soutenus sur la fenêtre :
+     * au-dessus de tout roulage légal, en dessous des sauts déjà couverts par
+     * detecterSautAberrant). Configurable par propriété.
      */
-    private static final double SEUIL_ECART_CORRIDOR_KM = 50.0;
+    private final double seuilEcartCorridorKm;
 
     /**
      * Fenetre glissante pour le calcul d'ecart de corridor : compare la
@@ -72,14 +83,53 @@ public class AnomalieDetector {
      * fenetre glissante que detecterArretProlonge ci-dessus, qui avait deja
      * le bon pattern.
      */
-    private static final Duration FENETRE_ECART_CORRIDOR = Duration.ofMinutes(15);
+    private final Duration fenetreEcartCorridor;
 
     /**
      * Distance maximale entre deux positions consécutives considérée comme
      * physiquement possible (en km). Au-delà, c'est une position aberrante.
      * 300 km en 5 minutes = 3600 km/h, impossible pour un camion.
      */
-    private static final double SEUIL_SAUT_ABERRANT_KM = 50.0;
+    private final double seuilSautAberrantKm;
+
+    public AnomalieDetector() {
+        // Valeurs historiques sauf ecart corridor : 50 km -> 35 km (fix M6,
+        // cf javadoc du champ).
+        this(0.1, 30, 2, 35.0, 15, 50.0);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public AnomalieDetector(
+            @org.springframework.beans.factory.annotation.Value(
+                    "${fretcorridor.trk.seuil-distance-arret-km:0.1}") double seuilDistanceArretKm,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${fretcorridor.trk.seuil-duree-arret-minutes:30}") long seuilDureeArretMinutes,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${fretcorridor.trk.seuil-absence-position-heures:2}") long seuilAbsencePositionHeures,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${fretcorridor.trk.seuil-ecart-corridor-km:35}") double seuilEcartCorridorKm,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${fretcorridor.trk.fenetre-ecart-corridor-minutes:15}") long fenetreEcartCorridorMinutes,
+            @org.springframework.beans.factory.annotation.Value(
+                    "${fretcorridor.trk.seuil-saut-aberrant-km:50}") double seuilSautAberrantKm) {
+        this(seuilDistanceArretKm,
+                Duration.ofMinutes(seuilDureeArretMinutes),
+                Duration.ofHours(seuilAbsencePositionHeures),
+                seuilEcartCorridorKm,
+                Duration.ofMinutes(fenetreEcartCorridorMinutes),
+                seuilSautAberrantKm);
+    }
+
+    private AnomalieDetector(double seuilDistanceArretKm, Duration seuilDureeArret,
+                             Duration seuilAbsencePosition, double seuilEcartCorridorKm,
+                             Duration fenetreEcartCorridor, double seuilSautAberrantKm) {
+        this.seuilDistanceArretKm = seuilDistanceArretKm;
+        this.seuilDureeArret = seuilDureeArret;
+        this.seuilAbsencePosition = seuilAbsencePosition;
+        this.seuilEcartCorridorKm = seuilEcartCorridorKm;
+        this.fenetreEcartCorridor = fenetreEcartCorridor;
+        this.seuilSautAberrantKm = seuilSautAberrantKm;
+    }
 
     /**
      * Détecte les anomalies à partir de l'historique des positions d'une mission.
@@ -98,7 +148,7 @@ public class AnomalieDetector {
 
         // 1. Détection absence prolongée de position
         Duration ageDernierePosition = Duration.between(dernière.getHorodatageCapture(), maintenant);
-        boolean absenceProlongee = ageDernierePosition.compareTo(SEUIL_ABSENCE_POSITION) > 0;
+        boolean absenceProlongee = ageDernierePosition.compareTo(seuilAbsencePosition) > 0;
 
         // 2. Détection arrêt prolongé
         boolean arretProlonge = detecterArretProlonge(positionsRécentes);
@@ -137,8 +187,8 @@ public class AnomalieDetector {
             return false;
         }
 
-        // Fenêtre d'analyse : positions dans les SEUIL_DUREE_ARRET dernières minutes
-        Instant seuilTemporal = Instant.now().minus(SEUIL_DUREE_ARRET);
+        // Fenêtre d'analyse : positions dans les seuilDureeArret dernières minutes
+        Instant seuilTemporal = Instant.now().minus(seuilDureeArret);
         List<Position> fenetre = positions.stream()
                 .filter(p -> p.getHorodatageCapture().isAfter(seuilTemporal))
                 .toList();
@@ -156,7 +206,7 @@ public class AnomalieDetector {
             );
         }
 
-        return distanceKm < SEUIL_DISTANCE_ARRET_KM;
+        return distanceKm < seuilDistanceArretKm;
     }
 
     /**
@@ -215,7 +265,7 @@ public class AnomalieDetector {
             return false;
         }
 
-        Instant seuilTemporel = Instant.now().minus(FENETRE_ECART_CORRIDOR);
+        Instant seuilTemporel = Instant.now().minus(fenetreEcartCorridor);
         Position reference = positions.stream()
                 .filter(p -> p.getHorodatageCapture().isAfter(seuilTemporel))
                 .findFirst()
@@ -239,7 +289,7 @@ public class AnomalieDetector {
         // Alerte si la distance parcourue depuis la position de référence
         // (fenêtre glissante) dépasse le seuil — indicateur d'un éloignement
         // significatif ET récent, pas un cumul depuis le départ de mission.
-        return distanceKm > SEUIL_ECART_CORRIDOR_KM;
+        return distanceKm > seuilEcartCorridorKm;
     }
 
     /**

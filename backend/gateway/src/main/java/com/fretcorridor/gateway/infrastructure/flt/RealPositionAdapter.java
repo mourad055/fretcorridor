@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
-import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Appelle service-flt (Mobile, port 8083) pour l'envoi de positions GPS
@@ -41,14 +41,26 @@ public class RealPositionAdapter implements PositionPort {
         if (delegationToken == null) {
             return Mono.error(new FltServiceIndisponibleException());
         }
+        var body = new java.util.HashMap<String, Object>();
+        body.put("missionId", position.missionId());
+        body.put("latitude", position.latitude());
+        body.put("longitude", position.longitude());
+        body.put("horodatage", position.horodatage());
+        // FIX audit 21/08 : champs optionnels du contrat position-brute
+        // (eventId à la capture, sourceCapture enum, precisionMetres).
+        if (position.eventId() != null) {
+            body.put("eventId", position.eventId());
+        }
+        if (position.sourceCapture() != null) {
+            body.put("sourceCapture", position.sourceCapture());
+        }
+        if (position.precisionMetres() != null) {
+            body.put("precisionMetres", position.precisionMetres());
+        }
         return webClient.post()
                 .uri("/api/positions")
                 .headers(h -> h.setBearerAuth(delegationToken))
-                .bodyValue(Map.of(
-                        "missionId", position.missionId(),
-                        "latitude", position.latitude(),
-                        "longitude", position.longitude(),
-                        "horodatage", position.horodatage()))
+                .bodyValue(body)
                 .retrieve()
                 .toBodilessEntity()
                 .then()
