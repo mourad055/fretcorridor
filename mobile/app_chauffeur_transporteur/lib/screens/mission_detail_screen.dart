@@ -192,6 +192,27 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                         Text('Suivi GPS actif', style: TextStyle(color: AppColors.succes, fontSize: 13)),
                       ]),
                     ),
+                  // BUG CORRIGE (retour utilisateur direct, 22 aout) : le
+                  // badge "Suivi GPS actif" ci-dessus s'affiche des que
+                  // demarrerSuivi() est appele, meme si l'envoi echoue
+                  // ensuite (permission refusee, GPS coupe...) - aucune
+                  // indication n'existait pour le chauffeur, qui croyait le
+                  // suivi actif alors qu'aucune position ne partait jamais.
+                  if (positionState.suiviActif && positionState.erreur != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.erreur.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppColors.erreur.withValues(alpha: 0.4)),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.gps_off, color: AppColors.erreur, size: 18),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(positionState.erreur!, style: const TextStyle(color: AppColors.erreur, fontSize: 12))),
+                      ]),
+                    ),
                   if (state.erreur != null)
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),

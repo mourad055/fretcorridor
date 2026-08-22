@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dio_provider.dart';
 
 const String keyTelephone = 'telephone';
+const String keyTenantId = 'tenant_id';
 
 class AuthState {
   final bool estConnecte;
@@ -68,11 +69,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
     });
   }
 
+  // BUG CORRIGE (retour utilisateur direct, 22 aout) : tenantId n'etait
+  // jamais persiste ni restaure ici (seulement telephone) - toute session
+  // restauree depuis le stockage (app relancee sans nouvelle connexion,
+  // ce qui arrive tres souvent en test) avait estConnecte=true mais
+  // tenantId=null, faisant echouer silencieusement tout appel qui en
+  // depend (ex. confirmation du moyen de paiement -> "Session incomplete").
   Future<void> _verifierSession() async {
     final token = await _storage.read(key: keyAccessToken);
     if (token != null) {
       final telephone = await _storage.read(key: keyTelephone);
-      state = state.copyWith(estConnecte: true, telephone: telephone);
+      final tenantId = await _storage.read(key: keyTenantId);
+      state = state.copyWith(estConnecte: true, telephone: telephone, tenantId: tenantId);
     }
   }
 
@@ -173,12 +181,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _storage.write(key: keyAccessToken, value: data['accessToken']);
     await _storage.write(key: keyRefreshToken, value: data['refreshToken']);
     await _storage.write(key: keyTelephone, value: telephone);
+    if (data['tenantId'] != null) {
+      await _storage.write(key: keyTenantId, value: data['tenantId'] as String);
+    }
   }
 
   Future<void> logout() async {
     await _storage.delete(key: keyAccessToken);
     await _storage.delete(key: keyRefreshToken);
     await _storage.delete(key: keyTelephone);
+    await _storage.delete(key: keyTenantId);
     state = const AuthState();
   }
 }
