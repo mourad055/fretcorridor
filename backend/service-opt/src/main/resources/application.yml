@@ -64,6 +64,15 @@ fretcorridor:
       fenetre-min-secondes: 0
       fenetre-max-secondes: 3600
       facteur-adaptation-fenetre: 2.0
+      # Filtrage L0 par cellules H3 (CDC S8.5.4) : anneaux de voisines autour
+      # de la cellule de l'origine (plafond 3 cote GEO). Repli automatique sur
+      # le rayon Haversine si service-geo est injoignable.
+      l0-k-ring: 1
+      # VALEUR_RETOUR (7e terme CDC S8.5.3) : rayon de recherche du fret au
+      # retour autour de la destination, et nb de demandes proches saturant
+      # le score a 1.0 (hypotheses d'equipe, calibrables en exploitation).
+      valeur-retour-rayon-km: 50
+      valeur-retour-saturation: 5
 
 logging:
   level:
