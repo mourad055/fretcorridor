@@ -17,6 +17,7 @@ services:
     # Digest capture le 2026-08-04, cf docs/adr/0004-valhalla-image-digest.md.
     image: ghcr.io/valhalla/valhalla-scripted@sha256:e454d110227a83804785ff271628d36548388777939f5e18a887ee1bc3f0ffef
     container_name: fretcorridor-valhalla
+    restart: unless-stopped
     environment:
       tile_urls: https://download.geofabrik.de/africa/cameroon-260803.osm.pbf
       use_tiles_ignore_pbf: "True"
@@ -37,6 +38,7 @@ services:
       context: ../backend
       dockerfile: service-opt/Dockerfile
     container_name: fretcorridor-service-opt
+    restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3

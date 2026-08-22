@@ -18,6 +18,7 @@ services:
     build:
       context: ../backend/gateway
     container_name: fretcorridor-gateway
+    restart: unless-stopped
     environment:
       # Résolvent par nom de conteneur uniquement si les fichiers compose de
       # service-pay/service-adm sont inclus dans la même commande ; sinon

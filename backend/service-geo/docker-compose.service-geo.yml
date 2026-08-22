@@ -23,6 +23,7 @@ services:
       context: ../backend
       dockerfile: service-geo/Dockerfile
     container_name: fretcorridor-service-geo
+    restart: unless-stopped
     environment:
       # "docker,dev" par defaut : active aussi le profil dev (data-dev.sql,
       # hubs/axes de demonstration) - c'est ce profil que consomme le
