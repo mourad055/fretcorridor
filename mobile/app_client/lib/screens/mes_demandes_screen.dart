@@ -181,42 +181,52 @@ class _DemandeCard extends ConsumerWidget {
                 ),
                 child: Text(demande.statut, style: const TextStyle(fontSize: 10, color: AppColors.accent, fontWeight: FontWeight.bold)),
               ),
-              if (demande.statut == 'PUBLIEE') ...[
-                const SizedBox(width: 6),
-                TextButton.icon(
-                  onPressed: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => PublierDemandeScreen(demandeAModifier: demande)),
-                    );
-                    if (context.mounted) ref.read(demandeProvider.notifier).chargerMesDemandes();
-                  },
-                  icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.accent),
-                  label: const Text('Modifier', style: TextStyle(fontSize: 11, color: AppColors.accent)),
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
-                ),
-                const SizedBox(width: 6),
-                TextButton.icon(
-                  onPressed: () => _annuler(context, ref),
-                  icon: const Icon(Icons.delete_outline, size: 14, color: AppColors.erreur),
-                  label: const Text('Annuler', style: TextStyle(fontSize: 11, color: AppColors.erreur)),
-                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
-                ),
-              ],
               const Spacer(),
-              TextButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => SuiviScreen(demandeId: demande.id, demande: demande)),
-                ),
-                icon: const Icon(Icons.location_on_outlined, size: 14, color: AppColors.accent),
-                label: const Text('Suivi', style: TextStyle(fontSize: 11, color: AppColors.accent)),
-                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+              Flexible(
+                child: Text('Voir les propositions', style: const TextStyle(fontSize: 11, color: AppColors.texteMuet), overflow: TextOverflow.ellipsis),
               ),
-              const SizedBox(width: 6),
-              const Text('Voir les propositions', style: TextStyle(fontSize: 11, color: AppColors.texteMuet)),
               const Icon(Icons.chevron_right, size: 16, color: AppColors.texteMuet),
             ]),
+            const SizedBox(height: 8),
+            // Actions sur une ligne séparée, avec retour à la ligne
+            // automatique (Wrap) plutôt qu'un unique Row qui débordait du
+            // cadre de la carte une fois Modifier/Annuler ajoutés à côté
+            // de Suivi.
+            Wrap(
+              spacing: 14,
+              runSpacing: 4,
+              children: [
+                TextButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => SuiviScreen(demandeId: demande.id, demande: demande)),
+                  ),
+                  icon: const Icon(Icons.location_on_outlined, size: 14, color: AppColors.accent),
+                  label: const Text('Suivi', style: TextStyle(fontSize: 11, color: AppColors.accent)),
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+                ),
+                if (demande.statut == 'PUBLIEE') ...[
+                  TextButton.icon(
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => PublierDemandeScreen(demandeAModifier: demande)),
+                      );
+                      if (context.mounted) ref.read(demandeProvider.notifier).chargerMesDemandes();
+                    },
+                    icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.accent),
+                    label: const Text('Modifier', style: TextStyle(fontSize: 11, color: AppColors.accent)),
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _annuler(context, ref),
+                    icon: const Icon(Icons.delete_outline, size: 14, color: AppColors.erreur),
+                    label: const Text('Annuler', style: TextStyle(fontSize: 11, color: AppColors.erreur)),
+                    style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+                  ),
+                ],
+              ],
+            ),
           ],
         ),
       ),
