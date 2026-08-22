@@ -17,6 +17,7 @@ public class MktEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(MktEventPublisher.class);
     private static final String TOPIC_DEMANDE_PUBLIEE = "demande-publiee";
+    private static final String TOPIC_DEMANDE_ANNULEE = "demande-annulee";
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -39,6 +40,25 @@ public class MktEventPublisher {
         } catch (Exception exceptionBlocante) {
             log.error("Echec publication DemandePubliee (send() bloquant) - demande={} - "
                     + "publication non bloquante pour le client (ENF-DIS-04)",
+                    event.demandeId(), exceptionBlocante);
+        }
+    }
+
+    public void publierDemandeAnnulee(DemandeAnnuleeEvent event) {
+        try {
+            kafkaTemplate.send(TOPIC_DEMANDE_ANNULEE, event.demandeId().toString(), event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.debug("DemandeAnnulee publiee - demande={}, offset={}",
+                                    event.demandeId(), result.getRecordMetadata().offset());
+                        } else {
+                            log.error("Echec publication DemandeAnnulee (callback async) - demande={}",
+                                    event.demandeId(), ex);
+                        }
+                    });
+        } catch (Exception exceptionBlocante) {
+            log.error("Echec publication DemandeAnnulee (send() bloquant) - demande={} - "
+                    + "annulation cote client non bloquee pour autant (ENF-DIS-04)",
                     event.demandeId(), exceptionBlocante);
         }
     }

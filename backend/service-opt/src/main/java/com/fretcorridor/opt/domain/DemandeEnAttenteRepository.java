@@ -7,4 +7,10 @@ import java.util.UUID;
 
 public interface DemandeEnAttenteRepository extends JpaRepository<DemandeEnAttente, UUID> {
     List<DemandeEnAttente> findByAxeIdAndTraiteeFalse(UUID axeId);
+
+    // DemandeAnnuleeListener : retire une demande annulee de la file
+    // d'attente avant qu'un cycle de matching ne la traite (traiteeFalse
+    // uniquement - si deja traitee, une Affectation existe deja, trop tard
+    // pour l'annuler cote Moteur).
+    List<DemandeEnAttente> findByDemandeIdAndTraiteeFalse(UUID demandeId);
 }

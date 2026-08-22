@@ -1,6 +1,7 @@
 package com.fretcorridor.opt.config;
 
 import com.fretcorridor.opt.messaging.CapaciteDeclareeEvent;
+import com.fretcorridor.opt.messaging.DemandeAnnuleeEvent;
 import com.fretcorridor.opt.messaging.DemandePublieeEvent;
 import com.fretcorridor.opt.messaging.EtapeExecuteeEvent;
 import com.fretcorridor.opt.messaging.DemandePublieeLotsEvent;
@@ -85,6 +86,24 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, DemandePublieeEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(demandePublieeConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, DemandeAnnuleeEvent> demandeAnnuleeConsumerFactory() {
+        JsonDeserializer<DemandeAnnuleeEvent> deserializer =
+                new JsonDeserializer<>(DemandeAnnuleeEvent.class, false);
+        deserializer.setUseTypeHeaders(false);
+        deserializer.addTrustedPackages("com.fretcorridor.*");
+        return new DefaultKafkaConsumerFactory<>(proprietesBase(), new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, DemandeAnnuleeEvent>
+            demandeAnnuleeKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, DemandeAnnuleeEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(demandeAnnuleeConsumerFactory());
         return factory;
     }
 

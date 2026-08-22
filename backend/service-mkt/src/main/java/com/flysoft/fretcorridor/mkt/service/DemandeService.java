@@ -10,6 +10,7 @@ import com.flysoft.fretcorridor.mkt.entity.Proposition;
 import com.flysoft.fretcorridor.mkt.repository.CatalogueEmballageRepository;
 import com.flysoft.fretcorridor.mkt.repository.DemandeRepository;
 import com.flysoft.fretcorridor.mkt.repository.PropositionRepository;
+import com.flysoft.fretcorridor.mkt.messaging.DemandeAnnuleeEvent;
 import com.flysoft.fretcorridor.mkt.messaging.DemandePublieeEvent;
 import com.flysoft.fretcorridor.mkt.messaging.MktEventPublisher;
 import lombok.RequiredArgsConstructor;
@@ -172,6 +173,13 @@ public class DemandeService {
 
         demande.setStatut(Demande.StatutDemande.ANNULEE);
         demande = demandeRepository.save(demande);
+
+        // Previent le Moteur (service-opt) de retirer cette demande de sa
+        // file d'attente - sans ca, une demande annulee restait matchable et
+        // pouvait consommer une capacite reelle pour rien (retour utilisateur
+        // direct, 22 aout).
+        eventPublisher.publierDemandeAnnulee(new DemandeAnnuleeEvent(java.util.UUID.randomUUID(), demande.getId()));
+
         return DemandeDto.DemandeResponse.fromEntity(demande);
     }
 
