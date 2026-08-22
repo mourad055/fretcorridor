@@ -14,6 +14,7 @@ class CapaciteDeclaree {
   final bool expiree;
   final DateTime? dateDepart;
   final DateTime? dateCreation;
+  final String? vehiculeId;
 
   const CapaciteDeclaree({
     required this.id,
@@ -25,6 +26,7 @@ class CapaciteDeclaree {
     this.expiree = false,
     this.dateDepart,
     this.dateCreation,
+    this.vehiculeId,
   });
 
   factory CapaciteDeclaree.fromJson(Map<String, dynamic> json) => CapaciteDeclaree(
@@ -37,6 +39,7 @@ class CapaciteDeclaree {
         expiree: json['expiree'] as bool? ?? false,
         dateDepart: json['dateDepart'] != null ? DateTime.tryParse(json['dateDepart'] as String)?.toLocal() : null,
         dateCreation: json['dateCreation'] != null ? DateTime.tryParse(json['dateCreation'] as String)?.toLocal() : null,
+        vehiculeId: json['vehiculeId'] as String?,
       );
 }
 

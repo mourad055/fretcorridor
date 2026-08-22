@@ -4,11 +4,18 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import '../providers/demande_provider.dart';
 import '../providers/axes_provider.dart';
 import '../models/catalogue_emballage_model.dart';
+import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/top_notification.dart';
 
 class PublierDemandeScreen extends ConsumerStatefulWidget {
-  const PublierDemandeScreen({super.key});
+  // CRUD demande (audit de suivi Mobile) : pas de vrai endpoint de
+  // modification côté backend (changer le poids/l'axe demanderait de
+  // rerésoudre l'axe et recalculer les coordonnées) — "modifier" republie
+  // une nouvelle demande pré-remplie puis annule l'ancienne, en réutilisant
+  // le flux publier()/annuler() déjà validé plutôt qu'un PATCH risqué.
+  final DemandeModel? demandeAModifier;
+  const PublierDemandeScreen({super.key, this.demandeAModifier});
 
   @override
   ConsumerState<PublierDemandeScreen> createState() => _PublierDemandeScreenState();
@@ -31,7 +38,38 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(axesProvider.notifier).charger());
+    Future.microtask(() {
+      ref.read(axesProvider.notifier).charger();
+      _preRemplirSiModification();
+    });
+  }
+
+  void _preRemplirSiModification() {
+    final d = widget.demandeAModifier;
+    if (d == null) return;
+    _villeDepartCtrl.text = d.villeDepart;
+    _villeArriveeCtrl.text = d.villeArrivee;
+    _quantiteCtrl.text = '${d.quantite}';
+    _destinataireNomCtrl.text = d.destinataireNom;
+    _destinataireTelephone = d.destinataireTelephone;
+    _fragile = d.fragile;
+    _perissable = d.perissable;
+    _dangereuse = d.dangereuse;
+    _grandeValeur = d.grandeValeur;
+    _typeDisponibilite = d.typeDisponibilite;
+    _modeCollecte = d.modeCollecte;
+    // Le catalogue (types d'emballage) est chargé globalement par
+    // demandeProvider au démarrage de l'app — déjà disponible ici dans la
+    // quasi-totalité des cas (l'utilisateur vient de "Mes demandes", donc
+    // le catalogue a déjà servi à publier la demande d'origine).
+    final catalogue = ref.read(demandeProvider).catalogue;
+    for (final e in catalogue) {
+      if (e.nom == d.typeEmballageNom) {
+        setState(() => _emballageSelectionne = e);
+        break;
+      }
+    }
+    if (mounted) setState(() {});
   }
 
   @override
@@ -81,11 +119,13 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       return;
     }
 
-    afficherNotification(
-      context,
-      message: 'Le prix affiché sera une estimation — le prix ferme viendra avec la proposition acceptée.',
-      duree: const Duration(seconds: 4),
-    );
+    if (widget.demandeAModifier == null) {
+      afficherNotification(
+        context,
+        message: 'Le prix affiché sera une estimation — le prix ferme viendra avec la proposition acceptée.',
+        duree: const Duration(seconds: 4),
+      );
+    }
 
     final succes = await ref.read(demandeProvider.notifier).publier(
       villeDepart: _villeDepartCtrl.text.trim(),
@@ -102,7 +142,28 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       destinataireTelephone: _destinataireTelephone,
     );
 
-    if (succes && mounted) Navigator.pop(context);
+    if (!succes || !mounted) return;
+
+    final ancienne = widget.demandeAModifier;
+    if (ancienne != null) {
+      // La nouvelle demande est déjà publiée à ce stade (succes==true) —
+      // annuler l'ancienne est un nettoyage, pas une condition de succès :
+      // ne pas bloquer l'utilisateur si ça échoue, juste l'avertir.
+      final erreurAnnulation = await ref.read(demandeProvider.notifier).annulerDemande(ancienne.id);
+      if (!mounted) return;
+      if (erreurAnnulation != null) {
+        afficherNotification(
+          context,
+          message: 'Nouvelle demande publiée, mais l\'ancienne n\'a pas pu être annulée : $erreurAnnulation',
+          couleur: AppColors.erreur,
+          icone: Icons.error_outline,
+        );
+      } else {
+        afficherNotification(context, message: 'Demande modifiée.', couleur: AppColors.succes, icone: Icons.check_circle);
+      }
+    }
+
+    if (mounted) Navigator.pop(context);
   }
 
   InputDecoration _decoration(String hint, [IconData? icon]) {
@@ -192,7 +253,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Envoyer une marchandise')),
+      appBar: AppBar(title: Text(widget.demandeAModifier == null ? 'Envoyer une marchandise' : 'Modifier la demande')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -412,7 +473,8 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                   child: demandeState.publicationEnCours
                       ? const SizedBox(height: 22, width: 22,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : const Text('Publier la demande', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      : Text(widget.demandeAModifier == null ? 'Publier la demande' : 'Enregistrer les modifications',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 20),

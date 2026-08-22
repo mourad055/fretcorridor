@@ -12,7 +12,13 @@ import 'vehicules_screen.dart';
 // Le véhicule vient du registre réel de la flotte (S10) — voir
 // vehicule_provider.dart. Plus d'identifiant généré localement (TODO fermé).
 class CapaciteScreen extends ConsumerStatefulWidget {
-  const CapaciteScreen({super.key});
+  // CRUD capacité (audit de suivi Mobile) : pas de vrai endpoint de
+  // modification côté backend (changer le poids déjà partiellement
+  // décrémenté demanderait de recalculer le résiduel) — "modifier"
+  // redéclare une nouvelle capacité pré-remplie puis supprime l'ancienne,
+  // même principe que la modification de demande côté app Client.
+  final CapaciteDeclaree? capaciteAModifier;
+  const CapaciteScreen({super.key, this.capaciteAModifier});
 
   @override
   ConsumerState<CapaciteScreen> createState() => _CapaciteScreenState();
@@ -31,6 +37,15 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
     Future.microtask(() {
       ref.read(axesProvider.notifier).charger();
       ref.read(vehiculeProvider.notifier).chargerMesVehicules();
+      final c = widget.capaciteAModifier;
+      if (c != null) {
+        setState(() {
+          _axeId = c.axeId;
+          _vehiculeId = c.vehiculeId;
+          _poidsCtrl.text = c.poidsKg.toStringAsFixed(0);
+          _dateDepart = c.dateDepart;
+        });
+      }
     });
   }
 
@@ -83,18 +98,37 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
     // même piège copyWith(champ: null) que suivi_provider.dart). Une
     // notification transitoire ne pose pas ce problème par construction.
     final capacite = ref.read(capaciteProvider).derniereCapacite;
-    if (capacite != null) {
+    if (capacite == null) return;
+
+    final ancienne = widget.capaciteAModifier;
+    if (ancienne != null) {
+      // La nouvelle capacité est déjà déclarée à ce stade — supprimer
+      // l'ancienne est un nettoyage, pas une condition de succès : ne pas
+      // bloquer l'utilisateur si ça échoue, juste l'avertir.
+      final succesSuppression = await ref.read(capaciteProvider.notifier).supprimer(ancienne.id);
+      if (!mounted) return;
       afficherNotification(
         context,
-        message: capacite.publiee
-            ? 'Capacité publiée — ${capacite.poidsTaxableKg.round()} kg taxables.'
-            : 'Capacité enregistrée.',
-        couleur: AppColors.succes,
-        icone: Icons.check_circle,
+        message: succesSuppression
+            ? 'Capacité modifiée.'
+            : 'Nouvelle capacité déclarée, mais l\'ancienne n\'a pas pu être supprimée.',
+        couleur: succesSuppression ? AppColors.succes : AppColors.erreur,
+        icone: succesSuppression ? Icons.check_circle : Icons.error_outline,
       );
-      _poidsCtrl.clear();
-      setState(() { _axeId = null; _vehiculeId = null; _dateDepart = null; });
+      Navigator.pop(context);
+      return;
     }
+
+    afficherNotification(
+      context,
+      message: capacite.publiee
+          ? 'Capacité publiée — ${capacite.poidsTaxableKg.round()} kg taxables.'
+          : 'Capacité enregistrée.',
+      couleur: AppColors.succes,
+      icone: Icons.check_circle,
+    );
+    _poidsCtrl.clear();
+    setState(() { _axeId = null; _vehiculeId = null; _dateDepart = null; });
   }
 
   @override
@@ -106,7 +140,7 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
     return Scaffold(
       backgroundColor: AppColors.fond,
       appBar: AppBar(
-        title: const Text('Déclarer une capacité'),
+        title: Text(widget.capaciteAModifier == null ? 'Déclarer une capacité' : 'Modifier la capacité'),
         actions: [
           IconButton(
             icon: const Icon(Icons.list_alt),
@@ -215,8 +249,8 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
                     ),
                     child: state.chargement
                         ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                        : const Text('Déclarer la capacité',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+                        : Text(widget.capaciteAModifier == null ? 'Déclarer la capacité' : 'Enregistrer les modifications',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
                   ),
                 ),
                 const SizedBox(height: 32),
