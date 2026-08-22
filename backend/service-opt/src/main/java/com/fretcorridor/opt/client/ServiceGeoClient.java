@@ -60,6 +60,54 @@ public class ServiceGeoClient {
     }
 
     /**
+     * Index H3 de la cellule contenant un point quelconque (resolution lue
+     * cote GEO dans geo.configuration_h3, jamais supposee ici). Retourne null
+     * en cas d'echec - meme degradation gracieuse que les autres methodes :
+     * l'appelant bascule sur son filtre de repli (rayon Haversine).
+     */
+    public String indexZonage(double latitude, double longitude) {
+        try {
+            String index = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/geo/zonage/index")
+                            .queryParam("latitude", latitude)
+                            .queryParam("longitude", longitude)
+                            .build())
+                    .retrieve()
+                    .body(String.class);
+            return index == null || index.isBlank() ? null : index;
+        } catch (RestClientException exception) {
+            log.warn("Echec appel service-geo (zonage/index) - mode degrade active : {}",
+                    exception.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * k-ring brut d'une cellule H3 : la cellule elle-meme plus ses k anneaux
+     * de voisines (plafond k=3 impose cote GEO). Liste vide en cas d'echec -
+     * l'appelant degrade vers son filtre Haversine plutot que de filtrer
+     * tout le monde par erreur.
+     */
+    public List<String> kRing(String indexH3, int k) {
+        try {
+            String[] cellules = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/geo/zonage/k-ring")
+                            .queryParam("indexH3", indexH3)
+                            .queryParam("k", k)
+                            .build())
+                    .retrieve()
+                    .body(String[].class);
+            return cellules == null ? List.of() : List.of(cellules);
+        } catch (RestClientException exception) {
+            log.warn("Echec appel service-geo (zonage/k-ring) - mode degrade active : {}",
+                    exception.getMessage());
+            return List.of();
+        }
+    }
+
+    /**
      * Axes ou le matching est actif (EF-GEO-03) - c'est sur cette liste que
      * MatchingCycleService boucle pour declencher un cycle par axe. Un axe
      * absent de cette liste n'est jamais propose au matching, meme s'il a des

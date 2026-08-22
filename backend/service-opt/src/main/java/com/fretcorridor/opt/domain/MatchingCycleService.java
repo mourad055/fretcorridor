@@ -40,6 +40,8 @@ public class MatchingCycleService {
     private final CapaciteEnAttenteRepository capaciteEnAttenteRepository;
     private final DemandeEnAttenteRepository demandeEnAttenteRepository;
     private final AffectationL1Service affectationL1Service;
+    private final CalculateurCoutSeptTermes calculateurCoutSeptTermes;
+    private final InstrumentationPerfService instrumentationPerfService;
 
     // RG-105 (fenetre adaptative) : fenetre courante par axe, ajustee apres
     // chaque cycle traite selon le volume observe (taille du lot). Cle absente
@@ -61,10 +63,17 @@ public class MatchingCycleService {
     private final double fenetreMaxSecondes;
     private final double facteurAdaptationFenetre;
 
+    // Filtrage L0 par cellules H3 (CDC S8.5.4/S8.10) : nombre d'anneaux de
+    // voisines autour de la cellule de l'origine de la demande. 1 = la cellule
+    // + ses 6 voisines directes ; plafond impose cote GEO a 3.
+    private final int l0KRing;
+
     public MatchingCycleService(ServiceGeoClient serviceGeoClient,
                                  CapaciteEnAttenteRepository capaciteEnAttenteRepository,
                                  DemandeEnAttenteRepository demandeEnAttenteRepository,
                                  AffectationL1Service affectationL1Service,
+                                 CalculateurCoutSeptTermes calculateurCoutSeptTermes,
+                                 InstrumentationPerfService instrumentationPerfService,
                                  @org.springframework.beans.factory.annotation.Value(
                                          "${fretcorridor.opt.matching.fenetre-defaut-secondes:0}") double fenetreDefautSecondes,
                                  @org.springframework.beans.factory.annotation.Value(
@@ -72,15 +81,20 @@ public class MatchingCycleService {
                                  @org.springframework.beans.factory.annotation.Value(
                                          "${fretcorridor.opt.matching.fenetre-max-secondes:3600}") double fenetreMaxSecondes,
                                  @org.springframework.beans.factory.annotation.Value(
-                                         "${fretcorridor.opt.matching.facteur-adaptation-fenetre:2.0}") double facteurAdaptationFenetre) {
+                                         "${fretcorridor.opt.matching.facteur-adaptation-fenetre:2.0}") double facteurAdaptationFenetre,
+                                 @org.springframework.beans.factory.annotation.Value(
+                                         "${fretcorridor.opt.matching.l0-k-ring:1}") int l0KRing) {
         this.serviceGeoClient = serviceGeoClient;
         this.capaciteEnAttenteRepository = capaciteEnAttenteRepository;
         this.demandeEnAttenteRepository = demandeEnAttenteRepository;
         this.affectationL1Service = affectationL1Service;
+        this.calculateurCoutSeptTermes = calculateurCoutSeptTermes;
+        this.instrumentationPerfService = instrumentationPerfService;
         this.fenetreDefautSecondes = fenetreDefautSecondes;
         this.fenetreMinSecondes = fenetreMinSecondes;
         this.fenetreMaxSecondes = fenetreMaxSecondes;
         this.facteurAdaptationFenetre = facteurAdaptationFenetre;
+        this.l0KRing = Math.max(0, Math.min(3, l0KRing));
     }
 
     @Scheduled(fixedDelayString = "${spring.matching.cycle-interval-ms:15000}")
@@ -133,41 +147,61 @@ public class MatchingCycleService {
             }
         }
 
-        // Volet A Phase 4 (README_PHASE4_MOTEUR S2.2) : RISQUE_AXE, un des 7
-        // termes du cout composite (CDC S8.5.3) prevu depuis le V0 mais jamais
-        // branche jusqu'ici - la donnee existe cote GEO depuis le Sprint 15
-        // (Axe.parametres.risqueSecuritaire) mais n'etait consommee par aucun
-        // module. Valeur identique pour tous les candidats de ce cycle (le
-        // risque est une propriete de l'axe, pas du candidat individuel).
+        long debutCycleNano = System.nanoTime();
+
+        // RISQUE_AXE (6e terme du cout composite, CDC S8.5.3) : la donnee
+        // existe cote GEO depuis le Sprint 15 (Axe.parametres.risqueSecuritaire).
+        // Valeur identique pour tous les candidats de ce cycle (le risque est
+        // une propriete de l'axe, pas du candidat individuel).
         Double risqueAxeScore = extraireRisqueAxeScore(axe);
 
-        List<CandidatCoutDto> candidatsCommuns = capacites.stream()
-                .map(c -> new CandidatCoutDto(c.getCapaciteId(), c.getTransporteurId(),
-                        c.getVehiculeId(), enrichirAvecRisqueAxe(c.getValeursCriteres(), risqueAxeScore),
-                        c.getPosition(), c.getProfilCamion(), c.getTypeVehicule()))
-                .toList();
+        java.time.Instant instantCalcul = java.time.Instant.now();
 
-        // EF-MAT-01/02/03 (Phase 1 MVP, priorite M) - RG-046 : rayonMatchingKm
-        // lu depuis Axe.parametres (EF-GEO-02), jamais code en dur. Absence
-        // de cle = pas de borne appliquee ce cycle (limitation documentee
-        // dans AxeActifDto, pas une valeur par defaut inventee ici).
-        //
-        // CHOIX D'EQUIPE (le CDC ne precise pas explicitement "distance entre
-        // quoi et quoi") : rayon autour de l'ORIGINE de la demande - RG-046
-        // parle de "distance d'approche a vide", c-a-d la distance camion ->
-        // point de collecte, pas la destination ni le trajet complet.
-        // Coherent avec ZonageH3Service/hubs-proches (GEO), qui filtre deja
-        // par rayon autour d'un point de collecte unique.
+        // VALEUR_RETOUR (7e terme, prospectif) : densite de fret en attente
+        // autour de la destination de chaque demande - calculee une fois par
+        // cycle, partagee entre toutes les paires de cette demande.
+        Map<java.util.UUID, Long> fretAuRetourParDemande =
+                compterAutresDemandesProchesDestination(demandes);
+
+        // ===== L0 - Filtrage geospatial des candidats (CDC S8.5.4, budget < 50ms) =====
+        // Priorite a l'indexation H3 (endpoints zonage/index + zonage/k-ring de
+        // GEO) : cellule de l'origine de la demande + k anneaux de voisines ;
+        // repli sur le rayon Haversine historique (RG-046) si GEO est injoignable
+        // ou non configure (ENF-DIS-04 : on degrade, on ne plante jamais).
+        // Les 7 criteres CDC S8.5.3 sont ensuite calcules PAR PAIRE sur les
+        // candidats survivants (convention DemandeAvecCandidats : valeurs
+        // "deja normalisees pour cette paire demande/candidat").
+        long debutL0Nano = System.nanoTime();
         Double rayonMatchingKm = extraireRayonMatchingKm(axe);
+        Map<PointGeoDto, String> cacheCellulesH3 = new java.util.HashMap<>();
+        boolean[] l0H3Utilise = { false };
+        // Copie finale pour la lambda : la variable capacites est reassignee
+        // plus haut par le filtrage RG-105, donc pas "effectively final".
+        List<CapaciteEnAttente> capacitesDuCycle = capacites;
 
         List<DemandeAvecCandidats> lot = demandes.stream()
-                .map(d -> new DemandeAvecCandidats(d.getDemandeId(), d.getOrigine(), d.getDestination(),
-                        d.getAxeId(), d.getPoidsTaxableKg(), filtrerCandidatsParRayon(d, candidatsCommuns, rayonMatchingKm),
-                        d.getTypeEmballageNom(), d.getQuantite(),
-                        d.getDestinataireNom(), d.getDestinataireTelephone(),
-                        d.getModeCollecte(), d.getTypeDisponibilite(),
-                        d.getPoidsTotalKg(), d.getGrandeValeur()))
+                .map(d -> {
+                    List<CapaciteEnAttente> capacitesFiltrees =
+                            filtrerCandidatsL0(d, capacitesDuCycle, rayonMatchingKm, cacheCellulesH3, l0H3Utilise);
+                    long fretAuRetour = fretAuRetourParDemande.getOrDefault(d.getDemandeId(), 0L);
+                    List<CandidatCoutDto> candidatsAvecCriteres = capacitesFiltrees.stream()
+                            .map(c -> construireCandidatAvecCriteresCDC(
+                                    d, c, instantCalcul, fretAuRetour, risqueAxeScore))
+                            .toList();
+                    // Infos destinataire (audit de suivi Mobile, fusion dev/backend-stevetelecom) :
+                    // propagees comme les autres champs marchandise, aucun impact sur le pipeline
+                    // L0/7-termes ci-dessus - juste des donnees supplementaires portees jusqu'a
+                    // AffectationConfirmeeEvent.
+                    return new DemandeAvecCandidats(d.getDemandeId(), d.getOrigine(), d.getDestination(),
+                            d.getAxeId(), d.getPoidsTaxableKg(), candidatsAvecCriteres,
+                            d.getTypeEmballageNom(), d.getQuantite(),
+                            d.getDestinataireNom(), d.getDestinataireTelephone(),
+                            d.getModeCollecte(), d.getTypeDisponibilite(),
+                            d.getPoidsTotalKg(), d.getGrandeValeur());
+                })
                 .toList();
+        instrumentationPerfService.recordL0FiltrageMs(
+                (System.nanoTime() - debutL0Nano) / 1_000_000.0);
 
         // Une demande dont TOUS les candidats ont ete elimines par le rayon
         // n'a plus de sens a envoyer a Kuhn-Munkres (AffectationL1Service
@@ -196,12 +230,17 @@ public class MatchingCycleService {
             return;
         }
 
-        log.info("Cycle de matching declenche - axe={}, {} demande(s), {} capacite(s) en attente "
-                        + "(rayon={} km)",
-                axe.nom(), demandes.size(), capacites.size(), rayonMatchingKm);
+        String modeL0 = l0H3Utilise[0]
+                ? "H3(k=" + l0KRing + ")"
+                : (rayonMatchingKm != null ? "rayon=" + rayonMatchingKm + "km" : "aucun filtre");
+        log.info("Cycle de matching declenche - axe={}, {} demande(s), {} capacite(s) en attente, L0={}",
+                axe.nom(), demandes.size(), capacites.size(), modeL0);
 
+        long debutL1Nano = System.nanoTime();
         AffectationLotResultat resultat = affectationL1Service.calculerAffectationOptimale(
                 lotNonVide, axe.hubOrigineVille(), axe.hubDestinationVille());
+        instrumentationPerfService.recordL1AffectationMs(
+                (System.nanoTime() - debutL1Nano) / 1_000_000.0);
 
         if (resultat.modeDegrade()) {
             log.warn("Cycle en mode degrade sur l'axe {} - service-mat injoignable, "
@@ -248,6 +287,16 @@ public class MatchingCycleService {
                     axe.nom(), demandesNonAffecteesCeCycle);
         }
 
+        // EF-PERF (CDC S8.10) : latence bout-en-bout des demandes affectees
+        // (date_reception -> fin du cycle d'affectation).
+        java.time.Instant finCycle = java.time.Instant.now();
+        for (DemandeEnAttente d : demandesTraitees) {
+            if (d.getDateReception() != null) {
+                instrumentationPerfService.recordLatenceAffectationSecondes(
+                        java.time.Duration.between(d.getDateReception(), finCycle).toMillis() / 1000.0);
+            }
+        }
+
         // RG-105 : ajuste la fenetre de l'axe selon le volume observe - un lot
         // d'un element est precisement le "dispatch glouton deguise" que le
         // CDC ordonne d'eviter, on attend donc plus la fois suivante ; un lot
@@ -262,6 +311,9 @@ public class MatchingCycleService {
                             + "(lot observe de {} element(s)).",
                     axe.nom(), fenetreAvant, fenetreApres, lotNonVide.size());
         }
+
+        // EF-PERF (CDC S8.10) : duree totale du cycle de cet axe (L0+L1+persistance).
+        instrumentationPerfService.recordCycleAxeMs((System.nanoTime() - debutCycleNano) / 1_000_000.0);
     }
 
     /**
@@ -384,45 +436,105 @@ public class MatchingCycleService {
     }
 
     /**
-     * Ajoute RISQUE_AXE aux criteres d'un candidat, sans modifier les criteres
-     * deja calcules ailleurs (cf CapaciteEnAttente.getValeursCriteres()).
-     * risqueAxeScore==null n'arrive jamais en pratique (extraireRisqueAxeScore
-     * retourne toujours 0.0 au minimum) mais garde-fou defensif quand meme,
-     * meme principe que les autres degradations gracieuses de ce fichier.
+     * Construit le CandidatCoutDto d'une paire demande/capacite avec les 7
+     * criteres CDC S8.5.3 calcules pour CETTE paire (convention
+     * DemandeAvecCandidats : valeurs deja normalisees par paire).
      */
-    private Map<String, Double> enrichirAvecRisqueAxe(Map<String, Double> valeursCriteres, Double risqueAxeScore) {
-        if (risqueAxeScore == null) {
-            return valeursCriteres;
-        }
-        Map<String, Double> enrichi = new java.util.LinkedHashMap<>(valeursCriteres);
-        enrichi.put("RISQUE_AXE", risqueAxeScore);
-        return enrichi;
+    private CandidatCoutDto construireCandidatAvecCriteresCDC(DemandeEnAttente demande,
+                                                               CapaciteEnAttente capacite,
+                                                               java.time.Instant instantCalcul,
+                                                               long fretAuRetour,
+                                                               Double risqueAxeScore) {
+        return new CandidatCoutDto(capacite.getCapaciteId(), capacite.getTransporteurId(),
+                capacite.getVehiculeId(),
+                calculateurCoutSeptTermes.calculer(demande, capacite, instantCalcul,
+                        fretAuRetour, risqueAxeScore),
+                capacite.getPosition(), capacite.getProfilCamion(), capacite.getTypeVehicule());
     }
 
     /**
-     * Filtre les candidats dont la position est a plus de rayonKm de
-     * l'origine de la demande (Haversine, RG-046 : "distance d'approche a
-     * vide"). Aucun filtre applique si rayonKm est null (cle absente) ou si
-     * l'origine de la demande / la position d'un candidat est inconnue -
-     * degrade vers "pas de borne" plutot que d'exclure silencieusement un
-     * candidat sur une donnee manquante (ENF-DIS-04).
+     * Filtrage L0 d'un axe de demandes : priorite a l'indexation H3 (cellule
+     * H3 de l'origine + k anneaux, endpoints zonage cote GEO - CDC S8.5.4),
+     * repli sur le rayon Haversine historique (RG-046) si GEO est injoignable.
+     * Une position de candidat inconnue n'est JAMAIS exclue silencieusement
+     * (ENF-DIS-04), quel que soit le mode de filtrage actif.
+     *
+     * @param cacheCellulesH3 cache par position du cycle courant : plusieurs
+     *        demandes partagent souvent les memes positions de candidats,
+     *        inutile de rappeler GEO pour chaque paire
+     * @param h3Utilise sortie (tableau a une case, les lambdas ne mutent pas
+     *        les locales) : true si au moins un filtrage H3 a reussi sur ce cycle
      */
-    private List<CandidatCoutDto> filtrerCandidatsParRayon(DemandeEnAttente demande,
-                                                            List<CandidatCoutDto> candidats,
-                                                            Double rayonKm) {
+    private List<CapaciteEnAttente> filtrerCandidatsL0(DemandeEnAttente demande,
+                                                        List<CapaciteEnAttente> capacites,
+                                                        Double rayonHaversineRepliKm,
+                                                        Map<PointGeoDto, String> cacheCellulesH3,
+                                                        boolean[] h3Utilise) {
         PointGeoDto origine = demande.getOrigine();
-        if (rayonKm == null || origine == null) {
-            return candidats;
+        if (origine == null || capacites.isEmpty()) {
+            return capacites;
         }
 
-        return candidats.stream()
+        String celluleOrigine = serviceGeoClient.indexZonage(origine.latitude(), origine.longitude());
+        if (celluleOrigine != null) {
+            List<String> cellulesEligibles = serviceGeoClient.kRing(celluleOrigine, l0KRing);
+            if (!cellulesEligibles.isEmpty()) {
+                h3Utilise[0] = true;
+                return capacites.stream()
+                        .filter(c -> {
+                            PointGeoDto position = c.getPosition();
+                            if (position == null) {
+                                return true; // position inconnue : ne pas exclure silencieusement
+                            }
+                            String cellule = cacheCellulesH3.computeIfAbsent(position,
+                                    p -> serviceGeoClient.indexZonage(p.latitude(), p.longitude()));
+                            // GEO injoignable pour CE point : candidat conserve
+                            // plutot qu'elimine par erreur de donnee manquante.
+                            return cellule == null || cellulesEligibles.contains(cellule);
+                        })
+                        .toList();
+            }
+        }
+
+        // Repli historique : rayon Haversine autour de l'origine (RG-046,
+        // "distance d'approche a vide" camion -> point de collecte).
+        if (rayonHaversineRepliKm == null) {
+            return capacites;
+        }
+        double rayonKm = rayonHaversineRepliKm;
+        return capacites.stream()
                 .filter(c -> {
-                    PointGeoDto position = c.positionCapacite();
+                    PointGeoDto position = c.getPosition();
                     if (position == null) {
-                        return true; // position inconnue : ne pas exclure silencieusement
+                        return true;
                     }
                     return HaversineUtils.distance(origine, position) <= rayonKm;
                 })
                 .toList();
+    }
+
+    /**
+     * VALEUR_RETOUR (7e terme CDC S8.5.3, prospectif) : pour chaque demande,
+     * nombre d'AUTRES demandes en attente dont l'ORIGINE est a moins de
+     * fretcorridor.opt.matching.valeur-retour-rayon-km de SA destination -
+     * proxy mesurable du "fret trouvable au retour". O(N^2) sur la file de
+     * l'axe : negligeable aux volumes MVP (dizaines d'elements par axe/cycle).
+     */
+    private Map<java.util.UUID, Long> compterAutresDemandesProchesDestination(
+            List<DemandeEnAttente> demandes) {
+        double rayonKm = calculateurCoutSeptTermes.getValeurRetourRayonKm();
+        Map<java.util.UUID, Long> compteParId = new java.util.HashMap<>();
+        for (DemandeEnAttente d : demandes) {
+            if (d.getDestination() == null) {
+                continue;
+            }
+            long nbAutres = demandes.stream()
+                    .filter(autre -> !autre.getDemandeId().equals(d.getDemandeId()))
+                    .filter(autre -> autre.getOrigine() != null)
+                    .filter(autre -> HaversineUtils.distance(d.getDestination(), autre.getOrigine()) <= rayonKm)
+                    .count();
+            compteParId.put(d.getDemandeId(), nbAutres);
+        }
+        return compteParId;
     }
 }

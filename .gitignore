@@ -23,3 +23,4 @@ node_modules/
 # Documents de reprise de session, personnels/non partagés
 docs/CONTEXTE_SESSION_UI.md
 mobile/app_client/pubspec.lock
+custom_files/
