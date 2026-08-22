@@ -19,7 +19,7 @@ services:
     container_name: fretcorridor-valhalla
     restart: unless-stopped
     environment:
-      tile_urls: https://download.geofabrik.de/africa/cameroon-260803.osm.pbf
+      tile_urls: https://download.geofabrik.de/africa/cameroon-latest.osm.pbf
       use_tiles_ignore_pbf: "True"
       force_rebuild: "False"
     ports:
