@@ -12,6 +12,7 @@ services:
     build:
       context: ../backend/service-bur
     container_name: fretcorridor-service-bur
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy

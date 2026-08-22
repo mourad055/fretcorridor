@@ -6,6 +6,7 @@ services:
       context: ../backend
       dockerfile: service-mat/Dockerfile
     container_name: fretcorridor-service-mat
+    restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
