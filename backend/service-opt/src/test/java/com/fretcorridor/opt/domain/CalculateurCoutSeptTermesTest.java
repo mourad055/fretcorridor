@@ -127,7 +127,12 @@ class CalculateurCoutSeptTermesTest {
                 new PointGeoDto(4.0511, 9.7679), new PointGeoDto(3.848, 11.502),
                 new BigDecimal("5000"),
                 Instant.parse("2026-08-22T08:00:00Z"), Instant.parse("2026-08-22T12:00:00Z"),
-                "Palette", 10);
+                "Palette", 10,
+                // Champs ajoutes apres l'ecriture initiale de ce test (destinataire,
+                // mode de collecte/disponibilite, poids total, grande valeur) - non
+                // pertinents pour ce test des 7 criteres de cout, null accepte
+                // (tous nullable sur l'entite, cf DemandeEnAttente.java).
+                null, null, null, null, null, null);
         CapaciteEnAttente capacite = new CapaciteEnAttente(UUID.randomUUID(), UUID.randomUUID(),
                 UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
                 Map.of("FIABILITE", 0.7),
