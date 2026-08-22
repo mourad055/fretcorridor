@@ -1,4 +1,78 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 21 août 2026, nuit)
+# FretCorridor v4 — Transmission d'état (mise à jour 22 août 2026, matin)
+
+> **Session CRUD + icône adaptative (21→22 août, nuit)** — suite directe
+> de la session pipeline matching ci-dessous, même soirée de test
+> continue. **Nouvelle règle stricte posée par l'utilisatrice** : mettre à
+> jour ce fichier après chaque merge sur `dev` (ou quand elle le demande
+> explicitement) ; un audit complet du projet vs CDC/Plan d'Exécution est
+> prévu comme tâche séparée dédiée (trop volumineux pour être glissé en
+> parallèle de correctifs live), à lancer sur demande explicite.
+>
+> **CRUD demande/capacité** (elle avait explicitement demandé "modifier,
+> supprimer surtout") :
+> - Suppression : `DELETE /api/demandes/{id}` (service-mkt) — annule
+>   (`StatutDemande.ANNULEE`, existait dans l'enum sans jamais être
+>   atteint par aucun code) plutôt qu'une suppression physique ; refusée
+>   si une proposition est déjà acceptée. Capacité : `supprimer()` déjà
+>   présent côté `capacite_provider.dart`, juste jamais exposé dans l'UI
+>   avant cette session (écran "Mes capacités").
+> - **Modification** : pas de vrai endpoint PATCH dans aucun des deux cas
+>   (recalculer poids résiduel déjà entamé pour une capacité, ou
+>   rerésoudre l'axe/les coordonnées pour une demande, est plus risqué
+>   qu'utile pour du test). "Modifier" réutilise le formulaire de
+>   déclaration existant pré-rempli (`PublierDemandeScreen.demandeAModifier`,
+>   `CapaciteScreen.capaciteAModifier`) : republie/redéclare avec les
+>   nouvelles valeurs puis annule/supprime l'ancienne entrée sur succès.
+>   `CapaciteDeclaree` (app_chauffeur) exposait pas `vehiculeId` avant
+>   cette session — ajouté, nécessaire pour pré-remplir le véhicule.
+>
+> **Icône d'application — saga en 5 correctifs, cause réelle trouvée
+> seulement au 4ᵉ essai** : les deux premiers essais (marge 6% puis
+> 1,5% sur le PNG brut) n'ont RIEN changé visuellement — cause : le
+> projet n'avait **aucune icône adaptative**
+> (`mipmap-anydpi-v26/ic_launcher.xml`), seulement des PNG "legacy".
+> Sur Android 8+, Pixel Launcher applique un rétrécissement/masquage
+> **automatique supplémentaire** aux icônes legacy pour les harmoniser
+> avec les vraies icônes adaptatives des autres apps — peu importe le
+> remplissage du PNG source, ce rétrécissement s'ajoutait par-dessus.
+> Ajout d'une vraie icône adaptative (foreground + `ic_launcher_background`
+> couleur) a réglé la sous-taille, mais le 1ᵉʳ essai adaptatif (marge 1%,
+> quasi plein cadre) a révélé un **second piège** : le masque circulaire
+> du lanceur recadre les **coins** du carré adaptatif — un contenu logo
+> en format paysage (le camion) qui s'étend jusqu'aux bords se fait
+> couper net par le cercle inscrit. Toujours **simuler le masque
+> circulaire (PIL, `ImageDraw.ellipse`) sur le foreground avant de
+> reconstruire** plutôt que de juger sur le PNG carré brut — ça aurait
+> évité l'aller-retour. Marge finale : 20% (contenu à 60% du canevas),
+> ajustée par petites touches sur retour utilisateur direct (13% encore
+> jugé "trop à l'avant"). **Piège de process à retenir** : une icône
+> éditée ne se reflète pas toujours avec un simple `flutter run` (réinstall
+> `-r`) — le lanceur peut garder l'ancien bitmap en cache ; désinstaller
+> complètement (`adb uninstall`) puis réinstaller à neuf est le seul
+> moyen fiable de vérifier un changement d'icône.
+>
+> **Autres correctifs** : débordement d'affichage (`Wrap` au lieu d'un
+> `Row` à plat) sur la carte de demande une fois Modifier/Annuler ajoutés
+> à côté de Suivi ; nettoyage des demandes de test `AXE_NON_DESSERVI`
+> (données de session précédentes, sans rapport avec un bug).
+>
+> **Web "Bureau de fret" (`localhost:8099`) + `service-bur`/`service-pay`
+> ne font PAS partie du setup testé cette session** (uniquement les 2 apps
+> mobiles + backend host `mvn spring-boot:run`) — mais l'utilisatrice a
+> confirmé que **le web fait partie du projet** et devra être lancé aussi
+> avant toute démo publique (les 3 apps). Pas encore fait, à prévoir.
+>
+> **IP du laptop encore instable cette nuit** — changée au moins 3 fois
+> de plus après la précédente note (`172.22.171.133` → `192.168.1.142` →
+> `192.168.1.53`, stable ensuite sur `.53` pour le reste de la session).
+> Chaque changement casse silencieusement les deux apps ("erreur réseau",
+> "je ne vois pas les demandes/capacités") puisque l'IP est figée au
+> build (`--dart-define`) — réflexe : `ip -4 addr show` dès qu'un symptôme
+> réseau généralisé apparaît après une pause.
+
+---
+
+# Historique (mise à jour 21 août 2026, nuit)
 
 > **Session pipeline matching bout-en-bout (21 août, soir/nuit)** — suite
 > directe de la session UI/UX du même jour (ci-dessous). Cette fois : le
