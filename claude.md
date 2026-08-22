@@ -1,4 +1,101 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 22 août 2026, matin)
+# FretCorridor v4 — Transmission d'état (mise à jour 22 août 2026, après-midi)
+
+> **Session bugs live + mockups (22 août, journée)** — suite directe de la
+> session CRUD ci-dessous, tests en continu avec l'utilisatrice.
+>
+> **Bug le plus important trouvé cette session : le suivi/paiement
+> chargeur ne fonctionnait pour AUCUNE demande, depuis toujours.**
+> `MissionController.getChronologiePourDemande` filtrait par
+> `tenantId` du JWT du chargeur (ex. `MARKETPLACE_CM`), mais
+> `Mission.tenantId` porte systématiquement le tenant PHASE 1 côté
+> exécution/transporteur (`tenant-bgft-douala`, constante posée par
+> `AffectationConfirmeeListener`) — les deux ne correspondent **jamais**.
+> Résultat : l'écran Suivi répondait "pas encore disponible" en boucle
+> même avec une Mission réelle déjà en "Prise en charge", masquant la
+> section paiement qui en dépend. Corrigé en filtrant par `demandeId`
+> seul (UUID non devinable, connu du seul chargeur propriétaire — même
+> principe que `notificationAppartenantA` côté service-not), le JWT
+> restant vérifié pour l'authentification. **Symptôme à surveiller si ça
+> revient** : tout endpoint qui croise un tenant "marketplace" (chargeur)
+> avec un tenant "exécution phase 1" (transporteur/chauffeur) est
+> suspect — les deux univers de tenant ne se recoupent structurellement
+> pas dans ce MVP mono-tenant hack (ADR 0011).
+>
+> **Canal de notifications entièrement mort, depuis le début** :
+> `TypeNotification.PROPOSITION_RECUE`/`STATUT_MISSION` existaient déjà
+> dans l'entité côté service-not, mais **aucun service n'appelait jamais**
+> `NotificationService.creer()` pour une demande publiée, une proposition
+> émise ou une capacité déclarée — juste 2 listeners Kafka
+> (`AlerteEcartListener`, `PropositionRetourAVideListener`) sur des
+> canaux annexes. Ajouté : endpoint interne
+> `POST /api/notifications/interne` (X-Internal-Service-Key, même
+> pattern que `POST /api/cap/capacites/*/decrement`) + appels
+> best-effort depuis `DemandeService.publier()`/`PropositionEmiseListener`
+> (service-mkt) et `CapaciteService.declarer()` (service-cap). Web only
+> — pas de push FCM, donc ajout aussi d'un **sondage périodique (20s) +
+> son/vibration** (`NotificationNotifier`, les deux apps) : avant ça, une
+> notification ne devenait visible qu'en rouvrant manuellement l'écran
+> Notifications, jamais en tâche de fond.
+>
+> **Auto-régression trouvée et corrigée en cours de session** : une
+> reconstruction de l'app Client (après reprise de contexte) utilisait de
+> mauvais ports `--dart-define` pour NOT (8090 au lieu de 8094), EXE
+> (8091 au lieu de 8093), GEO (`/api` en trop, la base ne doit PAS
+> l'inclure) et PAY (8098 au lieu de 8088) — masquait paiement,
+> notifications et résolution d'axe sans lien avec le vrai bug ci-dessus.
+> **Toujours vérifier les valeurs par défaut documentées dans
+> `dio_provider.dart` avant de composer une commande `flutter run`**,
+> surtout après une reprise de session — ne jamais les retaper de
+> mémoire.
+>
+> **`service-pay` n'avait jamais été démarré avant cette session** (11ᵉ
+> service backend, oublié du script de relance depuis le début) — démarré
+> pour la première fois, port 8088, `SPRING_DATASOURCE_URL` sur le port
+> 5434 comme les autres (défaut du service pointe sur 5432).
+>
+> **Annuler une demande ne prévenait jamais le Moteur (service-opt)** —
+> reproduit en direct : une capacité fraîchement déclarée a été
+> aussitôt consommée par une ancienne demande déjà annulée, laissant la
+> nouvelle demande sans capacité disponible. `DemandeService.annuler()`
+> publie désormais un événement Kafka `DemandeAnnulee`, consommé par un
+> nouveau listener côté service-opt qui retire la demande de
+> `opt.demande_en_attente` avant qu'un cycle ne la traite.
+>
+> **Infos demande propagées jusqu'à Mission (3ᵉ itération du même
+> pattern)** : `destinataireNom/Telephone`, `modeCollecte`,
+> `typeDisponibilite`, `poidsTotalKg`, `grandeValeur` — même chaîne
+> Kafka déjà utilisée pour marchandise (`DemandePubliee` → `opt.demande_en_attente`
+> → `AffectationConfirmee` → `Mission`/`MissionDto`). Piège rencontré :
+> `AffectationConfirmeeEvent` avait déjà un champ `modeCollecte`
+> (placeholders `"DEPOT"/"RETRAIT"` internes au calcul d'itinéraire,
+> sans lien avec `Demande.modeCollecte`) — collision de nom sur un
+> `record` Java = erreur de compilation immédiate, pas un bug silencieux;
+> renommé en `demandeModeCollecte` pour lever l'ambiguïté.
+>
+> **3 écrans reconstruits à partir de mockups fournis par
+> l'utilisatrice** (règle stricte : "suivre mes mockups à la lettre") —
+> `missions_screen.dart` (app Chauffeur), `suivi_screen.dart` et
+> `propositions_screen.dart` (app Client). Quand deux mockups étaient
+> fournis pour un même écran avec des retours contradictoires ("la mise
+> en page du 1er est bien mais les icônes du 2e sont meilleures"),
+> **combiner les deux plutôt que choisir** — c'est ce qu'elle voulait à
+> chaque fois.
+>
+> **Process** : deux documents produits explicitement à sa demande
+> (`plan-mockups-2026-08-22.md` avant les travaux, `recap-session-2026-08-22.md`
+> après, tableau demandé/fait) — elle a dit ne plus vouloir se répéter,
+> donc systématiser ce couple plan→récap dès qu'une liste de demandes
+> s'accumule plutôt que d'attendre qu'elle le redemande.
+>
+> **DB nettoyée deux fois cette session** (missions/demandes/capacités
+> de test datant d'avant les correctifs successifs) — toujours confirmer
+> avant un `DELETE` multi-tables large (le classifier de l'environnement
+> bloque ces commandes par défaut, ce qui est un signal sain à respecter,
+> pas à contourner).
+
+---
+
+# Historique (mise à jour 22 août 2026, matin)
 
 > **Session CRUD + icône adaptative (21→22 août, nuit)** — suite directe
 > de la session pipeline matching ci-dessous, même soirée de test
