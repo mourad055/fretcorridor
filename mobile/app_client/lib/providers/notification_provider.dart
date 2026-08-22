@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../models/notification_model.dart';
 import 'dio_provider.dart';
@@ -19,22 +21,43 @@ class NotificationState {
   }
 }
 
+// Aucun push FCM (pas de projet Firebase disponible, cf. NotificationService
+// javadoc côté service-not) — le seul moyen de savoir qu'une notification
+// est arrivée pendant que l'app est ouverte est de sonder périodiquement.
+// Retour utilisateur direct (22 août) : une notification créée côté serveur
+// restait invisible tant que l'écran Notifications n'était pas rouvert
+// manuellement — sondage + son/vibration à la première hausse du compteur.
 class NotificationNotifier extends StateNotifier<NotificationState> {
   final Dio _dio;
+  Timer? _sondage;
+
   NotificationNotifier(this._dio) : super(const NotificationState()) {
     charger();
+    _sondage = Timer.periodic(const Duration(seconds: 20), (_) => charger());
+  }
+
+  @override
+  void dispose() {
+    _sondage?.cancel();
+    super.dispose();
   }
 
   Future<void> charger() async {
+    final nombreAvant = state.nombreNonLues;
     state = state.copyWith(chargement: true);
     try {
       final responseListe = await _dio.get('/notifications');
       final responseNombre = await _dio.get('/notifications/non-lues/nombre');
+      final nouveauNombre = (responseNombre.data['nombre'] ?? 0) as int;
       state = state.copyWith(
         chargement: false,
         notifications: (responseListe.data as List).map((e) => NotificationModel.fromJson(e)).toList(),
-        nombreNonLues: responseNombre.data['nombre'] ?? 0,
+        nombreNonLues: nouveauNombre,
       );
+      if (nouveauNombre > nombreAvant) {
+        SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.mediumImpact();
+      }
     } on DioException {
       state = state.copyWith(chargement: false);
     }

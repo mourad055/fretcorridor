@@ -40,8 +40,8 @@ public class MissionService {
     // Consommé par l'app Client (S7) — absent tant qu'aucune mission n'a été
     // créée pour cette demande (le matching V0 côté Moteur est encore un stub).
     @Transactional(readOnly = true)
-    public Optional<MissionDto.ChronologieResponse> getChronologiePourDemande(UUID demandeId, String tenantId) {
-        return missionRepository.findByDemandeIdAndTenantId(demandeId, tenantId)
+    public Optional<MissionDto.ChronologieResponse> getChronologiePourDemande(UUID demandeId) {
+        return missionRepository.findByDemandeId(demandeId)
                 .map(mission -> {
                     var etapes = etapeMissionRepository.findByMissionIdOrderByHorodatageTransmissionAsc(mission.getId());
                     return MissionDto.ChronologieResponse.fromEntity(mission, etapes);

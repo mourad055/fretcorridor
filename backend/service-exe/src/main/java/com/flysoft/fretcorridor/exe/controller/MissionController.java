@@ -27,8 +27,12 @@ public class MissionController {
     public ResponseEntity<?> getChronologie(
             @PathVariable UUID demandeId, @RequestHeader("Authorization") String authHeader) {
         try {
-            String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
-            return missionService.getChronologiePourDemande(demandeId, tenantId)
+            // Signature JWT verifiee (acteur authentifie) meme si tenantId
+            // n'est plus utilise pour filtrer ci-dessous (cf javadoc
+            // MissionRepository.findByDemandeId : le tenant execution/phase1
+            // ne correspond jamais au tenant marketplace du chargeur).
+            jwtService.extraireActeurId(authHeader.substring(7));
+            return missionService.getChronologiePourDemande(demandeId)
                     .<ResponseEntity<?>>map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.noContent().build());
         } catch (RuntimeException e) {

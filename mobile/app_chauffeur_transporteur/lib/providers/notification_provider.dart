@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'dio_provider.dart';
 
@@ -54,20 +56,40 @@ class NotificationState {
 // NotificationMobileController (backend/gateway/.../infrastructure/rest/not/).
 // Le push FCM effectif (réception hors application) n'est pas câblé : aucun
 // projet Firebase disponible pour ce dépôt — écart documenté, pas un oubli.
+// Aucun push FCM (pas de projet Firebase disponible) — le seul moyen de
+// savoir qu'une notification est arrivée pendant que l'app est ouverte est
+// de sonder périodiquement. Retour utilisateur direct (22 août) : une
+// notification créée côté serveur restait invisible tant que l'écran
+// Notifications n'était pas rouvert manuellement — sondage + son/vibration
+// à la première hausse du nombre de non-lues.
 class NotificationNotifier extends StateNotifier<NotificationState> {
   final Dio _dio;
+  Timer? _sondage;
 
-  NotificationNotifier(this._dio) : super(const NotificationState());
+  NotificationNotifier(this._dio) : super(const NotificationState()) {
+    charger();
+    _sondage = Timer.periodic(const Duration(seconds: 20), (_) => charger());
+  }
+
+  @override
+  void dispose() {
+    _sondage?.cancel();
+    super.dispose();
+  }
 
   Future<void> charger() async {
+    final nombreAvant = state.nombreNonLues;
     state = state.copyWith(chargement: true, erreur: null);
     try {
       final response = await _dio.get('/notifications/mes');
-      state = state.copyWith(
-        chargement: false,
-        notifications:
-            (response.data as List<dynamic>).map((n) => AppNotification.fromJson(n as Map<String, dynamic>)).toList(),
-      );
+      final notifications =
+          (response.data as List<dynamic>).map((n) => AppNotification.fromJson(n as Map<String, dynamic>)).toList();
+      state = state.copyWith(chargement: false, notifications: notifications);
+      final nombreApres = notifications.where((n) => !n.lue).length;
+      if (nombreApres > nombreAvant) {
+        SystemSound.play(SystemSoundType.alert);
+        HapticFeedback.mediumImpact();
+      }
     } on DioException catch (e) {
       state = state.copyWith(chargement: false, erreur: _messageErreur(e));
     }
