@@ -66,6 +66,24 @@ public class DemandeEnAttente {
 
     private Integer quantite;
 
+    @Column(name = "destinataire_nom")
+    private String destinataireNom;
+
+    @Column(name = "destinataire_telephone")
+    private String destinataireTelephone;
+
+    @Column(name = "mode_collecte")
+    private String modeCollecte;
+
+    @Column(name = "type_disponibilite")
+    private String typeDisponibilite;
+
+    @Column(name = "poids_total_kg")
+    private Double poidsTotalKg;
+
+    @Column(name = "grande_valeur")
+    private Boolean grandeValeur;
+
     @Column(nullable = false)
     private boolean traitee = false;
 
@@ -79,7 +97,10 @@ public class DemandeEnAttente {
     public DemandeEnAttente(UUID demandeId, UUID axeId, UUID eventId, Map<String, Double> valeursCriteres,
                              PointGeoDto origine, PointGeoDto destination, BigDecimal poidsTaxableKg,
                              Instant fenetreDebut, Instant fenetreFin,
-                             String typeEmballageNom, Integer quantite) {
+                             String typeEmballageNom, Integer quantite,
+                             String destinataireNom, String destinataireTelephone,
+                             String modeCollecte, String typeDisponibilite,
+                             Double poidsTotalKg, Boolean grandeValeur) {
         this.demandeId = demandeId;
         this.axeId = axeId;
         this.eventId = eventId;
@@ -97,6 +118,12 @@ public class DemandeEnAttente {
         this.fenetreFin = fenetreFin;
         this.typeEmballageNom = typeEmballageNom;
         this.quantite = quantite;
+        this.destinataireNom = destinataireNom;
+        this.destinataireTelephone = destinataireTelephone;
+        this.modeCollecte = modeCollecte;
+        this.typeDisponibilite = typeDisponibilite;
+        this.poidsTotalKg = poidsTotalKg;
+        this.grandeValeur = grandeValeur;
     }
 
     @PrePersist
@@ -115,6 +142,12 @@ public class DemandeEnAttente {
     public Instant getFenetreFin() { return fenetreFin; }
     public String getTypeEmballageNom() { return typeEmballageNom; }
     public Integer getQuantite() { return quantite; }
+    public String getDestinataireNom() { return destinataireNom; }
+    public String getDestinataireTelephone() { return destinataireTelephone; }
+    public String getModeCollecte() { return modeCollecte; }
+    public String getTypeDisponibilite() { return typeDisponibilite; }
+    public Double getPoidsTotalKg() { return poidsTotalKg; }
+    public Boolean getGrandeValeur() { return grandeValeur; }
     // RG-105 : age de la demande dans la file - conditionne son eligibilite
     // a la fenetre de traitement de l'axe (fenetre adaptative par axe).
     public Instant getDateReception() { return dateReception; }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import '../models/chronologie_model.dart';
@@ -7,15 +8,17 @@ class SuiviState {
   final bool chargement;
   final ChronologieModel? chronologie;
   final PositionModel? position;
+  final String? lieuActuel;
   final String? erreur;
 
-  const SuiviState({this.chargement = false, this.chronologie, this.position, this.erreur});
+  const SuiviState({this.chargement = false, this.chronologie, this.position, this.lieuActuel, this.erreur});
 
-  SuiviState copyWith({bool? chargement, ChronologieModel? chronologie, PositionModel? position, String? erreur}) {
+  SuiviState copyWith({bool? chargement, ChronologieModel? chronologie, PositionModel? position, String? lieuActuel, String? erreur}) {
     return SuiviState(
       chargement: chargement ?? this.chargement,
       chronologie: chronologie ?? this.chronologie,
       position: position ?? this.position,
+      lieuActuel: lieuActuel ?? this.lieuActuel,
       erreur: erreur,
     );
   }
@@ -62,10 +65,36 @@ class SuiviNotifier extends StateNotifier<SuiviState> {
     try {
       final response = await _dioFlt.get('/positions/mission/$missionId/derniere');
       if (response.statusCode == 200 && response.data != null) {
-        state = state.copyWith(position: PositionModel.fromJson(response.data));
+        final position = PositionModel.fromJson(response.data);
+        state = state.copyWith(position: position);
+        unawaited(_resoudreLieu(position.latitude, position.longitude));
       }
     } on DioException {
       // Pas de position disponible — état normal tant que le chauffeur n'en envoie pas
+    }
+  }
+
+  // "Véhicule en mouvement" sans plus de détail ne veut rien dire pour le
+  // chargeur (retour utilisateur direct) — traduction des coordonnées brutes
+  // en lieu lisible (ville/quartier) via Nominatim (OpenStreetMap, gratuit,
+  // sans clé). Best-effort pur : un échec (réseau, quota) laisse simplement
+  // lieuActuel à null, l'écran retombe sur le texte générique existant.
+  Future<void> _resoudreLieu(double latitude, double longitude) async {
+    try {
+      final reponse = await Dio().get(
+        'https://nominatim.openstreetmap.org/reverse',
+        queryParameters: {'format': 'jsonv2', 'lat': latitude, 'lon': longitude, 'zoom': 14},
+        options: Options(headers: {'User-Agent': 'FretCorridor/1.0 (suivi livraison)'}),
+      );
+      final adresse = reponse.data?['address'] as Map<String, dynamic>?;
+      if (adresse == null) return;
+      final lieu = adresse['suburb'] ?? adresse['quarter'] ?? adresse['neighbourhood'] ??
+          adresse['town'] ?? adresse['city'] ?? adresse['village'] ?? adresse['county'];
+      final ville = adresse['city'] ?? adresse['town'] ?? adresse['county'];
+      final texte = (lieu != null && ville != null && lieu != ville) ? '$lieu, $ville' : (lieu ?? ville);
+      if (texte != null && mounted) state = state.copyWith(lieuActuel: texte as String);
+    } catch (_) {
+      // Best-effort — pas de lieu résolu, l'écran garde le texte générique.
     }
   }
 }

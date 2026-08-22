@@ -2,6 +2,7 @@ package com.flysoft.fretcorridor.mkt.service;
 
 import com.flysoft.fretcorridor.mkt.client.ServiceCapClient;
 import com.flysoft.fretcorridor.mkt.client.ServiceGeoClient;
+import com.flysoft.fretcorridor.mkt.client.ServiceNotClient;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
 import com.flysoft.fretcorridor.mkt.entity.CatalogueEmballage;
 import com.flysoft.fretcorridor.mkt.entity.Demande;
@@ -33,6 +34,7 @@ public class DemandeService {
     private final PropositionRepository propositionRepository;
     private final ServiceGeoClient serviceGeoClient;
     private final ServiceCapClient serviceCapClient;
+    private final ServiceNotClient serviceNotClient;
 
     // RG-038 : publication exige le niveau KYC 1 minimum
     @Transactional
@@ -116,9 +118,28 @@ public class DemandeService {
                             : null,
                     java.math.BigDecimal.valueOf(demande.getPoidsTaxableKg()),
                     demande.getTypeEmballage().getNom(),
-                    demande.getQuantite()
+                    demande.getQuantite(),
+                    demande.getDestinataireNom(),
+                    demande.getDestinataireTelephone(),
+                    demande.getModeCollecte().name(),
+                    demande.getTypeDisponibilite().name(),
+                    demande.getPoidsTotalKg(),
+                    demande.getGrandeValeur() != null && demande.getGrandeValeur()
             ));
         }
+
+        // Confirmation au chargeur (audit de suivi Mobile : la cloche de
+        // notifications n'affichait jamais rien pour ce parcours, alors que
+        // c'est le point d'entrée le plus fréquemment testé).
+        serviceNotClient.notifier(
+                clientActeurId,
+                demande.getStatut() == Demande.StatutDemande.PUBLIEE ? "Demande publiée" : "Demande enregistrée",
+                demande.getStatut() == Demande.StatutDemande.PUBLIEE
+                        ? "Votre demande de transport (%s → %s) a été publiée.".formatted(demande.getVilleDepart(), demande.getVilleArrivee())
+                        : "Votre demande a été enregistrée, mais l'axe %s → %s n'est pas encore desservi.".formatted(demande.getVilleDepart(), demande.getVilleArrivee()),
+                "INFO_GENERALE",
+                demande.getId(),
+                tenantId);
 
         return DemandeDto.DemandeResponse.fromEntity(demande);
     }

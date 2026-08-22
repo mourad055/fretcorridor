@@ -37,6 +37,16 @@ public class AuthDto {
         private String raisonSociale; // pertinent seulement pour TRANSPORTEUR
     }
 
+    // Modification du numéro de téléphone (compte connecté) - l'ancien numéro
+    // doit être confirmé pour éviter qu'un tiers ayant accès à l'appareil
+    // déverrouillé ne change silencieusement l'identifiant de connexion du
+    // titulaire du compte.
+    @Data
+    public static class ModifierTelephoneRequest {
+        @NotBlank private String ancienTelephone;
+        @NotBlank private String nouveauTelephone;
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

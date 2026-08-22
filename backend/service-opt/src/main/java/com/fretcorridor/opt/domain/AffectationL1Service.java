@@ -254,7 +254,16 @@ public class AffectationL1Service {
                         Instant.now(),
                         demande.typeEmballageNom(),
                         demande.quantite(),
-                        demande.poidsTaxableKg()
+                        demande.poidsTaxableKg(),
+                        demande.destinataireNom(),
+                        demande.destinataireTelephone(),
+                        demande.modeCollecte(),
+                        // ^ demandeModeCollecte du record (DOMICILE/POINT_RELAIS) —
+                        // distinct de "modeCollecte"/"modeRemise" plus haut
+                        // (DEPOT/RETRAIT, placeholders itineraire).
+                        demande.typeDisponibilite(),
+                        demande.poidsTotalKg(),
+                        demande.grandeValeur()
                 );
                 eventPublisher.publierAffectationConfirmee(confirmation);
 

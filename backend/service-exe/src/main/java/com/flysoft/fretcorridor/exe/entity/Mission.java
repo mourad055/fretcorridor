@@ -48,6 +48,12 @@ public class Mission {
     private String typeEmballageNom;
     private Integer quantite;
     private java.math.BigDecimal poidsTaxableKg;
+    private String destinataireNom;
+    private String destinataireTelephone;
+    private String demandeModeCollecte;
+    private String typeDisponibilite;
+    private Double poidsTotalKg;
+    private Boolean grandeValeur;
 
     // S11 (EF-MAT-05/06) : renseigné par TourneeConstitueeListener quand
     // cette Mission fait partie d'une Tournée consolidée (LTL) — null pour

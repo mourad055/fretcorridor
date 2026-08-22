@@ -32,6 +32,15 @@ public record DemandePublieeEvent(
         // service-mkt, propagees jusqu'a Mission (service-exe) pour que
         // l'app Chauffeur sache ce qu'elle transporte.
         String typeEmballageNom,
-        Integer quantite
+        Integer quantite,
+        // Infos destinataire (audit de suivi Mobile) : propagees jusqu'a
+        // Mission (service-exe) pour que l'app Chauffeur sache a qui remettre
+        // le colis.
+        String destinataireNom,
+        String destinataireTelephone,
+        String modeCollecte,
+        String typeDisponibilite,
+        Double poidsTotalKg,
+        Boolean grandeValeur
 ) {
 }

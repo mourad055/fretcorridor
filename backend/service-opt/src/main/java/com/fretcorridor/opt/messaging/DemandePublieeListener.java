@@ -27,7 +27,10 @@ public class DemandePublieeListener {
                     event.demandeId(), event.axeId(), event.eventId(), event.valeursCriteres(),
                     event.origine(), event.destination(), event.poidsTaxableKg(),
                     event.fenetreDebut(), event.fenetreFin(),
-                    event.typeEmballageNom(), event.quantite()));
+                    event.typeEmballageNom(), event.quantite(),
+                    event.destinataireNom(), event.destinataireTelephone(),
+                    event.modeCollecte(), event.typeDisponibilite(),
+                    event.poidsTotalKg(), event.grandeValeur()));
             log.debug("Demande mise en attente - demande={}, axe={}, eventId={}",
                     event.demandeId(), event.axeId(), event.eventId());
         } catch (DataIntegrityViolationException doublon) {

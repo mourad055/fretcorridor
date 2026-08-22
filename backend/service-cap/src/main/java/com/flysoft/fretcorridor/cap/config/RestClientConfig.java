@@ -12,7 +12,7 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties({ServiceFltClientProperties.class, ServiceGeoClientProperties.class})
+@EnableConfigurationProperties({ServiceFltClientProperties.class, ServiceGeoClientProperties.class, ServiceNotClientProperties.class})
 public class RestClientConfig {
 
     @Bean
@@ -24,6 +24,12 @@ public class RestClientConfig {
     @Bean
     @Qualifier("serviceGeoRestClient")
     public RestClient serviceGeoRestClient(ServiceGeoClientProperties properties) {
+        return client(properties.getBaseUrl(), properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    @Bean
+    @Qualifier("serviceNotRestClient")
+    public RestClient serviceNotRestClient(ServiceNotClientProperties properties) {
         return client(properties.getBaseUrl(), properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
     }
 

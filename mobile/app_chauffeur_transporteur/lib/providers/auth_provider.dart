@@ -174,6 +174,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // Vérification de l'ancien numéro côté serveur (ProfilController.modifierTelephone,
+  // gateway -> service-ida) avant tout changement — même principe de sécurité que le
+  // code PIN au login.
+  Future<bool> modifierTelephone(String ancienTelephone, String nouveauTelephone) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final response = await _dio.put('/kyc/profil/telephone',
+          data: {'ancienTelephone': ancienTelephone, 'nouveauTelephone': nouveauTelephone});
+      final nouveauNumero = response.data['telephone'] as String;
+      await _storage.write(key: keyTelephone, value: nouveauNumero);
+      state = state.copyWith(chargement: false, telephone: nouveauNumero);
+      return true;
+    } on DioException catch (e) {
+      final detail = e.response?.data is Map ? e.response?.data['detail'] as String? : null;
+      String erreur = 'Erreur lors du changement de numéro.';
+      if (detail == 'ANCIEN_TELEPHONE_INCORRECT') {
+        erreur = 'L\'ancien numéro saisi est incorrect.';
+      } else if (detail == 'TELEPHONE_DEJA_UTILISE') {
+        erreur = 'Ce numéro est déjà utilisé par un autre compte.';
+      }
+      _afficherErreurTemporaire(erreur);
+      return false;
+    }
+  }
+
   Future<void> logout() async {
     await _storage.delete(key: keyAccessToken);
     await _storage.delete(key: keyRole);

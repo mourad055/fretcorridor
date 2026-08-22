@@ -13,6 +13,12 @@ class Mission {
   final String? typeEmballageNom;
   final int? quantite;
   final double? poidsTaxableKg;
+  final String? destinataireNom;
+  final String? destinataireTelephone;
+  final String? demandeModeCollecte;
+  final String? typeDisponibilite;
+  final double? poidsTotalKg;
+  final bool? grandeValeur;
 
   const Mission({
     required this.missionId,
@@ -24,6 +30,12 @@ class Mission {
     this.typeEmballageNom,
     this.quantite,
     this.poidsTaxableKg,
+    this.destinataireNom,
+    this.destinataireTelephone,
+    this.demandeModeCollecte,
+    this.typeDisponibilite,
+    this.poidsTotalKg,
+    this.grandeValeur,
   });
 
   factory Mission.fromJson(Map<String, dynamic> json) => Mission(
@@ -36,6 +48,12 @@ class Mission {
         typeEmballageNom: json['typeEmballageNom'] as String?,
         quantite: json['quantite'] as int?,
         poidsTaxableKg: (json['poidsTaxableKg'] as num?)?.toDouble(),
+        destinataireNom: json['destinataireNom'] as String?,
+        destinataireTelephone: json['destinataireTelephone'] as String?,
+        demandeModeCollecte: json['demandeModeCollecte'] as String?,
+        typeDisponibilite: json['typeDisponibilite'] as String?,
+        poidsTotalKg: (json['poidsTotalKg'] as num?)?.toDouble(),
+        grandeValeur: json['grandeValeur'] as bool?,
       );
 }
 
@@ -64,6 +82,8 @@ class MissionDetail {
   final String? typeEmballageNom;
   final int? quantite;
   final double? poidsTaxableKg;
+  final String? destinataireNom;
+  final String? destinataireTelephone;
 
   const MissionDetail({
     required this.missionId,
@@ -74,6 +94,8 @@ class MissionDetail {
     this.typeEmballageNom,
     this.quantite,
     this.poidsTaxableKg,
+    this.destinataireNom,
+    this.destinataireTelephone,
   });
 
   factory MissionDetail.fromJson(Map<String, dynamic> json) => MissionDetail(
@@ -85,6 +107,8 @@ class MissionDetail {
         typeEmballageNom: json['typeEmballageNom'] as String?,
         quantite: json['quantite'] as int?,
         poidsTaxableKg: (json['poidsTaxableKg'] as num?)?.toDouble(),
+        destinataireNom: json['destinataireNom'] as String?,
+        destinataireTelephone: json['destinataireTelephone'] as String?,
       );
 }
 

@@ -1,13 +1,17 @@
 package com.flysoft.fretcorridor.not.controller;
 
 import com.flysoft.fretcorridor.not.dto.NotificationDto;
+import com.flysoft.fretcorridor.not.entity.Notification;
 import com.flysoft.fretcorridor.not.security.JwtService;
 import com.flysoft.fretcorridor.not.service.NotificationIntrouvableException;
 import com.flysoft.fretcorridor.not.service.NotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,6 +22,9 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final JwtService jwtService;
+
+    @Value("${fretcorridor.internal.service-key}")
+    private String cleInterneAttendue;
 
     @GetMapping
     public ResponseEntity<?> getMesNotifications(@RequestHeader("Authorization") String authHeader) {
@@ -55,6 +62,27 @@ public class NotificationController {
         } catch (NotificationIntrouvableException e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // Appelé par service-mkt/service-cap (X-Internal-Service-Key, pas de JWT
+    // utilisateur — déclenché par une action d'un AUTRE acteur : demande
+    // publiée, proposition émise, capacité déclarée). Voir NotificationDto
+    // javadoc pour le contexte.
+    @PostMapping("/interne")
+    public ResponseEntity<?> creerNotificationInterne(
+            @Valid @RequestBody NotificationDto.CreerNotificationInterneRequest request,
+            @RequestHeader(value = "X-Internal-Service-Key", required = false) String cleInterne) {
+        if (!cleInterneAttendue.equals(cleInterne)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        }
+        notificationService.creer(
+                UUID.fromString(request.getDestinataireActeurId()),
+                request.getTitre(),
+                request.getCorps(),
+                Notification.TypeNotification.valueOf(request.getType()),
+                request.getReferenceId() != null ? UUID.fromString(request.getReferenceId()) : null,
+                request.getTenantId());
+        return ResponseEntity.noContent().build();
     }
 
     // Préparé pour le vrai push — enregistrer maintenant, exploiter plus tard

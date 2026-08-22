@@ -17,4 +17,6 @@ public interface IdaProfilPort {
     Mono<Profil> completerEntreprise(String delegationToken, String raisonSociale, String numeroRegistreCommerce);
 
     Mono<Profil> deposerPiece(String delegationToken, String typeDocument, FilePart fichier);
+
+    Mono<String> modifierTelephone(String delegationToken, String ancienTelephone, String nouveauTelephone);
 }

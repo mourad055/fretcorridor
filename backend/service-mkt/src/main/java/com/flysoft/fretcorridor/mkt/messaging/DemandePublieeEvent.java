@@ -23,7 +23,19 @@ public record DemandePublieeEvent(
         // cet evenement, le Moteur/l'app Chauffeur ne pouvaient donc jamais
         // savoir ce qu'ils transportent une fois la Mission creee.
         String typeEmballageNom,
-        int quantite
+        int quantite,
+        // Infos destinataire (audit de suivi Mobile, complement des infos
+        // marchandise) : le chauffeur ne savait toujours pas a qui remettre
+        // le colis une fois la Mission creee.
+        String destinataireNom,
+        String destinataireTelephone,
+        // Infos complementaires (mockup "Mes missions", audit de suivi
+        // Mobile) : disponibilite/collecte/poids/valeur affiches sur la
+        // carte de mission chauffeur.
+        String modeCollecte,
+        String typeDisponibilite,
+        double poidsTotalKg,
+        boolean grandeValeur
 ) {
     public record PointGeo(double latitude, double longitude) {
     }

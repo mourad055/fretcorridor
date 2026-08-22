@@ -18,6 +18,23 @@ public class NotificationDto {
         private boolean accepte;
     }
 
+    // Création d'une notification par un autre service (service-mkt,
+    // service-cap) via X-Internal-Service-Key — même principe que
+    // ServiceCapClient.decrementer côté service-cap. Comble un canal jusqu'ici
+    // totalement mort (audit de suivi) : demande publiée, proposition émise et
+    // capacité déclarée n'ont jamais notifié personne (aucun appelant
+    // n'existait, ni Kafka ni HTTP, malgré TypeNotification.PROPOSITION_RECUE
+    // déjà prévu dans l'entité).
+    @Data
+    public static class CreerNotificationInterneRequest {
+        @NotBlank private String destinataireActeurId;
+        @NotBlank private String titre;
+        @NotBlank private String corps;
+        @NotBlank private String type;
+        private String referenceId;
+        @NotBlank private String tenantId;
+    }
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor

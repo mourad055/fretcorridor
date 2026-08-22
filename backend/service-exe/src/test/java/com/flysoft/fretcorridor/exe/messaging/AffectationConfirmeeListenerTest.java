@@ -44,7 +44,8 @@ class AffectationConfirmeeListenerTest {
                 300000.0, 18000L, 3600L, null,
                 BigDecimal.valueOf(50000), BigDecimal.valueOf(5000), BigDecimal.valueOf(45000),
                 "XAF", "PORTE_A_PORTE", "PORTE_A_PORTE", Instant.now(),
-                "Sac de ciment", 10, BigDecimal.valueOf(500));
+                "Sac de ciment", 10, BigDecimal.valueOf(500), "Awa Mballa", "690000000",
+                "DOMICILE", "DES_QUE_POSSIBLE", 500.0, false);
     }
 
     @Test

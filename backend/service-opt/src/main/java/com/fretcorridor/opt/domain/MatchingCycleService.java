@@ -163,7 +163,10 @@ public class MatchingCycleService {
         List<DemandeAvecCandidats> lot = demandes.stream()
                 .map(d -> new DemandeAvecCandidats(d.getDemandeId(), d.getOrigine(), d.getDestination(),
                         d.getAxeId(), d.getPoidsTaxableKg(), filtrerCandidatsParRayon(d, candidatsCommuns, rayonMatchingKm),
-                        d.getTypeEmballageNom(), d.getQuantite()))
+                        d.getTypeEmballageNom(), d.getQuantite(),
+                        d.getDestinataireNom(), d.getDestinataireTelephone(),
+                        d.getModeCollecte(), d.getTypeDisponibilite(),
+                        d.getPoidsTotalKg(), d.getGrandeValeur()))
                 .toList();
 
         // Une demande dont TOUS les candidats ont ete elimines par le rayon

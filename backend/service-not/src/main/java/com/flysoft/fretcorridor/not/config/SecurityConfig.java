@@ -30,6 +30,11 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/actuator/health").permitAll()
+                // Authentification par X-Internal-Service-Key gérée dans le
+                // controller (pas de JWT utilisateur pour un appel service à
+                // service) — même principe que POST /api/cap/capacites/*/decrement
+                // côté service-cap.
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/notifications/interne").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

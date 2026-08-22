@@ -34,5 +34,17 @@ public record AffectationConfirmeeEvent(
         // (service-exe) -> app Chauffeur sache ce qu'elle transporte.
         String typeEmballageNom,
         Integer quantite,
-        BigDecimal poidsTaxableKg
+        BigDecimal poidsTaxableKg,
+        // Infos destinataire (audit de suivi Mobile), meme raisonnement que
+        // typeEmballageNom/quantite ci-dessus.
+        String destinataireNom,
+        String destinataireTelephone,
+        // demandeModeCollecte : DOMICILE/POINT_RELAIS declare par le
+        // chargeur (Demande.modeCollecte) - a NE PAS confondre avec
+        // modeCollecte/modeRemise ci-dessus (DEPOT/RETRAIT, placeholders
+        // internes au calcul d'itineraire, sans lien avec la demande).
+        String demandeModeCollecte,
+        String typeDisponibilite,
+        Double poidsTotalKg,
+        Boolean grandeValeur
 ) {}

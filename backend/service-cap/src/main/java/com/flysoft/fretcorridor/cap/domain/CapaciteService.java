@@ -34,6 +34,7 @@ public class CapaciteService {
     private final CapEventPublisher eventPublisher;
     private final ServiceFltClient serviceFltClient;
     private final ServiceGeoClient serviceGeoClient;
+    private final com.flysoft.fretcorridor.cap.client.ServiceNotClient serviceNotClient;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -42,12 +43,14 @@ public class CapaciteService {
                             CalculateurPoidsTaxable calculateurPoidsTaxable,
                             CapEventPublisher eventPublisher,
                             ServiceFltClient serviceFltClient,
-                            ServiceGeoClient serviceGeoClient) {
+                            ServiceGeoClient serviceGeoClient,
+                            com.flysoft.fretcorridor.cap.client.ServiceNotClient serviceNotClient) {
         this.capaciteRepository = capaciteRepository;
         this.calculateurPoidsTaxable = calculateurPoidsTaxable;
         this.eventPublisher = eventPublisher;
         this.serviceFltClient = serviceFltClient;
         this.serviceGeoClient = serviceGeoClient;
+        this.serviceNotClient = serviceNotClient;
     }
 
     @Transactional
@@ -81,6 +84,19 @@ public class CapaciteService {
         // limitation plutot que cachee).
         publierEvenement(capacite);
         capacite.marquerPubliee();
+
+        // Confirmation au transporteur (audit de suivi Mobile) : canal
+        // jusqu'ici mort. Rien a notifier si le transporteur n'a pas pu etre
+        // resolu (best-effort ci-dessus, ENF-DIS-04) - pas de destinataire.
+        if (transporteurId != null) {
+            serviceNotClient.notifier(
+                    transporteurId,
+                    "Capacité déclarée",
+                    "Votre capacité de transport a été déclarée avec succès.",
+                    "INFO_GENERALE",
+                    capacite.getId(),
+                    tenantId);
+        }
 
         return capacite;
     }

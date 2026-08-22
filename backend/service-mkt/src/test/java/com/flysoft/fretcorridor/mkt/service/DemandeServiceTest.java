@@ -3,6 +3,7 @@ package com.flysoft.fretcorridor.mkt.service;
 import com.flysoft.fretcorridor.mkt.client.AxeDto;
 import com.flysoft.fretcorridor.mkt.client.ServiceCapClient;
 import com.flysoft.fretcorridor.mkt.client.ServiceGeoClient;
+import com.flysoft.fretcorridor.mkt.client.ServiceNotClient;
 import com.flysoft.fretcorridor.mkt.dto.DemandeDto;
 import com.flysoft.fretcorridor.mkt.entity.CatalogueEmballage;
 import com.flysoft.fretcorridor.mkt.entity.Demande;
@@ -37,6 +38,7 @@ class DemandeServiceTest {
     @Mock private PropositionRepository propositionRepository;
     @Mock private ServiceGeoClient serviceGeoClient;
     @Mock private ServiceCapClient serviceCapClient;
+    @Mock private ServiceNotClient serviceNotClient;
 
     private DemandeService service;
     private UUID clientActeurId;
@@ -46,7 +48,7 @@ class DemandeServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new DemandeService(demandeRepository, catalogueRepository, eventPublisher, propositionRepository, serviceGeoClient, serviceCapClient);
+        service = new DemandeService(demandeRepository, catalogueRepository, eventPublisher, propositionRepository, serviceGeoClient, serviceCapClient, serviceNotClient);
         clientActeurId = UUID.randomUUID();
         typeEmballageId = UUID.randomUUID();
 

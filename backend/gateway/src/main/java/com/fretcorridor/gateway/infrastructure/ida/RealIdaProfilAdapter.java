@@ -116,6 +116,25 @@ public class RealIdaProfilAdapter implements IdaProfilPort {
                 .transform(this::gererErreurs);
     }
 
+    @Override
+    public Mono<String> modifierTelephone(String delegationToken, String ancienTelephone, String nouveauTelephone) {
+        if (delegationToken == null) {
+            return Mono.error(new ProfilServiceIndisponibleException());
+        }
+        return webClient.put()
+                .uri("/api/auth/telephone")
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .bodyValue(Map.of("ancienTelephone", ancienTelephone, "nouveauTelephone", nouveauTelephone))
+                .retrieve()
+                .bodyToMono(TelephoneDto.class)
+                .map(TelephoneDto::telephone)
+                .onErrorMap(this::estRefus, e -> new ProfilCompletionRefuseeException(messageDe(e)))
+                .onErrorMap(e -> !(e instanceof ProfilCompletionRefuseeException), e -> new ProfilServiceIndisponibleException());
+    }
+
+    private record TelephoneDto(String telephone) {
+    }
+
     private Mono<Profil> gererErreurs(Mono<Profil> mono) {
         return mono
                 .onErrorMap(this::estRefus, e -> new ProfilCompletionRefuseeException(messageDe(e)))

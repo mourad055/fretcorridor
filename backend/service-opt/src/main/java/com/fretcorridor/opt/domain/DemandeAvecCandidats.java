@@ -36,6 +36,14 @@ public record DemandeAvecCandidats(
         // verification manuelle (AffectationL1Controller) n'a pas a les
         // fournir.
         String typeEmballageNom,
-        Integer quantite
+        Integer quantite,
+        // Infos destinataire (audit de suivi Mobile), meme raisonnement que
+        // typeEmballageNom/quantite ci-dessus.
+        String destinataireNom,
+        String destinataireTelephone,
+        String modeCollecte,
+        String typeDisponibilite,
+        Double poidsTotalKg,
+        Boolean grandeValeur
 ) {
 }

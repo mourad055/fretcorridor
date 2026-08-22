@@ -34,6 +34,12 @@ spring:
       # si service-geo est injoignable.
       connect-timeout-ms: 500
       read-timeout-ms: 1000
+    service-not:
+      base-url: http://localhost:8094
+      # Best-effort (ENF-DIS-04) : confirmation de declaration au
+      # transporteur, jamais bloquant.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
   kafka:
     bootstrap-servers: localhost:9092
     producer:

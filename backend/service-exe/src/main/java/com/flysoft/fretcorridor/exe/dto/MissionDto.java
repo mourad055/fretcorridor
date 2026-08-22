@@ -28,6 +28,12 @@ public class MissionDto {
         private String typeEmballageNom;
         private Integer quantite;
         private java.math.BigDecimal poidsTaxableKg;
+        private String destinataireNom;
+        private String destinataireTelephone;
+        private String demandeModeCollecte;
+        private String typeDisponibilite;
+        private Double poidsTotalKg;
+        private Boolean grandeValeur;
 
         public static MissionResumeResponse fromEntity(Mission m) {
             return MissionResumeResponse.builder()
@@ -40,6 +46,12 @@ public class MissionDto {
                     .typeEmballageNom(m.getTypeEmballageNom())
                     .quantite(m.getQuantite())
                     .poidsTaxableKg(m.getPoidsTaxableKg())
+                    .destinataireNom(m.getDestinataireNom())
+                    .destinataireTelephone(m.getDestinataireTelephone())
+                    .demandeModeCollecte(m.getDemandeModeCollecte())
+                    .typeDisponibilite(m.getTypeDisponibilite())
+                    .poidsTotalKg(m.getPoidsTotalKg())
+                    .grandeValeur(m.getGrandeValeur())
                     .build();
         }
     }
@@ -88,6 +100,8 @@ public class MissionDto {
         private String typeEmballageNom;
         private Integer quantite;
         private java.math.BigDecimal poidsTaxableKg;
+        private String destinataireNom;
+        private String destinataireTelephone;
 
         public static ChronologieResponse fromEntity(Mission m, List<EtapeMission> etapes) {
             return ChronologieResponse.builder()
@@ -101,6 +115,8 @@ public class MissionDto {
                     .typeEmballageNom(m.getTypeEmballageNom())
                     .quantite(m.getQuantite())
                     .poidsTaxableKg(m.getPoidsTaxableKg())
+                    .destinataireNom(m.getDestinataireNom())
+                    .destinataireTelephone(m.getDestinataireTelephone())
                     .build();
         }
     }

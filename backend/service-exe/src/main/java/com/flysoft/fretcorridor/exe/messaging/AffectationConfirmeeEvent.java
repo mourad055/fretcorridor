@@ -39,6 +39,15 @@ public record AffectationConfirmeeEvent(
         // Chauffeur sache ce qu'elle transporte.
         String typeEmballageNom,
         Integer quantite,
-        BigDecimal poidsTaxableKg
+        BigDecimal poidsTaxableKg,
+        String destinataireNom,
+        String destinataireTelephone,
+        // demandeModeCollecte : DOMICILE/POINT_RELAIS declare par le
+        // chargeur - a NE PAS confondre avec modeCollecte/modeRemise
+        // ci-dessus (DEPOT/RETRAIT, placeholders itineraire).
+        String demandeModeCollecte,
+        String typeDisponibilite,
+        Double poidsTotalKg,
+        Boolean grandeValeur
 ) {
 }

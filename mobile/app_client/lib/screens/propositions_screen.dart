@@ -65,21 +65,29 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${widget.demande.villeDepart} → ${widget.demande.villeArrivee}',
-                          style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: 4),
+                      Row(children: [
+                        const Icon(Icons.location_on, color: AppColors.accent, size: 20),
+                        const SizedBox(width: 8),
+                        Text('${widget.demande.villeDepart} → ${widget.demande.villeArrivee}',
+                            style: Theme.of(context).textTheme.titleMedium),
+                      ]),
+                      const SizedBox(height: 8),
                       Text(
                         '${widget.demande.typeEmballageNom} × ${widget.demande.quantite} — '
                         '${widget.demande.poidsTotalKg.toStringAsFixed(0)} kg',
-                        style: const TextStyle(color: AppColors.texteMuet, fontSize: 13),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                       ),
+                      const SizedBox(height: 8),
+                      _ligneAvecIcone(Icons.access_time,
+                          '${_libellesDisponibilite[widget.demande.typeDisponibilite] ?? widget.demande.typeDisponibilite} · '
+                          '${_libellesCollecte[widget.demande.modeCollecte] ?? widget.demande.modeCollecte}'),
                       const SizedBox(height: 6),
-                      Text(
-                        'Destinataire : ${widget.demande.destinataireNom} · ${widget.demande.destinataireTelephone}',
-                        style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
-                      ),
+                      _ligneAvecIcone(Icons.person_outline,
+                          'Destinataire : ${widget.demande.destinataireNom} · ${widget.demande.destinataireTelephone}'),
+                      const SizedBox(height: 6),
+                      _ligneAvecIcone(Icons.calendar_today_outlined, 'Publiée le ${_dateAffichee(widget.demande.dateCreation)}'),
                       if (widget.demande.fragile || widget.demande.perissable || widget.demande.dangereuse || widget.demande.grandeValeur) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Wrap(spacing: 6, runSpacing: 4, children: [
                           if (widget.demande.fragile) _badgeDemande('Fragile'),
                           if (widget.demande.perissable) _badgeDemande('Périssable'),
@@ -121,6 +129,14 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
     );
   }
 
+  Widget _ligneAvecIcone(IconData icone, String texte) {
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Icon(icone, size: 15, color: AppColors.texteMuet),
+      const SizedBox(width: 8),
+      Expanded(child: Text(texte, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12))),
+    ]);
+  }
+
   Widget _badgeDemande(String texte) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
@@ -129,6 +145,23 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
         ),
         child: Text(texte, style: const TextStyle(fontSize: 10, color: AppColors.erreur, fontWeight: FontWeight.bold)),
       );
+}
+
+const _libellesDisponibilite = {
+  'DES_QUE_POSSIBLE': 'Dès que possible',
+  'DATE_PRECISE': 'À date précise',
+  'PLAGE': 'Sur une plage horaire',
+};
+
+const _libellesCollecte = {
+  'DOMICILE': 'Collecte à domicile',
+  'POINT_RELAIS': 'Collecte en point relais',
+};
+
+String _dateAffichee(DateTime d) {
+  final h = d.hour.toString().padLeft(2, '0');
+  final m = d.minute.toString().padLeft(2, '0');
+  return '${d.day}/${d.month}/${d.year} à $h:$m';
 }
 
 class _CarteProposition extends StatelessWidget {

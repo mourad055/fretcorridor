@@ -149,9 +149,9 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Véhicule en mouvement',
-                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                Text(
+                                  suivi.lieuActuel ?? 'Véhicule en mouvement',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                 ),
                                 Text(
                                   suivi.position!.ageSecondes < 60
@@ -270,15 +270,55 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${d.villeDepart} → ${d.villeArrivee}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          const SizedBox(height: 4),
-          Text('${d.typeEmballageNom} × ${d.quantite} — ${d.poidsTotalKg.toStringAsFixed(0)} kg',
-              style: const TextStyle(color: AppColors.texteMuet, fontSize: 13)),
-          const SizedBox(height: 4),
-          Text('Destinataire : ${d.destinataireNom} · ${d.destinataireTelephone}',
-              style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+          _ligneIconee(Icons.alt_route, '${d.villeDepart} → ${d.villeArrivee}', gras: true),
+          const SizedBox(height: 10),
+          _ligneIconee(Icons.inventory_2_outlined, '${d.typeEmballageNom} × ${d.quantite} — ${d.poidsTotalKg.toStringAsFixed(0)} kg'),
+          const SizedBox(height: 10),
+          _ligneIconee(Icons.calendar_today_outlined,
+              '${_libellesDisponibilite[d.typeDisponibilite] ?? d.typeDisponibilite} · ${_libellesCollecte[d.modeCollecte] ?? d.modeCollecte}'),
+          const SizedBox(height: 10),
+          _ligneIconee(Icons.person_outline, 'Destinataire : ${d.destinataireNom} · ${d.destinataireTelephone}'),
+          const SizedBox(height: 10),
+          _ligneIconee(Icons.access_time, 'Publiée le ${_dateAffichee(d.dateCreation)}'),
         ],
       ),
     );
   }
+
+  Widget _ligneIconee(IconData icone, String texte, {bool gras = false}) {
+    return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Container(
+        width: 28, height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(color: AppColors.surfaceClaire, shape: BoxShape.circle),
+        child: Icon(icone, size: 15, color: AppColors.accent),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 5),
+          child: Text(texte,
+              style: TextStyle(fontSize: gras ? 15 : 13, fontWeight: gras ? FontWeight.bold : FontWeight.normal,
+                  color: gras ? AppColors.texte : AppColors.texteMuet)),
+        ),
+      ),
+    ]);
+  }
+}
+
+const _libellesDisponibilite = {
+  'DES_QUE_POSSIBLE': 'Dès que possible',
+  'DATE_PRECISE': 'À date précise',
+  'PLAGE': 'Sur une plage horaire',
+};
+
+const _libellesCollecte = {
+  'DOMICILE': 'Collecte à domicile',
+  'POINT_RELAIS': 'Collecte en point relais',
+};
+
+String _dateAffichee(DateTime d) {
+  final h = d.hour.toString().padLeft(2, '0');
+  final m = d.minute.toString().padLeft(2, '0');
+  return '${d.day}/${d.month}/${d.year} à $h:$m';
 }

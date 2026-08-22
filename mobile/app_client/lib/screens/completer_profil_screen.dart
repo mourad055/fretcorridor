@@ -284,7 +284,7 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
             ),
           ),
           const SizedBox(height: 28),
-          _ligneInfo(Icons.phone_outlined, 'Téléphone', telephone ?? '—'),
+          _ligneInfo(Icons.phone_outlined, 'Téléphone', telephone ?? '—', onEdit: () => _modifierTelephone(telephone)),
           _ligneInfo(Icons.badge_outlined, 'Type de compte', kycState.type == 'ENTREPRISE' ? 'Entreprise' : 'Particulier'),
           if (kycState.pieces.isNotEmpty)
             _ligneInfo(Icons.description_outlined, 'Pièce déposée', kycState.pieces.first.typeDocument),
@@ -307,7 +307,7 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
     );
   }
 
-  Widget _ligneInfo(IconData icone, String label, String valeur) {
+  Widget _ligneInfo(IconData icone, String label, String valeur, {VoidCallback? onEdit}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -325,8 +325,77 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
               ],
             ),
           ),
+          if (onEdit != null)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, color: AppColors.accent, size: 18),
+              onPressed: onEdit,
+              tooltip: 'Modifier',
+            ),
         ],
       ),
+    );
+  }
+
+  // Changement du numéro de téléphone (identifiant de connexion) : l'ancien
+  // numéro doit être re-saisi et confirmé côté serveur avant d'accepter le
+  // nouveau — évite qu'un tiers ayant accès à l'appareil déverrouillé ne
+  // s'approprie silencieusement le compte.
+  Future<void> _modifierTelephone(String? telephoneActuel) async {
+    final ancienCtrl = TextEditingController();
+    final nouveauCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Modifier le numéro de téléphone'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Numéro actuel : ${telephoneActuel ?? '—'}',
+                  style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: ancienCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: _decoration('Confirmez votre numéro actuel', Icons.phone_outlined),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Champ obligatoire' : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: nouveauCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: _decoration('Nouveau numéro', Icons.phone_iphone_outlined),
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Champ obligatoire' : null,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) Navigator.pop(dialogContext, true);
+            },
+            child: const Text('Valider'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirme != true || !mounted) return;
+
+    final succes = await ref.read(authProvider.notifier).modifierTelephone(ancienCtrl.text.trim(), nouveauCtrl.text.trim());
+    if (!mounted) return;
+    final erreur = ref.read(authProvider).erreur;
+    afficherNotification(
+      context,
+      message: succes ? 'Numéro de téléphone mis à jour.' : (erreur ?? 'Échec de la modification.'),
+      couleur: succes ? AppColors.succes : AppColors.erreur,
+      icone: succes ? Icons.check_circle : Icons.error_outline,
     );
   }
 

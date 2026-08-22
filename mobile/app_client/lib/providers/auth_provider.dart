@@ -143,6 +143,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // Vérification de l'ancien numéro côté serveur (AuthController.modifierTelephone,
+  // service-ida) avant tout changement — même principe de sécurité que le PIN au login.
+  Future<bool> modifierTelephone(String ancienTelephone, String nouveauTelephone) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final token = await _storage.read(key: keyAccessToken);
+      final response = await _dio.put('/auth/telephone',
+          data: {'ancienTelephone': ancienTelephone, 'nouveauTelephone': nouveauTelephone},
+          options: Options(headers: {'Authorization': 'Bearer $token'}));
+      final nouveauNumero = response.data['telephone'] as String;
+      await _storage.write(key: keyTelephone, value: nouveauNumero);
+      state = state.copyWith(chargement: false, telephone: nouveauNumero);
+      return true;
+    } on DioException catch (e) {
+      final message = e.response?.data?.toString() ?? e.message ?? '';
+      String erreur = 'Erreur lors du changement de numéro.';
+      if (message.contains('ANCIEN_TELEPHONE_INCORRECT')) {
+        erreur = 'L\'ancien numéro saisi est incorrect.';
+      } else if (message.contains('TELEPHONE_DEJA_UTILISE')) {
+        erreur = 'Ce numéro est déjà utilisé par un autre compte.';
+      }
+      _afficherErreurTemporaire(erreur);
+      return false;
+    }
+  }
+
   Future<void> _enregistrerSession(Map<String, dynamic> data, String telephone) async {
     await _storage.write(key: keyAccessToken, value: data['accessToken']);
     await _storage.write(key: keyRefreshToken, value: data['refreshToken']);

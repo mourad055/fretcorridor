@@ -123,6 +123,23 @@ public class AuthService {
         return (valeur == null || valeur.isBlank()) ? null : valeur;
     }
 
+    @Transactional
+    public String modifierTelephone(java.util.UUID acteurId, AuthDto.ModifierTelephoneRequest request) {
+        Acteur acteur = acteurRepository.findById(acteurId)
+                .orElseThrow(() -> new RuntimeException("ACTEUR_INTROUVABLE"));
+
+        if (!acteur.getTelephone().equals(request.getAncienTelephone())) {
+            throw new RuntimeException("ANCIEN_TELEPHONE_INCORRECT");
+        }
+        if (acteurRepository.existsByTelephone(request.getNouveauTelephone())) {
+            throw new RuntimeException("TELEPHONE_DEJA_UTILISE");
+        }
+
+        acteur.setTelephone(request.getNouveauTelephone());
+        acteurRepository.save(acteur);
+        return acteur.getTelephone();
+    }
+
     @Transactional(readOnly = true)
     public AuthDto.AuthResponse rafraichir(String refreshToken) {
         if (refreshToken == null) throw new RuntimeException("REFRESH_TOKEN_MANQUANT");

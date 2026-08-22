@@ -36,6 +36,11 @@ spring:
       # ici doit faire echouer l'acceptation elle-meme (ServiceCapClient).
       connect-timeout-ms: 500
       read-timeout-ms: 1500
+    service-not:
+      base-url: http://localhost:8094
+      # Best-effort (ENF-DIS-04) : notification au chargeur, jamais bloquant.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1500
 
 # ⚠️ Même secret que service-ida — obligatoire pour que service-mkt puisse
 # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).

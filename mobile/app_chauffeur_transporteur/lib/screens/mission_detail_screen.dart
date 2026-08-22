@@ -150,6 +150,33 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                         ),
                       ]),
                     ),
+                  if (widget.mission.destinataireNom != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceClaire,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(children: [
+                        const Icon(Icons.person_outline, color: AppColors.accent, size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Destinataire',
+                                  style: TextStyle(fontSize: 11, color: AppColors.texteMuet, letterSpacing: 0.5)),
+                              Text(
+                                '${widget.mission.destinataireNom}'
+                                '${widget.mission.destinataireTelephone != null ? ' · ${widget.mission.destinataireTelephone}' : ''}',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ]),
+                    ),
                   if (positionState.suiviActif)
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),

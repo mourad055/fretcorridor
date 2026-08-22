@@ -13,6 +13,31 @@ const _libellesStatut = {
   'ANNULEE': 'Annulée',
 };
 
+const _libellesDisponibilite = {
+  'DES_QUE_POSSIBLE': 'Dès que possible',
+  'DATE_PRECISE': 'À date précise',
+  'PLAGE': 'Sur une plage horaire',
+};
+
+const _libellesCollecte = {
+  'DOMICILE': 'Collecte à domicile',
+  'POINT_RELAIS': 'Collecte en point relais',
+};
+
+// Identifiant lisible affiche a l'ecran (mockup "Mes missions") : aucune
+// numerotation sequentielle n'existe cote backend, on derive un code stable
+// et lisible depuis missionId + date plutot que d'exposer l'UUID brut.
+String _idAffiche(String missionId, String? dateCreationIso) {
+  String datePart = '';
+  if (dateCreationIso != null) {
+    final d = DateTime.tryParse(dateCreationIso);
+    if (d != null) {
+      datePart = '${d.year}${d.month.toString().padLeft(2, '0')}${d.day.toString().padLeft(2, '0')}-';
+    }
+  }
+  return '#MIS-$datePart${missionId.substring(0, 8).toUpperCase()}';
+}
+
 // S7 : liste des missions du chauffeur/transporteur connecté. Peut rester
 // vide tant que le lien mission↔chauffeur n'est pas peuplé en amont côté
 // service-opt (écart documenté, cf. README) — pas un bug de cet écran.
@@ -92,31 +117,77 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
             borderRadius: BorderRadius.circular(12),
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Row(children: [
-                const Icon(Icons.local_shipping_outlined, color: AppColors.accent),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('${mission.origineNom ?? '—'} → ${mission.destinationNom ?? '—'}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                      if (mission.typeEmballageNom != null) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          '${mission.quantite ?? ''} × ${mission.typeEmballageNom}'
-                          '${mission.poidsTaxableKg != null ? ' — ${mission.poidsTaxableKg!.toStringAsFixed(0)} kg' : ''}',
-                          style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
-                        ),
-                      ],
-                      const SizedBox(height: 4),
-                      Text(_libellesStatut[mission.statut] ?? mission.statut,
-                          style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: AppColors.texteMuet),
-              ]),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Container(
+                      width: 44, height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(10)),
+                      child: const Icon(Icons.local_shipping_outlined, color: AppColors.accent),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('${mission.origineNom ?? '—'} → ${mission.destinationNom ?? '—'}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          const SizedBox(height: 4),
+                          Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
+                            const Text('ID de la mission :', style: TextStyle(fontSize: 11, color: AppColors.texteMuet)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(6)),
+                              child: Text(_idAffiche(mission.missionId, mission.dateCreation),
+                                  style: const TextStyle(fontSize: 11, color: AppColors.accent, fontWeight: FontWeight.bold)),
+                            ),
+                          ]),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppColors.texteMuet),
+                  ]),
+                  const Divider(height: 24),
+                  if (mission.typeEmballageNom != null)
+                    _ligneMission(Icons.inventory_2_outlined,
+                        '${mission.quantite ?? ''} × ${mission.typeEmballageNom}'
+                        '${mission.poidsTaxableKg != null ? ' — ${mission.poidsTaxableKg!.toStringAsFixed(0)} kg' : ''}',
+                        gras: true),
+                  if (mission.typeDisponibilite != null || mission.demandeModeCollecte != null)
+                    _ligneMission(Icons.calendar_today_outlined,
+                        [
+                          if (mission.typeDisponibilite != null) _libellesDisponibilite[mission.typeDisponibilite] ?? mission.typeDisponibilite!,
+                          if (mission.demandeModeCollecte != null) _libellesCollecte[mission.demandeModeCollecte] ?? mission.demandeModeCollecte!,
+                        ].join(' · ')),
+                  if (mission.destinataireNom != null)
+                    _ligneMission(Icons.person_outline,
+                        'Destinataire : ${mission.destinataireNom}${mission.destinataireTelephone != null ? ' · ${mission.destinataireTelephone}' : ''}'),
+                  if (mission.poidsTotalKg != null)
+                    _ligneMission(Icons.shopping_bag_outlined, 'Poids total : ${mission.poidsTotalKg!.toStringAsFixed(0)} kg'),
+                  if (mission.typeEmballageNom != null)
+                    _ligneMission(Icons.category_outlined, 'Type : ${mission.typeEmballageNom}'),
+                  if (mission.dateCreation != null)
+                    _ligneMission(Icons.access_time, 'Publiée le ${_dateAffichee(mission.dateCreation!)}'),
+                  Text(_libellesStatut[mission.statut] ?? mission.statut,
+                      style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                  if (mission.grandeValeur == true) ...[
+                    const SizedBox(height: 8),
+                    Row(children: [
+                      const Icon(Icons.star_border, color: AppColors.accent, size: 16),
+                      const SizedBox(width: 8),
+                      const Text('Valeur : ', style: TextStyle(fontSize: 13)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(20)),
+                        child: const Text('Grande valeur',
+                            style: TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ),
+                    ]),
+                  ],
+                ],
+              ),
             ),
           ),
           // S11 (EF-MAT-05/06) : présent uniquement si service-opt a
@@ -150,5 +221,27 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
         ],
       ),
     );
+  }
+
+  Widget _ligneMission(IconData icone, String texte, {bool gras = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icone, size: 16, color: AppColors.texteMuet),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(texte,
+              style: TextStyle(fontSize: 13, fontWeight: gras ? FontWeight.bold : FontWeight.normal, color: AppColors.texte)),
+        ),
+      ]),
+    );
+  }
+
+  String _dateAffichee(String iso) {
+    final d = DateTime.tryParse(iso);
+    if (d == null) return iso;
+    final h = d.hour.toString().padLeft(2, '0');
+    final m = d.minute.toString().padLeft(2, '0');
+    return '${d.day}/${d.month}/${d.year} à $h:$m';
   }
 }
