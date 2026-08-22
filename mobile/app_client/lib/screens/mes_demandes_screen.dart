@@ -184,6 +184,19 @@ class _DemandeCard extends ConsumerWidget {
               if (demande.statut == 'PUBLIEE') ...[
                 const SizedBox(width: 6),
                 TextButton.icon(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => PublierDemandeScreen(demandeAModifier: demande)),
+                    );
+                    if (context.mounted) ref.read(demandeProvider.notifier).chargerMesDemandes();
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.accent),
+                  label: const Text('Modifier', style: TextStyle(fontSize: 11, color: AppColors.accent)),
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
+                ),
+                const SizedBox(width: 6),
+                TextButton.icon(
                   onPressed: () => _annuler(context, ref),
                   icon: const Icon(Icons.delete_outline, size: 14, color: AppColors.erreur),
                   label: const Text('Annuler', style: TextStyle(fontSize: 11, color: AppColors.erreur)),

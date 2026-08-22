@@ -4,6 +4,7 @@ import '../providers/axes_provider.dart';
 import '../providers/capacite_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/top_notification.dart';
+import 'capacite_screen.dart';
 
 // "Mes capacités" — liste des déclarations du transporteur connecté (date,
 // heure, statut) avec suppression, absente jusqu'ici (seule la dernière
@@ -135,13 +136,27 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                               Text('Déclarée le ${_formatDate(c.dateCreation)}', style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                             ]),
                             const SizedBox(height: 12),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: () => _supprimer(c),
-                                icon: const Icon(Icons.delete_outline, color: AppColors.erreur, size: 18),
-                                label: const Text('Supprimer', style: TextStyle(color: AppColors.erreur)),
-                              ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                if (!c.expiree)
+                                  TextButton.icon(
+                                    onPressed: () async {
+                                      await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => CapaciteScreen(capaciteAModifier: c)),
+                                      );
+                                      if (context.mounted) ref.read(capaciteProvider.notifier).chargerMesCapacites();
+                                    },
+                                    icon: const Icon(Icons.edit_outlined, color: AppColors.accent, size: 18),
+                                    label: const Text('Modifier', style: TextStyle(color: AppColors.accent)),
+                                  ),
+                                TextButton.icon(
+                                  onPressed: () => _supprimer(c),
+                                  icon: const Icon(Icons.delete_outline, color: AppColors.erreur, size: 18),
+                                  label: const Text('Supprimer', style: TextStyle(color: AppColors.erreur)),
+                                ),
+                              ],
                             ),
                           ],
                         ),
