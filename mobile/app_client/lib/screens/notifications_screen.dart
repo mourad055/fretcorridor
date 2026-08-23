@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/notification_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -28,18 +29,19 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(notificationProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(title: Text(t.notifications)),
       body: state.chargement
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
           : state.notifications.isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('Aucune notification pour le moment.',
-                        style: TextStyle(color: AppColors.texteMuet), textAlign: TextAlign.center),
+                    padding: const EdgeInsets.all(24),
+                    child: Text(t.aucuneNotification,
+                        style: const TextStyle(color: AppColors.texteMuet), textAlign: TextAlign.center),
                   ),
                 )
               : RefreshIndicator(

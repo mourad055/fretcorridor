@@ -631,6 +631,348 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Créer mon compte'**
   String get creerMonCompte;
+
+  /// No description provided for @aucuneNotification.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune notification pour le moment.'**
+  String get aucuneNotification;
+
+  /// No description provided for @paiement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paiement'**
+  String get paiement;
+
+  /// No description provided for @intentionReglementInfo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce choix indique votre intention de règlement — l\'encaissement effectif se fait séparément via le prestataire agréé.'**
+  String get intentionReglementInfo;
+
+  /// No description provided for @choisirMoyenReglement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisissez votre moyen de règlement'**
+  String get choisirMoyenReglement;
+
+  /// No description provided for @confirmer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmer'**
+  String get confirmer;
+
+  /// No description provided for @moyenReglementRetenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Moyen de règlement retenu : {moyen}.'**
+  String moyenReglementRetenu(String moyen);
+
+  /// No description provided for @especes.
+  ///
+  /// In fr, this message translates to:
+  /// **'Espèces'**
+  String get especes;
+
+  /// No description provided for @promoTitre1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyez partout au Cameroun'**
+  String get promoTitre1;
+
+  /// No description provided for @promoDesc1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Des centaines de transporteurs vérifiés sur le corridor CEMAC'**
+  String get promoDesc1;
+
+  /// No description provided for @promoTitre2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suivi en temps réel'**
+  String get promoTitre2;
+
+  /// No description provided for @promoDesc2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suivez votre marchandise du départ jusqu\'à la livraison'**
+  String get promoDesc2;
+
+  /// No description provided for @promoTitre3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Transporteurs vérifiés'**
+  String get promoTitre3;
+
+  /// No description provided for @promoDesc3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chaque chauffeur passe par une vérification d\'identité'**
+  String get promoDesc3;
+
+  /// No description provided for @signalerLitige.
+  ///
+  /// In fr, this message translates to:
+  /// **'Signaler un litige'**
+  String get signalerLitige;
+
+  /// No description provided for @missionConcernee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mission concernée : {id}'**
+  String missionConcernee(String id);
+
+  /// No description provided for @motif.
+  ///
+  /// In fr, this message translates to:
+  /// **'MOTIF'**
+  String get motif;
+
+  /// No description provided for @description.
+  ///
+  /// In fr, this message translates to:
+  /// **'DESCRIPTION'**
+  String get description;
+
+  /// No description provided for @hintDescriptionLitige.
+  ///
+  /// In fr, this message translates to:
+  /// **'Décrivez le problème rencontré'**
+  String get hintDescriptionLitige;
+
+  /// No description provided for @envoyerSignalement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyer le signalement'**
+  String get envoyerSignalement;
+
+  /// No description provided for @litigeConfirmation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre signalement a été transmis. Le Bureau reviendra vers vous.'**
+  String get litigeConfirmation;
+
+  /// No description provided for @mesDemandes.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes demandes'**
+  String get mesDemandes;
+
+  /// No description provided for @nouvelleDemande.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle demande'**
+  String get nouvelleDemande;
+
+  /// No description provided for @aucuneDemande.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune demande publiée pour le moment.'**
+  String get aucuneDemande;
+
+  /// No description provided for @annulerCetteDemandeTitre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler cette demande ?'**
+  String get annulerCetteDemandeTitre;
+
+  /// No description provided for @annulerCetteDemandeContenu.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette action est définitive.'**
+  String get annulerCetteDemandeContenu;
+
+  /// No description provided for @retour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retour'**
+  String get retour;
+
+  /// No description provided for @annulerLaDemande.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler la demande'**
+  String get annulerLaDemande;
+
+  /// No description provided for @demandeAnnulee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande annulée.'**
+  String get demandeAnnulee;
+
+  /// No description provided for @prochaineAEtreServie.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prochaine à être servie'**
+  String get prochaineAEtreServie;
+
+  /// No description provided for @positionDansLaFile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Position {rang} dans la file'**
+  String positionDansLaFile(int rang);
+
+  /// No description provided for @fragile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fragile'**
+  String get fragile;
+
+  /// No description provided for @perissable.
+  ///
+  /// In fr, this message translates to:
+  /// **'Périssable'**
+  String get perissable;
+
+  /// No description provided for @dangereuse.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dangereuse'**
+  String get dangereuse;
+
+  /// No description provided for @grandeValeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Grande valeur'**
+  String get grandeValeur;
+
+  /// No description provided for @voirLesPropositions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les propositions'**
+  String get voirLesPropositions;
+
+  /// No description provided for @suivi.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suivi'**
+  String get suivi;
+
+  /// No description provided for @modifier.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier'**
+  String get modifier;
+
+  /// No description provided for @annuler.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler'**
+  String get annuler;
+
+  /// No description provided for @desQuePossible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dès que possible'**
+  String get desQuePossible;
+
+  /// No description provided for @datePrecise.
+  ///
+  /// In fr, this message translates to:
+  /// **'Date précise'**
+  String get datePrecise;
+
+  /// No description provided for @plageHoraire.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plage horaire'**
+  String get plageHoraire;
+
+  /// No description provided for @collecteADomicile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Collecte à domicile'**
+  String get collecteADomicile;
+
+  /// No description provided for @pointRelais.
+  ///
+  /// In fr, this message translates to:
+  /// **'Point relais'**
+  String get pointRelais;
+
+  /// No description provided for @destinataireLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Destinataire : {nom} · {telephone}'**
+  String destinataireLabel(String nom, String telephone);
+
+  /// No description provided for @publieeLe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Publiée le {date}'**
+  String publieeLe(String date);
+
+  /// No description provided for @propositions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Propositions'**
+  String get propositions;
+
+  /// No description provided for @aucuneProposition.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune proposition pour le moment'**
+  String get aucuneProposition;
+
+  /// No description provided for @aucunePropositionDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre demande est en attente d\'appariement avec un transporteur disponible sur cet axe.'**
+  String get aucunePropositionDescription;
+
+  /// No description provided for @prixEnCoursCalcul.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prix en cours de calcul'**
+  String get prixEnCoursCalcul;
+
+  /// No description provided for @statutAcceptee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Acceptée'**
+  String get statutAcceptee;
+
+  /// No description provided for @statutExpiree.
+  ///
+  /// In fr, this message translates to:
+  /// **'Expirée'**
+  String get statutExpiree;
+
+  /// No description provided for @statutEnAttente.
+  ///
+  /// In fr, this message translates to:
+  /// **'En attente'**
+  String get statutEnAttente;
+
+  /// No description provided for @accepterCetteProposition.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accepter cette proposition'**
+  String get accepterCetteProposition;
+
+  /// No description provided for @propositionAcceptee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Proposition acceptée ✅'**
+  String get propositionAcceptee;
+
+  /// No description provided for @dateSpecifique.
+  ///
+  /// In fr, this message translates to:
+  /// **'À date précise'**
+  String get dateSpecifique;
+
+  /// No description provided for @surPlageHoraire.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sur une plage horaire'**
+  String get surPlageHoraire;
+
+  /// No description provided for @collecteEnPointRelais.
+  ///
+  /// In fr, this message translates to:
+  /// **'Collecte en point relais'**
+  String get collecteEnPointRelais;
 }
 
 class _AppLocalizationsDelegate

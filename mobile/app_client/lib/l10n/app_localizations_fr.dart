@@ -298,4 +298,191 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get creerMonCompte => 'Créer mon compte';
+
+  @override
+  String get aucuneNotification => 'Aucune notification pour le moment.';
+
+  @override
+  String get paiement => 'Paiement';
+
+  @override
+  String get intentionReglementInfo =>
+      'Ce choix indique votre intention de règlement — l\'encaissement effectif se fait séparément via le prestataire agréé.';
+
+  @override
+  String get choisirMoyenReglement => 'Choisissez votre moyen de règlement';
+
+  @override
+  String get confirmer => 'Confirmer';
+
+  @override
+  String moyenReglementRetenu(String moyen) {
+    return 'Moyen de règlement retenu : $moyen.';
+  }
+
+  @override
+  String get especes => 'Espèces';
+
+  @override
+  String get promoTitre1 => 'Envoyez partout au Cameroun';
+
+  @override
+  String get promoDesc1 =>
+      'Des centaines de transporteurs vérifiés sur le corridor CEMAC';
+
+  @override
+  String get promoTitre2 => 'Suivi en temps réel';
+
+  @override
+  String get promoDesc2 =>
+      'Suivez votre marchandise du départ jusqu\'à la livraison';
+
+  @override
+  String get promoTitre3 => 'Transporteurs vérifiés';
+
+  @override
+  String get promoDesc3 =>
+      'Chaque chauffeur passe par une vérification d\'identité';
+
+  @override
+  String get signalerLitige => 'Signaler un litige';
+
+  @override
+  String missionConcernee(String id) {
+    return 'Mission concernée : $id';
+  }
+
+  @override
+  String get motif => 'MOTIF';
+
+  @override
+  String get description => 'DESCRIPTION';
+
+  @override
+  String get hintDescriptionLitige => 'Décrivez le problème rencontré';
+
+  @override
+  String get envoyerSignalement => 'Envoyer le signalement';
+
+  @override
+  String get litigeConfirmation =>
+      'Votre signalement a été transmis. Le Bureau reviendra vers vous.';
+
+  @override
+  String get mesDemandes => 'Mes demandes';
+
+  @override
+  String get nouvelleDemande => 'Nouvelle demande';
+
+  @override
+  String get aucuneDemande => 'Aucune demande publiée pour le moment.';
+
+  @override
+  String get annulerCetteDemandeTitre => 'Annuler cette demande ?';
+
+  @override
+  String get annulerCetteDemandeContenu => 'Cette action est définitive.';
+
+  @override
+  String get retour => 'Retour';
+
+  @override
+  String get annulerLaDemande => 'Annuler la demande';
+
+  @override
+  String get demandeAnnulee => 'Demande annulée.';
+
+  @override
+  String get prochaineAEtreServie => 'Prochaine à être servie';
+
+  @override
+  String positionDansLaFile(int rang) {
+    return 'Position $rang dans la file';
+  }
+
+  @override
+  String get fragile => 'Fragile';
+
+  @override
+  String get perissable => 'Périssable';
+
+  @override
+  String get dangereuse => 'Dangereuse';
+
+  @override
+  String get grandeValeur => 'Grande valeur';
+
+  @override
+  String get voirLesPropositions => 'Voir les propositions';
+
+  @override
+  String get suivi => 'Suivi';
+
+  @override
+  String get modifier => 'Modifier';
+
+  @override
+  String get annuler => 'Annuler';
+
+  @override
+  String get desQuePossible => 'Dès que possible';
+
+  @override
+  String get datePrecise => 'Date précise';
+
+  @override
+  String get plageHoraire => 'Plage horaire';
+
+  @override
+  String get collecteADomicile => 'Collecte à domicile';
+
+  @override
+  String get pointRelais => 'Point relais';
+
+  @override
+  String destinataireLabel(String nom, String telephone) {
+    return 'Destinataire : $nom · $telephone';
+  }
+
+  @override
+  String publieeLe(String date) {
+    return 'Publiée le $date';
+  }
+
+  @override
+  String get propositions => 'Propositions';
+
+  @override
+  String get aucuneProposition => 'Aucune proposition pour le moment';
+
+  @override
+  String get aucunePropositionDescription =>
+      'Votre demande est en attente d\'appariement avec un transporteur disponible sur cet axe.';
+
+  @override
+  String get prixEnCoursCalcul => 'Prix en cours de calcul';
+
+  @override
+  String get statutAcceptee => 'Acceptée';
+
+  @override
+  String get statutExpiree => 'Expirée';
+
+  @override
+  String get statutEnAttente => 'En attente';
+
+  @override
+  String get accepterCetteProposition => 'Accepter cette proposition';
+
+  @override
+  String get propositionAcceptee => 'Proposition acceptée ✅';
+
+  @override
+  String get dateSpecifique => 'À date précise';
+
+  @override
+  String get surPlageHoraire => 'Sur une plage horaire';
+
+  @override
+  String get collecteEnPointRelais => 'Collecte en point relais';
 }

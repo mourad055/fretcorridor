@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/litige_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -39,10 +40,11 @@ class _LitigeScreenState extends ConsumerState<LitigeScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(litigeProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Signaler un litige')),
+      appBar: AppBar(title: Text(t.signalerLitige)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -72,13 +74,17 @@ class _LitigeScreenState extends ConsumerState<LitigeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(10)),
-                child: Text('Mission concernée : ${widget.missionId}',
+                child: Text(t.missionConcernee(widget.missionId),
                     style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
               ),
               const SizedBox(height: 20),
-              const Text('MOTIF', style: TextStyle(fontSize: 11, letterSpacing: 1.1,
+              Text(t.motif, style: const TextStyle(fontSize: 11, letterSpacing: 1.1,
                   color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
+              // motifsLitige reste en français quelle que soit la langue de
+              // l'app : c'est un texte libre ENVOYE TEL QUEL au Bureau
+              // (service-adm, cf litige_provider.dart) - traduire l'affichage
+              // changerait ce qui est reellement transmis au destinataire.
               DropdownButtonFormField<String>(
                 initialValue: _motif,
                 decoration: InputDecoration(
@@ -90,14 +96,14 @@ class _LitigeScreenState extends ConsumerState<LitigeScreen> {
                 onChanged: (v) => setState(() => _motif = v!),
               ),
               const SizedBox(height: 16),
-              const Text('DESCRIPTION', style: TextStyle(fontSize: 11, letterSpacing: 1.1,
+              Text(t.description, style: const TextStyle(fontSize: 11, letterSpacing: 1.1,
                   color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
               const SizedBox(height: 8),
               TextField(
                 controller: _descriptionCtrl,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Décrivez le problème rencontré',
+                  hintText: t.hintDescriptionLitige,
                   filled: true,
                   fillColor: AppColors.surface,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
@@ -116,8 +122,8 @@ class _LitigeScreenState extends ConsumerState<LitigeScreen> {
                   child: state.envoiEnCours
                       ? const SizedBox(height: 22, width: 22,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : const Text('Envoyer le signalement',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      : Text(t.envoyerSignalement,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
             ],
@@ -128,6 +134,7 @@ class _LitigeScreenState extends ConsumerState<LitigeScreen> {
   }
 
   Widget _confirmation() {
+    final t = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -138,9 +145,9 @@ class _LitigeScreenState extends ConsumerState<LitigeScreen> {
       child: Row(children: [
         const Icon(Icons.check_circle, color: AppColors.succes),
         const SizedBox(width: 10),
-        const Expanded(
-          child: Text('Votre signalement a été transmis. Le Bureau reviendra vers vous.',
-              style: TextStyle(color: AppColors.succes)),
+        Expanded(
+          child: Text(t.litigeConfirmation,
+              style: const TextStyle(color: AppColors.succes)),
         ),
       ]),
     );

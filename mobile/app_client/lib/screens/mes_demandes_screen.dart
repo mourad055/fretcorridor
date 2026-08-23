@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/demande_provider.dart';
 import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
@@ -14,11 +15,12 @@ class MesDemandesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final demandeState = ref.watch(demandeProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
       appBar: AppBar(
-        title: const Text('Mes demandes'),
+        title: Text(t.mesDemandes),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: AppColors.texteMuet),
@@ -33,16 +35,16 @@ class MesDemandesScreen extends ConsumerWidget {
           ref.read(demandeProvider.notifier).chargerMesDemandes();
         },
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Nouvelle demande', style: TextStyle(color: Colors.white)),
+        label: Text(t.nouvelleDemande, style: const TextStyle(color: Colors.white)),
       ),
       body: demandeState.chargement
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
           : demandeState.mesDemandes.isEmpty
-              ? const Center(
+              ? Center(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text('Aucune demande publiée pour le moment.',
-                        style: TextStyle(color: AppColors.texteMuet), textAlign: TextAlign.center),
+                    padding: const EdgeInsets.all(24),
+                    child: Text(t.aucuneDemande,
+                        style: const TextStyle(color: AppColors.texteMuet), textAlign: TextAlign.center),
                   ),
                 )
               : RefreshIndicator(
@@ -80,14 +82,15 @@ class _DemandeCard extends ConsumerWidget {
   const _DemandeCard({required this.demande, this.positionFile});
 
   Future<void> _annuler(BuildContext context, WidgetRef ref) async {
+    final t = AppLocalizations.of(context);
     final confirme = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Annuler cette demande ?'),
-        content: const Text('Cette action est définitive.'),
+        title: Text(t.annulerCetteDemandeTitre),
+        content: Text(t.annulerCetteDemandeContenu),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Retour')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Annuler la demande', style: TextStyle(color: AppColors.erreur))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.retour)),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.annulerLaDemande, style: const TextStyle(color: AppColors.erreur))),
         ],
       ),
     );
@@ -97,12 +100,13 @@ class _DemandeCard extends ConsumerWidget {
     if (erreur != null) {
       afficherNotification(context, message: erreur, couleur: AppColors.erreur, icone: Icons.error_outline);
     } else {
-      afficherNotification(context, message: 'Demande annulée.', couleur: AppColors.succes, icone: Icons.check_circle);
+      afficherNotification(context, message: t.demandeAnnulee, couleur: AppColors.succes, icone: Icons.check_circle);
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
     return InkWell(
       onTap: () => Navigator.push(
         context,
@@ -128,7 +132,7 @@ class _DemandeCard extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  positionFile == 1 ? 'Prochaine à être servie' : 'Position $positionFile dans la file',
+                  positionFile == 1 ? t.prochaineAEtreServie : t.positionDansLaFile(positionFile!),
                   style: TextStyle(
                     fontSize: 10, fontWeight: FontWeight.bold,
                     color: positionFile == 1 ? AppColors.succes : AppColors.texteMuet,
@@ -149,26 +153,26 @@ class _DemandeCard extends ConsumerWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 4),
             Text(
-              '${_libelleDisponibilite(demande.typeDisponibilite)} · ${_libelleCollecte(demande.modeCollecte)}',
+              '${_libelleDisponibilite(t, demande.typeDisponibilite)} · ${_libelleCollecte(t, demande.modeCollecte)}',
               style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
             ),
             const SizedBox(height: 2),
             Text(
-              'Destinataire : ${demande.destinataireNom} · ${demande.destinataireTelephone}',
+              t.destinataireLabel(demande.destinataireNom, demande.destinataireTelephone),
               style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
             ),
             const SizedBox(height: 2),
             Text(
-              'Publiée le ${_formatDate(demande.dateCreation)}',
+              t.publieeLe(_formatDate(demande.dateCreation)),
               style: const TextStyle(color: AppColors.texteMuet, fontSize: 11),
             ),
             if (demande.fragile || demande.perissable || demande.dangereuse || demande.grandeValeur) ...[
               const SizedBox(height: 6),
               Wrap(spacing: 6, runSpacing: 4, children: [
-                if (demande.fragile) _badge('Fragile'),
-                if (demande.perissable) _badge('Périssable'),
-                if (demande.dangereuse) _badge('Dangereuse'),
-                if (demande.grandeValeur) _badge('Grande valeur'),
+                if (demande.fragile) _badge(t.fragile),
+                if (demande.perissable) _badge(t.perissable),
+                if (demande.dangereuse) _badge(t.dangereuse),
+                if (demande.grandeValeur) _badge(t.grandeValeur),
               ]),
             ],
             const SizedBox(height: 6),
@@ -183,7 +187,7 @@ class _DemandeCard extends ConsumerWidget {
               ),
               const Spacer(),
               Flexible(
-                child: Text('Voir les propositions', style: const TextStyle(fontSize: 11, color: AppColors.texteMuet), overflow: TextOverflow.ellipsis),
+                child: Text(t.voirLesPropositions, style: const TextStyle(fontSize: 11, color: AppColors.texteMuet), overflow: TextOverflow.ellipsis),
               ),
               const Icon(Icons.chevron_right, size: 16, color: AppColors.texteMuet),
             ]),
@@ -202,7 +206,7 @@ class _DemandeCard extends ConsumerWidget {
                     MaterialPageRoute(builder: (_) => SuiviScreen(demandeId: demande.id, demande: demande)),
                   ),
                   icon: const Icon(Icons.location_on_outlined, size: 14, color: AppColors.accent),
-                  label: const Text('Suivi', style: TextStyle(fontSize: 11, color: AppColors.accent)),
+                  label: Text(t.suivi, style: const TextStyle(fontSize: 11, color: AppColors.accent)),
                   style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
                 ),
                 if (demande.statut == 'PUBLIEE') ...[
@@ -215,13 +219,13 @@ class _DemandeCard extends ConsumerWidget {
                       if (context.mounted) ref.read(demandeProvider.notifier).chargerMesDemandes();
                     },
                     icon: const Icon(Icons.edit_outlined, size: 14, color: AppColors.accent),
-                    label: const Text('Modifier', style: TextStyle(fontSize: 11, color: AppColors.accent)),
+                    label: Text(t.modifier, style: const TextStyle(fontSize: 11, color: AppColors.accent)),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
                   ),
                   TextButton.icon(
                     onPressed: () => _annuler(context, ref),
                     icon: const Icon(Icons.delete_outline, size: 14, color: AppColors.erreur),
-                    label: const Text('Annuler', style: TextStyle(fontSize: 11, color: AppColors.erreur)),
+                    label: Text(t.annuler, style: const TextStyle(fontSize: 11, color: AppColors.erreur)),
                     style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 0)),
                   ),
                 ],
@@ -242,19 +246,19 @@ class _DemandeCard extends ConsumerWidget {
         child: Text(texte, style: const TextStyle(fontSize: 10, color: AppColors.erreur, fontWeight: FontWeight.bold)),
       );
 
-  String _libelleDisponibilite(String v) {
+  String _libelleDisponibilite(AppLocalizations t, String v) {
     switch (v) {
-      case 'DES_QUE_POSSIBLE': return 'Dès que possible';
-      case 'DATE_PRECISE': return 'Date précise';
-      case 'PLAGE': return 'Plage horaire';
+      case 'DES_QUE_POSSIBLE': return t.desQuePossible;
+      case 'DATE_PRECISE': return t.datePrecise;
+      case 'PLAGE': return t.plageHoraire;
       default: return v;
     }
   }
 
-  String _libelleCollecte(String v) {
+  String _libelleCollecte(AppLocalizations t, String v) {
     switch (v) {
-      case 'DOMICILE': return 'Collecte à domicile';
-      case 'POINT_RELAIS': return 'Point relais';
+      case 'DOMICILE': return t.collecteADomicile;
+      case 'POINT_RELAIS': return t.pointRelais;
       default: return v;
     }
   }

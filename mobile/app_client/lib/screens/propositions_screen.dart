@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/demande_provider.dart';
 import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
@@ -41,15 +42,16 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
       afficherNotification(context, message: erreur, couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
-    afficherNotification(context, message: 'Proposition acceptée ✅', couleur: AppColors.succes, icone: Icons.check_circle);
+    afficherNotification(context, message: AppLocalizations.of(context).propositionAcceptee, couleur: AppColors.succes, icone: Icons.check_circle);
     await _charger();
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Propositions')),
+      appBar: AppBar(title: Text(t.propositions)),
       body: _chargement
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
           : ListView(
@@ -79,20 +81,20 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
                       ),
                       const SizedBox(height: 8),
                       _ligneAvecIcone(Icons.access_time,
-                          '${_libellesDisponibilite[widget.demande.typeDisponibilite] ?? widget.demande.typeDisponibilite} · '
-                          '${_libellesCollecte[widget.demande.modeCollecte] ?? widget.demande.modeCollecte}'),
+                          '${_libelleDisponibilite(t, widget.demande.typeDisponibilite)} · '
+                          '${_libelleCollecte(t, widget.demande.modeCollecte)}'),
                       const SizedBox(height: 6),
                       _ligneAvecIcone(Icons.person_outline,
-                          'Destinataire : ${widget.demande.destinataireNom} · ${widget.demande.destinataireTelephone}'),
+                          t.destinataireLabel(widget.demande.destinataireNom, widget.demande.destinataireTelephone)),
                       const SizedBox(height: 6),
-                      _ligneAvecIcone(Icons.calendar_today_outlined, 'Publiée le ${_dateAffichee(widget.demande.dateCreation)}'),
+                      _ligneAvecIcone(Icons.calendar_today_outlined, t.publieeLe(_dateAffichee(widget.demande.dateCreation))),
                       if (widget.demande.fragile || widget.demande.perissable || widget.demande.dangereuse || widget.demande.grandeValeur) ...[
                         const SizedBox(height: 8),
                         Wrap(spacing: 6, runSpacing: 4, children: [
-                          if (widget.demande.fragile) _badgeDemande('Fragile'),
-                          if (widget.demande.perissable) _badgeDemande('Périssable'),
-                          if (widget.demande.dangereuse) _badgeDemande('Dangereuse'),
-                          if (widget.demande.grandeValeur) _badgeDemande('Grande valeur'),
+                          if (widget.demande.fragile) _badgeDemande(t.fragile),
+                          if (widget.demande.perissable) _badgeDemande(t.perissable),
+                          if (widget.demande.dangereuse) _badgeDemande(t.dangereuse),
+                          if (widget.demande.grandeValeur) _badgeDemande(t.grandeValeur),
                         ]),
                       ],
                     ],
@@ -107,13 +109,13 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
                       children: [
                         const Icon(Icons.hourglass_empty, color: AppColors.bordure, size: 48),
                         const SizedBox(height: 12),
-                        const Text('Aucune proposition pour le moment',
-                            style: TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.bold)),
+                        Text(t.aucuneProposition,
+                            style: const TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 6),
-                        const Text(
-                          'Votre demande est en attente d\'appariement avec un transporteur disponible sur cet axe.',
+                        Text(
+                          t.aucunePropositionDescription,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.texteMuet, fontSize: 12),
+                          style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
                         ),
                       ],
                     ),
@@ -147,16 +149,22 @@ class _PropositionsScreenState extends ConsumerState<PropositionsScreen> {
       );
 }
 
-const _libellesDisponibilite = {
-  'DES_QUE_POSSIBLE': 'Dès que possible',
-  'DATE_PRECISE': 'À date précise',
-  'PLAGE': 'Sur une plage horaire',
-};
+String _libelleDisponibilite(AppLocalizations t, String v) {
+  switch (v) {
+    case 'DES_QUE_POSSIBLE': return t.desQuePossible;
+    case 'DATE_PRECISE': return t.dateSpecifique;
+    case 'PLAGE': return t.surPlageHoraire;
+    default: return v;
+  }
+}
 
-const _libellesCollecte = {
-  'DOMICILE': 'Collecte à domicile',
-  'POINT_RELAIS': 'Collecte en point relais',
-};
+String _libelleCollecte(AppLocalizations t, String v) {
+  switch (v) {
+    case 'DOMICILE': return t.collecteADomicile;
+    case 'POINT_RELAIS': return t.collecteEnPointRelais;
+    default: return v;
+  }
+}
 
 String _dateAffichee(DateTime d) {
   final h = d.hour.toString().padLeft(2, '0');
@@ -185,19 +193,20 @@ class _CarteProposition extends StatelessWidget {
     }
   }
 
-  String _libelleStatut(String statut) {
+  String _libelleStatut(AppLocalizations t, String statut) {
     switch (statut) {
       case 'ACCEPTEE':
-        return 'Acceptée';
+        return t.statutAcceptee;
       case 'EXPIREE':
-        return 'Expirée';
+        return t.statutExpiree;
       default:
-        return 'En attente';
+        return t.statutEnAttente;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     final rang = proposition['rang']?.toString() ?? '?';
     final motif = proposition['motifClassement'] as String?;
     final prix = proposition['prixEstime'] as String?;
@@ -233,7 +242,7 @@ class _CarteProposition extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      prix != null ? '$prix XAF' : 'Prix en cours de calcul',
+                      prix != null ? '$prix XAF' : t.prixEnCoursCalcul,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     Container(
@@ -242,11 +251,14 @@ class _CarteProposition extends StatelessWidget {
                         color: couleur.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Text(_libelleStatut(statut),
+                      child: Text(_libelleStatut(t, statut),
                           style: TextStyle(color: couleur, fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
+                // motifClassement reste en français quelle que soit la
+                // langue de l'app : texte genere cote backend (service-opt),
+                // pas de i18n serveur pour l'instant (hors perimetre).
                 if (motif != null && motif.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(motif, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
@@ -268,7 +280,7 @@ class _CarteProposition extends StatelessWidget {
                               width: 18, height: 18,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
-                          : const Text('Accepter cette proposition'),
+                          : Text(t.accepterCetteProposition),
                     ),
                   ),
                 ],

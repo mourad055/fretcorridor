@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/choix_paiement_provider.dart';
 import '../theme/app_theme.dart';
@@ -17,14 +18,18 @@ class PaiementScreen extends ConsumerWidget {
 
   const PaiementScreen({super.key, required this.missionId});
 
+  String _libelle(AppLocalizations t, MoyenPaiement moyen) =>
+      moyen == MoyenPaiement.especes ? t.especes : libellesMoyenPaiement[moyen]!;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(choixPaiementProvider);
     final tenantId = ref.watch(authProvider).tenantId;
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Paiement')),
+      appBar: AppBar(title: Text(t.paiement)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -38,23 +43,22 @@ class PaiementScreen extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
                 ),
-                child: const Row(children: [
-                  Icon(Icons.info_outline, color: AppColors.accent, size: 16),
-                  SizedBox(width: 8),
+                child: Row(children: [
+                  const Icon(Icons.info_outline, color: AppColors.accent, size: 16),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Ce choix indique votre intention de règlement — l\'encaissement '
-                      'effectif se fait séparément via le prestataire agréé.',
-                      style: TextStyle(color: AppColors.accent, fontSize: 12),
+                      t.intentionReglementInfo,
+                      style: const TextStyle(color: AppColors.accent, fontSize: 12),
                     ),
                   ),
                 ]),
               ),
               const SizedBox(height: 24),
-              Text('Choisissez votre moyen de règlement', style: Theme.of(context).textTheme.titleMedium),
+              Text(t.choisirMoyenReglement, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 16),
               for (final moyen in MoyenPaiement.values) ...[
-                _carteMoyen(context, ref, moyen, state.moyenSelectionne == moyen),
+                _carteMoyen(context, ref, t, moyen, state.moyenSelectionne == moyen),
                 const SizedBox(height: 10),
               ],
               const SizedBox(height: 12),
@@ -87,7 +91,7 @@ class PaiementScreen extends ConsumerWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Moyen de règlement retenu : ${libellesMoyenPaiement[state.moyenSelectionne]}.',
+                        t.moyenReglementRetenu(_libelle(t, state.moyenSelectionne!)),
                         style: const TextStyle(color: AppColors.succes),
                       ),
                     ),
@@ -108,7 +112,7 @@ class PaiementScreen extends ConsumerWidget {
                     child: state.chargement
                         ? const SizedBox(
                             width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.texteBouton))
-                        : const Text('Confirmer', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+                        : Text(t.confirmer, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
                   ),
                 ),
             ],
@@ -118,7 +122,7 @@ class PaiementScreen extends ConsumerWidget {
     );
   }
 
-  Widget _carteMoyen(BuildContext context, WidgetRef ref, MoyenPaiement moyen, bool selectionne) {
+  Widget _carteMoyen(BuildContext context, WidgetRef ref, AppLocalizations t, MoyenPaiement moyen, bool selectionne) {
     return InkWell(
       onTap: () => ref.read(choixPaiementProvider.notifier).selectionner(moyen),
       borderRadius: BorderRadius.circular(10),
@@ -135,7 +139,7 @@ class PaiementScreen extends ConsumerWidget {
             color: selectionne ? AppColors.accent : AppColors.texteMuet,
           ),
           const SizedBox(width: 12),
-          Text(libellesMoyenPaiement[moyen]!,
+          Text(_libelle(t, moyen),
               style: TextStyle(fontWeight: selectionne ? FontWeight.bold : FontWeight.normal, fontSize: 14)),
         ]),
       ),
