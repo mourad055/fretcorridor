@@ -863,4 +863,65 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get enregistrerLesModifications => 'Enregistrer les modifications';
+
+  @override
+  String get supprimerCetteCapacite => 'Supprimer cette capacité ?';
+
+  @override
+  String get actionDefinitive => 'Cette action est définitive.';
+
+  @override
+  String get supprimer => 'Supprimer';
+
+  @override
+  String get capaciteSupprimee => 'Capacité supprimée.';
+
+  @override
+  String get suppressionImpossible => 'Suppression impossible pour le moment.';
+
+  @override
+  String get jourLun => 'lun.';
+
+  @override
+  String get jourMar => 'mar.';
+
+  @override
+  String get jourMer => 'mer.';
+
+  @override
+  String get jourJeu => 'jeu.';
+
+  @override
+  String get jourVen => 'ven.';
+
+  @override
+  String get jourSam => 'sam.';
+
+  @override
+  String get jourDim => 'dim.';
+
+  @override
+  String get aucuneCapaciteDeclareePourLeMoment =>
+      'Aucune capacité déclarée pour le moment';
+
+  @override
+  String get expiree => 'Expirée';
+
+  @override
+  String get publiee => 'Publiée';
+
+  @override
+  String kgDisponibles(String kg) {
+    return '$kg kg disponibles';
+  }
+
+  @override
+  String departLabelValeur(String date) {
+    return 'Départ : $date';
+  }
+
+  @override
+  String declareeLe(String date) {
+    return 'Déclarée le $date';
+  }
 }

@@ -1657,6 +1657,114 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Enregistrer les modifications'**
   String get enregistrerLesModifications;
+
+  /// No description provided for @supprimerCetteCapacite.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer cette capacité ?'**
+  String get supprimerCetteCapacite;
+
+  /// No description provided for @actionDefinitive.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette action est définitive.'**
+  String get actionDefinitive;
+
+  /// No description provided for @supprimer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer'**
+  String get supprimer;
+
+  /// No description provided for @capaciteSupprimee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Capacité supprimée.'**
+  String get capaciteSupprimee;
+
+  /// No description provided for @suppressionImpossible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suppression impossible pour le moment.'**
+  String get suppressionImpossible;
+
+  /// No description provided for @jourLun.
+  ///
+  /// In fr, this message translates to:
+  /// **'lun.'**
+  String get jourLun;
+
+  /// No description provided for @jourMar.
+  ///
+  /// In fr, this message translates to:
+  /// **'mar.'**
+  String get jourMar;
+
+  /// No description provided for @jourMer.
+  ///
+  /// In fr, this message translates to:
+  /// **'mer.'**
+  String get jourMer;
+
+  /// No description provided for @jourJeu.
+  ///
+  /// In fr, this message translates to:
+  /// **'jeu.'**
+  String get jourJeu;
+
+  /// No description provided for @jourVen.
+  ///
+  /// In fr, this message translates to:
+  /// **'ven.'**
+  String get jourVen;
+
+  /// No description provided for @jourSam.
+  ///
+  /// In fr, this message translates to:
+  /// **'sam.'**
+  String get jourSam;
+
+  /// No description provided for @jourDim.
+  ///
+  /// In fr, this message translates to:
+  /// **'dim.'**
+  String get jourDim;
+
+  /// No description provided for @aucuneCapaciteDeclareePourLeMoment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune capacité déclarée pour le moment'**
+  String get aucuneCapaciteDeclareePourLeMoment;
+
+  /// No description provided for @expiree.
+  ///
+  /// In fr, this message translates to:
+  /// **'Expirée'**
+  String get expiree;
+
+  /// No description provided for @publiee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Publiée'**
+  String get publiee;
+
+  /// No description provided for @kgDisponibles.
+  ///
+  /// In fr, this message translates to:
+  /// **'{kg} kg disponibles'**
+  String kgDisponibles(String kg);
+
+  /// No description provided for @departLabelValeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Départ : {date}'**
+  String departLabelValeur(String date);
+
+  /// No description provided for @declareeLe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déclarée le {date}'**
+  String declareeLe(String date);
 }
 
 class _AppLocalizationsDelegate

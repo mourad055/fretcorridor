@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/axes_provider.dart';
 import '../providers/capacite_provider.dart';
 import '../theme/app_theme.dart';
@@ -26,15 +27,15 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
     });
   }
 
-  Future<void> _supprimer(CapaciteDeclaree capacite) async {
+  Future<void> _supprimer(AppLocalizations t, CapaciteDeclaree capacite) async {
     final confirme = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer cette capacité ?'),
-        content: const Text('Cette action est définitive.'),
+        title: Text(t.supprimerCetteCapacite),
+        content: Text(t.actionDefinitive),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer', style: TextStyle(color: AppColors.erreur))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.annuler)),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.supprimer, style: const TextStyle(color: AppColors.erreur))),
         ],
       ),
     );
@@ -42,15 +43,15 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
     final succes = await ref.read(capaciteProvider.notifier).supprimer(capacite.id);
     if (!mounted) return;
     if (succes) {
-      afficherNotification(context, message: 'Capacité supprimée.', couleur: AppColors.succes, icone: Icons.check_circle);
+      afficherNotification(context, message: t.capaciteSupprimee, couleur: AppColors.succes, icone: Icons.check_circle);
     } else {
-      afficherNotification(context, message: 'Suppression impossible pour le moment.', couleur: AppColors.erreur, icone: Icons.error_outline);
+      afficherNotification(context, message: t.suppressionImpossible, couleur: AppColors.erreur, icone: Icons.error_outline);
     }
   }
 
-  String _formatDate(DateTime? d) {
+  String _formatDate(AppLocalizations t, DateTime? d) {
     if (d == null) return '—';
-    final jours = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
+    final jours = [t.jourLun, t.jourMar, t.jourMer, t.jourJeu, t.jourVen, t.jourSam, t.jourDim];
     final j = jours[d.weekday - 1];
     final heure = d.hour.toString().padLeft(2, '0');
     final minute = d.minute.toString().padLeft(2, '0');
@@ -61,10 +62,11 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(capaciteProvider);
     final axes = ref.watch(axesProvider).axes;
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Mes capacités')),
+      appBar: AppBar(title: Text(t.mesCapacites)),
       body: RefreshIndicator(
         onRefresh: () => ref.read(capaciteProvider.notifier).chargerMesCapacites(),
         child: state.chargement && state.mesCapacites.isEmpty
@@ -75,8 +77,8 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                       const SizedBox(height: 100),
                       const Icon(Icons.local_shipping_outlined, color: AppColors.bordure, size: 48),
                       const SizedBox(height: 12),
-                      const Center(child: Text('Aucune capacité déclarée pour le moment',
-                          style: TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.bold))),
+                      Center(child: Text(t.aucuneCapaciteDeclareePourLeMoment,
+                          style: const TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.bold))),
                     ],
                   )
                 : ListView.builder(
@@ -85,7 +87,7 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                     itemBuilder: (context, i) {
                       final c = state.mesCapacites[i];
                       final statutCouleur = c.expiree ? AppColors.texteMuet : (c.publiee ? AppColors.succes : AppColors.accent);
-                      final statutLibelle = c.expiree ? 'Expirée' : (c.publiee ? 'Publiée' : 'En attente');
+                      final statutLibelle = c.expiree ? t.expiree : (c.publiee ? t.publiee : t.statutEnAttente);
                       Axe? axe;
                       for (final a in axes) {
                         if (a.id == c.axeId) { axe = a; break; }
@@ -111,7 +113,7 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                                       if (axe != null)
                                         Text('${axe.origine} → ${axe.destination}',
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.accent)),
-                                      Text('${c.poidsKg.toStringAsFixed(0)} kg disponibles',
+                                      Text(t.kgDisponibles(c.poidsKg.toStringAsFixed(0)),
                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                     ],
                                   ),
@@ -127,13 +129,13 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                             Row(children: [
                               const Icon(Icons.schedule, size: 15, color: AppColors.texteMuet),
                               const SizedBox(width: 6),
-                              Text('Départ : ${_formatDate(c.dateDepart)}', style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                              Text(t.departLabelValeur(_formatDate(t, c.dateDepart)), style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                             ]),
                             const SizedBox(height: 4),
                             Row(children: [
                               const Icon(Icons.add_circle_outline, size: 15, color: AppColors.texteMuet),
                               const SizedBox(width: 6),
-                              Text('Déclarée le ${_formatDate(c.dateCreation)}', style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                              Text(t.declareeLe(_formatDate(t, c.dateCreation)), style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                             ]),
                             const SizedBox(height: 12),
                             Row(
@@ -149,12 +151,12 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                                       if (context.mounted) ref.read(capaciteProvider.notifier).chargerMesCapacites();
                                     },
                                     icon: const Icon(Icons.edit_outlined, color: AppColors.accent, size: 18),
-                                    label: const Text('Modifier', style: TextStyle(color: AppColors.accent)),
+                                    label: Text(t.modifier, style: const TextStyle(color: AppColors.accent)),
                                   ),
                                 TextButton.icon(
-                                  onPressed: () => _supprimer(c),
+                                  onPressed: () => _supprimer(t, c),
                                   icon: const Icon(Icons.delete_outline, color: AppColors.erreur, size: 18),
-                                  label: const Text('Supprimer', style: TextStyle(color: AppColors.erreur)),
+                                  label: Text(t.supprimer, style: const TextStyle(color: AppColors.erreur)),
                                 ),
                               ],
                             ),
