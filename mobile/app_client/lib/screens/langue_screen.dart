@@ -1,44 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
+import '../providers/locale_provider.dart';
 import '../theme/app_theme.dart';
 
-class LangueScreen extends StatefulWidget {
+class LangueScreen extends ConsumerWidget {
   const LangueScreen({super.key});
 
   @override
-  State<LangueScreen> createState() => _LangueScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = AppLocalizations.of(context);
+    final selection = ref.watch(localeProvider).languageCode;
 
-class _LangueScreenState extends State<LangueScreen> {
-  String _selection = 'fr';
+    final langues = [
+      ('fr', t.langueFrancais),
+      ('en', t.langueAnglais),
+    ];
 
-  static const _langues = [
-    ('fr', 'Français', true),
-    ('en', 'English', false),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Langue')),
+      appBar: AppBar(title: Text(t.langueTitre)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          for (final l in _langues)
+          for (final l in langues)
             Container(
               margin: const EdgeInsets.only(bottom: 10),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _selection == l.$1 ? AppColors.accent : AppColors.bordure),
+                border: Border.all(color: selection == l.$1 ? AppColors.accent : AppColors.bordure),
               ),
               child: ListTile(
-                onTap: l.$3 ? () => setState(() => _selection = l.$1) : null,
+                onTap: () => ref.read(localeProvider.notifier).choisir(l.$1),
                 title: Text(l.$2, style: const TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: l.$3 ? null : const Text('Bientôt disponible', style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                 trailing: Icon(
-                  _selection == l.$1 ? Icons.check_circle : Icons.circle_outlined,
-                  color: _selection == l.$1 ? AppColors.accent : AppColors.bordure,
+                  selection == l.$1 ? Icons.check_circle : Icons.circle_outlined,
+                  color: selection == l.$1 ? AppColors.accent : AppColors.bordure,
                 ),
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'inscription_screen.dart';
@@ -9,6 +10,7 @@ class WelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.fond,
       body: Column(
@@ -65,15 +67,15 @@ class WelcomeScreen extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Vos envois,\nsans complications',
+                                t.welcomeTitre,
                                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                                       color: Colors.white, fontSize: 28, height: 1.15,
                                     ),
                               ),
                               const SizedBox(height: 8),
-                              const Text(
-                                'Publiez votre demande et connectez-vous aux\ntransporteurs du réseau CEMAC.',
-                                style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                              Text(
+                                t.welcomeSousTitre,
+                                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
                               ),
                             ],
                           ),
@@ -124,7 +126,7 @@ class WelcomeScreen extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Commencer',
+                          Text(t.commencer,
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
                                   color: AppColors.texteBouton)),
                           const SizedBox(width: 8),
@@ -137,15 +139,15 @@ class WelcomeScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Vous avez déjà un compte ? ',
-                          style: TextStyle(color: AppColors.texteMuet, fontSize: 13)),
+                      Text(t.dejaUnCompte,
+                          style: const TextStyle(color: AppColors.texteMuet, fontSize: 13)),
                       GestureDetector(
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const LoginScreen()),
                         ),
-                        child: const Text('Connexion',
-                            style: TextStyle(color: AppColors.accent, fontSize: 13,
+                        child: Text(t.connexion,
+                            style: const TextStyle(color: AppColors.accent, fontSize: 13,
                                 fontWeight: FontWeight.bold)),
                       ),
                     ],

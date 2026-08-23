@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
@@ -39,8 +40,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final profil = ref.watch(kycProvider).profil;
     final nombreNonLues = ref.watch(notificationProvider).nombreNonLues;
     final estTransporteur = const ['CHAUFFEUR', 'TRANSPORTEUR', 'CHAUFFEUR_PROPRIETAIRE'].contains(authState.role);
+    final t = AppLocalizations.of(context);
 
-    final nomAffiche = _nomAffiche(profil, authState.role);
+    final nomAffiche = _nomAffiche(t, profil, authState.role);
     final initiale = nomAffiche.isNotEmpty ? nomAffiche[0].toUpperCase() : '?';
     final niveauValide = profil != null && profil.niveauKyc != 'NIVEAU_0';
 
@@ -52,7 +54,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (!etaitComplet && estComplet) {
         afficherNotification(
           context,
-          message: 'Profil complété ✅ — vous pouvez déclarer une capacité.',
+          message: t.profilCompleteMessageChauffeur,
           couleur: AppColors.succes,
           icone: Icons.check_circle,
         );
@@ -95,7 +97,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               isLabelVisible: nombreNonLues > 0,
                               child: const Icon(Icons.notifications_outlined, color: Colors.white),
                             ),
-                            tooltip: 'Notifications',
+                            tooltip: t.notificationsTooltip,
                             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
                           ),
                           GestureDetector(
@@ -115,7 +117,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Bonjour, $nomAffiche',
+                          Text(t.bonjour(nomAffiche),
                               style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
                           const SizedBox(height: 2),
                           Text(authState.tenantId ?? '—', style: const TextStyle(color: Colors.white70, fontSize: 13)),
@@ -146,19 +148,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         const Icon(Icons.info_outline, color: AppColors.accent),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Profil à compléter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              Text('Complétez votre profil pour déclarer une capacité ou accepter une mission.',
-                                  style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                              Text(t.profilACompleter, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(t.profilACompleterDescriptionChauffeur,
+                                  style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                             ],
                           ),
                         ),
                         TextButton(
                           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen())),
-                          child: const Text('Compléter'),
+                          child: Text(t.completer),
                         ),
                       ],
                     ),
@@ -169,44 +171,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 if (estTransporteur) ...[
                   _CarteAction(
                     icone: Icons.assignment_outlined,
-                    titre: 'Mes missions',
-                    description: 'Missions en cours et historique',
+                    titre: t.mesMissions,
+                    description: t.mesMissionsDescription,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MissionsScreen())),
                   ),
                   const SizedBox(height: 12),
                   _CarteAction(
                     icone: Icons.local_shipping_outlined,
-                    titre: 'Déclarer une capacité',
-                    description: 'Proposer un trajet et de la place disponible',
+                    titre: t.declarerCapacite,
+                    description: t.declarerCapaciteDescription,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CapaciteScreen())),
                   ),
                   const SizedBox(height: 12),
                   _CarteAction(
                     icone: Icons.garage_outlined,
-                    titre: 'Ma flotte',
-                    description: 'Gérer mes véhicules',
+                    titre: t.maFlotte,
+                    description: t.maFlotteDescription,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VehiculesScreen())),
                   ),
                   const SizedBox(height: 12),
                   _CarteAction(
                     icone: Icons.account_balance_wallet_outlined,
-                    titre: 'Solde et gains',
-                    description: 'Consulter mes paiements',
+                    titre: t.soldeEtGains,
+                    description: t.soldeEtGainsDescription,
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaiementScreen())),
                   ),
                   const SizedBox(height: 12),
                 ],
                 _CarteAction(
                   icone: Icons.route_outlined,
-                  titre: 'Axes',
-                  description: 'Corridors disponibles',
+                  titre: t.axes,
+                  description: t.axesDescription,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AxesScreen())),
                 ),
                 const SizedBox(height: 12),
                 _CarteAction(
                   icone: Icons.badge_outlined,
-                  titre: 'Mon profil',
-                  description: 'Identité et niveau KYC',
+                  titre: t.monProfil,
+                  description: t.monProfilDescriptionChauffeur,
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen())),
                 ),
               ]),
@@ -221,7 +223,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               },
               backgroundColor: AppColors.accent,
               icon: const Icon(Icons.person_add_alt_1, color: AppColors.texteBouton),
-              label: const Text('Enrôler', style: TextStyle(color: AppColors.texteBouton, fontWeight: FontWeight.bold)),
+              label: Text(t.enroler, style: const TextStyle(color: AppColors.texteBouton, fontWeight: FontWeight.bold)),
             )
           : null,
     );
@@ -229,16 +231,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   // Prénom (ou raison sociale pour un transporteur société) déclaré au KYC —
   // à défaut (profil pas encore complété), retombe sur le libellé du rôle.
-  String _nomAffiche(Profil? profil, String? role) {
+  String _nomAffiche(AppLocalizations t, Profil? profil, String? role) {
     if (profil != null) {
       if (profil.type == 'ENTREPRISE' && (profil.raisonSociale?.isNotEmpty ?? false)) return profil.raisonSociale!;
       if (profil.prenom != null && profil.prenom!.isNotEmpty) return profil.prenom!;
     }
     return switch (role) {
-      'CHAUFFEUR' => 'Chauffeur',
-      'TRANSPORTEUR' => 'Transporteur',
-      'CHAUFFEUR_PROPRIETAIRE' => 'Chauffeur',
-      'AGENT' => 'Agent',
+      'CHAUFFEUR' => t.roleChauffeur,
+      'TRANSPORTEUR' => t.roleTransporteur,
+      'CHAUFFEUR_PROPRIETAIRE' => t.roleChauffeur,
+      'AGENT' => t.roleAgent,
       _ => role ?? '—',
     };
   }

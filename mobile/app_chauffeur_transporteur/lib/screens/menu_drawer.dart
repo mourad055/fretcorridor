@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
+import '../providers/locale_provider.dart';
 import '../theme/app_theme.dart';
 import 'aide_screen.dart';
 import 'conditions_utilisation_screen.dart';
@@ -20,6 +22,8 @@ class MenuDrawer extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final t = AppLocalizations.of(context);
+    final langueCourante = ref.watch(localeProvider).languageCode == 'en' ? t.langueAnglais : t.langueFrancais;
 
     return Drawer(
       backgroundColor: AppColors.surface,
@@ -41,8 +45,8 @@ class MenuDrawer extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Menu', style: Theme.of(context).textTheme.titleMedium),
-                        Text(authState.telephone ?? 'Espace utilisateur',
+                        Text(t.menuTitre, style: Theme.of(context).textTheme.titleMedium),
+                        Text(authState.telephone ?? t.menuEspaceUtilisateur,
                             style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                       ],
                     ),
@@ -56,25 +60,25 @@ class MenuDrawer extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
-                  _item(context, Icons.person_outline, 'Profil',
+                  _item(context, Icons.person_outline, t.profil,
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const KycScreen()))),
-                  _item(context, Icons.notifications_none, 'Notifications',
+                  _item(context, Icons.notifications_none, t.notifications,
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()))),
-                  _item(context, Icons.language, 'Langue (Français)',
+                  _item(context, Icons.language, t.langueMenuItem(langueCourante),
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LangueScreen()))),
-                  _item(context, Icons.help_outline, 'Centre d\'aide',
+                  _item(context, Icons.help_outline, t.centreAide,
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AideScreen()))),
-                  _item(context, Icons.privacy_tip_outlined, 'Politique & confidentialité',
+                  _item(context, Icons.privacy_tip_outlined, t.politiqueConfidentialite,
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PolitiqueConfidentialiteScreen()))),
-                  _item(context, Icons.description_outlined, 'Conditions d\'utilisation',
+                  _item(context, Icons.description_outlined, t.conditionsUtilisation,
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ConditionsUtilisationScreen()))),
-                  _item(context, Icons.settings_outlined, 'Paramètres',
+                  _item(context, Icons.settings_outlined, t.parametres,
                       () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ParametresScreen()))),
                 ],
               ),
             ),
             const Divider(height: 1),
-            _item(context, Icons.logout, 'Se déconnecter', () async {
+            _item(context, Icons.logout, t.seDeconnecter, () async {
               await ref.read(authProvider.notifier).logout();
               if (context.mounted) {
                 Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginScreen()), (route) => false);

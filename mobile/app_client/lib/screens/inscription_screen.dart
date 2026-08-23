@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
@@ -75,6 +76,7 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -87,7 +89,7 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
           children: [
             Image.asset('assets/images/logo_fretcorridor.jpeg', height: 28),
             const SizedBox(width: 8),
-            const Text('Créer un compte', style: TextStyle(fontSize: 16)),
+            Text(t.creerUnCompte, style: const TextStyle(fontSize: 16)),
           ],
         ),
       ),
@@ -109,7 +111,7 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                         backgroundColor: !_entreprise ? AppColors.accent : AppColors.surface,
                         side: BorderSide(color: !_entreprise ? AppColors.accent : AppColors.bordure),
                       ),
-                      child: Text('Particulier',
+                      child: Text(t.particulier,
                           style: TextStyle(color: !_entreprise ? Colors.white : AppColors.texte)),
                     ),
                   ),
@@ -121,7 +123,7 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                         backgroundColor: _entreprise ? AppColors.accent : AppColors.surface,
                         side: BorderSide(color: _entreprise ? AppColors.accent : AppColors.bordure),
                       ),
-                      child: Text('Entreprise',
+                      child: Text(t.entreprise,
                           style: TextStyle(color: _entreprise ? Colors.white : AppColors.texte)),
                     ),
                   ),
@@ -130,33 +132,33 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
               const SizedBox(height: 20),
 
               if (_entreprise) ...[
-                _label('RAISON SOCIALE'),
+                _label(t.labelRaisonSociale),
                 TextFormField(
                   controller: _raisonSocialeCtrl,
-                  decoration: _decoration('Ex : Cimencam SA', Icons.apartment),
+                  decoration: _decoration(t.hintRaisonSociale, Icons.apartment),
                   validator: (v) => (_entreprise && (v == null || v.isEmpty))
-                      ? 'Raison sociale obligatoire' : null,
+                      ? t.raisonSocialeObligatoire : null,
                 ),
               ] else ...[
-                _label('PRÉNOM'),
+                _label(t.labelPrenom),
                 TextFormField(
                   controller: _prenomCtrl,
-                  decoration: _decoration('Ex : Awa', Icons.person),
+                  decoration: _decoration(t.hintPrenom, Icons.person),
                   validator: (v) => (!_entreprise && (v == null || v.isEmpty))
-                      ? 'Prénom obligatoire' : null,
+                      ? t.prenomObligatoire : null,
                 ),
                 const SizedBox(height: 16),
-                _label('NOM'),
+                _label(t.labelNom),
                 TextFormField(
                   controller: _nomCtrl,
-                  decoration: _decoration('Ex : Mballa', Icons.person_outline),
+                  decoration: _decoration(t.hintNom, Icons.person_outline),
                   validator: (v) => (!_entreprise && (v == null || v.isEmpty))
-                      ? 'Nom obligatoire' : null,
+                      ? t.nomObligatoire : null,
                 ),
               ],
               const SizedBox(height: 16),
 
-              _label('TÉLÉPHONE'),
+              _label(t.champTelephone),
               IntlPhoneField(
                 initialCountryCode: 'CM',
                 dropdownTextStyle: const TextStyle(color: AppColors.texte),
@@ -165,16 +167,16 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
               ),
               const SizedBox(height: 16),
 
-              _label('CODE PIN (4 à 6 chiffres)'),
+              _label(t.labelCodePinInscription),
               TextFormField(
                 controller: _pinCtrl,
                 obscureText: true,
                 keyboardType: TextInputType.number,
                 maxLength: 6,
-                decoration: _decoration('Ex : 1234', Icons.lock).copyWith(counterText: ''),
+                decoration: _decoration(t.hintCodePin, Icons.lock).copyWith(counterText: ''),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'PIN obligatoire';
-                  if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return '4 à 6 chiffres';
+                  if (v == null || v.isEmpty) return t.pinObligatoire;
+                  if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return t.pinFormatInvalide;
                   return null;
                 },
               ),
@@ -210,8 +212,8 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                   child: authState.chargement
                       ? const SizedBox(height: 22, width: 22,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : const Text('Créer mon compte',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      : Text(t.creerMonCompte,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),
             ],

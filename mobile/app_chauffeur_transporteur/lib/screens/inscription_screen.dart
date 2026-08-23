@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../theme/app_theme.dart';
 import 'kyc_screen.dart';
@@ -14,10 +15,10 @@ extension on _TypeCompte {
         _TypeCompte.chauffeurProprietaire => 'CHAUFFEUR_PROPRIETAIRE',
       };
 
-  String get libelle => switch (this) {
-        _TypeCompte.chauffeur => 'Chauffeur',
-        _TypeCompte.transporteur => 'Transporteur',
-        _TypeCompte.chauffeurProprietaire => 'Les deux',
+  String libelle(AppLocalizations s) => switch (this) {
+        _TypeCompte.chauffeur => s.typeChauffeur,
+        _TypeCompte.transporteur => s.typeTransporteur,
+        _TypeCompte.chauffeurProprietaire => s.typeChauffeurProprietaire,
       };
 }
 
@@ -67,6 +68,7 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final s = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.texte,
@@ -102,23 +104,23 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                     children: [
                       Center(child: Image.asset('assets/images/logo_fretcorridor.jpeg', height: 32)),
                       const SizedBox(height: 12),
-                      Text('Créer un compte', textAlign: TextAlign.center,
+                      Text(s.creerUnCompte, textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium),
                       const SizedBox(height: 4),
-                      const Text('Vous compléterez votre profil juste après.',
+                      Text(s.inscriptionSousTitre,
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                          style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                       const SizedBox(height: 20),
 
-                      const Text('JE SUIS', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
+                      Text(s.jeSuis, style: const TextStyle(fontSize: 11, letterSpacing: 1.2,
                           color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
-                      Wrap(spacing: 8, runSpacing: 8, children: _TypeCompte.values.map((t) {
-                        final selectionne = t == _type;
+                      Wrap(spacing: 8, runSpacing: 8, children: _TypeCompte.values.map((type) {
+                        final selectionne = type == _type;
                         return ChoiceChip(
-                          label: Text(t.libelle),
+                          label: Text(type.libelle(s)),
                           selected: selectionne,
-                          onSelected: (_) => setState(() => _type = t),
+                          onSelected: (_) => setState(() => _type = type),
                           selectedColor: AppColors.accent,
                           backgroundColor: AppColors.fond,
                           labelStyle: TextStyle(color: selectionne ? Colors.white : AppColors.texte),
@@ -128,34 +130,34 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                       const SizedBox(height: 20),
 
                       if (_type == _TypeCompte.transporteur) ...[
-                        _label('RAISON SOCIALE'),
+                        _label(s.labelRaisonSociale),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _raisonSocialeCtrl,
-                          decoration: _decoration('Ex : Transport Fotso SARL'),
-                          validator: (v) => (v == null || v.isEmpty) ? 'Raison sociale obligatoire' : null,
+                          decoration: _decoration(s.hintRaisonSocialeChauffeur),
+                          validator: (v) => (v == null || v.isEmpty) ? s.raisonSocialeObligatoire : null,
                         ),
                         const SizedBox(height: 16),
                       ] else ...[
-                        _label('PRÉNOM'),
+                        _label(s.labelPrenom),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _prenomCtrl,
-                          decoration: _decoration('Ex : Paul'),
-                          validator: (v) => (v == null || v.isEmpty) ? 'Prénom obligatoire' : null,
+                          decoration: _decoration(s.hintPrenomChauffeur),
+                          validator: (v) => (v == null || v.isEmpty) ? s.prenomObligatoire : null,
                         ),
                         const SizedBox(height: 16),
-                        _label('NOM'),
+                        _label(s.labelNom),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _nomCtrl,
-                          decoration: _decoration('Ex : Kamga'),
-                          validator: (v) => (v == null || v.isEmpty) ? 'Nom obligatoire' : null,
+                          decoration: _decoration(s.hintNomChauffeur),
+                          validator: (v) => (v == null || v.isEmpty) ? s.nomObligatoire : null,
                         ),
                         const SizedBox(height: 16),
                       ],
 
-                      _label('TÉLÉPHONE'),
+                      _label(s.champTelephone),
                       const SizedBox(height: 8),
                       IntlPhoneField(
                         initialCountryCode: 'CM',
@@ -166,7 +168,7 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      _label('CODE (4 à 6 chiffres)'),
+                      _label(s.labelCodeInscription),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _codeCtrl,
@@ -183,8 +185,8 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                           ),
                         ),
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'Code obligatoire';
-                          if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return '4 à 6 chiffres';
+                          if (v == null || v.isEmpty) return s.codeObligatoire;
+                          if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return s.codeFormatInvalide;
                           return null;
                         },
                       ),
@@ -218,8 +220,8 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                           child: authState.chargement
                               ? const SizedBox(height: 22, width: 22,
                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                              : const Text('Créer mon compte',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+                              : Text(s.creerMonCompte,
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
                         ),
                       ),
                     ],

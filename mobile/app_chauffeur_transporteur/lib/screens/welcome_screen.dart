@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'inscription_screen.dart';
@@ -41,6 +42,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.fond,
       body: Column(
@@ -82,15 +84,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Roulez,\nlivrez, gagnez',
+                                t.welcomeTitre,
                                 style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                                       color: Colors.white, fontSize: 28, height: 1.15,
                                     ),
                               ),
                               const SizedBox(height: 8),
-                              const Text(
-                                'Déclarez vos capacités et acceptez des missions\nsur le corridor CEMAC.',
-                                style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                              Text(
+                                t.welcomeSousTitre,
+                                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
                               ),
                             ],
                           ),
@@ -122,13 +124,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                         backgroundColor: AppColors.accent,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('Créer un compte',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                          Text(t.creerUnCompte,
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
                         ],
                       ),
                     ),
@@ -137,15 +139,15 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('Vous avez déjà un compte ? ',
-                          style: TextStyle(color: AppColors.texteMuet, fontSize: 13)),
+                      Text(t.dejaUnCompte,
+                          style: const TextStyle(color: AppColors.texteMuet, fontSize: 13)),
                       GestureDetector(
                         onTap: () => Navigator.push(
                           context,
                           MaterialPageRoute(builder: (_) => const LoginScreen()),
                         ),
-                        child: const Text('Connexion',
-                            style: TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.bold)),
+                        child: Text(t.connexion,
+                            style: const TextStyle(color: AppColors.accent, fontSize: 13, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),

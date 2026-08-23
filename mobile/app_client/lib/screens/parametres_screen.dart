@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'langue_screen.dart';
 
@@ -14,14 +15,15 @@ class _ParametresScreenState extends State<ParametresScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Paramètres')),
+      appBar: AppBar(title: Text(t.parametres)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('NOTIFICATIONS',
-              style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+          Text(t.sectionNotifications,
+              style: const TextStyle(fontSize: 11, letterSpacing: 1.1, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -33,14 +35,14 @@ class _ParametresScreenState extends State<ParametresScreen> {
               activeThumbColor: AppColors.accent,
               value: _notificationsPush,
               onChanged: (v) => setState(() => _notificationsPush = v),
-              title: const Text('Notifications push', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-              subtitle: const Text('Propositions reçues, statut des demandes', style: TextStyle(fontSize: 12, color: AppColors.texteMuet)),
+              title: Text(t.notificationsPush, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              subtitle: Text(t.notificationsPushDescription, style: const TextStyle(fontSize: 12, color: AppColors.texteMuet)),
             ),
           ),
           const SizedBox(height: 24),
 
-          const Text('GÉNÉRAL',
-              style: TextStyle(fontSize: 11, letterSpacing: 1.1, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+          Text(t.sectionGeneral,
+              style: const TextStyle(fontSize: 11, letterSpacing: 1.1, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -50,7 +52,7 @@ class _ParametresScreenState extends State<ParametresScreen> {
             ),
             child: ListTile(
               leading: const Icon(Icons.language, color: AppColors.texte),
-              title: const Text('Langue', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              title: Text(t.langue, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
               trailing: const Icon(Icons.chevron_right, color: AppColors.texteMuet),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LangueScreen())),
             ),
@@ -58,7 +60,7 @@ class _ParametresScreenState extends State<ParametresScreen> {
           const SizedBox(height: 24),
 
           Center(
-            child: Text('FretCorridor · Version 1.0.0 (bêta)',
+            child: Text(t.versionApp,
                 style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
           ),
         ],

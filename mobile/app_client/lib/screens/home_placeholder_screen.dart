@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kyc_provider.dart';
 import '../providers/notification_provider.dart';
@@ -20,12 +21,13 @@ class HomePlaceholderScreen extends ConsumerWidget {
     final niveauValide = kycState.niveauKyc != 'NIVEAU_0';
     final notifState = ref.watch(notificationProvider);
     final authState = ref.watch(authProvider);
+    final t = AppLocalizations.of(context);
 
     final nomAffiche = kycState.type == 'ENTREPRISE' && (kycState.raisonSociale?.isNotEmpty ?? false)
         ? kycState.raisonSociale!
         : (kycState.prenom?.isNotEmpty ?? false)
             ? kycState.prenom!
-            : 'Chargeur';
+            : t.chargeurDefaut;
     final initiale = nomAffiche.isNotEmpty ? nomAffiche[0].toUpperCase() : '?';
 
     // Passage à un profil complet : notification brève plutôt qu'un bandeau
@@ -36,7 +38,7 @@ class HomePlaceholderScreen extends ConsumerWidget {
       if (!etaitComplet && estComplet) {
         afficherNotification(
           context,
-          message: 'Profil complété ✅ — vous pouvez publier une demande.',
+          message: t.profilCompleteMessage,
           couleur: AppColors.succes,
           icone: Icons.check_circle,
         );
@@ -98,10 +100,10 @@ class HomePlaceholderScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Bonjour, $nomAffiche',
+                          Text(t.bonjour(nomAffiche),
                               style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
                           const SizedBox(height: 2),
-                          Text(authState.tenantId ?? 'Marketplace CEMAC', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                          Text(authState.tenantId ?? t.marketplaceCemac, style: const TextStyle(color: Colors.white70, fontSize: 13)),
                         ],
                       ),
                     ),
@@ -130,13 +132,13 @@ class HomePlaceholderScreen extends ConsumerWidget {
                       children: [
                         const Icon(Icons.info_outline, color: AppColors.accent),
                         const SizedBox(width: 12),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Profil à compléter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              Text('Complétez votre profil pour publier une demande.',
-                                  style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                              Text(t.profilACompleter, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                              Text(t.profilACompleterDescription,
+                                  style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                             ],
                           ),
                         ),
@@ -145,7 +147,7 @@ class HomePlaceholderScreen extends ConsumerWidget {
                             context,
                             MaterialPageRoute(builder: (_) => const CompleterProfilScreen()),
                           ),
-                          child: const Text('Compléter'),
+                          child: Text(t.completer),
                         ),
                       ],
                     ),
@@ -155,8 +157,8 @@ class HomePlaceholderScreen extends ConsumerWidget {
 
                 _CarteAction(
                   icone: Icons.local_shipping_outlined,
-                  titre: 'Envoyer une marchandise',
-                  description: 'Publiez une demande via le catalogue d\'emballages',
+                  titre: t.envoyerMarchandise,
+                  description: t.envoyerMarchandiseDescription,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const MesDemandesScreen()),
@@ -165,8 +167,8 @@ class HomePlaceholderScreen extends ConsumerWidget {
                 const SizedBox(height: 12),
                 _CarteAction(
                   icone: Icons.person_outline,
-                  titre: 'Mon profil',
-                  description: 'Informations personnelles et niveau KYC',
+                  titre: t.monProfil,
+                  description: t.monProfilDescription,
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const CompleterProfilScreen()),

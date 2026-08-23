@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
@@ -44,6 +45,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -69,13 +71,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 24),
-                Text('Se connecter', style: Theme.of(context).textTheme.headlineLarge),
+                Text(t.seConnecter, style: Theme.of(context).textTheme.headlineLarge),
                 const SizedBox(height: 4),
-                const Text('Envoyez vos marchandises, simplement',
-                    style: TextStyle(fontSize: 14, color: AppColors.texteMuet)),
+                Text(t.loginSousTitre,
+                    style: const TextStyle(fontSize: 14, color: AppColors.texteMuet)),
                 const SizedBox(height: 48),
 
-                const Text('TÉLÉPHONE', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
+                Text(t.champTelephone, style: const TextStyle(fontSize: 11, letterSpacing: 1.2,
                     color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 IntlPhoneField(
@@ -99,7 +101,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                const Text('CODE PIN', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
+                Text(t.champCodePin, style: const TextStyle(fontSize: 11, letterSpacing: 1.2,
                     color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -130,8 +132,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'PIN obligatoire';
-                    if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return '4 à 6 chiffres';
+                    if (v == null || v.isEmpty) return t.pinObligatoire;
+                    if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return t.pinFormatInvalide;
                     return null;
                   },
                 ),
@@ -166,7 +168,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: authState.chargement
                         ? const SizedBox(height: 22, width: 22,
                             child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                        : Text('Se connecter',
+                        : Text(t.seConnecter,
                             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold,
                                 color: AppColors.texteBouton)),
                   ),
@@ -179,8 +181,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       context,
                       MaterialPageRoute(builder: (_) => const InscriptionScreen()),
                     ),
-                    child: const Text("Pas encore de compte ? Créer un compte",
-                        style: TextStyle(color: AppColors.accent, fontSize: 13)),
+                    child: Text(t.pasEncoreDeCompte,
+                        style: const TextStyle(color: AppColors.accent, fontSize: 13)),
                   ),
                 ),
                 const SizedBox(height: 32),
