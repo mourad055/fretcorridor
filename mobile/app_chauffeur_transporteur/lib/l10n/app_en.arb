@@ -160,5 +160,14 @@
   "categorieMarchandiseEndommagee": "Damaged goods",
   "categorieAccident": "Accident",
   "categoriePanneVehicule": "Vehicle breakdown",
-  "categorieAutre": "Other"
+  "categorieAutre": "Other",
+  "aucuneNotification": "No notifications.",
+  "refuser": "Decline",
+  "accepter": "Accept",
+  "promoTitre1": "Find missions quickly",
+  "promoDesc1": "Declare your capacity, receive offers on your routes",
+  "promoTitre2": "Secure payment",
+  "promoDesc2": "Track your earnings and payments right in the app",
+  "promoTitre3": "Real-time GPS tracking",
+  "promoDesc3": "Share your position during your missions"
 }

@@ -160,5 +160,14 @@
   "categorieMarchandiseEndommagee": "Marchandise endommagée",
   "categorieAccident": "Accident",
   "categoriePanneVehicule": "Panne véhicule",
-  "categorieAutre": "Autre"
+  "categorieAutre": "Autre",
+  "aucuneNotification": "Aucune notification.",
+  "refuser": "Refuser",
+  "accepter": "Accepter",
+  "promoTitre1": "Trouvez des missions rapidement",
+  "promoDesc1": "Déclarez votre capacité, recevez des propositions sur vos axes",
+  "promoTitre2": "Paiement sécurisé",
+  "promoDesc2": "Suivez vos gains et vos paiements directement dans l'app",
+  "promoTitre3": "Suivi GPS en temps réel",
+  "promoDesc3": "Partagez votre position pendant vos missions"
 }

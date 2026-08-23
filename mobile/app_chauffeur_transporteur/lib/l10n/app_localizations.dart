@@ -1015,6 +1015,60 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Autre'**
   String get categorieAutre;
+
+  /// No description provided for @aucuneNotification.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune notification.'**
+  String get aucuneNotification;
+
+  /// No description provided for @refuser.
+  ///
+  /// In fr, this message translates to:
+  /// **'Refuser'**
+  String get refuser;
+
+  /// No description provided for @accepter.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accepter'**
+  String get accepter;
+
+  /// No description provided for @promoTitre1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trouvez des missions rapidement'**
+  String get promoTitre1;
+
+  /// No description provided for @promoDesc1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déclarez votre capacité, recevez des propositions sur vos axes'**
+  String get promoDesc1;
+
+  /// No description provided for @promoTitre2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paiement sécurisé'**
+  String get promoTitre2;
+
+  /// No description provided for @promoDesc2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suivez vos gains et vos paiements directement dans l\'app'**
+  String get promoDesc2;
+
+  /// No description provided for @promoTitre3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suivi GPS en temps réel'**
+  String get promoTitre3;
+
+  /// No description provided for @promoDesc3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partagez votre position pendant vos missions'**
+  String get promoDesc3;
 }
 
 class _AppLocalizationsDelegate

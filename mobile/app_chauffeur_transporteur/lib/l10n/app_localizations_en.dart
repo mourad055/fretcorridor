@@ -507,4 +507,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get categorieAutre => 'Other';
+
+  @override
+  String get aucuneNotification => 'No notifications.';
+
+  @override
+  String get refuser => 'Decline';
+
+  @override
+  String get accepter => 'Accept';
+
+  @override
+  String get promoTitre1 => 'Find missions quickly';
+
+  @override
+  String get promoDesc1 =>
+      'Declare your capacity, receive offers on your routes';
+
+  @override
+  String get promoTitre2 => 'Secure payment';
+
+  @override
+  String get promoDesc2 => 'Track your earnings and payments right in the app';
+
+  @override
+  String get promoTitre3 => 'Real-time GPS tracking';
+
+  @override
+  String get promoDesc3 => 'Share your position during your missions';
 }

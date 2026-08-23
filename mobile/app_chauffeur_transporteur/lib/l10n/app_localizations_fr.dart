@@ -508,4 +508,33 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get categorieAutre => 'Autre';
+
+  @override
+  String get aucuneNotification => 'Aucune notification.';
+
+  @override
+  String get refuser => 'Refuser';
+
+  @override
+  String get accepter => 'Accepter';
+
+  @override
+  String get promoTitre1 => 'Trouvez des missions rapidement';
+
+  @override
+  String get promoDesc1 =>
+      'Déclarez votre capacité, recevez des propositions sur vos axes';
+
+  @override
+  String get promoTitre2 => 'Paiement sécurisé';
+
+  @override
+  String get promoDesc2 =>
+      'Suivez vos gains et vos paiements directement dans l\'app';
+
+  @override
+  String get promoTitre3 => 'Suivi GPS en temps réel';
+
+  @override
+  String get promoDesc3 => 'Partagez votre position pendant vos missions';
 }
