@@ -77,6 +77,54 @@
 > obtenir/valider le contrat ou la décision produit manquante, pas
 > réimplémenter le mock directement.**
 >
+> **Suite du 23 août — S18 corrigé, langue FR/EN construite.** L'utilisatrice
+> a vérifié elle-même le Plan d'exécution (Sprint 18) et corrigé mon
+> affirmation initiale : "Sélection de tenant au login (si multi-bureau)"
+> **est bien spécifié** côté Plan (backend service-ida+gateway "isolation
+> renforcée, marque blanche" / mobile "sélection au login" / web "portail
+> second bureau distinct") — seul le MÉCANISME d'affiliation (qui accorde
+> l'accès à un second tenant) n'était pas détaillé. Question posée
+> explicitement à l'utilisatrice → réponse : **c'est le second bureau qui
+> invite/valide, jamais le transporteur** (l'invitation EST la validation,
+> aucun flux d'acceptation côté transporteur).
+>
+> **S18 implémenté pour de vrai** : nouvelle table d'affiliation
+> (`AffiliationTenant`, service-ida) séparée du tenant d'origine de l'acteur
+> (jamais modifié — reste l'identité KYC canonique) ; `JwtService` sait
+> émettre un JWT scopé à un tenant différent après vérification de
+> l'affiliation. **Découverte architecturale importante en cours de route** :
+> la gateway n'est PAS un simple proxy vers service-ida — elle émet son
+> PROPRE JWT (secret distinct) qui embarque le token service-ida en
+> "délégation" (claim `idaToken`, double autorité JWT, cf.
+> `ServiceIdaAuthenticationAdapter`). Toute nouvelle fonctionnalité d'auth
+> côté app Chauffeur/Transporteur (qui passe par la gateway, contrairement à
+> app Client) doit donc être doublée : un endpoint service-ida qui fait le
+> vrai travail + un port/adapter/controller gateway qui le relaie et
+> réémet SON PROPRE JWT avec les nouvelles infos (mécanisme déjà utilisé par
+> `IdaProfilPort`/`RealIdaProfilAdapter` pour la complétion KYC — suivi ici à
+> l'identique, pas réinventé). Non traité : le portail web "second bureau
+> distinct" (l'invitation est fonctionnelle via API,
+> `POST /api/v1/bureau/affiliations`, mais sans interface web).
+>
+> **Langue FR/EN (EF-NOT-05) construite en parallèle**, sur simple "fais la
+> langue" — l'écran `langue_screen.dart` (les deux apps) était un mock figé
+> sur "Bientôt disponible" pour l'anglais, sans la moindre infrastructure
+> i18n derrière (zéro `flutter_localizations`, zéro fichier `.arb`, ~300+
+> chaînes en dur rien que côté écrans). Infrastructure `flutter_localizations`
+> + `gen-l10n` complète et réelle dans les deux apps (persistance du choix
+> via `flutter_secure_storage`, `MaterialApp` câblé). **Écrans convertis
+> cette session : le socle commun aux deux apps** (accueil, connexion,
+> inscription, menu, paramètres, langue, accueil principal, centre d'aide,
+> CGU, politique de confidentialité) — testable dès maintenant en changeant
+> la langue dans Paramètres. **Écrans métier de chaque app PAS encore
+> convertis** (toujours en français en dur, aucune régression — simplement
+> pas traduits) : côté app Client — publier une demande, suivi, propositions,
+> paiement, notifications, mes demandes, litige, compléter profil ; côté
+> app Chauffeur — missions, capacité, véhicules, KYC, plan de chargement,
+> etc. Mécanique déjà rodée si une session future veut continuer : extraire
+> chaque `Text('...')` vers une clé ARB (fr+en), remplacer par
+> `AppLocalizations.of(context).cle`, `flutter gen-l10n`, `flutter analyze`.
+>
 > **Suite immédiate (même session, 23 août) : S19 et S16 corrigés pour de
 > vrai, S18 volontairement laissé en l'état — raison ci-dessous.**
 >
