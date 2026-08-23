@@ -108,8 +108,8 @@ Rien ici n'est visible du grand public mais tout le reste en dépend.
 |---|---|---|
 | 1.1 | **Module de gestion des comptes utilisateurs** (créer / désactiver / réactiver / réinitialiser le moyen d'authentification / changer de rôle, par tenant) | Admin |
 | 1.2 | Tenants : édition, statut actif/inactif, vue détail (acteurs rattachés), recherche | Admin |
-| 1.3 | Écran Observatoire de marché (courbes médiane/IQR par axe, indicateur de déséquilibre) | Bureau |
-| 1.4 | Écran Alertes de seuil (liste/bannière des alertes actives par axe) | Bureau |
+| 1.3 | Écran Observatoire de marché (courbes médiane/IQR par axe, indicateur de déséquilibre) | Bureau | ✅ Fait (2026-08-23) — chiffres bruts pour l'instant (pas de courbe, dataviz repoussée à 2.3), estimation de marché incluse |
+| 1.4 | Écran Alertes de seuil (liste/bannière des alertes actives par axe) | Bureau | ✅ Fait (2026-08-23) — création/liste/suppression, état évaluable/déclenchée |
 | 1.5 | Carte de suivi temps réel pour les positions (réutiliser/dériver le composant Leaflet des axes), tableau en vue de repli | Bureau |
 | 1.6 | KPIs en tête de chaque écran "dashboard" des 3 rôles (dossiers en attente/retard, KYC en attente, écart de réconciliation, tenants actifs, solde ventilé transporteur...) — chiffres simples avant tout graphique | Admin, Bureau, Transporteur |
 | 1.7 | Agrégation + export sur les 3 rapports financiers (Admin, Bureau, Transporteur) : totaux, ventilation par période/mode, export CSV a minima | Les 3 |
