@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../models/demande_model.dart';
 import '../providers/suivi_provider.dart';
 import '../theme/app_theme.dart';
@@ -45,11 +46,12 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
   @override
   Widget build(BuildContext context) {
     final suivi = ref.watch(suiviProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
       appBar: AppBar(
-        title: const Text('Suivi de ma livraison'),
+        title: Text(t.suiviTitre),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: AppColors.texteMuet),
@@ -59,7 +61,7 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
       ),
       body: Column(
         children: [
-          if (widget.demande != null) _carteDemande(widget.demande!),
+          if (widget.demande != null) _carteDemande(t, widget.demande!),
           Expanded(
             child: suivi.chargement
                 ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
@@ -72,13 +74,13 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                             children: [
                               const Icon(Icons.hourglass_empty, color: AppColors.bordure, size: 48),
                               const SizedBox(height: 12),
-                              const Text('Suivi pas encore disponible',
-                                  style: TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.bold)),
+                              Text(t.suiviPasDisponible,
+                                  style: const TextStyle(color: AppColors.texteMuet, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 6),
-                              const Text(
-                                'Le suivi démarre dès qu\'un transporteur prend en charge votre demande.',
+                              Text(
+                                t.suiviPasDisponibleDescription,
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: AppColors.texteMuet, fontSize: 12),
+                                style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
                               ),
                             ],
                           ),
@@ -124,10 +126,10 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                         child: Row(children: [
                           const Icon(Icons.merge_type, color: AppColors.marqueOrange, size: 18),
                           const SizedBox(width: 8),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Envoi groupé : votre colis fait partie d\'une tournée consolidée avec d\'autres envois.',
-                              style: TextStyle(color: AppColors.marqueOrange, fontSize: 12, fontWeight: FontWeight.w600),
+                              t.envoiGroupe,
+                              style: const TextStyle(color: AppColors.marqueOrange, fontSize: 12, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ]),
@@ -150,13 +152,13 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  suivi.lieuActuel ?? 'Véhicule en mouvement',
+                                  suivi.lieuActuel ?? t.vehiculeEnMouvement,
                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                 ),
                                 Text(
                                   suivi.position!.ageSecondes < 60
-                                      ? 'Position mise à jour à l\'instant'
-                                      : 'Position mise à jour il y a ${suivi.position!.ageSecondes ~/ 60} min',
+                                      ? t.positionMiseAJourInstant
+                                      : t.positionMiseAJourDepuis(suivi.position!.ageSecondes ~/ 60),
                                   style: const TextStyle(color: AppColors.texteMuet, fontSize: 11),
                                 ),
                               ],
@@ -169,22 +171,25 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(10)),
-                        child: const Text('Position GPS pas encore disponible.',
-                            style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                        child: Text(t.positionGpsIndisponible,
+                            style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                       ),
                       const SizedBox(height: 20),
                     ],
 
                     // ── Chronologie (S7) ───────────────────
-                    Text('Étapes', style: Theme.of(context).textTheme.titleMedium),
+                    Text(t.etapesTitre, style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 12),
                     if (suivi.chronologie!.etapes.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text('Aucune étape enregistrée pour le moment.',
-                            style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(t.aucuneEtape,
+                            style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                       )
                     else
+                      // e.libelle reste en francais : texte saisi/genere au
+                      // moment de l'etape (app Chauffeur), pas de i18n
+                      // serveur pour l'instant (hors perimetre).
                       ...suivi.chronologie!.etapes.map((e) => Padding(
                             padding: const EdgeInsets.only(bottom: 14),
                             child: Row(
@@ -221,7 +226,7 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                           ),
                         ),
                         icon: const Icon(Icons.payments_outlined, size: 18, color: AppColors.accent),
-                        label: const Text('Choisir le moyen de paiement', style: TextStyle(color: AppColors.accent)),
+                        label: Text(t.choisirMoyenPaiement, style: const TextStyle(color: AppColors.accent)),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: AppColors.accent),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -243,7 +248,7 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                           ),
                         ),
                         icon: const Icon(Icons.flag_outlined, size: 18, color: AppColors.erreur),
-                        label: const Text('Signaler un litige', style: TextStyle(color: AppColors.erreur)),
+                        label: Text(t.signalerLitige, style: const TextStyle(color: AppColors.erreur)),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: AppColors.erreur),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -258,7 +263,7 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
     );
   }
 
-  Widget _carteDemande(DemandeModel d) {
+  Widget _carteDemande(AppLocalizations t, DemandeModel d) {
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       padding: const EdgeInsets.all(14),
@@ -275,11 +280,11 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
           _ligneIconee(Icons.inventory_2_outlined, '${d.typeEmballageNom} × ${d.quantite} — ${d.poidsTotalKg.toStringAsFixed(0)} kg'),
           const SizedBox(height: 10),
           _ligneIconee(Icons.calendar_today_outlined,
-              '${_libellesDisponibilite[d.typeDisponibilite] ?? d.typeDisponibilite} · ${_libellesCollecte[d.modeCollecte] ?? d.modeCollecte}'),
+              '${_libelleDisponibilite(t, d.typeDisponibilite)} · ${_libelleCollecte(t, d.modeCollecte)}'),
           const SizedBox(height: 10),
-          _ligneIconee(Icons.person_outline, 'Destinataire : ${d.destinataireNom} · ${d.destinataireTelephone}'),
+          _ligneIconee(Icons.person_outline, t.destinataireLabel(d.destinataireNom, d.destinataireTelephone)),
           const SizedBox(height: 10),
-          _ligneIconee(Icons.access_time, 'Publiée le ${_dateAffichee(d.dateCreation)}'),
+          _ligneIconee(Icons.access_time, t.publieeLe(_dateAffichee(d.dateCreation))),
         ],
       ),
     );
@@ -306,16 +311,22 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
   }
 }
 
-const _libellesDisponibilite = {
-  'DES_QUE_POSSIBLE': 'Dès que possible',
-  'DATE_PRECISE': 'À date précise',
-  'PLAGE': 'Sur une plage horaire',
-};
+String _libelleDisponibilite(AppLocalizations t, String v) {
+  switch (v) {
+    case 'DES_QUE_POSSIBLE': return t.desQuePossible;
+    case 'DATE_PRECISE': return t.dateSpecifique;
+    case 'PLAGE': return t.surPlageHoraire;
+    default: return v;
+  }
+}
 
-const _libellesCollecte = {
-  'DOMICILE': 'Collecte à domicile',
-  'POINT_RELAIS': 'Collecte en point relais',
-};
+String _libelleCollecte(AppLocalizations t, String v) {
+  switch (v) {
+    case 'DOMICILE': return t.collecteADomicile;
+    case 'POINT_RELAIS': return t.collecteEnPointRelais;
+    default: return v;
+  }
+}
 
 String _dateAffichee(DateTime d) {
   final h = d.hour.toString().padLeft(2, '0');

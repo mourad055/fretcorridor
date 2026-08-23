@@ -483,4 +483,171 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get collecteEnPointRelais => 'Drop-off point pickup';
+
+  @override
+  String get suiviTitre => 'Delivery tracking';
+
+  @override
+  String get suiviPasDisponible => 'Tracking not available yet';
+
+  @override
+  String get suiviPasDisponibleDescription =>
+      'Tracking starts as soon as a carrier takes charge of your request.';
+
+  @override
+  String get envoiGroupe =>
+      'Grouped shipment: your parcel is part of a consolidated route with other shipments.';
+
+  @override
+  String get vehiculeEnMouvement => 'Vehicle in motion';
+
+  @override
+  String get positionMiseAJourInstant => 'Position updated just now';
+
+  @override
+  String positionMiseAJourDepuis(int minutes) {
+    return 'Position updated $minutes min ago';
+  }
+
+  @override
+  String get positionGpsIndisponible => 'GPS position not available yet.';
+
+  @override
+  String get etapesTitre => 'Stages';
+
+  @override
+  String get aucuneEtape => 'No stage recorded yet.';
+
+  @override
+  String get choisirMoyenPaiement => 'Choose payment method';
+
+  @override
+  String get modifierLaDemande => 'Edit request';
+
+  @override
+  String get sectionLieu => 'Location';
+
+  @override
+  String get axeFacultatif => 'CORRIDOR (OPTIONAL)';
+
+  @override
+  String get champVilleDepart => 'DEPARTURE CITY';
+
+  @override
+  String get hintVilleDepart => 'E.g.: Yaoundé';
+
+  @override
+  String get obligatoire => 'Required';
+
+  @override
+  String get champVilleArrivee => 'ARRIVAL CITY';
+
+  @override
+  String get hintVilleArrivee => 'E.g.: Douala';
+
+  @override
+  String get sectionMarchandise => 'Goods';
+
+  @override
+  String get typeMarchandise => 'TYPE OF GOODS';
+
+  @override
+  String get catalogueIndisponible => 'Catalog unavailable for now';
+
+  @override
+  String get reessayer => 'Retry';
+
+  @override
+  String get selectionnerLeType => 'Select the type';
+
+  @override
+  String get choisirTypeMarchandise => 'Choose a type of goods';
+
+  @override
+  String get quantiteNombreUnites => 'QUANTITY (NUMBER OF UNITS)';
+
+  @override
+  String quantiteNombreDe(String nom) {
+    return 'QUANTITY (NUMBER OF \"$nom\")';
+  }
+
+  @override
+  String get unites => 'unit(s)';
+
+  @override
+  String get nombreInvalide => 'Invalid number';
+
+  @override
+  String get poidsTotalLabel => 'Total weight';
+
+  @override
+  String get volumeTotalLabel => 'Total volume';
+
+  @override
+  String vehiculeAdapte(String vehicule) {
+    return 'Suitable vehicle: $vehicule';
+  }
+
+  @override
+  String get vehiculeCamionnette => 'Van (up to 500 kg)';
+
+  @override
+  String get vehiculeFourgon => 'Light truck (up to 1.5 t)';
+
+  @override
+  String get vehiculeCamionLeger => 'Light truck 3.5T (up to 3.5 t)';
+
+  @override
+  String get vehiculeCamionMoyen => 'Medium truck 8T (up to 8 t)';
+
+  @override
+  String get vehiculeCamionLourd => 'Heavy truck 20T (up to 20 t)';
+
+  @override
+  String get vehiculeSemiRemorque => 'Semi-trailer (over 20 t)';
+
+  @override
+  String get naturesParticulieres => 'SPECIAL HANDLING';
+
+  @override
+  String get sectionModalites => 'Details';
+
+  @override
+  String get disponibiliteLabel => 'AVAILABILITY';
+
+  @override
+  String get dansUnePlage => 'Within a window';
+
+  @override
+  String get modeCollecteLabel => 'PICKUP METHOD';
+
+  @override
+  String get aDomicile => 'At home';
+
+  @override
+  String get sectionDestinataire => 'Recipient';
+
+  @override
+  String get hintDestinataireNom => 'E.g.: Paul Nkomo';
+
+  @override
+  String get telephoneRenseigner => 'Enter the recipient\'s phone number';
+
+  @override
+  String get prixEstimationMessage =>
+      'The price shown will be an estimate — the final price comes with the accepted offer.';
+
+  @override
+  String nouvelleDemandeAnnulationEchouee(String erreur) {
+    return 'New request posted, but the old one could not be cancelled: $erreur';
+  }
+
+  @override
+  String get demandeModifiee => 'Request updated.';
+
+  @override
+  String get publierLaDemande => 'Post the request';
+
+  @override
+  String get enregistrerModifications => 'Save changes';
 }

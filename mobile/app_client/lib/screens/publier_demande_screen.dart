@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/demande_provider.dart';
 import '../providers/axes_provider.dart';
 import '../models/catalogue_emballage_model.dart';
@@ -99,30 +100,31 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
 
   // Donne un repère concret (type de véhicule) au client plutôt qu'un
   // chiffre brut en kg qu'il ne sait pas interpréter (ex : "2500 kg" seul).
-  String _vehiculeSuggere(double poidsKg) {
-    if (poidsKg <= 500) return 'Camionnette (jusqu\'à 500 kg)';
-    if (poidsKg <= 1500) return 'Fourgon (jusqu\'à 1,5 t)';
-    if (poidsKg <= 3500) return 'Camion léger 3T5 (jusqu\'à 3,5 t)';
-    if (poidsKg <= 8000) return 'Camion moyen 8T (jusqu\'à 8 t)';
-    if (poidsKg <= 20000) return 'Camion lourd 20T (jusqu\'à 20 t)';
-    return 'Semi-remorque (plus de 20 t)';
+  String _vehiculeSuggere(AppLocalizations t, double poidsKg) {
+    if (poidsKg <= 500) return t.vehiculeCamionnette;
+    if (poidsKg <= 1500) return t.vehiculeFourgon;
+    if (poidsKg <= 3500) return t.vehiculeCamionLeger;
+    if (poidsKg <= 8000) return t.vehiculeCamionMoyen;
+    if (poidsKg <= 20000) return t.vehiculeCamionLourd;
+    return t.vehiculeSemiRemorque;
   }
 
   Future<void> _publier() async {
+    final t = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_emballageSelectionne == null) {
-      afficherNotification(context, message: 'Choisissez un type de marchandise', couleur: AppColors.erreur, icone: Icons.error_outline);
+      afficherNotification(context, message: t.choisirTypeMarchandise, couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     if (_destinataireTelephone.isEmpty) {
-      afficherNotification(context, message: 'Renseignez le téléphone du destinataire', couleur: AppColors.erreur, icone: Icons.error_outline);
+      afficherNotification(context, message: t.telephoneRenseigner, couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
 
     if (widget.demandeAModifier == null) {
       afficherNotification(
         context,
-        message: 'Le prix affiché sera une estimation — le prix ferme viendra avec la proposition acceptée.',
+        message: t.prixEstimationMessage,
         duree: const Duration(seconds: 4),
       );
     }
@@ -154,12 +156,12 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       if (erreurAnnulation != null) {
         afficherNotification(
           context,
-          message: 'Nouvelle demande publiée, mais l\'ancienne n\'a pas pu être annulée : $erreurAnnulation',
+          message: t.nouvelleDemandeAnnulationEchouee(erreurAnnulation),
           couleur: AppColors.erreur,
           icone: Icons.error_outline,
         );
       } else {
-        afficherNotification(context, message: 'Demande modifiée.', couleur: AppColors.succes, icone: Icons.check_circle);
+        afficherNotification(context, message: t.demandeModifiee, couleur: AppColors.succes, icone: Icons.check_circle);
       }
     }
 
@@ -178,7 +180,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
     );
   }
 
-  Widget _stepperQuantite() {
+  Widget _stepperQuantite(AppLocalizations t) {
     final q = int.tryParse(_quantiteCtrl.text) ?? 1;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -201,9 +203,9 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
             onPressed: () => _changerQuantite(1),
             icon: const Icon(Icons.add_circle_outline, color: AppColors.accent),
           ),
-          const Padding(
-            padding: EdgeInsets.only(right: 8),
-            child: Text('unité(s)', style: TextStyle(color: AppColors.texteMuet, fontSize: 13)),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Text(t.unites, style: const TextStyle(color: AppColors.texteMuet, fontSize: 13)),
           ),
         ],
       ),
@@ -250,10 +252,11 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   Widget build(BuildContext context) {
     final demandeState = ref.watch(demandeProvider);
     final axesState = ref.watch(axesProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: Text(widget.demandeAModifier == null ? 'Envoyer une marchandise' : 'Modifier la demande')),
+      appBar: AppBar(title: Text(widget.demandeAModifier == null ? t.envoyerMarchandise : t.modifierLaDemande)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -261,12 +264,12 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _section(icone: Icons.map_outlined, titre: 'Lieu', enfants: [
+              _section(icone: Icons.map_outlined, titre: t.sectionLieu, enfants: [
               // S15 — sélecteur d'axe (GET /api/geo/axes?tenantId=...),
               // remplit les villes ci-dessous mais reste facultatif — la
               // saisie libre fonctionne toujours (ex. axe non couvert).
               if (axesState.axes.length > 1) ...[
-                _label('AXE (FACULTATIF)'),
+                _label(t.axeFacultatif),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -292,22 +295,22 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                   }).toList(),
                 ),
               ],
-              _label('VILLE DE DÉPART'),
+              _label(t.champVilleDepart),
               TextFormField(
                 controller: _villeDepartCtrl,
-                decoration: _decoration('Ex : Yaoundé', Icons.trip_origin),
-                validator: (v) => v!.isEmpty ? 'Obligatoire' : null,
+                decoration: _decoration(t.hintVilleDepart, Icons.trip_origin),
+                validator: (v) => v!.isEmpty ? t.obligatoire : null,
               ),
-              _label('VILLE D\'ARRIVÉE'),
+              _label(t.champVilleArrivee),
               TextFormField(
                 controller: _villeArriveeCtrl,
-                decoration: _decoration('Ex : Douala', Icons.place),
-                validator: (v) => v!.isEmpty ? 'Obligatoire' : null,
+                decoration: _decoration(t.hintVilleArrivee, Icons.place),
+                validator: (v) => v!.isEmpty ? t.obligatoire : null,
               ),
               ]),
 
-              _section(icone: Icons.inventory_2_outlined, titre: 'Marchandise', enfants: [
-              _label('TYPE DE MARCHANDISE'),
+              _section(icone: Icons.inventory_2_outlined, titre: t.sectionMarchandise, enfants: [
+              _label(t.typeMarchandise),
               if (demandeState.catalogue.isEmpty)
                 Container(
                   padding: const EdgeInsets.all(14),
@@ -319,13 +322,13 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                     children: [
                       const Icon(Icons.wifi_off, color: AppColors.texteMuet, size: 18),
                       const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text('Catalogue indisponible pour le moment',
-                            style: TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+                      Expanded(
+                        child: Text(t.catalogueIndisponible,
+                            style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                       ),
                       TextButton(
                         onPressed: () => ref.read(demandeProvider.notifier).chargerCatalogue(),
-                        child: const Text('Réessayer'),
+                        child: Text(t.reessayer),
                       ),
                     ],
                   ),
@@ -333,19 +336,19 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
               else
               DropdownButtonFormField<CatalogueEmballageModel>(
                 initialValue: _emballageSelectionne,
-                decoration: _decoration('Sélectionner le type'),
-                hint: const Text('Sélectionner le type'),
+                decoration: _decoration(t.selectionnerLeType),
+                hint: Text(t.selectionnerLeType),
                 items: demandeState.catalogue
                     .map((e) => DropdownMenuItem(value: e, child: Text(e.nom)))
                     .toList(),
                 onChanged: (e) => setState(() => _emballageSelectionne = e),
-                validator: (v) => v == null ? 'Choisissez un type de marchandise' : null,
+                validator: (v) => v == null ? t.choisirTypeMarchandise : null,
               ),
 
               _label(_emballageSelectionne == null
-                  ? 'QUANTITÉ (NOMBRE D\'UNITÉS)'
-                  : 'QUANTITÉ (NOMBRE DE "${_emballageSelectionne!.nom.toUpperCase()}")'),
-              _stepperQuantite(),
+                  ? t.quantiteNombreUnites
+                  : t.quantiteNombreDe(_emballageSelectionne!.nom.toUpperCase())),
+              _stepperQuantite(t),
 
               // Champ caché : conserve le comportement de validation existant
               // (obligatoire, entier positif) sans dupliquer la logique.
@@ -354,8 +357,8 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                 child: TextFormField(
                   controller: _quantiteCtrl,
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Obligatoire';
-                    if (int.tryParse(v) == null || int.parse(v) <= 0) return 'Nombre invalide';
+                    if (v == null || v.isEmpty) return t.obligatoire;
+                    if (int.tryParse(v) == null || int.parse(v) <= 0) return t.nombreInvalide;
                     return null;
                   },
                 ),
@@ -381,8 +384,8 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _ChiffreCalcule('Poids total', '${_poidsTotal.toStringAsFixed(0)} kg'),
-                          _ChiffreCalcule('Volume total', '${_volumeTotal.toStringAsFixed(2)} m³'),
+                          _ChiffreCalcule(t.poidsTotalLabel, '${_poidsTotal.toStringAsFixed(0)} kg'),
+                          _ChiffreCalcule(t.volumeTotalLabel, '${_volumeTotal.toStringAsFixed(2)} m³'),
                         ],
                       ),
                       const Divider(height: 20),
@@ -392,7 +395,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
-                              'Véhicule adapté : ${_vehiculeSuggere(_poidsTotal)}',
+                              t.vehiculeAdapte(_vehiculeSuggere(t, _poidsTotal)),
                               style: const TextStyle(fontSize: 12, color: AppColors.texte, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -404,49 +407,49 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
               ],
 
               // ── Nature particulière ────────────────────────
-              _label('NATURE PARTICULIÈRE'),
+              _label(t.naturesParticulieres),
               Wrap(spacing: 8, runSpacing: 8, children: [
-                _Commutateur('Fragile', _fragile, (v) => setState(() => _fragile = v)),
-                _Commutateur('Périssable', _perissable, (v) => setState(() => _perissable = v)),
-                _Commutateur('Dangereuse', _dangereuse, (v) => setState(() => _dangereuse = v)),
-                _Commutateur('Grande valeur', _grandeValeur, (v) => setState(() => _grandeValeur = v)),
+                _Commutateur(t.fragile, _fragile, (v) => setState(() => _fragile = v)),
+                _Commutateur(t.perissable, _perissable, (v) => setState(() => _perissable = v)),
+                _Commutateur(t.dangereuse, _dangereuse, (v) => setState(() => _dangereuse = v)),
+                _Commutateur(t.grandeValeur, _grandeValeur, (v) => setState(() => _grandeValeur = v)),
               ]),
               ]),
 
-              _section(icone: Icons.schedule_outlined, titre: 'Modalités', enfants: [
-              _label('DISPONIBILITÉ'),
+              _section(icone: Icons.schedule_outlined, titre: t.sectionModalites, enfants: [
+              _label(t.disponibiliteLabel),
               DropdownButtonFormField<String>(
                 initialValue: _typeDisponibilite,
                 decoration: _decoration(''),
-                items: const [
-                  DropdownMenuItem(value: 'DES_QUE_POSSIBLE', child: Text('Dès que possible')),
-                  DropdownMenuItem(value: 'DATE_PRECISE', child: Text('Date précise')),
-                  DropdownMenuItem(value: 'PLAGE', child: Text('Dans une plage')),
+                items: [
+                  DropdownMenuItem(value: 'DES_QUE_POSSIBLE', child: Text(t.desQuePossible)),
+                  DropdownMenuItem(value: 'DATE_PRECISE', child: Text(t.datePrecise)),
+                  DropdownMenuItem(value: 'PLAGE', child: Text(t.dansUnePlage)),
                 ],
                 onChanged: (v) => setState(() => _typeDisponibilite = v!),
               ),
 
               // ── Comment ─────────────────────────────────
-              _label('MODE DE COLLECTE'),
+              _label(t.modeCollecteLabel),
               DropdownButtonFormField<String>(
                 initialValue: _modeCollecte,
                 decoration: _decoration(''),
-                items: const [
-                  DropdownMenuItem(value: 'DOMICILE', child: Text('À domicile')),
-                  DropdownMenuItem(value: 'POINT_RELAIS', child: Text('Point relais')),
+                items: [
+                  DropdownMenuItem(value: 'DOMICILE', child: Text(t.aDomicile)),
+                  DropdownMenuItem(value: 'POINT_RELAIS', child: Text(t.pointRelais)),
                 ],
                 onChanged: (v) => setState(() => _modeCollecte = v!),
               ),
               ]),
 
-              _section(icone: Icons.person_pin_circle_outlined, titre: 'Destinataire', enfants: [
-              _label('NOM'),
+              _section(icone: Icons.person_pin_circle_outlined, titre: t.sectionDestinataire, enfants: [
+              _label(t.labelNom),
               TextFormField(
                 controller: _destinataireNomCtrl,
-                decoration: _decoration('Ex : Paul Nkomo', Icons.person),
-                validator: (v) => v!.isEmpty ? 'Obligatoire' : null,
+                decoration: _decoration(t.hintDestinataireNom, Icons.person),
+                validator: (v) => v!.isEmpty ? t.obligatoire : null,
               ),
-              _label('TÉLÉPHONE'),
+              _label(t.champTelephone),
               IntlPhoneField(
                 initialCountryCode: 'CM',
                 decoration: _decoration('', Icons.phone).copyWith(hintText: null),
@@ -473,7 +476,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                   child: demandeState.publicationEnCours
                       ? const SizedBox(height: 22, width: 22,
                           child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                      : Text(widget.demandeAModifier == null ? 'Publier la demande' : 'Enregistrer les modifications',
+                      : Text(widget.demandeAModifier == null ? t.publierLaDemande : t.enregistrerModifications,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                 ),
               ),

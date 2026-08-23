@@ -485,4 +485,171 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get collecteEnPointRelais => 'Collecte en point relais';
+
+  @override
+  String get suiviTitre => 'Suivi de ma livraison';
+
+  @override
+  String get suiviPasDisponible => 'Suivi pas encore disponible';
+
+  @override
+  String get suiviPasDisponibleDescription =>
+      'Le suivi démarre dès qu\'un transporteur prend en charge votre demande.';
+
+  @override
+  String get envoiGroupe =>
+      'Envoi groupé : votre colis fait partie d\'une tournée consolidée avec d\'autres envois.';
+
+  @override
+  String get vehiculeEnMouvement => 'Véhicule en mouvement';
+
+  @override
+  String get positionMiseAJourInstant => 'Position mise à jour à l\'instant';
+
+  @override
+  String positionMiseAJourDepuis(int minutes) {
+    return 'Position mise à jour il y a $minutes min';
+  }
+
+  @override
+  String get positionGpsIndisponible => 'Position GPS pas encore disponible.';
+
+  @override
+  String get etapesTitre => 'Étapes';
+
+  @override
+  String get aucuneEtape => 'Aucune étape enregistrée pour le moment.';
+
+  @override
+  String get choisirMoyenPaiement => 'Choisir le moyen de paiement';
+
+  @override
+  String get modifierLaDemande => 'Modifier la demande';
+
+  @override
+  String get sectionLieu => 'Lieu';
+
+  @override
+  String get axeFacultatif => 'AXE (FACULTATIF)';
+
+  @override
+  String get champVilleDepart => 'VILLE DE DÉPART';
+
+  @override
+  String get hintVilleDepart => 'Ex : Yaoundé';
+
+  @override
+  String get obligatoire => 'Obligatoire';
+
+  @override
+  String get champVilleArrivee => 'VILLE D\'ARRIVÉE';
+
+  @override
+  String get hintVilleArrivee => 'Ex : Douala';
+
+  @override
+  String get sectionMarchandise => 'Marchandise';
+
+  @override
+  String get typeMarchandise => 'TYPE DE MARCHANDISE';
+
+  @override
+  String get catalogueIndisponible => 'Catalogue indisponible pour le moment';
+
+  @override
+  String get reessayer => 'Réessayer';
+
+  @override
+  String get selectionnerLeType => 'Sélectionner le type';
+
+  @override
+  String get choisirTypeMarchandise => 'Choisissez un type de marchandise';
+
+  @override
+  String get quantiteNombreUnites => 'QUANTITÉ (NOMBRE D\'UNITÉS)';
+
+  @override
+  String quantiteNombreDe(String nom) {
+    return 'QUANTITÉ (NOMBRE DE \"$nom\")';
+  }
+
+  @override
+  String get unites => 'unité(s)';
+
+  @override
+  String get nombreInvalide => 'Nombre invalide';
+
+  @override
+  String get poidsTotalLabel => 'Poids total';
+
+  @override
+  String get volumeTotalLabel => 'Volume total';
+
+  @override
+  String vehiculeAdapte(String vehicule) {
+    return 'Véhicule adapté : $vehicule';
+  }
+
+  @override
+  String get vehiculeCamionnette => 'Camionnette (jusqu\'à 500 kg)';
+
+  @override
+  String get vehiculeFourgon => 'Fourgon (jusqu\'à 1,5 t)';
+
+  @override
+  String get vehiculeCamionLeger => 'Camion léger 3T5 (jusqu\'à 3,5 t)';
+
+  @override
+  String get vehiculeCamionMoyen => 'Camion moyen 8T (jusqu\'à 8 t)';
+
+  @override
+  String get vehiculeCamionLourd => 'Camion lourd 20T (jusqu\'à 20 t)';
+
+  @override
+  String get vehiculeSemiRemorque => 'Semi-remorque (plus de 20 t)';
+
+  @override
+  String get naturesParticulieres => 'NATURE PARTICULIÈRE';
+
+  @override
+  String get sectionModalites => 'Modalités';
+
+  @override
+  String get disponibiliteLabel => 'DISPONIBILITÉ';
+
+  @override
+  String get dansUnePlage => 'Dans une plage';
+
+  @override
+  String get modeCollecteLabel => 'MODE DE COLLECTE';
+
+  @override
+  String get aDomicile => 'À domicile';
+
+  @override
+  String get sectionDestinataire => 'Destinataire';
+
+  @override
+  String get hintDestinataireNom => 'Ex : Paul Nkomo';
+
+  @override
+  String get telephoneRenseigner => 'Renseignez le téléphone du destinataire';
+
+  @override
+  String get prixEstimationMessage =>
+      'Le prix affiché sera une estimation — le prix ferme viendra avec la proposition acceptée.';
+
+  @override
+  String nouvelleDemandeAnnulationEchouee(String erreur) {
+    return 'Nouvelle demande publiée, mais l\'ancienne n\'a pas pu être annulée : $erreur';
+  }
+
+  @override
+  String get demandeModifiee => 'Demande modifiée.';
+
+  @override
+  String get publierLaDemande => 'Publier la demande';
+
+  @override
+  String get enregistrerModifications => 'Enregistrer les modifications';
 }
