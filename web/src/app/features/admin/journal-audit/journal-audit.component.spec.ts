@@ -18,11 +18,20 @@ describe('JournalAuditComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('affiche les entrees du journal au chargement', () => {
+  function flushTenants(fixture: ReturnType<typeof TestBed.createComponent>): void {
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([
+      { id: 'tenant-bgft-douala', nom: 'BGFT Douala', pays: 'CM' },
+    ]);
+  }
+
+  it('affiche les entrees du journal au chargement, tous tenants confondus par defaut', () => {
     const fixture = TestBed.createComponent(JournalAuditComponent);
     fixture.detectChanges();
+    flushTenants(fixture);
 
-    httpMock.expectOne(`${environment.apiBaseUrl}/admin/journal-audit`).flush([
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/journal-audit`);
+    expect(req.request.params.has('tenantId')).toBe(false);
+    req.flush([
       { id: 'e1', tenantId: 'tenant-bgft-douala', acteurId: 'actor-admin-1', action: 'DOSSIER_OUVERT', ressource: 'dossier:d1', horodatage: '2026-08-05T00:00:00Z' },
     ]);
     fixture.detectChanges();
@@ -33,10 +42,29 @@ describe('JournalAuditComponent', () => {
   it("affiche un message si le journal est vide", () => {
     const fixture = TestBed.createComponent(JournalAuditComponent);
     fixture.detectChanges();
+    flushTenants(fixture);
 
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/journal-audit`).flush([]);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain("Aucune entrée");
+  });
+
+  it('recharge le journal filtre sur le tenant selectionne dans le menu', () => {
+    const fixture = TestBed.createComponent(JournalAuditComponent);
+    fixture.detectChanges();
+    flushTenants(fixture);
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/journal-audit`).flush([]);
+    fixture.detectChanges();
+
+    const select: HTMLSelectElement = fixture.nativeElement.querySelector('#journal-audit-tenant');
+    select.value = 'tenant-bgft-douala';
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const reqFiltre = httpMock.expectOne(
+      (r) => r.url === `${environment.apiBaseUrl}/admin/journal-audit` && r.params.get('tenantId') === 'tenant-bgft-douala'
+    );
+    reqFiltre.flush([]);
   });
 });
