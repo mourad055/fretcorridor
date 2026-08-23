@@ -39,16 +39,18 @@ public class DossierRepositoryAdapter implements DossierPort {
     private DossierEntity versEntite(Dossier dossier) {
         return new DossierEntity(dossier.id(), dossier.tenantId(), dossier.type(), dossier.priorite(),
                 dossier.statut(), dossier.missionId(), dossier.parties(), dossier.preuvesReferences(),
-                dossier.ouvertLe(), dossier.delaiTraitement(), dossier.priseEnChargeParActeurId(),
-                dossier.decision(), dossier.motifDecision(), dossier.decidePar(), dossier.decideLe(),
-                dossier.grilleVersionAppliquee(), dossier.recoursDeDossierId());
+                dossier.motif(), dossier.description(), dossier.ouvertLe(), dossier.delaiTraitement(),
+                dossier.priseEnChargeParActeurId(), dossier.decision(), dossier.motifDecision(),
+                dossier.decidePar(), dossier.decideLe(), dossier.grilleVersionAppliquee(),
+                dossier.recoursDeDossierId());
     }
 
     private Dossier versDomaine(DossierEntity entity) {
         return new Dossier(entity.getId(), entity.getTenantId(), entity.getType(), entity.getPriorite(),
                 entity.getStatut(), entity.getMissionId(), entity.getParties(), entity.getPreuvesReferences(),
-                entity.getOuvertLe(), entity.getDelaiTraitement(), entity.getPriseEnChargeParActeurId(),
-                entity.getDecision(), entity.getMotifDecision(), entity.getDecidePar(), entity.getDecideLe(),
-                entity.getGrilleVersionAppliquee(), entity.getRecoursDeDossierId());
+                entity.getMotif(), entity.getDescription(), entity.getOuvertLe(), entity.getDelaiTraitement(),
+                entity.getPriseEnChargeParActeurId(), entity.getDecision(), entity.getMotifDecision(),
+                entity.getDecidePar(), entity.getDecideLe(), entity.getGrilleVersionAppliquee(),
+                entity.getRecoursDeDossierId());
     }
 }

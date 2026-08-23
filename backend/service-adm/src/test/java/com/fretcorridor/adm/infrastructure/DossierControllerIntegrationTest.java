@@ -88,6 +88,44 @@ class DossierControllerIntegrationTest {
                 .andExpect(jsonPath("$.id").value(dossierId));
     }
 
+    /**
+     * S19 (audit de suivi, 23 août) : un chargeur (Mobile, app_client) qui
+     * signale un litige n'envoie ni motif/description structurés côté ADM
+     * ni délai de traitement administratif - le motif/description doivent
+     * survivre, et un délai par défaut (72h, DossierController.DELAI_TRAITEMENT_DEFAUT)
+     * doit être appliqué plutôt que de rejeter la requête.
+     */
+    @Test
+    void ouvrir_un_litige_sans_delai_de_traitement_applique_le_delai_par_defaut() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        Instant avant = Instant.now();
+
+        mockMvc.perform(post("/api/v1/dossiers")
+                        .header("Authorization", "Bearer " + token(tenantId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"tenantId": "%s", "type": "LITIGE", "priorite": "NORMALE", "missionId": "mission-a",
+                                 "motif": "Marchandise endommagée", "description": "Le carton était écrasé."}
+                                """.formatted(tenantId)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.motif").value("Marchandise endommagée"))
+                .andExpect(jsonPath("$.description").value("Le carton était écrasé."))
+                .andExpect(jsonPath("$.delaiTraitement").exists());
+
+        mockMvc.perform(get("/api/v1/dossiers")
+                        .header("Authorization", "Bearer " + token(tenantId)).param("tenantId", tenantId))
+                .andExpect(status().isOk())
+                .andExpect(result -> {
+                    String corps = result.getResponse().getContentAsString();
+                    String delaiTexte = corps.replaceAll(".*\"delaiTraitement\":\"([^\"]+)\".*", "$1");
+                    Instant delai = Instant.parse(delaiTexte);
+                    // Doit tomber proche de "maintenant + 72h", jamais null/immediat.
+                    org.assertj.core.api.Assertions.assertThat(delai)
+                            .isAfter(avant.plus(71, ChronoUnit.HOURS))
+                            .isBefore(avant.plus(73, ChronoUnit.HOURS));
+                });
+    }
+
     /** IDOR corrigé (audit CDC du 19 août, §7.2) : un acteur d'un autre tenant ne peut pas consulter ce dossier. */
     @Test
     void consulter_un_dossier_d_un_autre_tenant_retourne_404() throws Exception {

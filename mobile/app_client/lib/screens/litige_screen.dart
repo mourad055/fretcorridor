@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/litige_provider.dart';
 import '../theme/app_theme.dart';
 
-/// S19 (Sprint 19, "Back-office avancé, litiges"), Volet Client — ⚠️ MOCK,
-/// voir litige_provider.dart. Signalement d'un litige en cohérence avec le
-/// contexte d'une mission donnée (motif, description, référence mission),
-/// accessible depuis l'écran de suivi (suivi_screen.dart).
+/// S19 (Sprint 19, "Back-office avancé, litiges"), Volet Client — appel réel
+/// depuis le 23 août, voir litige_provider.dart. Signalement d'un litige en
+/// cohérence avec le contexte d'une mission donnée (motif, description,
+/// référence mission), accessible depuis l'écran de suivi (suivi_screen.dart).
 class LitigeScreen extends ConsumerStatefulWidget {
   final String demandeId;
   final String missionId;
@@ -48,25 +48,24 @@ class _LitigeScreenState extends ConsumerState<LitigeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.accent.withValues(alpha: 0.4)),
-              ),
-              child: const Row(children: [
-                Icon(Icons.science_outlined, color: AppColors.accent, size: 16),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Démonstration — envoi simulé en attendant le traitement des litiges côté service-adm.',
-                    style: TextStyle(color: AppColors.accent, fontSize: 12),
-                  ),
+            if (state.erreur != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.erreur.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.erreur.withValues(alpha: 0.4)),
                 ),
-              ]),
-            ),
-            const SizedBox(height: 20),
+                child: Row(children: [
+                  const Icon(Icons.error_outline, color: AppColors.erreur, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(state.erreur!, style: const TextStyle(color: AppColors.erreur, fontSize: 12)),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (state.envoye)
               _confirmation()
             else ...[

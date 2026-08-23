@@ -46,6 +46,11 @@ public class DossierEntity {
     @Column(name = "preuve_reference")
     private List<String> preuvesReferences;
 
+    private String motif;
+
+    @Column(length = 2000)
+    private String description;
+
     @Column(nullable = false)
     private Instant ouvertLe;
 
@@ -66,9 +71,10 @@ public class DossierEntity {
     public DossierEntity(String id, String tenantId, com.fretcorridor.adm.domain.TypeDossier type,
                           com.fretcorridor.adm.domain.PrioriteDossier priorite,
                           com.fretcorridor.adm.domain.StatutDossier statut, String missionId, List<String> parties,
-                          List<String> preuvesReferences, Instant ouvertLe, Instant delaiTraitement,
-                          String priseEnChargeParActeurId, String decision, String motifDecision, String decidePar,
-                          Instant decideLe, Integer grilleVersionAppliquee, String recoursDeDossierId) {
+                          List<String> preuvesReferences, String motif, String description, Instant ouvertLe,
+                          Instant delaiTraitement, String priseEnChargeParActeurId, String decision,
+                          String motifDecision, String decidePar, Instant decideLe, Integer grilleVersionAppliquee,
+                          String recoursDeDossierId) {
         this.id = id;
         this.tenantId = tenantId;
         this.type = type;
@@ -77,6 +83,8 @@ public class DossierEntity {
         this.missionId = missionId;
         this.parties = parties;
         this.preuvesReferences = preuvesReferences;
+        this.motif = motif;
+        this.description = description;
         this.ouvertLe = ouvertLe;
         this.delaiTraitement = delaiTraitement;
         this.priseEnChargeParActeurId = priseEnChargeParActeurId;
@@ -118,6 +126,14 @@ public class DossierEntity {
 
     public List<String> getPreuvesReferences() {
         return preuvesReferences;
+    }
+
+    public String getMotif() {
+        return motif;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public Instant getOuvertLe() {

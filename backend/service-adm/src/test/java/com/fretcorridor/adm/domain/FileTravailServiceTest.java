@@ -19,17 +19,28 @@ class FileTravailServiceTest {
     @Test
     void ouvrir_un_dossier_le_place_en_statut_ouvert_et_journalise() {
         Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
-                "mission-a", List.of("acteur-transporteur-1"), List.of(), Instant.now().plus(2, ChronoUnit.DAYS));
+                "mission-a", List.of("acteur-transporteur-1"), List.of(), null, null, Instant.now().plus(2, ChronoUnit.DAYS));
 
         assertThat(dossier.statut()).isEqualTo(StatutDossier.OUVERT);
         assertThat(journalAuditPort.lister("tenant-bgft-douala"))
                 .anyMatch(e -> e.action().equals("DOSSIER_OUVERT"));
     }
 
+    /** Motif/description (audit de suivi, 23 aout) : contenu libre saisi par l'auteur, doit survivre au round-trip. */
+    @Test
+    void ouvrir_un_dossier_conserve_le_motif_et_la_description() {
+        Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
+                "mission-a", List.of(), List.of(), "Marchandise endommagée",
+                "Le carton était écrasé à la livraison.", Instant.now().plus(2, ChronoUnit.DAYS));
+
+        assertThat(dossier.motif()).isEqualTo("Marchandise endommagée");
+        assertThat(dossier.description()).isEqualTo("Le carton était écrasé à la livraison.");
+    }
+
     @Test
     void ouvrir_un_dossier_litige_avec_mission_le_publie_pour_service_pay() {
         service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
-                "mission-a", List.of(), List.of(), Instant.now().plus(2, ChronoUnit.DAYS));
+                "mission-a", List.of(), List.of(), null, null, Instant.now().plus(2, ChronoUnit.DAYS));
 
         assertThat(dossierEventPort.publies()).hasSize(1);
         assertThat(dossierEventPort.publies().get(0).missionId()).isEqualTo("mission-a");
@@ -38,9 +49,9 @@ class FileTravailServiceTest {
     @Test
     void ouvrir_un_dossier_moderation_ou_sans_mission_n_est_jamais_publie() {
         service.ouvrir("tenant-bgft-douala", TypeDossier.MODERATION, PrioriteDossier.NORMALE,
-                null, List.of(), List.of(), Instant.now().plus(2, ChronoUnit.DAYS));
+                null, List.of(), List.of(), null, null, Instant.now().plus(2, ChronoUnit.DAYS));
         service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
-                null, List.of(), List.of(), Instant.now().plus(2, ChronoUnit.DAYS));
+                null, List.of(), List.of(), null, null, Instant.now().plus(2, ChronoUnit.DAYS));
 
         assertThat(dossierEventPort.publies()).isEmpty();
     }
@@ -49,11 +60,11 @@ class FileTravailServiceTest {
     void la_file_de_travail_priorise_les_dossiers_haute_priorite_puis_le_delai_le_plus_proche() {
         Instant maintenant = Instant.now();
         Dossier basse = service.ouvrir("tenant-bgft-douala", TypeDossier.MODERATION, PrioriteDossier.BASSE, null,
-                List.of(), List.of(), maintenant.plus(1, ChronoUnit.DAYS));
+                List.of(), List.of(), null, null, maintenant.plus(1, ChronoUnit.DAYS));
         Dossier hauteLointaine = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.HAUTE, null,
-                List.of(), List.of(), maintenant.plus(5, ChronoUnit.DAYS));
+                List.of(), List.of(), null, null, maintenant.plus(5, ChronoUnit.DAYS));
         Dossier hauteProche = service.ouvrir("tenant-bgft-douala", TypeDossier.INCIDENT, PrioriteDossier.HAUTE, null,
-                List.of(), List.of(), maintenant.plus(1, ChronoUnit.HOURS));
+                List.of(), List.of(), null, null, maintenant.plus(1, ChronoUnit.HOURS));
 
         List<Dossier> file = service.lister("tenant-bgft-douala");
 
@@ -63,7 +74,7 @@ class FileTravailServiceTest {
     @Test
     void prendre_en_charge_un_dossier_le_passe_en_cours_et_journalise_l_acteur() {
         Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.INCIDENT, PrioriteDossier.NORMALE, null,
-                List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
         Dossier misAJour = service.prendreEnCharge(dossier.id(), "actor-admin-1");
 
@@ -77,7 +88,7 @@ class FileTravailServiceTest {
     @Test
     void consulter_un_dossier_de_son_propre_tenant_reussit() {
         Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
-                "mission-a", List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                "mission-a", List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
         Dossier consulte = service.consulter(dossier.id(), "tenant-bgft-douala");
 
@@ -88,7 +99,7 @@ class FileTravailServiceTest {
     @Test
     void consulter_un_dossier_d_un_autre_tenant_est_refuse_comme_introuvable() {
         Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
-                "mission-a", List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                "mission-a", List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
         assertThatThrownBy(() -> service.consulter(dossier.id(), "tenant-bnft-ndjamena"))
                 .isInstanceOf(DossierIntrouvableException.class);
@@ -106,7 +117,7 @@ class FileTravailServiceTest {
                 tenantId, "grille v1", "actor-admin-1", 1, Instant.now()));
         DecisionService decisionService = new DecisionService(dossierPort, journalAuditPort, dossierEventPort, configurationPort);
         Dossier dossier = service.ouvrir(tenantId, TypeDossier.LITIGE, PrioriteDossier.NORMALE, "mission-a",
-                List.of("acteur-transporteur-1"), List.of("preuve-1"), Instant.now().plus(1, ChronoUnit.DAYS));
+                List.of("acteur-transporteur-1"), List.of("preuve-1"), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
         return decisionService.trancher(dossier.id(), "RESOLU_EN_FAVEUR_TRANSPORTEUR", "motif", decideur);
     }
 
@@ -131,7 +142,7 @@ class FileTravailServiceTest {
     @Test
     void ouvrir_un_recours_sur_un_dossier_pas_encore_tranche_est_refuse() {
         Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
-                null, List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                null, List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
         assertThatThrownBy(() -> service.ouvrirRecours(dossier.id(), PrioriteDossier.HAUTE, Instant.now().plus(1, ChronoUnit.DAYS)))
                 .isInstanceOf(DossierNonTrancheException.class);

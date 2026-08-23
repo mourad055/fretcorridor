@@ -18,6 +18,15 @@ public record Dossier(
         String missionId,
         List<String> parties,
         List<String> preuvesReferences,
+        // Motif/description (audit de suivi, 23 aout) : contenu libre saisi
+        // par l'auteur du signalement (ex. chargeur, S19) - jusqu'ici absent
+        // du contrat, qui ne portait que des references structurees
+        // (parties/preuves), pensees pour un dossier ouvert cote ADM plutot
+        // que pour la plainte initiale d'un utilisateur. Nullables : les
+        // autres types de dossier (MODERATION/INCIDENT) n'en fournissent
+        // pas forcement.
+        String motif,
+        String description,
         Instant ouvertLe,
         Instant delaiTraitement,
         String priseEnChargeParActeurId,
@@ -33,24 +42,24 @@ public record Dossier(
             throw new DossierDejaTrancheException(id);
         }
         return new Dossier(id, tenantId, type, priorite, StatutDossier.EN_COURS, missionId, parties,
-                preuvesReferences, ouvertLe, delaiTraitement, acteurId, decision, motifDecision, decidePar, decideLe,
-                grilleVersionAppliquee, recoursDeDossierId);
+                preuvesReferences, motif, description, ouvertLe, delaiTraitement, acteurId, decision, motifDecision,
+                decidePar, decideLe, grilleVersionAppliquee, recoursDeDossierId);
     }
 
     /** RG-096 : {@code grilleVersion} est la version de la grille de décision appliquée, enregistrée avec la décision. */
-    public Dossier trancher(String decisionPrise, String motif, String acteurId, Instant maintenant, int grilleVersion) {
+    public Dossier trancher(String decisionPrise, String motifDecision, String acteurId, Instant maintenant, int grilleVersion) {
         if (statut == StatutDossier.CLOS) {
             throw new DossierDejaTrancheException(id);
         }
         return new Dossier(id, tenantId, type, priorite, StatutDossier.CLOS, missionId, parties,
-                preuvesReferences, ouvertLe, delaiTraitement, priseEnChargeParActeurId, decisionPrise, motif,
-                acteurId, maintenant, grilleVersion, recoursDeDossierId);
+                preuvesReferences, motif, description, ouvertLe, delaiTraitement, priseEnChargeParActeurId,
+                decisionPrise, motifDecision, acteurId, maintenant, grilleVersion, recoursDeDossierId);
     }
 
     public Dossier escalader() {
         return new Dossier(id, tenantId, type, PrioriteDossier.HAUTE, StatutDossier.ESCALADE, missionId, parties,
-                preuvesReferences, ouvertLe, delaiTraitement, priseEnChargeParActeurId, decision, motifDecision,
-                decidePar, decideLe, grilleVersionAppliquee, recoursDeDossierId);
+                preuvesReferences, motif, description, ouvertLe, delaiTraitement, priseEnChargeParActeurId, decision,
+                motifDecision, decidePar, decideLe, grilleVersionAppliquee, recoursDeDossierId);
     }
 
     public boolean delaiDepasse(Instant maintenant) {

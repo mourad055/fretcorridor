@@ -21,7 +21,7 @@ class EscaladeServiceTest {
     void un_dossier_dont_le_delai_est_depasse_est_escalade_en_haute_priorite() {
         Instant maintenant = Instant.now();
         Dossier dossier = fileTravailService.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.BASSE,
-                null, List.of(), List.of(), maintenant.minus(1, ChronoUnit.HOURS));
+                null, List.of(), List.of(), null, null, maintenant.minus(1, ChronoUnit.HOURS));
 
         List<Dossier> escalades = escaladeService.detecterEtEscalader(maintenant);
 
@@ -36,7 +36,7 @@ class EscaladeServiceTest {
     void un_dossier_dont_le_delai_n_est_pas_depasse_n_est_pas_escalade() {
         Instant maintenant = Instant.now();
         fileTravailService.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.BASSE, null, List.of(),
-                List.of(), maintenant.plus(1, ChronoUnit.DAYS));
+                List.of(), null, null, maintenant.plus(1, ChronoUnit.DAYS));
 
         assertThat(escaladeService.detecterEtEscalader(maintenant)).isEmpty();
     }
@@ -45,7 +45,7 @@ class EscaladeServiceTest {
     void un_dossier_deja_clos_n_est_jamais_escalade_meme_si_le_delai_est_depasse() {
         Instant maintenant = Instant.now();
         Dossier dossier = fileTravailService.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.BASSE,
-                null, List.of(), List.of(), maintenant.minus(1, ChronoUnit.HOURS));
+                null, List.of(), List.of(), null, null, maintenant.minus(1, ChronoUnit.HOURS));
         InMemoryConfigurationPort configurationPort = new InMemoryConfigurationPort();
         configurationPort.sauvegarder(new ConfigurationVersionnee("g-1", DecisionService.CLE_GRILLE_DECISION,
                 "tenant-bgft-douala", "grille v1", "actor-admin-1", 1, Instant.now()));

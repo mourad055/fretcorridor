@@ -27,7 +27,7 @@ class DecisionServiceTest {
     void trancher_un_dossier_le_clot_et_journalise_la_decision() {
         definirGrille("tenant-bgft-douala");
         Dossier dossier = fileTravailService.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
-                "mission-a", List.of("acteur-transporteur-1"), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                "mission-a", List.of("acteur-transporteur-1"), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
         Dossier tranche = decisionService.trancher(dossier.id(), "RESOLU_EN_FAVEUR_TRANSPORTEUR",
                 "Preuve de livraison conforme", "actor-admin-1");
@@ -48,7 +48,7 @@ class DecisionServiceTest {
     void trancher_un_dossier_deja_clos_est_interdit() {
         definirGrille("tenant-bgft-douala");
         Dossier dossier = fileTravailService.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
-                null, List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                null, List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
         decisionService.trancher(dossier.id(), "CLOS_SANS_SUITE", "motif", "actor-admin-1");
 
         assertThatThrownBy(() -> decisionService.trancher(dossier.id(), "AUTRE", "motif", "actor-admin-1"))
@@ -59,7 +59,7 @@ class DecisionServiceTest {
     @Test
     void trancher_sans_grille_de_decision_definie_pour_le_tenant_est_refuse() {
         Dossier dossier = fileTravailService.ouvrir("tenant-sans-grille", TypeDossier.MODERATION, PrioriteDossier.NORMALE,
-                null, List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                null, List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
         assertThatThrownBy(() -> decisionService.trancher(dossier.id(), "CLOS_SANS_SUITE", "motif", "actor-admin-1"))
                 .isInstanceOf(GrilleDecisionAbsenteException.class);
@@ -73,7 +73,7 @@ class DecisionServiceTest {
                 "tenant-bnft-ndjamena", "grille v2", "actor-admin-1", 2, Instant.now()));
 
         Dossier dossier = fileTravailService.ouvrir("tenant-bnft-ndjamena", TypeDossier.MODERATION, PrioriteDossier.NORMALE,
-                null, List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                null, List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
         Dossier tranche = decisionService.trancher(dossier.id(), "CLOS_SANS_SUITE", "motif", "actor-admin-1");
 
@@ -86,7 +86,7 @@ class DecisionServiceTest {
         definirGrille("tenant-bgft-douala");
         FileTravailService fileTravailServiceLocal = new FileTravailService(dossierPort, journalAuditPort, dossierEventPort);
         Dossier original = fileTravailServiceLocal.ouvrir("tenant-bgft-douala", TypeDossier.MODERATION, PrioriteDossier.NORMALE,
-                null, List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                null, List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
         Dossier tranche = decisionService.trancher(original.id(), "CLOS_SANS_SUITE", "motif", "actor-admin-1");
         Dossier recours = fileTravailServiceLocal.ouvrirRecours(tranche.id(), PrioriteDossier.HAUTE, Instant.now().plus(1, ChronoUnit.DAYS));
 

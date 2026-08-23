@@ -50,7 +50,7 @@ class DossierPersistenceIntegrationTest {
 
         Dossier ouvert = fileTravailService.ouvrir(tenantId, TypeDossier.LITIGE, PrioriteDossier.HAUTE, "mission-a",
                 List.of("acteur-transporteur-1", "acteur-bureau-1"), List.of("preuve-photo-1"),
-                Instant.now().plus(2, ChronoUnit.DAYS));
+                null, null, Instant.now().plus(2, ChronoUnit.DAYS));
 
         List<Dossier> file = fileTravailService.lister(tenantId);
 
@@ -64,7 +64,7 @@ class DossierPersistenceIntegrationTest {
     void une_decision_persistee_clot_le_dossier_de_facon_durable() {
         String tenantId = "tenant-test-" + System.nanoTime();
         Dossier dossier = fileTravailService.ouvrir(tenantId, TypeDossier.INCIDENT, PrioriteDossier.NORMALE, null,
-                List.of(), List.of(), Instant.now().plus(1, ChronoUnit.DAYS));
+                List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
         configurationService.definir(DecisionService.CLE_GRILLE_DECISION, tenantId, "grille v1", "actor-admin-1");
 
         decisionService.trancher(dossier.id(), "CLOS_SANS_SUITE", "Incident résolu", "actor-admin-1");

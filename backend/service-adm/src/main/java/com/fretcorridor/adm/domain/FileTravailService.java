@@ -24,9 +24,10 @@ public class FileTravailService {
     }
 
     public Dossier ouvrir(String tenantId, TypeDossier type, PrioriteDossier priorite, String missionId,
-                           List<String> parties, List<String> preuvesReferences, Instant delaiTraitement) {
-        return creerEtPublier(tenantId, type, priorite, missionId, parties, preuvesReferences, delaiTraitement,
-                null, "DOSSIER_OUVERT");
+                           List<String> parties, List<String> preuvesReferences, String motif, String description,
+                           Instant delaiTraitement) {
+        return creerEtPublier(tenantId, type, priorite, missionId, parties, preuvesReferences, motif, description,
+                delaiTraitement, null, "DOSSIER_OUVERT");
     }
 
     /**
@@ -44,16 +45,17 @@ public class FileTravailService {
             throw new DossierNonTrancheException(dossierOriginalId);
         }
         return creerEtPublier(original.tenantId(), original.type(), priorite, original.missionId(),
-                original.parties(), original.preuvesReferences(), delaiTraitement, dossierOriginalId,
-                "DOSSIER_RECOURS_OUVERT");
+                original.parties(), original.preuvesReferences(), original.motif(), original.description(),
+                delaiTraitement, dossierOriginalId, "DOSSIER_RECOURS_OUVERT");
     }
 
     private Dossier creerEtPublier(String tenantId, TypeDossier type, PrioriteDossier priorite, String missionId,
-                                    List<String> parties, List<String> preuvesReferences, Instant delaiTraitement,
-                                    String recoursDeDossierId, String actionJournal) {
+                                    List<String> parties, List<String> preuvesReferences, String motif,
+                                    String description, Instant delaiTraitement, String recoursDeDossierId,
+                                    String actionJournal) {
         Dossier dossier = new Dossier(UUID.randomUUID().toString(), tenantId, type, priorite, StatutDossier.OUVERT,
-                missionId, parties, preuvesReferences, Instant.now(), delaiTraitement, null, null, null, null, null,
-                null, recoursDeDossierId);
+                missionId, parties, preuvesReferences, motif, description, Instant.now(), delaiTraitement, null,
+                null, null, null, null, null, recoursDeDossierId);
         dossierPort.sauvegarder(dossier);
         journalAuditPort.enregistrer(new EntreeJournalAudit(UUID.randomUUID().toString(), tenantId, "system",
                 actionJournal, "dossier:" + dossier.id(), Instant.now()));
@@ -78,7 +80,8 @@ public class FileTravailService {
             return Optional.empty();
         }
         return Optional.of(creerEtPublier(tenantId, TypeDossier.INCIDENT, PrioriteDossier.HAUTE, missionId,
-                List.of(), List.of(description), delaiTraitement, null, "DOSSIER_INCIDENT_RECONCILIATION_OUVERT"));
+                List.of(), List.of(description), null, description, delaiTraitement, null,
+                "DOSSIER_INCIDENT_RECONCILIATION_OUVERT"));
     }
 
     public List<Dossier> lister(String tenantId) {

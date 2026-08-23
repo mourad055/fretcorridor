@@ -40,14 +40,25 @@ public class DossierController {
         this.jwtService = jwtService;
     }
 
+    // Delai de traitement par defaut (audit de suivi, 23 aout, S19) : un
+    // chargeur qui signale un litige (Mobile, app_client) n'a aucune idee
+    // d'un "delai de traitement" administratif - HYPOTHESE D'EQUIPE (a
+    // valider, meme statut que RISQUE_AXE=SURVEILLE->0.5 cote service-opt) :
+    // 72h, jamais invente comme une donnee certaine, applique uniquement en
+    // repli quand l'appelant (typiquement ADM en interne) n'en fournit pas.
+    private static final java.time.Duration DELAI_TRAITEMENT_DEFAUT = java.time.Duration.ofHours(72);
+
     @PostMapping
     public ResponseEntity<DossierResponse> ouvrir(@Valid @RequestBody OuvrirDossierRequest request,
                                                     @RequestHeader("Authorization") String authHeader) {
         String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        Instant delaiTraitement = request.delaiTraitement() != null
+                ? request.delaiTraitement()
+                : Instant.now().plus(DELAI_TRAITEMENT_DEFAUT);
         Dossier dossier = fileTravailService.ouvrir(tenantId, request.type(), request.priorite(),
                 request.missionId(), request.parties() == null ? List.of() : request.parties(),
                 request.preuvesReferences() == null ? List.of() : request.preuvesReferences(),
-                request.delaiTraitement());
+                request.motif(), request.description(), delaiTraitement);
         return ResponseEntity.status(201).body(DossierResponse.from(dossier));
     }
 

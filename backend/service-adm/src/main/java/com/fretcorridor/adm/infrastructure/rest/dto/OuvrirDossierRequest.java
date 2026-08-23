@@ -14,6 +14,14 @@ public record OuvrirDossierRequest(
         String missionId,
         List<String> parties,
         List<String> preuvesReferences,
-        @NotNull(message = "Le délai de traitement est obligatoire") Instant delaiTraitement
+        // Motif/description (audit de suivi, 23 aout) - cf javadoc Dossier.
+        String motif,
+        String description,
+        // Nullable depuis le 23 aout (S19, litige initie par un chargeur,
+        // Mobile) : cf javadoc DossierController.ouvrir sur le delai par
+        // defaut applique quand absent - un auteur ADM interne connait un
+        // vrai delai de traitement, un chargeur qui signale un litige n'en
+        // a aucune idee.
+        Instant delaiTraitement
 ) {
 }

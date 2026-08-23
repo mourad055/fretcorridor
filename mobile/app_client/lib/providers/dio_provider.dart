@@ -38,6 +38,14 @@ const String _apiBasePay = String.fromEnvironment(
   defaultValue: 'http://localhost:8088/api/v1/pay',
 );
 
+// S19 (audit de suivi, 23 août) — service-adm (Web), signalement de litige.
+// Même raisonnement que les autres clients directs : aucune route gateway
+// pour le rôle Chargeur.
+const String _apiBaseAdm = String.fromEnvironment(
+  'API_BASE_ADM',
+  defaultValue: 'http://localhost:8095/api/v1',
+);
+
 const String keyAccessToken = 'access_token';
 const String keyRefreshToken = 'refresh_token';
 
@@ -122,3 +130,6 @@ final fltDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseFlt));
 
 /// service-pay (8088) — choix du moyen de paiement (S14 Item B).
 final payDioProvider = Provider<Dio>((ref) => _creerClient(_apiBasePay));
+
+/// service-adm (8095) — signalement de litige (S19).
+final admDioProvider = Provider<Dio>((ref) => _creerClient(_apiBaseAdm));
