@@ -76,6 +76,53 @@
 > **Si une session future s'attaque à l'un des trois, commencer par
 > obtenir/valider le contrat ou la décision produit manquante, pas
 > réimplémenter le mock directement.**
+>
+> **Suite immédiate (même session, 23 août) : S19 et S16 corrigés pour de
+> vrai, S18 volontairement laissé en l'état — raison ci-dessous.**
+>
+> **S19 (litige app_client)** : le contrat `POST /api/v1/dossiers`
+> (service-adm) ne portait ni `motif` ni `description` (pensé pour un
+> dossier ouvert côté ADM avec parties/preuves structurées, pas pour la
+> plainte initiale d'un chargeur) — étendu avec ces deux champs texte
+> libre. `delaiTraitement` devient optionnel : un chargeur n'a aucune idée
+> d'un délai de traitement administratif, un délai par défaut (72h,
+> hypothèse d'équipe documentée dans `DossierController`) s'applique
+> maintenant à la place d'un rejet. `litige_provider.dart` appelle
+> réellement l'endpoint (nouveau client Dio direct vers service-adm, même
+> raisonnement que les autres — aucune route gateway pour le rôle
+> Chargeur).
+>
+> **S16 (plan de chargement)** : `PlanChargementConfirmeEvent` était déjà
+> publié pour de vrai par service-opt (`SequencementDeclencheur`) mais
+> **aucun service ne le consommait** — canal mort, pas un contrat inventé
+> ici. Complété plutôt que redéfini : nouveau listener + entité
+> `PlanChargementEtape` côté service-exe (corrélée à l'`EtapeTournee`
+> locale par `(tourneeId, rang)` — les deux entités `EtapeTournee`, opt et
+> exe, ont des ids internes distincts, rang est la seule clé partagée),
+> `GET /missions/tournees/{tourneeId}` (déjà utilisé par l'écran tournée
+> multi-étapes, S11) expose désormais `chargesParEssieu` par étape,
+> propagé à travers 3 couches de DTO gateway jusqu'ici silencieuses sur ce
+> champ (records stricts, Jackson ignore un champ inconnu sans erreur).
+> Mobile : positions/orientations de colis **retirées** de l'écran (le
+> Moteur ne les calcule pas, contrat colis 3D absent) — seule la
+> répartition de poids par essieu (donnée réelle, garantie faisable par
+> construction puisque l'oracle ne publie jamais un état rejeté) est
+> restituée.
+>
+> **S18 (sélection tenant) : NON traité, à dessein.** Contrairement à
+> S16/S19, aucune primitive backend n'existe à compléter — `Acteur.telephone`
+> porte une contrainte **UNIQUE globale** en base (`service-ida`), donc un
+> numéro de téléphone ne peut structurellement appartenir qu'à UN SEUL
+> tenant aujourd'hui. Supporter "un acteur choisit son tenant" exigerait de
+> concevoir de zéro un modèle d'affiliation multi-tenant (nouvelle table
+> de rattachement, mécanisme d'octroi de l'affiliation, ré-émission d'un
+> JWT après sélection) — rien de tout cela n'est spécifié dans le CDC ni
+> déjà esquissé dans le code. C'est une décision de produit/architecture,
+> pas une correction — à ne pas trancher seul, surtout que ça touche
+> directement le hack mono-tenant Phase 1 (ADR 0011) sur lequel tout le
+> reste du backend s'appuie. **Si une session future s'y attaque : d'abord
+> obtenir la décision produit sur comment l'affiliation est accordée,
+> avant tout schéma de base de données.**
 
 ---
 
