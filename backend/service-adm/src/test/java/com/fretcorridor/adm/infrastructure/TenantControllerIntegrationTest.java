@@ -39,9 +39,12 @@ class TenantControllerIntegrationTest {
     private String jwtSecret;
 
     private String token() {
+        // Role ADMINISTRATION requis depuis le correctif du 23 aout (audit de
+        // suivi) : la creation de tenant est desormais reservee a ce role,
+        // meme pattern que DossierController/JournalAuditController.
         return Jwts.builder()
                 .subject(UUID.randomUUID().toString())
-                .claim("roles", List.of("ADMIN"))
+                .claim("roles", List.of("ADMINISTRATION"))
                 .claim("tenantId", "tenant-jwt-test")
                 .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
                 .compact();
@@ -79,5 +82,23 @@ class TenantControllerIntegrationTest {
         mockMvc.perform(post("/api/v1/tenants")
                         .header("Authorization", "Bearer " + token()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    void creer_un_tenant_sans_le_role_administration_est_rejete() throws Exception {
+        String tokenSansRole = Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("roles", List.of("CHARGEUR"))
+                .claim("tenantId", "tenant-jwt-test")
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+
+        mockMvc.perform(post("/api/v1/tenants")
+                        .header("Authorization", "Bearer " + tokenSansRole)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id": "tenant-refuse", "nom": "Bureau", "pays": "Cameroun", "auteur": "actor-1"}
+                                """))
+                .andExpect(status().isForbidden());
     }
 }

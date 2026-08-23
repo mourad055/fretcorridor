@@ -4,6 +4,7 @@ import com.fretcorridor.dto.PointGeoDto;
 import com.fretcorridor.opt.client.CandidatCoutDto;
 import com.fretcorridor.opt.client.CoutLotResponseDto;
 import com.fretcorridor.opt.client.CoutResponseDto;
+import com.fretcorridor.opt.client.ServiceCapClient;
 import com.fretcorridor.opt.client.ServiceGeoClient;
 import com.fretcorridor.opt.client.ServiceMatClient;
 import com.fretcorridor.opt.client.ValhallaClient;
@@ -41,6 +42,7 @@ class AffectationL1ServiceTest {
     @Mock private AffectationRepository affectationRepository;
     @Mock private OptEventPublisher eventPublisher;
     @Mock private ServiceGeoClient serviceGeoClient;
+    @Mock private ServiceCapClient serviceCapClient;
 
     private AffectationL1Service service;
 
@@ -48,7 +50,7 @@ class AffectationL1ServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         service = new AffectationL1Service(serviceMatClient, valhallaClient, tarificationL4Service,
-                affectationRepository, eventPublisher, serviceGeoClient);
+                affectationRepository, eventPublisher, serviceGeoClient, serviceCapClient);
     }
 
     @Test

@@ -13,7 +13,7 @@ import com.flysoft.fretcorridor.mkt.repository.PropositionRepository;
 import com.flysoft.fretcorridor.mkt.messaging.DemandeAnnuleeEvent;
 import com.flysoft.fretcorridor.mkt.messaging.DemandePublieeEvent;
 import com.flysoft.fretcorridor.mkt.messaging.MktEventPublisher;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -22,12 +22,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class DemandeService {
 
-    // Coefficient volumétrique MVP (kg/m³) — placeholder simple, la vraie
-    // tarification (RG-037) relève du moteur, pas de ce service.
-    private static final double COEFFICIENT_VOLUMETRIQUE = 200.0;
+    // RG-101 (audit de suivi, 23 aout) : meme cle que CalculateurPoidsTaxable
+    // cote service-cap (Axe.parametres.coefficientVolumetriqueKgParM3) - un
+    // operateur d'axe fixe UNE valeur, exploitee de facon coherente cote
+    // marketplace (ce fichier) ET cote declaration de capacite transporteur.
+    // Repli sur cette reference globale si l'axe n'a rien configure -
+    // alignee sur la valeur de reference deja validee cote service-cap
+    // (333.0, remplace l'ancien placeholder 200.0 propre a ce service).
+    private static final String CLE_COEFFICIENT_VOLUMETRIQUE = "coefficientVolumetriqueKgParM3";
 
     private final DemandeRepository demandeRepository;
     private final CatalogueEmballageRepository catalogueRepository;
@@ -36,6 +40,30 @@ public class DemandeService {
     private final ServiceGeoClient serviceGeoClient;
     private final ServiceCapClient serviceCapClient;
     private final ServiceNotClient serviceNotClient;
+    private final double coefficientVolumetriqueReference;
+
+    // Constructeur explicite (remplace @RequiredArgsConstructor) : seul moyen
+    // de porter @Value sur coefficientVolumetriqueReference tout en gardant
+    // le champ final et testable sans contexte Spring (meme pattern que
+    // CalculateurPoidsTaxable cote service-cap).
+    public DemandeService(DemandeRepository demandeRepository,
+                           CatalogueEmballageRepository catalogueRepository,
+                           MktEventPublisher eventPublisher,
+                           PropositionRepository propositionRepository,
+                           ServiceGeoClient serviceGeoClient,
+                           ServiceCapClient serviceCapClient,
+                           ServiceNotClient serviceNotClient,
+                           @Value("${fretcorridor.mkt.coefficient-volumetrique-kg-par-m3:333.0}")
+                           double coefficientVolumetriqueReference) {
+        this.demandeRepository = demandeRepository;
+        this.catalogueRepository = catalogueRepository;
+        this.eventPublisher = eventPublisher;
+        this.propositionRepository = propositionRepository;
+        this.serviceGeoClient = serviceGeoClient;
+        this.serviceCapClient = serviceCapClient;
+        this.serviceNotClient = serviceNotClient;
+        this.coefficientVolumetriqueReference = coefficientVolumetriqueReference;
+    }
 
     // RG-038 : publication exige le niveau KYC 1 minimum
     @Transactional
@@ -48,10 +76,6 @@ public class DemandeService {
 
         CatalogueEmballage emballage = catalogueRepository.findById(request.getTypeEmballageId())
                 .orElseThrow(() -> new RuntimeException("TYPE_EMBALLAGE_INTROUVABLE"));
-
-        double poidsTotal = emballage.getPoidsUnitaireKg() * request.getQuantite();
-        double volumeTotal = emballage.getVolumeUnitaireM3() * request.getQuantite();
-        double poidsTaxable = Math.max(poidsTotal, volumeTotal * COEFFICIENT_VOLUMETRIQUE);
 
         // Resolution de l'axe (service-geo) par nom de ville - ferme le
         // bloquant audit §1.2 : sans axeId, DemandePubliee n'etait jamais
@@ -67,9 +91,27 @@ public class DemandeService {
         // TOUTE demande. Granularite hub (position reelle du hub resolu),
         // pas une coordonnee inventee -- coherente avec le fait qu'un axe
         // relie deux hubs, pas deux points arbitraires.
+        //
+        // Resolue AVANT le calcul du poids taxable (BUG CORRIGE, audit de
+        // suivi 23 aout) : RG-101 exige un coefficient volumetrique resolu
+        // PAR AXE (Axe.parametres), jamais une seule valeur globale figee
+        // pour tout le systeme - jusqu'ici COEFFICIENT_VOLUMETRIQUE=200.0
+        // etait un placeholder en dur propre a ce service, incoherent avec
+        // le coefficient (333.0, egalement resolu par axe) deja applique
+        // cote service-cap pour la meme grandeur physique.
         Optional<com.flysoft.fretcorridor.mkt.client.AxeDto> axe =
                 serviceGeoClient.resoudreAxe(request.getVilleDepart(), request.getVilleArrivee());
         Optional<UUID> axeId = axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::id);
+
+        double coefficientVolumetrique = axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::parametres)
+                .map(parametres -> parametres.get(CLE_COEFFICIENT_VOLUMETRIQUE))
+                .filter(Number.class::isInstance)
+                .map(valeur -> ((Number) valeur).doubleValue())
+                .orElse(coefficientVolumetriqueReference);
+
+        double poidsTotal = emballage.getPoidsUnitaireKg() * request.getQuantite();
+        double volumeTotal = emballage.getVolumeUnitaireM3() * request.getQuantite();
+        double poidsTaxable = Math.max(poidsTotal, volumeTotal * coefficientVolumetrique);
 
         Demande demande = Demande.builder()
                 .clientActeurId(clientActeurId)

@@ -24,6 +24,10 @@ spring:
       base-url: http://localhost:8086
       connect-timeout-ms: 200
       read-timeout-ms: 300
+    service-cap:
+      base-url: http://localhost:8096
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
     valhalla:
       base-url: http://localhost:8002
       connect-timeout-ms: 500

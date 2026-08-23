@@ -21,11 +21,18 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * GET /api/opt/affectations/{missionId} (AffectationController) EST appele
  * en synchrone interne par TRK (ServiceOptClient, meme principe que
  * ServiceMatClient cote MAT) - ce client ne transporte aucun Authorization
- * header aujourd'hui. Le proteger sans exemption aurait coupe
- * silencieusement tout calcul d'ETA (degrade gracieusement, cf ENF-DIS-04
- * dans ServiceOptClient - pas de crash, juste plus jamais de PositionETA
- * publie). Meme exemption ciblee que service-mat/calculer-lot : jamais un
- * retour a permitAll() global, un seul endpoint precis, avec justification.
+ * header (jamais de JWT utilisateur dans ce flux). Le proteger via Spring
+ * Security seul aurait coupe silencieusement tout calcul d'ETA (degrade
+ * gracieusement, cf ENF-DIS-04 dans ServiceOptClient - pas de crash, juste
+ * plus jamais de PositionETA publie). Meme exemption ciblee que
+ * service-mat/calculer-lot : jamais un retour a permitAll() global, un seul
+ * endpoint precis, avec justification.
+ *
+ * BUG CORRIGE (audit de suivi, 23 aout) : permitAll() ici ne veut pas dire
+ * "non protege" - AffectationController verifie desormais lui-meme
+ * X-Internal-Service-Key (meme defense-en-profondeur que CoutController cote
+ * service-mat), ServiceOptClient transporte la cle. Avant ce correctif,
+ * seule l'imprevisibilite de l'UUID protegeait cet endpoint.
  */
 @Configuration
 @EnableWebSecurity

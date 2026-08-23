@@ -237,7 +237,25 @@ public class CapaciteService {
         }
 
         capacite.decrementer(montantKg);
-        return capaciteRepository.save(capacite); // verrou optimiste applique ici
+        Capacite sauvegardee = capaciteRepository.save(capacite); // verrou optimiste applique ici
+
+        // BUG CORRIGE (audit de suivi, 23 aout) : jusqu'ici, aucune republication
+        // n'avait lieu apres un decrement - une capacite matchee une seule fois
+        // (rang 1 auto-affecte OU proposition acceptee) restait definitivement
+        // exclue de tout matching futur cote service-opt (CapaciteEnAttente.traitee,
+        // MatchingCycleService) meme quand un reliquat important restait disponible
+        // (ex. camion 20T aparie a 500kg -> 19,5T perdues pour le systeme). En
+        // republiant CapaciteDeclaree ici des qu'un reliquat exploitable subsiste,
+        // service-opt (CapaciteDeclareeListener, deja existant, aucune modification
+        // necessaire cote consommateur) cree naturellement une NOUVELLE
+        // CapaciteEnAttente non traitee portant le poids restant - meme mecanisme
+        // que la toute premiere declaration, pas un nouveau canal.
+        if (sauvegardee.getCapaciteResiduelleKg() != null
+                && sauvegardee.getCapaciteResiduelleKg().compareTo(BigDecimal.ZERO) > 0) {
+            publierEvenement(sauvegardee);
+        }
+
+        return sauvegardee;
     }
 
     // IDOR corrige (audit CDC du 19 aout, §3) : POST /decrement acceptait

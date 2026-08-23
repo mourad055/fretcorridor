@@ -20,6 +20,10 @@ spring:
       base-url: http://service-mat:8086
       connect-timeout-ms: 200
       read-timeout-ms: 300
+    service-cap:
+      base-url: http://service-cap:8096
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
     valhalla:
       base-url: http://valhalla:8002
       # Contrairement a service-mat (meme porteur, latence ~ms), Valhalla est

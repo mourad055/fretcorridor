@@ -48,7 +48,7 @@ class DemandeServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new DemandeService(demandeRepository, catalogueRepository, eventPublisher, propositionRepository, serviceGeoClient, serviceCapClient, serviceNotClient);
+        service = new DemandeService(demandeRepository, catalogueRepository, eventPublisher, propositionRepository, serviceGeoClient, serviceCapClient, serviceNotClient, 333.0);
         clientActeurId = UUID.randomUUID();
         typeEmballageId = UUID.randomUUID();
 
@@ -84,7 +84,7 @@ class DemandeServiceTest {
     @Test
     void publishing_a_request_on_a_covered_axis_resolves_the_axis_and_publishes_the_event() {
         UUID axeId = UUID.randomUUID();
-        AxeDto axe = new AxeDto(axeId, "Douala", "Yaounde", 4.05, 9.7, 3.87, 11.52);
+        AxeDto axe = new AxeDto(axeId, "Douala", "Yaounde", 4.05, 9.7, 3.87, 11.52, null);
         when(serviceGeoClient.resoudreAxe("Douala", "Yaounde")).thenReturn(Optional.of(axe));
 
         service.publier(requeteValide(), clientActeurId, TENANT, "NIVEAU_1");

@@ -27,6 +27,7 @@ import java.time.Duration;
 @EnableConfigurationProperties({
         ServiceGeoClientProperties.class,
         ServiceMatClientProperties.class,
+        ServiceCapClientProperties.class,
         ValhallaClientProperties.class
 })
 public class RestClientConfig {
@@ -41,6 +42,13 @@ public class RestClientConfig {
     @Bean
     @Qualifier("serviceMatRestClient")
     public RestClient serviceMatRestClient(ServiceMatClientProperties properties) {
+        return construireRestClient(properties.getBaseUrl(),
+                properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    @Bean
+    @Qualifier("serviceCapRestClient")
+    public RestClient serviceCapRestClient(ServiceCapClientProperties properties) {
         return construireRestClient(properties.getBaseUrl(),
                 properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
     }

@@ -8,6 +8,7 @@ import com.fretcorridor.opt.client.CoutResponseDto;
 import com.fretcorridor.opt.client.ItineraireRequestDto;
 import com.fretcorridor.opt.client.ItineraireResponseDto;
 import com.fretcorridor.opt.client.AxeDetailDto;
+import com.fretcorridor.opt.client.ServiceCapClient;
 import com.fretcorridor.opt.client.ServiceGeoClient;
 import com.fretcorridor.opt.client.ServiceMatClient;
 import com.fretcorridor.opt.client.ValhallaClient;
@@ -55,18 +56,21 @@ public class AffectationL1Service {
     private final AffectationRepository affectationRepository;
     private final OptEventPublisher eventPublisher;
     private final ServiceGeoClient serviceGeoClient;
+    private final ServiceCapClient serviceCapClient;
 
     public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
                                  TarificationL4Service tarificationL4Service,
                                  AffectationRepository affectationRepository,
                                  OptEventPublisher eventPublisher,
-                                 ServiceGeoClient serviceGeoClient) {
+                                 ServiceGeoClient serviceGeoClient,
+                                 ServiceCapClient serviceCapClient) {
         this.serviceMatClient = serviceMatClient;
         this.valhallaClient = valhallaClient;
         this.tarificationL4Service = tarificationL4Service;
         this.affectationRepository = affectationRepository;
         this.eventPublisher = eventPublisher;
         this.serviceGeoClient = serviceGeoClient;
+        this.serviceCapClient = serviceCapClient;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
@@ -266,6 +270,15 @@ public class AffectationL1Service {
                         demande.grandeValeur()
                 );
                 eventPublisher.publierAffectationConfirmee(confirmation);
+
+                // BUG CORRIGE (audit de suivi, 23 aout) : reservation reelle de la
+                // capacite cote service-cap, jusqu'ici totalement absente pour le
+                // rang 1 (affectation directe) - voir javadoc ServiceCapClient.
+                // Meme garde que le flux d'acceptation rang 2/3 (service-mkt,
+                // EF-MKT-08) : rien a reserver sans capaciteId/poidsTaxableKg.
+                if (demande.poidsTaxableKg() != null) {
+                    serviceCapClient.reserver(capaciteId, demande.poidsTaxableKg(), missionId.toString());
+                }
 
                 // --- Publication Kafka conditionnelle : RepartitionConventionnelleAppliquee
                 // (-> service-pay, EF-GEO-05/RG-052, Phase 4). Uniquement si l'axe porte une

@@ -59,6 +59,11 @@ spring:
 fretcorridor:
   jwt:
     secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+  # BUG CORRIGE (audit de suivi, 23 aout) : ServiceOptClient appelle desormais
+  # GET /api/opt/affectations/{missionId} avec cette cle (meme valeur partagee
+  # que les autres appels interservices, cf service-opt/service-mat).
+  internal:
+    service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
   # FIX audit 21/08 (anti-patron CDC S12.4) : seuils de detection d'anomalies
   # externalises (AnomalieDetector) - ajustables par deploiement sans
   # recompilation. Defauts : arret <0.1 km sur 30 min ; absence >2 h ;

@@ -3,6 +3,7 @@ package com.fretcorridor.trk.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -29,9 +30,12 @@ public class ServiceOptClient {
     private static final Logger log = LoggerFactory.getLogger(ServiceOptClient.class);
 
     private final RestClient restClient;
+    private final String cleInterne;
 
-    public ServiceOptClient(@Qualifier("serviceOptRestClient") RestClient serviceOptRestClient) {
+    public ServiceOptClient(@Qualifier("serviceOptRestClient") RestClient serviceOptRestClient,
+                             @Value("${fretcorridor.internal.service-key}") String cleInterne) {
         this.restClient = serviceOptRestClient;
+        this.cleInterne = cleInterne;
     }
 
     /**
@@ -46,6 +50,7 @@ public class ServiceOptClient {
         try {
             AffectationDto resultat = restClient.get()
                     .uri("/api/opt/affectations/{missionId}", missionId)
+                    .header("X-Internal-Service-Key", cleInterne)
                     .retrieve()
                     .body(AffectationDto.class);
 
