@@ -93,11 +93,17 @@ public class FileTravailService {
     // et "pas le sien", même principe que capaciteAppartenantA
     // (service-cap) / missionAppartenantA (service-exe) / notificationAppartenantA
     // (service-not).
-    public Dossier consulter(String dossierId, String tenantId) {
+    // ENF-SEC-02 (audit UX 2026-08-23, docs/AUDIT_ROADMAP_Backoffice_Web_
+    // 2026-08-23.md §1.8) : la simple consultation d'un dossier (contrairement
+    // à prendreEnCharge/trancher) n'était jusqu'ici jamais journalisée --
+    // écart documenté depuis l'audit CDC du 19 août, comblé ici.
+    public Dossier consulter(String dossierId, String tenantId, String acteurId) {
         Dossier dossier = dossierPort.parId(dossierId).orElseThrow(() -> new DossierIntrouvableException(dossierId));
         if (!dossier.tenantId().equals(tenantId)) {
             throw new DossierIntrouvableException(dossierId);
         }
+        journalAuditPort.enregistrer(new EntreeJournalAudit(UUID.randomUUID().toString(), tenantId, acteurId,
+                "DOSSIER_CONSULTE", "dossier:" + dossierId, Instant.now()));
         return dossier;
     }
 

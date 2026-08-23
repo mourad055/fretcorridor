@@ -90,9 +90,21 @@ class FileTravailServiceTest {
         Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
                 "mission-a", List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
-        Dossier consulte = service.consulter(dossier.id(), "tenant-bgft-douala");
+        Dossier consulte = service.consulter(dossier.id(), "tenant-bgft-douala", "actor-admin-1");
 
         assertThat(consulte.id()).isEqualTo(dossier.id());
+    }
+
+    /** ENF-SEC-02 (audit UX 2026-08-23) : la consultation, pas seulement la décision, est désormais journalisée. */
+    @Test
+    void consulter_un_dossier_journalise_l_acteur_consultant() {
+        Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
+                "mission-a", List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
+
+        service.consulter(dossier.id(), "tenant-bgft-douala", "actor-admin-2");
+
+        assertThat(journalAuditPort.lister("tenant-bgft-douala"))
+                .anyMatch(e -> e.action().equals("DOSSIER_CONSULTE") && e.acteurId().equals("actor-admin-2"));
     }
 
     /** IDOR corrigé (audit CDC du 19 août, §7.2) : même exception que "introuvable", jamais une confirmation d'existence. */
@@ -101,7 +113,7 @@ class FileTravailServiceTest {
         Dossier dossier = service.ouvrir("tenant-bgft-douala", TypeDossier.LITIGE, PrioriteDossier.NORMALE,
                 "mission-a", List.of(), List.of(), null, null, Instant.now().plus(1, ChronoUnit.DAYS));
 
-        assertThatThrownBy(() -> service.consulter(dossier.id(), "tenant-bnft-ndjamena"))
+        assertThatThrownBy(() -> service.consulter(dossier.id(), "tenant-bnft-ndjamena", "actor-admin-1"))
                 .isInstanceOf(DossierIntrouvableException.class);
     }
 

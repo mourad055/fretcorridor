@@ -81,8 +81,10 @@ public class DossierController {
     @GetMapping("/{dossierId}")
     public DossierResponse parId(@PathVariable String dossierId,
                                   @RequestHeader("Authorization") String authHeader) {
-        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
-        return DossierResponse.from(fileTravailService.consulter(dossierId, tenantId));
+        String token = authHeader.substring(7);
+        String tenantId = jwtService.extraireTenantId(token);
+        String acteurId = jwtService.extraireActeurId(token);
+        return DossierResponse.from(fileTravailService.consulter(dossierId, tenantId, acteurId));
     }
 
     @PostMapping("/{dossierId}/prise-en-charge")
