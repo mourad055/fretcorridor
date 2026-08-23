@@ -16,4 +16,8 @@ export class TenantsService {
   creer(id: string, nom: string, pays: string): Observable<Tenant> {
     return this.http.post<Tenant>(`${environment.apiBaseUrl}/admin/tenants`, { id, nom, pays });
   }
+
+  modifier(id: string, nom: string, pays: string, actif: boolean): Observable<Tenant> {
+    return this.http.put<Tenant>(`${environment.apiBaseUrl}/admin/tenants/${id}`, { nom, pays, actif });
+  }
 }

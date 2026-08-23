@@ -21,7 +21,7 @@ describe('JournalAuditComponent', () => {
 
   function flushTenants(fixture: ReturnType<typeof TestBed.createComponent>): void {
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([
-      { id: 'tenant-bgft-douala', nom: 'BGFT Douala', pays: 'CM' },
+      { id: 'tenant-bgft-douala', nom: 'BGFT Douala', pays: 'CM', actif: true },
     ]);
   }
 

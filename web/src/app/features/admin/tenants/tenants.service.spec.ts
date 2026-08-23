@@ -37,4 +37,13 @@ describe('TenantsService', () => {
     expect(req.request.body).toEqual({ id: 'tenant-new', nom: 'Bureau Neuf', pays: 'Tchad' });
     req.flush({});
   });
+
+  it('modifies a tenant', () => {
+    service.modifier('tenant-bgft-douala', 'Bureau renommé', 'Cameroun', false).subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants/tenant-bgft-douala`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ nom: 'Bureau renommé', pays: 'Cameroun', actif: false });
+    req.flush({});
+  });
 });

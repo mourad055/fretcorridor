@@ -628,6 +628,20 @@ textarea.field__input {
   line-height: 1.5;
 }
 
+/* Texte présent pour les lecteurs d'écran uniquement (ex. en-tête d'une colonne
+   d'actions sans libellé visuel) — objectivé par jest-axe (empty-table-header). */
+.fc-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @media (max-width: 480px) {
   .fc-empty {
     padding: var(--fc-space-6) var(--fc-space-3);

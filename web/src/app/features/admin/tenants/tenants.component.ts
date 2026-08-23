@@ -1,11 +1,18 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { TenantsService } from './tenants.service';
 import { Tenant } from '../../../shared/models/tenant.models';
 
-/** FE-ADM-04 (Sprint 10) : gestion des tenants. */
+/**
+ * FE-ADM-04 (Sprint 10) : gestion des tenants.
+ *
+ * Édition, statut actif/inactif et recherche ajoutés (audit UX 2026-08-23,
+ * docs/AUDIT_ROADMAP_Backoffice_Web_2026-08-23.md §1.2) : jusqu'ici le
+ * module était create-only, sans aucun moyen de corriger un nom/pays ou de
+ * désactiver un tenant obsolète.
+ */
 @Component({
   selector: 'app-tenants',
   standalone: true,
@@ -16,10 +23,26 @@ export class TenantsComponent implements OnInit {
   readonly tenants = signal<Tenant[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
+  readonly recherche = signal('');
+
+  readonly tenantsFiltres = computed(() => {
+    const terme = this.recherche().trim().toLowerCase();
+    if (!terme) {
+      return this.tenants();
+    }
+    return this.tenants().filter(
+      (t) => t.id.toLowerCase().includes(terme) || t.nom.toLowerCase().includes(terme) || t.pays.toLowerCase().includes(terme)
+    );
+  });
 
   readonly nouvelId = signal('');
   readonly nouvelNom = signal('');
   readonly nouveauPays = signal('');
+
+  readonly tenantEnEdition = signal<string | null>(null);
+  readonly editNom = signal('');
+  readonly editPays = signal('');
+  readonly editActif = signal(true);
 
   constructor(private readonly tenantsService: TenantsService) {}
 
@@ -50,6 +73,31 @@ export class TenantsComponent implements OnInit {
         this.charger();
       },
       error: () => this.errorMessage.set('Impossible de créer ce tenant.'),
+    });
+  }
+
+  commencerEdition(tenant: Tenant): void {
+    this.tenantEnEdition.set(tenant.id);
+    this.editNom.set(tenant.nom);
+    this.editPays.set(tenant.pays);
+    this.editActif.set(tenant.actif);
+  }
+
+  annulerEdition(): void {
+    this.tenantEnEdition.set(null);
+  }
+
+  enregistrerEdition(): void {
+    const id = this.tenantEnEdition();
+    if (!id) {
+      return;
+    }
+    this.tenantsService.modifier(id, this.editNom(), this.editPays(), this.editActif()).subscribe({
+      next: () => {
+        this.tenantEnEdition.set(null);
+        this.charger();
+      },
+      error: () => this.errorMessage.set('Impossible de modifier ce tenant.'),
     });
   }
 }

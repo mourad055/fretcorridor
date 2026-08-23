@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { axe } from 'jest-axe';
 import { TenantsComponent } from './tenants.component';
 import { environment } from '../../../../environments/environment';
 
@@ -18,16 +19,17 @@ describe('TenantsComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('affiche les tenants au chargement', () => {
+  it('affiche les tenants au chargement, avec leur statut', () => {
     const fixture = TestBed.createComponent(TenantsComponent);
     fixture.detectChanges();
 
     httpMock
       .expectOne(`${environment.apiBaseUrl}/admin/tenants`)
-      .flush([{ id: 'tenant-bgft-douala', nom: 'Bureau Douala', pays: 'Cameroun' }]);
+      .flush([{ id: 'tenant-bgft-douala', nom: 'Bureau Douala', pays: 'Cameroun', actif: true }]);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Bureau Douala');
+    expect(fixture.nativeElement.textContent).toContain('Actif');
   });
 
   it('cree un tenant puis rafraichit la liste', () => {
@@ -44,5 +46,58 @@ describe('TenantsComponent', () => {
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([]);
 
     expect(fixture.componentInstance.nouvelId()).toBe('');
+  });
+
+  it('filtre les tenants affiches par la recherche', () => {
+    const fixture = TestBed.createComponent(TenantsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([
+      { id: 'tenant-bgft-douala', nom: 'Bureau Douala', pays: 'Cameroun', actif: true },
+      { id: 'tenant-bnft-ndjamena', nom: 'Bureau N\'Djamena', pays: 'Tchad', actif: true },
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.recherche.set('Tchad');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('N\'Djamena');
+    expect(fixture.nativeElement.textContent).not.toContain('Bureau Douala');
+  });
+
+  it('modifie un tenant existant (nom, pays, statut) puis rafraichit la liste', () => {
+    const fixture = TestBed.createComponent(TenantsComponent);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/tenants`)
+      .flush([{ id: 'tenant-bgft-douala', nom: 'Bureau Douala', pays: 'Cameroun', actif: true }]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.commencerEdition({ id: 'tenant-bgft-douala', nom: 'Bureau Douala', pays: 'Cameroun', actif: true });
+    fixture.componentInstance.editNom.set('Bureau Douala renommé');
+    fixture.componentInstance.editActif.set(false);
+    fixture.componentInstance.enregistrerEdition();
+
+    const reqModif = httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants/tenant-bgft-douala`);
+    expect(reqModif.request.method).toBe('PUT');
+    expect(reqModif.request.body).toEqual({ nom: 'Bureau Douala renommé', pays: 'Cameroun', actif: false });
+    reqModif.flush({});
+
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/tenants`)
+      .flush([{ id: 'tenant-bgft-douala', nom: 'Bureau Douala renommé', pays: 'Cameroun', actif: false }]);
+
+    expect(fixture.componentInstance.tenantEnEdition()).toBeNull();
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = TestBed.createComponent(TenantsComponent);
+    fixture.detectChanges();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/tenants`)
+      .flush([{ id: 'tenant-bgft-douala', nom: 'Bureau Douala', pays: 'Cameroun', actif: true }]);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

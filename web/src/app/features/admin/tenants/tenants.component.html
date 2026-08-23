@@ -3,26 +3,85 @@
     <h2 class="fc-panel__title">Gestion des tenants</h2>
 
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+    <div class="fc-filters">
+      <label for="tenants-recherche">Rechercher</label>
+      <input
+        id="tenants-recherche"
+        type="search"
+        [ngModel]="recherche()"
+        (ngModelChange)="recherche.set($event)"
+        placeholder="Identifiant, nom ou pays"
+      />
+    </div>
+
     <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
       <div class="fc-skeleton__line"></div>
       <div class="fc-skeleton__line"></div>
     </div>
     <div class="fc-empty" *ngIf="!loading() && tenants().length === 0">Aucun tenant enregistré.</div>
+    <div class="fc-empty" *ngIf="!loading() && tenants().length > 0 && tenantsFiltres().length === 0">
+      Aucun tenant ne correspond à la recherche.
+    </div>
 
-    <table class="fc-table" *ngIf="!loading() && tenants().length > 0">
+    <table class="fc-table" *ngIf="!loading() && tenantsFiltres().length > 0">
       <thead>
         <tr>
           <th>Identifiant</th>
           <th>Nom</th>
           <th>Pays</th>
+          <th>Statut</th>
+          <th><span class="fc-sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let tenant of tenants()">
-          <td>{{ tenant.id }}</td>
-          <td>{{ tenant.nom }}</td>
-          <td>{{ tenant.pays }}</td>
-        </tr>
+        <ng-container *ngFor="let tenant of tenantsFiltres()">
+          <tr *ngIf="tenantEnEdition() !== tenant.id">
+            <td>{{ tenant.id }}</td>
+            <td>{{ tenant.nom }}</td>
+            <td>{{ tenant.pays }}</td>
+            <td>{{ tenant.actif ? 'Actif' : 'Inactif' }}</td>
+            <td>
+              <button type="button" class="fc-btn fc-btn--ghost" (click)="commencerEdition(tenant)">Modifier</button>
+            </td>
+          </tr>
+          <tr *ngIf="tenantEnEdition() === tenant.id" class="tenants__ligne-edition">
+            <td>{{ tenant.id }}</td>
+            <td>
+              <label class="field__label" [attr.for]="'edit-nom-' + tenant.id">Nom</label>
+              <input
+                [id]="'edit-nom-' + tenant.id"
+                class="field__input"
+                [ngModel]="editNom()"
+                (ngModelChange)="editNom.set($event)"
+              />
+            </td>
+            <td>
+              <label class="field__label" [attr.for]="'edit-pays-' + tenant.id">Pays</label>
+              <input
+                [id]="'edit-pays-' + tenant.id"
+                class="field__input"
+                [ngModel]="editPays()"
+                (ngModelChange)="editPays.set($event)"
+              />
+            </td>
+            <td>
+              <label [attr.for]="'edit-actif-' + tenant.id">
+                <input
+                  type="checkbox"
+                  [id]="'edit-actif-' + tenant.id"
+                  [ngModel]="editActif()"
+                  (ngModelChange)="editActif.set($event)"
+                />
+                Actif
+              </label>
+            </td>
+            <td>
+              <button type="button" class="fc-btn fc-btn--primary" (click)="enregistrerEdition()">Enregistrer</button>
+              <button type="button" class="fc-btn fc-btn--ghost" (click)="annulerEdition()">Annuler</button>
+            </td>
+          </tr>
+        </ng-container>
       </tbody>
     </table>
 
