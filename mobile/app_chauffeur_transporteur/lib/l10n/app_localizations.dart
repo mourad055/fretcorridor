@@ -1525,6 +1525,138 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Répartition approximative (poids total réparti uniformément entre essieux)'**
   String get repartitionApproximativeMessage;
+
+  /// No description provided for @choisissezUnAxe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisissez un axe.'**
+  String get choisissezUnAxe;
+
+  /// No description provided for @choisissezUnVehicule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisissez un véhicule.'**
+  String get choisissezUnVehicule;
+
+  /// No description provided for @choisissezUneDateDepart.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisissez une date de départ.'**
+  String get choisissezUneDateDepart;
+
+  /// No description provided for @capaciteModifiee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Capacité modifiée.'**
+  String get capaciteModifiee;
+
+  /// No description provided for @nouvelleCapaciteAncienneEchouee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle capacité déclarée, mais l\'ancienne n\'a pas pu être supprimée.'**
+  String get nouvelleCapaciteAncienneEchouee;
+
+  /// No description provided for @capacitePubliee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Capacité publiée — {kg} kg taxables.'**
+  String capacitePubliee(String kg);
+
+  /// No description provided for @capaciteEnregistree.
+  ///
+  /// In fr, this message translates to:
+  /// **'Capacité enregistrée.'**
+  String get capaciteEnregistree;
+
+  /// No description provided for @modifierLaCapacite.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier la capacité'**
+  String get modifierLaCapacite;
+
+  /// No description provided for @mesCapacites.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes capacités'**
+  String get mesCapacites;
+
+  /// No description provided for @axeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'AXE'**
+  String get axeLabel;
+
+  /// No description provided for @chargementEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chargement…'**
+  String get chargementEnCours;
+
+  /// No description provided for @choisirUnAxe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un axe'**
+  String get choisirUnAxe;
+
+  /// No description provided for @vehiculeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'VÉHICULE'**
+  String get vehiculeLabel;
+
+  /// No description provided for @gererMaFlotte.
+  ///
+  /// In fr, this message translates to:
+  /// **'Gérer ma flotte'**
+  String get gererMaFlotte;
+
+  /// No description provided for @aucunVehiculeAjoutezEnUn.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun véhicule — ajoutez-en un via \"Gérer ma flotte\".'**
+  String get aucunVehiculeAjoutezEnUn;
+
+  /// No description provided for @choisirUnVehicule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir un véhicule'**
+  String get choisirUnVehicule;
+
+  /// No description provided for @poidsDisponibleKgLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'POIDS DISPONIBLE (KG)'**
+  String get poidsDisponibleKgLabel;
+
+  /// No description provided for @nombreInvalide.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nombre invalide'**
+  String get nombreInvalide;
+
+  /// No description provided for @departLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'DÉPART'**
+  String get departLabel;
+
+  /// No description provided for @choisirDateEtHeure.
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisir une date et une heure'**
+  String get choisirDateEtHeure;
+
+  /// No description provided for @declarerLaCapacite.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déclarer la capacité'**
+  String get declarerLaCapacite;
+
+  /// No description provided for @enregistrerLesModifications.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer les modifications'**
+  String get enregistrerLesModifications;
 }
 
 class _AppLocalizationsDelegate

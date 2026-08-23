@@ -793,4 +793,74 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get repartitionApproximativeMessage =>
       'Répartition approximative (poids total réparti uniformément entre essieux)';
+
+  @override
+  String get choisissezUnAxe => 'Choisissez un axe.';
+
+  @override
+  String get choisissezUnVehicule => 'Choisissez un véhicule.';
+
+  @override
+  String get choisissezUneDateDepart => 'Choisissez une date de départ.';
+
+  @override
+  String get capaciteModifiee => 'Capacité modifiée.';
+
+  @override
+  String get nouvelleCapaciteAncienneEchouee =>
+      'Nouvelle capacité déclarée, mais l\'ancienne n\'a pas pu être supprimée.';
+
+  @override
+  String capacitePubliee(String kg) {
+    return 'Capacité publiée — $kg kg taxables.';
+  }
+
+  @override
+  String get capaciteEnregistree => 'Capacité enregistrée.';
+
+  @override
+  String get modifierLaCapacite => 'Modifier la capacité';
+
+  @override
+  String get mesCapacites => 'Mes capacités';
+
+  @override
+  String get axeLabel => 'AXE';
+
+  @override
+  String get chargementEnCours => 'Chargement…';
+
+  @override
+  String get choisirUnAxe => 'Choisir un axe';
+
+  @override
+  String get vehiculeLabel => 'VÉHICULE';
+
+  @override
+  String get gererMaFlotte => 'Gérer ma flotte';
+
+  @override
+  String get aucunVehiculeAjoutezEnUn =>
+      'Aucun véhicule — ajoutez-en un via \"Gérer ma flotte\".';
+
+  @override
+  String get choisirUnVehicule => 'Choisir un véhicule';
+
+  @override
+  String get poidsDisponibleKgLabel => 'POIDS DISPONIBLE (KG)';
+
+  @override
+  String get nombreInvalide => 'Nombre invalide';
+
+  @override
+  String get departLabel => 'DÉPART';
+
+  @override
+  String get choisirDateEtHeure => 'Choisir une date et une heure';
+
+  @override
+  String get declarerLaCapacite => 'Déclarer la capacité';
+
+  @override
+  String get enregistrerLesModifications => 'Enregistrer les modifications';
 }

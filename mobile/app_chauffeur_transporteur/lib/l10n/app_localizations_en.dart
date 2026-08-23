@@ -789,4 +789,74 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get repartitionApproximativeMessage =>
       'Approximate distribution (total weight spread evenly across axles)';
+
+  @override
+  String get choisissezUnAxe => 'Choose a corridor.';
+
+  @override
+  String get choisissezUnVehicule => 'Choose a vehicle.';
+
+  @override
+  String get choisissezUneDateDepart => 'Choose a departure date.';
+
+  @override
+  String get capaciteModifiee => 'Capacity updated.';
+
+  @override
+  String get nouvelleCapaciteAncienneEchouee =>
+      'New capacity declared, but the previous one couldn\'t be deleted.';
+
+  @override
+  String capacitePubliee(String kg) {
+    return 'Capacity published — $kg taxable kg.';
+  }
+
+  @override
+  String get capaciteEnregistree => 'Capacity saved.';
+
+  @override
+  String get modifierLaCapacite => 'Edit capacity';
+
+  @override
+  String get mesCapacites => 'My capacities';
+
+  @override
+  String get axeLabel => 'CORRIDOR';
+
+  @override
+  String get chargementEnCours => 'Loading…';
+
+  @override
+  String get choisirUnAxe => 'Choose a corridor';
+
+  @override
+  String get vehiculeLabel => 'VEHICLE';
+
+  @override
+  String get gererMaFlotte => 'Manage my fleet';
+
+  @override
+  String get aucunVehiculeAjoutezEnUn =>
+      'No vehicle — add one via \"Manage my fleet\".';
+
+  @override
+  String get choisirUnVehicule => 'Choose a vehicle';
+
+  @override
+  String get poidsDisponibleKgLabel => 'AVAILABLE WEIGHT (KG)';
+
+  @override
+  String get nombreInvalide => 'Invalid number';
+
+  @override
+  String get departLabel => 'DEPARTURE';
+
+  @override
+  String get choisirDateEtHeure => 'Choose a date and time';
+
+  @override
+  String get declarerLaCapacite => 'Declare capacity';
+
+  @override
+  String get enregistrerLesModifications => 'Save changes';
 }
