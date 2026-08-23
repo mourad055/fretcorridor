@@ -10,10 +10,12 @@ public record TourneeDetailResponse(String tourneeId, List<EtapeTourneeResponse>
 
     public record EtapeTourneeResponse(String missionId, int rang, String typeEtape, String demandeId,
                                         double pointLatitude, double pointLongitude,
-                                        String fenetreDebut, String fenetreFin, String missionStatut) {
+                                        String fenetreDebut, String fenetreFin, String missionStatut,
+                                        java.util.Map<String, Object> chargesParEssieu) {
         public static EtapeTourneeResponse from(com.fretcorridor.gateway.domain.exe.EtapeTournee e) {
             return new EtapeTourneeResponse(e.missionId(), e.rang(), e.typeEtape(), e.demandeId(),
-                    e.pointLatitude(), e.pointLongitude(), e.fenetreDebut(), e.fenetreFin(), e.missionStatut());
+                    e.pointLatitude(), e.pointLongitude(), e.fenetreDebut(), e.fenetreFin(), e.missionStatut(),
+                    e.chargesParEssieu());
         }
     }
 }

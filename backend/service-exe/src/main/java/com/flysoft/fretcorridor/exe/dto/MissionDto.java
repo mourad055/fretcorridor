@@ -139,8 +139,16 @@ public class MissionDto {
         private LocalDateTime fenetreDebut;
         private LocalDateTime fenetreFin;
         private String missionStatut;
+        // S16/EF-MAT-13 (audit de suivi, 23 août) : charge par essieu à cet
+        // état de la tournée (approximation uniforme, cf javadoc
+        // service-opt/OracleChargementService) - null tant que
+        // PlanChargementConfirme n'a pas été ingéré pour ce rang (tournée
+        // pas encore confirmée par l'oracle, ou événement pas encore reçu),
+        // jamais une valeur inventée en remplacement.
+        private java.util.Map<String, Object> chargesParEssieu;
 
-        public static EtapeTourneeResponse fromEntity(EtapeTournee e, String missionStatut) {
+        public static EtapeTourneeResponse fromEntity(EtapeTournee e, String missionStatut,
+                                                        java.util.Map<String, Object> chargesParEssieu) {
             return EtapeTourneeResponse.builder()
                     .missionId(e.getMissionId())
                     .rang(e.getRang())
@@ -151,6 +159,7 @@ public class MissionDto {
                     .fenetreDebut(e.getFenetreDebut())
                     .fenetreFin(e.getFenetreFin())
                     .missionStatut(missionStatut)
+                    .chargesParEssieu(chargesParEssieu)
                     .build();
         }
     }
@@ -163,11 +172,13 @@ public class MissionDto {
         private UUID tourneeId;
         private List<EtapeTourneeResponse> etapes;
 
-        public static TourneeResponse of(UUID tourneeId, List<EtapeTournee> etapes, Map<UUID, String> statutParMission) {
+        public static TourneeResponse of(UUID tourneeId, List<EtapeTournee> etapes, Map<UUID, String> statutParMission,
+                                          Map<Integer, java.util.Map<String, Object>> chargesParEssieuParRang) {
             return TourneeResponse.builder()
                     .tourneeId(tourneeId)
                     .etapes(etapes.stream()
-                            .map(e -> EtapeTourneeResponse.fromEntity(e, statutParMission.get(e.getMissionId())))
+                            .map(e -> EtapeTourneeResponse.fromEntity(e, statutParMission.get(e.getMissionId()),
+                                    chargesParEssieuParRang.get(e.getRang())))
                             .toList())
                     .build();
         }

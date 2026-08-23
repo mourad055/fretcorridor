@@ -156,8 +156,8 @@ class _MissionMultiEtapesScreenState extends ConsumerState<MissionMultiEtapesScr
                   context,
                   MaterialPageRoute(
                     builder: (_) => PlanChargementScreen(
-                      missionId: etape.missionId,
-                      etapeLibelle: '${_libellesType[etape.type]} — Demande ${etape.demandeId.substring(0, 8)}',
+                      tourneeId: ref.read(missionMultiEtapesProvider).tournee!.tourneeId,
+                      missionIdFiltre: etape.missionId,
                     ),
                   ),
                 );

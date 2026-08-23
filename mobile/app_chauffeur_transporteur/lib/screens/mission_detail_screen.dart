@@ -235,12 +235,22 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
 
                   if (detail != null) _actions(detail, state.chargement),
                   const SizedBox(height: 12),
+                  // S16 (audit de suivi, 23 août) : le Moteur ne calcule un plan de
+                  // chargement que pour une Tournée consolidée (multi-étapes) -
+                  // une mission simple sans tourneeId n'en a jamais, bouton masqué
+                  // plutôt que d'ouvrir un écran qui n'aurait jamais rien à montrer.
+                  if (widget.mission.tourneeId != null)
                   SizedBox(
                     width: double.infinity,
                     height: 44,
                     child: OutlinedButton.icon(
-                      onPressed: () => Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => PlanChargementScreen(missionId: widget.mission.missionId))),
+                      onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => PlanChargementScreen(
+                                    tourneeId: widget.mission.tourneeId!,
+                                    missionIdFiltre: widget.mission.missionId,
+                                  ))),
                       icon: const Icon(Icons.view_in_ar_outlined, size: 18),
                       label: const Text('Voir le plan de chargement'),
                       style: OutlinedButton.styleFrom(

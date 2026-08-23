@@ -9,6 +9,7 @@ import com.flysoft.fretcorridor.exe.messaging.MissionLivreeEvent;
 import com.flysoft.fretcorridor.exe.repository.EtapeMissionRepository;
 import com.flysoft.fretcorridor.exe.repository.EtapeTourneeRepository;
 import com.flysoft.fretcorridor.exe.repository.MissionRepository;
+import com.flysoft.fretcorridor.exe.repository.PlanChargementEtapeRepository;
 import com.flysoft.fretcorridor.exe.repository.PreuveEtapeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,6 +34,7 @@ class MissionServiceTest {
     @Mock private MissionRepository missionRepository;
     @Mock private EtapeMissionRepository etapeMissionRepository;
     @Mock private EtapeTourneeRepository etapeTourneeRepository;
+    @Mock private PlanChargementEtapeRepository planChargementEtapeRepository;
     @Mock private PreuveEtapeRepository preuveEtapeRepository;
     @Mock private PreuveStorageService preuveStorageService;
     @Mock private MissionEventPublisher missionEventPublisher;
@@ -53,7 +56,7 @@ class MissionServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         service = new MissionService(missionRepository, etapeMissionRepository, preuveEtapeRepository,
-                preuveStorageService, etapeTourneeRepository, missionEventPublisher);
+                preuveStorageService, etapeTourneeRepository, planChargementEtapeRepository, missionEventPublisher);
         missionId = UUID.randomUUID();
         transporteurId = UUID.randomUUID();
         when(etapeMissionRepository.findByMissionIdOrderByHorodatageTransmissionAsc(any())).thenReturn(List.of());
@@ -217,5 +220,55 @@ class MissionServiceTest {
 
         assertThatThrownBy(() -> service.ajouterEtape(missionId, transporteurId, TENANT, requete))
                 .hasMessage("MISSION_INTROUVABLE");
+    }
+
+    /** S16/EF-MAT-13 (audit de suivi, 23 août) : la tournée expose la charge par essieu quand elle est connue. */
+    @Test
+    void getTournee_rattache_la_charge_par_essieu_connue_a_l_etape_du_meme_rang() {
+        UUID tourneeId = UUID.randomUUID();
+        UUID demandeId = UUID.randomUUID();
+        Mission mission = Mission.builder().id(missionId).tenantId(TENANT).transporteurId(transporteurId)
+                .statut(Mission.StatutMission.EN_TRANSIT).build();
+        com.flysoft.fretcorridor.exe.entity.EtapeTournee etape =
+                com.flysoft.fretcorridor.exe.entity.EtapeTournee.builder()
+                        .tourneeId(tourneeId).missionId(missionId).rang(1)
+                        .typeEtape(com.flysoft.fretcorridor.exe.entity.EtapeTournee.TypeEtapeTournee.ENLEVEMENT)
+                        .demandeId(demandeId).pointLatitude(4.05).pointLongitude(9.7).build();
+        Map<String, Object> chargesEssieu = Map.of("essieu_1", 3200.0, "essieu_2", 5800.0);
+        com.flysoft.fretcorridor.exe.entity.PlanChargementEtape plan =
+                com.flysoft.fretcorridor.exe.entity.PlanChargementEtape.builder()
+                        .tourneeId(tourneeId).rang(1).chargesParEssieu(chargesEssieu)
+                        .dateGeneration(java.time.LocalDateTime.now()).build();
+
+        when(etapeTourneeRepository.findByTourneeIdOrderByRangAsc(tourneeId)).thenReturn(List.of(etape));
+        when(missionRepository.findAllById(List.of(missionId))).thenReturn(List.of(mission));
+        when(planChargementEtapeRepository.findByTourneeId(tourneeId)).thenReturn(List.of(plan));
+
+        MissionDto.TourneeResponse reponse = service.getTournee(tourneeId, transporteurId, TENANT);
+
+        assertThat(reponse.getEtapes()).hasSize(1);
+        assertThat(reponse.getEtapes().get(0).getChargesParEssieu()).isEqualTo(chargesEssieu);
+    }
+
+    /** Aucun plan de chargement ingéré pour cette tournée -> jamais une valeur inventée en remplacement. */
+    @Test
+    void getTournee_sans_plan_de_chargement_ingere_laisse_les_charges_par_essieu_a_null() {
+        UUID tourneeId = UUID.randomUUID();
+        UUID demandeId = UUID.randomUUID();
+        Mission mission = Mission.builder().id(missionId).tenantId(TENANT).transporteurId(transporteurId)
+                .statut(Mission.StatutMission.EN_TRANSIT).build();
+        com.flysoft.fretcorridor.exe.entity.EtapeTournee etape =
+                com.flysoft.fretcorridor.exe.entity.EtapeTournee.builder()
+                        .tourneeId(tourneeId).missionId(missionId).rang(1)
+                        .typeEtape(com.flysoft.fretcorridor.exe.entity.EtapeTournee.TypeEtapeTournee.ENLEVEMENT)
+                        .demandeId(demandeId).pointLatitude(4.05).pointLongitude(9.7).build();
+
+        when(etapeTourneeRepository.findByTourneeIdOrderByRangAsc(tourneeId)).thenReturn(List.of(etape));
+        when(missionRepository.findAllById(List.of(missionId))).thenReturn(List.of(mission));
+        when(planChargementEtapeRepository.findByTourneeId(tourneeId)).thenReturn(List.of());
+
+        MissionDto.TourneeResponse reponse = service.getTournee(tourneeId, transporteurId, TENANT);
+
+        assertThat(reponse.getEtapes().get(0).getChargesParEssieu()).isNull();
     }
 }

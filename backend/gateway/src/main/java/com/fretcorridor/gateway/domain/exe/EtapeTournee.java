@@ -9,5 +9,9 @@ package com.fretcorridor.gateway.domain.exe;
  */
 public record EtapeTournee(String missionId, int rang, String typeEtape, String demandeId,
                             double pointLatitude, double pointLongitude,
-                            String fenetreDebut, String fenetreFin, String missionStatut) {
+                            String fenetreDebut, String fenetreFin, String missionStatut,
+                            // S16/EF-MAT-13 (audit de suivi, 23 août) : charge par essieu à cet
+                            // état de la tournée, null tant qu'aucun plan de chargement n'a été
+                            // ingéré côté service-exe pour ce rang.
+                            java.util.Map<String, Object> chargesParEssieu) {
 }

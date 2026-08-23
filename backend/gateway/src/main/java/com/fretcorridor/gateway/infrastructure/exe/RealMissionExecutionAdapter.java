@@ -181,10 +181,11 @@ public class RealMissionExecutionAdapter implements MissionExecutionPort {
 
     private record EtapeTourneeDto(String missionId, int rang, String typeEtape, String demandeId,
                                     double pointLatitude, double pointLongitude,
-                                    String fenetreDebut, String fenetreFin, String missionStatut) {
+                                    String fenetreDebut, String fenetreFin, String missionStatut,
+                                    Map<String, Object> chargesParEssieu) {
         EtapeTournee versEtape() {
             return new EtapeTournee(missionId, rang, typeEtape, demandeId, pointLatitude, pointLongitude,
-                    fenetreDebut, fenetreFin, missionStatut);
+                    fenetreDebut, fenetreFin, missionStatut, chargesParEssieu);
         }
     }
 

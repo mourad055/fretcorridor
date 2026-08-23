@@ -35,6 +35,7 @@ public class MissionService {
     private final PreuveEtapeRepository preuveEtapeRepository;
     private final PreuveStorageService preuveStorageService;
     private final EtapeTourneeRepository etapeTourneeRepository;
+    private final com.flysoft.fretcorridor.exe.repository.PlanChargementEtapeRepository planChargementEtapeRepository;
     private final MissionEventPublisher missionEventPublisher;
 
     // Consommé par l'app Client (S7) — absent tant qu'aucune mission n'a été
@@ -209,7 +210,12 @@ public class MissionService {
 
         Map<UUID, String> statutParMission = missions.stream()
                 .collect(Collectors.toMap(Mission::getId, m -> m.getStatut().name()));
-        return MissionDto.TourneeResponse.of(tourneeId, etapes, statutParMission);
+        Map<Integer, Map<String, Object>> chargesParEssieuParRang = planChargementEtapeRepository
+                .findByTourneeId(tourneeId).stream()
+                .collect(Collectors.toMap(
+                        com.flysoft.fretcorridor.exe.entity.PlanChargementEtape::getRang,
+                        com.flysoft.fretcorridor.exe.entity.PlanChargementEtape::getChargesParEssieu));
+        return MissionDto.TourneeResponse.of(tourneeId, etapes, statutParMission, chargesParEssieuParRang);
     }
 
     private Mission missionAppartenantA(UUID missionId, UUID transporteurId, String tenantId) {

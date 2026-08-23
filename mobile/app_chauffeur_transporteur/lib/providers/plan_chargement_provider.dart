@@ -1,80 +1,105 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
-
-enum OrientationColis { debout, couche, fragileDessus }
-
-class ColisPlan {
-  final String id;
-  final String libelle;
-  final double poidsKg;
-  final OrientationColis orientation;
-  final int position; // ordre avant → arrière dans le véhicule
-
-  const ColisPlan({
-    required this.id,
-    required this.libelle,
-    required this.poidsKg,
-    required this.orientation,
-    required this.position,
-  });
-}
+import 'dio_provider.dart';
 
 class EssieuCharge {
   final String libelle;
   final double poidsKg;
-  final double poidsMaxKg;
 
-  const EssieuCharge({required this.libelle, required this.poidsKg, required this.poidsMaxKg});
-
-  bool get surcharge => poidsKg > poidsMaxKg;
+  const EssieuCharge({required this.libelle, required this.poidsKg});
 }
 
-class PlanChargement {
-  final String missionId;
-  final String? etapeLibelle;
-  final List<ColisPlan> colis;
+class EtapePlanChargement {
+  final int rang;
+  final String typeEtape;
+  final String demandeId;
   final List<EssieuCharge> essieux;
 
-  const PlanChargement({required this.missionId, this.etapeLibelle, required this.colis, required this.essieux});
+  const EtapePlanChargement({
+    required this.rang,
+    required this.typeEtape,
+    required this.demandeId,
+    required this.essieux,
+  });
 }
 
 class PlanChargementState {
-  final PlanChargement? plan;
+  final bool chargement;
+  final String? erreur;
+  final List<EtapePlanChargement> etapes;
 
-  const PlanChargementState({this.plan});
-}
+  const PlanChargementState({this.chargement = false, this.erreur, this.etapes = const []});
 
-/// S16 (Sprint 16, "Oracle de chargement 3D") — ⚠️ MOCK, aucun appel réseau.
-///
-/// service-opt V2 (Moteur) n'expose pas encore l'oracle de chargement 3D
-/// (positions des colis, orientations, répartition des charges par
-/// essieu) — aucun contrat backend à ce jour. Restitution purement visuelle
-/// et en lecture seule pour le chauffeur : c'est le Moteur qui calcule, pas
-/// l'app. Ce provider simule un plan de chargement plausible pour permettre
-/// de construire et valider l'écran dès maintenant. À remplacer par un vrai
-/// GET (contrat à définir avec le Moteur) une fois service-opt V2 prêt.
-class PlanChargementNotifier extends StateNotifier<PlanChargementState> {
-  PlanChargementNotifier() : super(const PlanChargementState());
-
-  void chargerPlanDemo(String missionId, {String? etapeLibelle}) {
-    state = PlanChargementState(
-      plan: PlanChargement(
-        missionId: missionId,
-        etapeLibelle: etapeLibelle,
-        colis: const [
-          ColisPlan(id: 'c1', libelle: 'Sacs de ciment (Palette A)', poidsKg: 850, orientation: OrientationColis.debout, position: 1),
-          ColisPlan(id: 'c2', libelle: 'Caisses électroménager (Palette B)', poidsKg: 620, orientation: OrientationColis.fragileDessus, position: 2),
-          ColisPlan(id: 'c3', libelle: 'Rouleaux de tissus', poidsKg: 430, orientation: OrientationColis.couche, position: 3),
-          ColisPlan(id: 'c4', libelle: 'Bidons d\'huile végétale', poidsKg: 980, orientation: OrientationColis.debout, position: 4),
-        ],
-        essieux: const [
-          EssieuCharge(libelle: 'Essieu avant', poidsKg: 3200, poidsMaxKg: 6000),
-          EssieuCharge(libelle: 'Essieu arrière', poidsKg: 5800, poidsMaxKg: 13000),
-        ],
-      ),
+  PlanChargementState copyWith({bool? chargement, String? erreur, List<EtapePlanChargement>? etapes}) {
+    return PlanChargementState(
+      chargement: chargement ?? this.chargement,
+      erreur: erreur,
+      etapes: etapes ?? this.etapes,
     );
   }
 }
 
+/// S16/EF-MAT-13 (audit de suivi, 23 août) — appel réel depuis ce correctif :
+/// GET /missions/tournees/{tourneeId} (même endpoint que mission_multi_etapes,
+/// désormais enrichi côté service-exe avec chargesParEssieu par étape,
+/// alimenté par PlanChargeConfirme, service-opt).
+///
+/// Ne restitue QUE la répartition de poids par essieu (approximation
+/// uniforme, cf javadoc backend OracleChargementService) — les positions et
+/// orientations réelles des colis dans le véhicule ne sont PAS calculées par
+/// le Moteur (le contrat colis 3D n'existe pas encore) et ne sont donc
+/// jamais affichées ici, contrairement à l'ancienne maquette qui les
+/// inventait pour la démonstration.
+///
+/// Une étape sans chargesParEssieu (tournée pas encore confirmée par
+/// l'oracle, ou événement pas encore reçu) est simplement absente de la
+/// liste plutôt que remplie d'une valeur inventée.
+class PlanChargementNotifier extends StateNotifier<PlanChargementState> {
+  final Dio _dio;
+
+  PlanChargementNotifier(this._dio) : super(const PlanChargementState());
+
+  Future<void> charger(String tourneeId, {String? missionIdFiltre}) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final response = await _dio.get('/missions/tournees/$tourneeId');
+      final etapesJson = response.data['etapes'] as List<dynamic>? ?? [];
+      final etapes = etapesJson
+          .where((e) => missionIdFiltre == null || e['missionId'] == missionIdFiltre)
+          .where((e) => e['chargesParEssieu'] != null)
+          .map((e) {
+        final charges = (e['chargesParEssieu'] as Map<String, dynamic>);
+        final essieux = charges.entries
+            .map((entree) => EssieuCharge(
+                  libelle: _libelleEssieu(entree.key),
+                  poidsKg: (entree.value as num).toDouble(),
+                ))
+            .toList()
+          ..sort((a, b) => a.libelle.compareTo(b.libelle));
+        return EtapePlanChargement(
+          rang: e['rang'] as int,
+          typeEtape: e['typeEtape'] as String,
+          demandeId: e['demandeId'] as String,
+          essieux: essieux,
+        );
+      }).toList()
+        ..sort((a, b) => a.rang.compareTo(b.rang));
+
+      state = state.copyWith(chargement: false, etapes: etapes);
+    } on DioException catch (_) {
+      state = state.copyWith(
+        chargement: false,
+        erreur: 'Impossible de charger le plan de chargement. Vérifiez votre connexion et réessayez.',
+      );
+    }
+  }
+
+  String _libelleEssieu(String cle) {
+    final numero = cle.replaceAll(RegExp(r'[^0-9]'), '');
+    return numero.isEmpty ? cle : 'Essieu $numero';
+  }
+}
+
 final planChargementProvider = StateNotifierProvider<PlanChargementNotifier, PlanChargementState>((ref) {
-  return PlanChargementNotifier();
+  return PlanChargementNotifier(ref.watch(dioProvider));
 });
