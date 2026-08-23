@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { RapportFinancierService } from './rapport-financier.service';
@@ -6,12 +6,14 @@ import { Ecriture } from '../../../shared/models/ecriture.models';
 import { DeclarationEspeces } from '../../../shared/models/declaration-especes.models';
 import { EcrituresTableComponent } from '../../../shared/components/ecritures-table/ecritures-table.component';
 import { EspecesTableComponent } from '../../../shared/components/especes-table/especes-table.component';
+import { TotauxEcrituresComponent } from '../../../shared/components/totaux-ecritures/totaux-ecritures.component';
+import { calculerTotauxEcritures, ecrituresVersCsv, telechargerCsv } from '../../../shared/utils/ecritures-totaux';
 
 /** Rapport financier (Sprint 8, lecture seule) : un Bureau voit les écritures de son territoire. */
 @Component({
   selector: 'app-rapport-financier',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, EcrituresTableComponent, EspecesTableComponent],
+  imports: [CommonModule, PageShellComponent, EcrituresTableComponent, EspecesTableComponent, TotauxEcrituresComponent],
   templateUrl: './rapport-financier.component.html',
 })
 export class RapportFinancierComponent implements OnInit {
@@ -20,7 +22,13 @@ export class RapportFinancierComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
 
+  readonly totaux = computed(() => calculerTotauxEcritures(this.ecritures()));
+
   constructor(private readonly rapportFinancierService: RapportFinancierService) {}
+
+  exporter(): void {
+    telechargerCsv('rapport-financier-bureau.csv', ecrituresVersCsv(this.ecritures()));
+  }
 
   ngOnInit(): void {
     this.rapportFinancierService.rapport().subscribe({

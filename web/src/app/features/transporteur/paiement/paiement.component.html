@@ -10,6 +10,12 @@
 
     <ng-container *ngIf="!loading() && solde() as s">
       <p class="solde-montant">Solde reçu à ce jour : <strong>{{ s.solde }}</strong></p>
+      <app-totaux-ecritures [totaux]="totaux()" />
+      <div class="fc-actions">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()" [disabled]="s.historique.length === 0">
+          Exporter en CSV
+        </button>
+      </div>
       <app-ecritures-table [ecritures]="s.historique" />
     </ng-container>
   </section>

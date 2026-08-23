@@ -8,9 +8,17 @@
       <div class="fc-skeleton__line"></div>
     </div>
 
-    <app-ecritures-table *ngIf="!loading()" [ecritures]="ecritures()" />
+    <ng-container *ngIf="!loading()">
+      <app-totaux-ecritures [totaux]="totaux()" />
+      <div class="fc-actions">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()" [disabled]="ecritures().length === 0">
+          Exporter en CSV
+        </button>
+      </div>
+      <app-ecritures-table [ecritures]="ecritures()" />
 
-    <h3 class="fc-panel__title">Paiements en espèces</h3>
-    <app-especes-table *ngIf="!loading()" [paiements]="paiementsEspeces()" />
+      <h3 class="fc-panel__title">Paiements en espèces</h3>
+      <app-especes-table [paiements]="paiementsEspeces()" />
+    </ng-container>
   </section>
 </app-page-shell>

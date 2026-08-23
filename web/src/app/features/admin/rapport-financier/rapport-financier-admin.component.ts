@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,8 @@ import { Ecriture } from '../../../shared/models/ecriture.models';
 import { DeclarationEspeces } from '../../../shared/models/declaration-especes.models';
 import { EcrituresTableComponent } from '../../../shared/components/ecritures-table/ecritures-table.component';
 import { EspecesTableComponent } from '../../../shared/components/especes-table/especes-table.component';
+import { TotauxEcrituresComponent } from '../../../shared/components/totaux-ecritures/totaux-ecritures.component';
+import { calculerTotauxEcritures, ecrituresVersCsv, telechargerCsv } from '../../../shared/utils/ecritures-totaux';
 
 /**
  * Rapport financier Admin (Sprint 8) : consultation transverse à tous les
@@ -16,7 +18,7 @@ import { EspecesTableComponent } from '../../../shared/components/especes-table/
 @Component({
   selector: 'app-rapport-financier-admin',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, FormsModule, EcrituresTableComponent, EspecesTableComponent],
+  imports: [CommonModule, PageShellComponent, FormsModule, EcrituresTableComponent, EspecesTableComponent, TotauxEcrituresComponent],
   templateUrl: './rapport-financier-admin.component.html',
 })
 export class RapportFinancierAdminComponent {
@@ -27,7 +29,17 @@ export class RapportFinancierAdminComponent {
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
+  readonly totaux = computed(() => calculerTotauxEcritures(this.ecritures() ?? []));
+
   constructor(private readonly rapportFinancierAdminService: RapportFinancierAdminService) {}
+
+  exporter(): void {
+    const ecritures = this.ecritures();
+    if (!ecritures) {
+      return;
+    }
+    telechargerCsv(`rapport-financier-${this.tenantSelectionne()}.csv`, ecrituresVersCsv(ecritures));
+  }
 
   consulter(): void {
     this.loading.set(true);

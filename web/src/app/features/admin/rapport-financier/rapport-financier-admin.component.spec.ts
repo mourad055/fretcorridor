@@ -43,6 +43,22 @@ describe('RapportFinancierAdminComponent', () => {
     expect(fixture.debugElement.query(By.css('app-ecritures-table'))).toBeTruthy();
   });
 
+  it('calcule les totaux (credit, debit, solde) a partir des ecritures recues', () => {
+    const fixture = TestBed.createComponent(RapportFinancierAdminComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.consulter();
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bgft-douala`).flush([
+      { id: 'e1', missionId: 'mission-1', typeCompte: 'COMPTE_SEQUESTRE_PRESTATAIRE', nature: 'ENCAISSEMENT', sens: 'CREDIT', montant: 500, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: 'VIREMENT', litigeActif: false },
+      { id: 'e2', missionId: 'mission-1', typeCompte: 'COMPTE_TRANSPORTEUR', nature: 'REVERSEMENT', sens: 'DEBIT', montant: 300, creeLe: '2026-01-02T00:00:00Z', statut: 'VALIDE', modePaiement: null, litigeActif: false },
+    ]);
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/paiements-especes/tenant-bgft-douala`).flush([]);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.totaux()).toEqual({ nombre: 2, totalCredit: 500, totalDebit: 300, solde: 200 });
+  });
+
   it('fetches the cash payments of the selected tenant on demand', () => {
     const fixture = TestBed.createComponent(RapportFinancierAdminComponent);
     fixture.detectChanges();

@@ -24,9 +24,15 @@
       <div class="fc-skeleton__line"></div>
     </div>
 
-    <app-ecritures-table *ngIf="!loading() && ecritures() as e" [ecritures]="e" />
+    <ng-container *ngIf="!loading() && ecritures() as e">
+      <app-totaux-ecritures [totaux]="totaux()" />
+      <div class="fc-actions">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()" [disabled]="e.length === 0">
+          Exporter en CSV
+        </button>
+      </div>
+      <app-ecritures-table [ecritures]="e" />
 
-    <ng-container *ngIf="!loading() && ecritures()">
       <h3 class="fc-panel__title">Paiements en espèces</h3>
       <app-especes-table [paiements]="paiementsEspeces()" />
     </ng-container>
