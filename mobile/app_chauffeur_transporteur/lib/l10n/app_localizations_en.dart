@@ -773,4 +773,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pinObligatoire => 'PIN required';
+
+  @override
+  String get planDeChargementTitre => 'Loading plan';
+
+  @override
+  String get planChargementNonDisponibleMessage =>
+      'Loading plan not yet available for this route — the Engine hasn\'t computed it yet (or this route is too simple to require one).';
+
+  @override
+  String etapePlanLabel(int rang, String type, String demandeId) {
+    return 'Step $rang — $type — Request $demandeId';
+  }
+
+  @override
+  String get repartitionApproximativeMessage =>
+      'Approximate distribution (total weight spread evenly across axles)';
 }

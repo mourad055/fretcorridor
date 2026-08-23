@@ -1501,6 +1501,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'PIN obligatoire'**
   String get pinObligatoire;
+
+  /// No description provided for @planDeChargementTitre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plan de chargement'**
+  String get planDeChargementTitre;
+
+  /// No description provided for @planChargementNonDisponibleMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plan de chargement pas encore disponible pour cette tournée — le Moteur ne l\'a pas encore calculé (ou cette tournée est trop simple pour en nécessiter un).'**
+  String get planChargementNonDisponibleMessage;
+
+  /// No description provided for @etapePlanLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Étape {rang} — {type} — Demande {demandeId}'**
+  String etapePlanLabel(int rang, String type, String demandeId);
+
+  /// No description provided for @repartitionApproximativeMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Répartition approximative (poids total réparti uniformément entre essieux)'**
+  String get repartitionApproximativeMessage;
 }
 
 class _AppLocalizationsDelegate

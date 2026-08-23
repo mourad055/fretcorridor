@@ -777,4 +777,20 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get pinObligatoire => 'PIN obligatoire';
+
+  @override
+  String get planDeChargementTitre => 'Plan de chargement';
+
+  @override
+  String get planChargementNonDisponibleMessage =>
+      'Plan de chargement pas encore disponible pour cette tournée — le Moteur ne l\'a pas encore calculé (ou cette tournée est trop simple pour en nécessiter un).';
+
+  @override
+  String etapePlanLabel(int rang, String type, String demandeId) {
+    return 'Étape $rang — $type — Demande $demandeId';
+  }
+
+  @override
+  String get repartitionApproximativeMessage =>
+      'Répartition approximative (poids total réparti uniformément entre essieux)';
 }

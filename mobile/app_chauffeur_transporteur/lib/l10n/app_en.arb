@@ -246,5 +246,10 @@
   "codeRecuParSmsLabel": "CODE RECEIVED BY SMS",
   "codeSixChiffres": "6-digit code",
   "nouveauCodePinLabel": "NEW PIN CODE (4-6 digits)",
-  "pinObligatoire": "PIN required"
+  "pinObligatoire": "PIN required",
+  "planDeChargementTitre": "Loading plan",
+  "planChargementNonDisponibleMessage": "Loading plan not yet available for this route — the Engine hasn't computed it yet (or this route is too simple to require one).",
+  "etapePlanLabel": "Step {rang} — {type} — Request {demandeId}",
+  "@etapePlanLabel": {"placeholders": {"rang": {"type": "int"}, "type": {"type": "String"}, "demandeId": {"type": "String"}}},
+  "repartitionApproximativeMessage": "Approximate distribution (total weight spread evenly across axles)"
 }

@@ -246,5 +246,10 @@
   "codeRecuParSmsLabel": "CODE REÇU PAR SMS",
   "codeSixChiffres": "Code à 6 chiffres",
   "nouveauCodePinLabel": "NOUVEAU CODE PIN (4-6 chiffres)",
-  "pinObligatoire": "PIN obligatoire"
+  "pinObligatoire": "PIN obligatoire",
+  "planDeChargementTitre": "Plan de chargement",
+  "planChargementNonDisponibleMessage": "Plan de chargement pas encore disponible pour cette tournée — le Moteur ne l'a pas encore calculé (ou cette tournée est trop simple pour en nécessiter un).",
+  "etapePlanLabel": "Étape {rang} — {type} — Demande {demandeId}",
+  "@etapePlanLabel": {"placeholders": {"rang": {"type": "int"}, "type": {"type": "String"}, "demandeId": {"type": "String"}}},
+  "repartitionApproximativeMessage": "Répartition approximative (poids total réparti uniformément entre essieux)"
 }

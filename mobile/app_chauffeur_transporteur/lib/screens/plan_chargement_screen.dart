@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/plan_chargement_provider.dart';
 import '../theme/app_theme.dart';
 
-const _libellesTypeEtape = {
-  'ENLEVEMENT': 'Enlèvement',
-  'LIVRAISON': 'Livraison',
-};
+Map<String, String> _libellesTypeEtape(AppLocalizations t) => {
+      'ENLEVEMENT': t.enlevementLabel,
+      'LIVRAISON': t.etapeLivraison,
+    };
 
 /// S16 (Sprint 16, "Oracle de chargement 3D") — appel réel depuis le
 /// 23 août, voir plan_chargement_provider.dart. Restitution en lecture
@@ -38,10 +39,11 @@ class _PlanChargementScreenState extends ConsumerState<PlanChargementScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(planChargementProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Plan de chargement')),
+      appBar: AppBar(title: Text(t.planDeChargementTitre)),
       body: state.chargement
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -71,27 +73,26 @@ class _PlanChargementScreenState extends ConsumerState<PlanChargementScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.bordure),
                       ),
-                      child: const Row(children: [
-                        Icon(Icons.hourglass_empty, color: AppColors.texteMuet, size: 18),
-                        SizedBox(width: 10),
+                      child: Row(children: [
+                        const Icon(Icons.hourglass_empty, color: AppColors.texteMuet, size: 18),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Plan de chargement pas encore disponible pour cette tournée — le Moteur ne l\'a pas '
-                            'encore calculé (ou cette tournée est trop simple pour en nécessiter un).',
-                            style: TextStyle(color: AppColors.texteMuet, fontSize: 13),
+                            t.planChargementNonDisponibleMessage,
+                            style: const TextStyle(color: AppColors.texteMuet, fontSize: 13),
                           ),
                         ),
                       ]),
                     )
                   else
-                    ...state.etapes.map(_carteEtape),
+                    ...state.etapes.map((e) => _carteEtape(t, e)),
                 ],
               ),
             ),
     );
   }
 
-  Widget _carteEtape(EtapePlanChargement etape) {
+  Widget _carteEtape(AppLocalizations t, EtapePlanChargement etape) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(14),
@@ -104,14 +105,13 @@ class _PlanChargementScreenState extends ConsumerState<PlanChargementScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Étape ${etape.rang} — ${_libellesTypeEtape[etape.typeEtape] ?? etape.typeEtape} '
-            '— Demande ${etape.demandeId.substring(0, 8)}',
+            t.etapePlanLabel(etape.rang, _libellesTypeEtape(t)[etape.typeEtape] ?? etape.typeEtape, etape.demandeId.substring(0, 8)),
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           ),
           const SizedBox(height: 4),
-          const Text(
-            'Répartition approximative (poids total réparti uniformément entre essieux)',
-            style: TextStyle(color: AppColors.texteMuet, fontSize: 11),
+          Text(
+            t.repartitionApproximativeMessage,
+            style: const TextStyle(color: AppColors.texteMuet, fontSize: 11),
           ),
           const SizedBox(height: 10),
           ...etape.essieux.map((e) => Padding(
