@@ -17,6 +17,7 @@ const ONGLETS_BUREAU: OngletNav[] = [
   { path: '/bureau/chronologie', labelKey: 'nav.bureau.chronologie', exact: false },
   { path: '/bureau/rapport-financier', labelKey: 'nav.bureau.rapportFinancier', exact: false },
   { path: '/bureau/notifications', labelKey: 'nav.bureau.notifications', exact: false },
+  { path: '/bureau/observatoire', labelKey: 'nav.bureau.observatoire', exact: false },
 ];
 
 const ONGLETS_TRANSPORTEUR: OngletNav[] = [

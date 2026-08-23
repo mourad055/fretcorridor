@@ -303,3 +303,29 @@ export function libelleModePaiement(mode?: string | null): string {
       return mode ?? '—';
   }
 }
+
+/** EF-BUR-07 (S) : indicateur de l'observatoire sur lequel une alerte de seuil peut être configurée. */
+export function libelleIndicateurObservatoire(indicateur?: string): string {
+  switch (indicateur) {
+    case 'NOMBRE_MISSIONS':
+      return 'Nombre de missions';
+    case 'PRIX_MEDIANE':
+      return 'Prix médian';
+    case 'TAUX_DESEQUILIBRE_DIRECTIONNEL':
+      return 'Taux de déséquilibre directionnel';
+    default:
+      return indicateur ?? '';
+  }
+}
+
+/** EF-BUR-07 (S) : sens de comparaison d'une alerte de seuil. */
+export function libelleComparateur(comparateur?: string): string {
+  switch (comparateur) {
+    case 'SUPERIEUR':
+      return 'Supérieur à';
+    case 'INFERIEUR':
+      return 'Inférieur à';
+    default:
+      return comparateur ?? '';
+  }
+}

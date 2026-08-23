@@ -9,6 +9,7 @@ import { PositionsListComponent } from './features/bureau/positions/positions-li
 import { BureauChronologieComponent } from './features/bureau/chronologie/bureau-chronologie.component';
 import { RapportFinancierComponent } from './features/bureau/rapport-financier/rapport-financier.component';
 import { NotificationsComponent } from './features/bureau/notifications/notifications.component';
+import { ObservatoireComponent } from './features/bureau/observatoire/observatoire.component';
 import { CapacitesListComponent } from './features/transporteur/capacites/capacites-list.component';
 import { TransporteurMissionsComponent } from './features/transporteur/missions/transporteur-missions.component';
 import { PaiementComponent } from './features/transporteur/paiement/paiement.component';
@@ -70,6 +71,12 @@ export const routes: Routes = [
       {
         path: 'bureau/notifications',
         component: NotificationsComponent,
+        canActivate: [roleGuard],
+        data: { role: 'BUREAU' },
+      },
+      {
+        path: 'bureau/observatoire',
+        component: ObservatoireComponent,
         canActivate: [roleGuard],
         data: { role: 'BUREAU' },
       },

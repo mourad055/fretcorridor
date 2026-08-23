@@ -39,7 +39,8 @@
       "positions": "Suivi temps réel",
       "chronologie": "Chronologie",
       "rapportFinancier": "Rapport financier",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "observatoire": "Observatoire"
     },
     "transporteur": {
       "capacites": "Capacités",

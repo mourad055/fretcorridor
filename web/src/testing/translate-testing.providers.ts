@@ -47,6 +47,7 @@ const TRADUCTIONS_TEST_FR = {
       chronologie: 'Chronologie',
       rapportFinancier: 'Rapport financier',
       notifications: 'Notifications',
+      observatoire: 'Observatoire',
     },
     transporteur: {
       capacites: 'Capacités',

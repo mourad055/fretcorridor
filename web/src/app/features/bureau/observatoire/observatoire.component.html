@@ -1,0 +1,178 @@
+<app-page-shell>
+  <section class="observatoire fc-panel">
+    <h2 class="fc-panel__title">Observatoire de marché</h2>
+
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+    <div class="fc-filters">
+      <label for="observatoire-axe">Axe</label>
+      <select
+        id="observatoire-axe"
+        name="axe"
+        [ngModel]="axeSelectionne()"
+        (ngModelChange)="onAxeChange($event)"
+      >
+        <option *ngFor="let axe of axes()" [value]="axe.id">{{ axe.origine }} → {{ axe.destination }}</option>
+      </select>
+    </div>
+
+    <div class="fc-skeleton" *ngIf="loadingObservatoire()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+
+    <ng-container *ngIf="!loadingObservatoire() && observatoire() as obs">
+      <p class="fc-msg" *ngIf="!obs.seuilAtteint">
+        Seuil d'agrégation non atteint pour cet axe : les indicateurs restent masqués tant qu'un volume minimal de
+        missions n'a pas été observé (RG-085, anonymisation).
+      </p>
+
+      <dl class="fc-dl" *ngIf="obs.seuilAtteint">
+        <div class="fc-dl__row">
+          <dt>Nombre de missions</dt>
+          <dd>{{ obs.nombreMissions }}</dd>
+        </div>
+        <div class="fc-dl__row">
+          <dt>Prix médian</dt>
+          <dd>{{ obs.prixMediane }} {{ obs.devise }}</dd>
+        </div>
+        <div class="fc-dl__row">
+          <dt>Dispersion des prix</dt>
+          <dd>{{ obs.prixDispersion }} {{ obs.devise }}</dd>
+        </div>
+        <div class="fc-dl__row">
+          <dt>Déséquilibre directionnel</dt>
+          <dd>{{ obs.tauxDesequilibreDirectionnel }}</dd>
+        </div>
+      </dl>
+
+      <dl class="fc-dl">
+        <div class="fc-dl__row">
+          <dt>Couverture de l'estimation</dt>
+          <dd>{{ obs.couverturePourcentage !== null ? obs.couverturePourcentage + ' %' : 'Aucune estimation déclarée' }}</dd>
+        </div>
+        <div class="fc-dl__row" *ngIf="obs.estimationDefinieLe">
+          <dt>Estimation définie le</dt>
+          <dd>{{ obs.estimationDefinieLe | date: 'short' }}</dd>
+        </div>
+      </dl>
+
+      <form class="observatoire__estimation" (ngSubmit)="definirEstimation()">
+        <h3>Déclarer une estimation de marché</h3>
+        <div class="field">
+          <label class="field__label" for="volume-mensuel-estime">Volume mensuel estimé</label>
+          <input
+            id="volume-mensuel-estime"
+            class="field__input"
+            type="number"
+            min="1"
+            [ngModel]="volumeMensuelEstime()"
+            (ngModelChange)="volumeMensuelEstime.set($event)"
+            name="volumeMensuelEstime"
+          />
+        </div>
+        <div class="field">
+          <label class="field__label" for="source-estimation">Source</label>
+          <input
+            id="source-estimation"
+            class="field__input"
+            [ngModel]="sourceEstimation()"
+            (ngModelChange)="sourceEstimation.set($event)"
+            name="sourceEstimation"
+          />
+        </div>
+        <button type="submit" class="fc-btn fc-btn--primary">Enregistrer l'estimation</button>
+      </form>
+    </ng-container>
+  </section>
+
+  <section class="observatoire-alertes fc-panel">
+    <h2 class="fc-panel__title">Alertes de seuil</h2>
+
+    <div class="fc-skeleton" *ngIf="loadingAlertes()" aria-busy="true">
+      <div class="fc-skeleton__line"></div>
+      <div class="fc-skeleton__line"></div>
+    </div>
+    <div class="fc-empty" *ngIf="!loadingAlertes() && alertes().length === 0">Aucune alerte configurée.</div>
+
+    <table class="fc-table" *ngIf="!loadingAlertes() && alertes().length > 0">
+      <thead>
+        <tr>
+          <th>Axe</th>
+          <th>Indicateur</th>
+          <th>Condition</th>
+          <th>État</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let etat of alertes()">
+          <td>{{ libelleAxe(etat.alerte.axeId) }}</td>
+          <td>{{ libelleIndicateurObservatoire(etat.alerte.indicateur) }}</td>
+          <td>{{ libelleComparateur(etat.alerte.comparateur) }} {{ etat.alerte.seuil }}</td>
+          <td>
+            <span *ngIf="!etat.evaluable">Non évaluable (seuil d'agrégation non atteint)</span>
+            <span *ngIf="etat.evaluable && etat.declenchee">Déclenchée ({{ etat.valeurActuelle }})</span>
+            <span *ngIf="etat.evaluable && !etat.declenchee">Sous contrôle ({{ etat.valeurActuelle }})</span>
+          </td>
+          <td>
+            <button type="button" class="fc-btn fc-btn--ghost" (click)="supprimerAlerte(etat.alerte)">Supprimer</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <form class="observatoire__nouvelle-alerte" (ngSubmit)="configurerAlerte()">
+      <h3>Configurer une nouvelle alerte</h3>
+      <div class="field">
+        <label class="field__label" for="alerte-axe">Axe</label>
+        <select
+          id="alerte-axe"
+          name="alerteAxe"
+          [ngModel]="nouvelleAlerteAxeId()"
+          (ngModelChange)="nouvelleAlerteAxeId.set($event)"
+        >
+          <option *ngFor="let axe of axes()" [value]="axe.id">{{ axe.origine }} → {{ axe.destination }}</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="alerte-indicateur">Indicateur</label>
+        <select
+          id="alerte-indicateur"
+          name="alerteIndicateur"
+          [ngModel]="nouvelleAlerteIndicateur()"
+          (ngModelChange)="nouvelleAlerteIndicateur.set($event)"
+        >
+          <option *ngFor="let indicateur of indicateurs" [value]="indicateur">
+            {{ libelleIndicateurObservatoire(indicateur) }}
+          </option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="alerte-comparateur">Condition</label>
+        <select
+          id="alerte-comparateur"
+          name="alerteComparateur"
+          [ngModel]="nouvelleAlerteComparateur()"
+          (ngModelChange)="nouvelleAlerteComparateur.set($event)"
+        >
+          <option *ngFor="let comparateur of comparateurs" [value]="comparateur">
+            {{ libelleComparateur(comparateur) }}
+          </option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="field__label" for="alerte-seuil">Seuil</label>
+        <input
+          id="alerte-seuil"
+          class="field__input"
+          type="number"
+          [ngModel]="nouvelleAlerteSeuil()"
+          (ngModelChange)="nouvelleAlerteSeuil.set($event)"
+          name="alerteSeuil"
+        />
+      </div>
+      <button type="submit" class="fc-btn fc-btn--primary">Créer l'alerte</button>
+    </form>
+  </section>
+</app-page-shell>

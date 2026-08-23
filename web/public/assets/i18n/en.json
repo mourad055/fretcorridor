@@ -39,7 +39,8 @@
       "positions": "Live tracking",
       "chronologie": "Timeline",
       "rapportFinancier": "Financial report",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "observatoire": "Market watch"
     },
     "transporteur": {
       "capacites": "Capacity",
