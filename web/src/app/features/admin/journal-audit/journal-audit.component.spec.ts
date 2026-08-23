@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { axe } from 'jest-axe';
 import { JournalAuditComponent } from './journal-audit.component';
 import { environment } from '../../../../environments/environment';
 
@@ -66,5 +67,18 @@ describe('JournalAuditComponent', () => {
       (r) => r.url === `${environment.apiBaseUrl}/admin/journal-audit` && r.params.get('tenantId') === 'tenant-bgft-douala'
     );
     reqFiltre.flush([]);
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable (select de tenant inclus)", async () => {
+    const fixture = TestBed.createComponent(JournalAuditComponent);
+    fixture.detectChanges();
+    flushTenants(fixture);
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/journal-audit`).flush([
+      { id: 'e1', tenantId: 'tenant-bgft-douala', acteurId: 'actor-admin-1', action: 'DOSSIER_OUVERT', ressource: 'dossier:d1', horodatage: '2026-08-05T00:00:00Z' },
+    ]);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

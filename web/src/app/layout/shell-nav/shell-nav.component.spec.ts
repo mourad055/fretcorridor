@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { ShellNavComponent } from './shell-nav.component';
 import { AuthService } from '../../core/auth/auth.service';
 import { Session } from '../../core/auth/auth.models';
@@ -65,5 +66,16 @@ describe('ShellNavComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.debugElement.queryAll(By.css('a.shell-nav__link'))).toHaveLength(0);
+  });
+
+  // Objective l'audit WCAG AA (DESIGN.md) sur la navigation partagée par les
+  // 3 rôles plutôt que de rester déclaratif (audit UX 2026-08-23).
+  it("n'a aucune violation d'accessibilité automatiquement détectable (rôle Bureau, 6 onglets)", async () => {
+    configure({ token: 't', role: 'BUREAU', tenantId: 'tenant-bgft-douala', actorId: 'actor-1' });
+    const fixture = TestBed.createComponent(ShellNavComponent);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });
