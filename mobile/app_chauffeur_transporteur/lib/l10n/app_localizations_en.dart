@@ -638,4 +638,78 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enregistrer => 'Save';
+
+  @override
+  String get kycPhotoNonReconnue =>
+      'This photo doesn\'t look like an ID document — frame the document clearly (readable text) and try again.';
+
+  @override
+  String get profilCompleteEmoji => 'Profile completed ✅';
+
+  @override
+  String get telephoneLabel => 'Phone';
+
+  @override
+  String get typeDeCompte => 'Account type';
+
+  @override
+  String get entreprise => 'Business';
+
+  @override
+  String get particulier => 'Individual';
+
+  @override
+  String get pieceDeposeeLabel => 'Document submitted';
+
+  @override
+  String get modifier => 'Edit';
+
+  @override
+  String get modifierNumeroTelephone => 'Change phone number';
+
+  @override
+  String numeroActuelLabel(String telephone) {
+    return 'Current number: $telephone';
+  }
+
+  @override
+  String get confirmezNumeroActuel => 'Confirm your current number';
+
+  @override
+  String get nouveauNumero => 'New number';
+
+  @override
+  String get annuler => 'Cancel';
+
+  @override
+  String get numeroTelephoneMisAJour => 'Phone number updated.';
+
+  @override
+  String get echecModification => 'Update failed.';
+
+  @override
+  String get completezVotreProfil => 'Complete your profile';
+
+  @override
+  String get identitePieceCondition =>
+      'Declared identity and submitted document — required to publish or accept a mission (RG-011).';
+
+  @override
+  String get identite => 'Identity';
+
+  @override
+  String get pieceIdentite => 'ID document';
+
+  @override
+  String get verificationEnCours => 'Checking…';
+
+  @override
+  String get envoiEnCours => 'Sending…';
+
+  @override
+  String get prendrePhotoIdentite => 'Take a photo of my ID document';
+
+  @override
+  String get numeroRegistreCommerceFacultatif =>
+      'BUSINESS REGISTRATION NUMBER (optional)';
 }

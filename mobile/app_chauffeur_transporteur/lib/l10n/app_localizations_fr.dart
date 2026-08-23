@@ -642,4 +642,78 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get enregistrer => 'Enregistrer';
+
+  @override
+  String get kycPhotoNonReconnue =>
+      'Cette photo ne ressemble pas à une pièce d\'identité — cadrez bien le document (texte lisible) et réessayez.';
+
+  @override
+  String get profilCompleteEmoji => 'Profil complété ✅';
+
+  @override
+  String get telephoneLabel => 'Téléphone';
+
+  @override
+  String get typeDeCompte => 'Type de compte';
+
+  @override
+  String get entreprise => 'Entreprise';
+
+  @override
+  String get particulier => 'Particulier';
+
+  @override
+  String get pieceDeposeeLabel => 'Pièce déposée';
+
+  @override
+  String get modifier => 'Modifier';
+
+  @override
+  String get modifierNumeroTelephone => 'Modifier le numéro de téléphone';
+
+  @override
+  String numeroActuelLabel(String telephone) {
+    return 'Numéro actuel : $telephone';
+  }
+
+  @override
+  String get confirmezNumeroActuel => 'Confirmez votre numéro actuel';
+
+  @override
+  String get nouveauNumero => 'Nouveau numéro';
+
+  @override
+  String get annuler => 'Annuler';
+
+  @override
+  String get numeroTelephoneMisAJour => 'Numéro de téléphone mis à jour.';
+
+  @override
+  String get echecModification => 'Échec de la modification.';
+
+  @override
+  String get completezVotreProfil => 'Complétez votre profil';
+
+  @override
+  String get identitePieceCondition =>
+      'Identité déclarée et pièce déposée — condition pour publier ou accepter une mission (RG-011).';
+
+  @override
+  String get identite => 'Identité';
+
+  @override
+  String get pieceIdentite => 'Pièce d\'identité';
+
+  @override
+  String get verificationEnCours => 'Vérification…';
+
+  @override
+  String get envoiEnCours => 'Envoi…';
+
+  @override
+  String get prendrePhotoIdentite => 'Prendre en photo ma pièce d\'identité';
+
+  @override
+  String get numeroRegistreCommerceFacultatif =>
+      'N° REGISTRE DE COMMERCE (facultatif)';
 }

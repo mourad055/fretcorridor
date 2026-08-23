@@ -1261,6 +1261,144 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Enregistrer'**
   String get enregistrer;
+
+  /// No description provided for @kycPhotoNonReconnue.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette photo ne ressemble pas à une pièce d\'identité — cadrez bien le document (texte lisible) et réessayez.'**
+  String get kycPhotoNonReconnue;
+
+  /// No description provided for @profilCompleteEmoji.
+  ///
+  /// In fr, this message translates to:
+  /// **'Profil complété ✅'**
+  String get profilCompleteEmoji;
+
+  /// No description provided for @telephoneLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Téléphone'**
+  String get telephoneLabel;
+
+  /// No description provided for @typeDeCompte.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type de compte'**
+  String get typeDeCompte;
+
+  /// No description provided for @entreprise.
+  ///
+  /// In fr, this message translates to:
+  /// **'Entreprise'**
+  String get entreprise;
+
+  /// No description provided for @particulier.
+  ///
+  /// In fr, this message translates to:
+  /// **'Particulier'**
+  String get particulier;
+
+  /// No description provided for @pieceDeposeeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pièce déposée'**
+  String get pieceDeposeeLabel;
+
+  /// No description provided for @modifier.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier'**
+  String get modifier;
+
+  /// No description provided for @modifierNumeroTelephone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le numéro de téléphone'**
+  String get modifierNumeroTelephone;
+
+  /// No description provided for @numeroActuelLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro actuel : {telephone}'**
+  String numeroActuelLabel(String telephone);
+
+  /// No description provided for @confirmezNumeroActuel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmez votre numéro actuel'**
+  String get confirmezNumeroActuel;
+
+  /// No description provided for @nouveauNumero.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau numéro'**
+  String get nouveauNumero;
+
+  /// No description provided for @annuler.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler'**
+  String get annuler;
+
+  /// No description provided for @numeroTelephoneMisAJour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro de téléphone mis à jour.'**
+  String get numeroTelephoneMisAJour;
+
+  /// No description provided for @echecModification.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec de la modification.'**
+  String get echecModification;
+
+  /// No description provided for @completezVotreProfil.
+  ///
+  /// In fr, this message translates to:
+  /// **'Complétez votre profil'**
+  String get completezVotreProfil;
+
+  /// No description provided for @identitePieceCondition.
+  ///
+  /// In fr, this message translates to:
+  /// **'Identité déclarée et pièce déposée — condition pour publier ou accepter une mission (RG-011).'**
+  String get identitePieceCondition;
+
+  /// No description provided for @identite.
+  ///
+  /// In fr, this message translates to:
+  /// **'Identité'**
+  String get identite;
+
+  /// No description provided for @pieceIdentite.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pièce d\'identité'**
+  String get pieceIdentite;
+
+  /// No description provided for @verificationEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vérification…'**
+  String get verificationEnCours;
+
+  /// No description provided for @envoiEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoi…'**
+  String get envoiEnCours;
+
+  /// No description provided for @prendrePhotoIdentite.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prendre en photo ma pièce d\'identité'**
+  String get prendrePhotoIdentite;
+
+  /// No description provided for @numeroRegistreCommerceFacultatif.
+  ///
+  /// In fr, this message translates to:
+  /// **'N° REGISTRE DE COMMERCE (facultatif)'**
+  String get numeroRegistreCommerceFacultatif;
 }
 
 class _AppLocalizationsDelegate
