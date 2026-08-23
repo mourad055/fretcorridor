@@ -715,6 +715,306 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'(principal)'**
   String get bureauPrincipal;
+
+  /// No description provided for @statutEnAttente.
+  ///
+  /// In fr, this message translates to:
+  /// **'En attente'**
+  String get statutEnAttente;
+
+  /// No description provided for @statutPriseEnCharge.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prise en charge'**
+  String get statutPriseEnCharge;
+
+  /// No description provided for @statutEnTransit.
+  ///
+  /// In fr, this message translates to:
+  /// **'En transit'**
+  String get statutEnTransit;
+
+  /// No description provided for @statutLivree.
+  ///
+  /// In fr, this message translates to:
+  /// **'Livrée'**
+  String get statutLivree;
+
+  /// No description provided for @statutAnnulee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annulée'**
+  String get statutAnnulee;
+
+  /// No description provided for @etapeLivraison.
+  ///
+  /// In fr, this message translates to:
+  /// **'Livraison'**
+  String get etapeLivraison;
+
+  /// No description provided for @incidentLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Incident'**
+  String get incidentLabel;
+
+  /// No description provided for @disponibiliteDesQuePossible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dès que possible'**
+  String get disponibiliteDesQuePossible;
+
+  /// No description provided for @disponibiliteDatePrecise.
+  ///
+  /// In fr, this message translates to:
+  /// **'À date précise'**
+  String get disponibiliteDatePrecise;
+
+  /// No description provided for @disponibilitePlage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sur une plage horaire'**
+  String get disponibilitePlage;
+
+  /// No description provided for @collecteDomicile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Collecte à domicile'**
+  String get collecteDomicile;
+
+  /// No description provided for @collectePointRelais.
+  ///
+  /// In fr, this message translates to:
+  /// **'Collecte en point relais'**
+  String get collectePointRelais;
+
+  /// No description provided for @aucuneMissionPourLeMoment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune mission pour le moment.'**
+  String get aucuneMissionPourLeMoment;
+
+  /// No description provided for @idDeLaMission.
+  ///
+  /// In fr, this message translates to:
+  /// **'ID de la mission :'**
+  String get idDeLaMission;
+
+  /// No description provided for @destinataireSansTel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Destinataire : {nom}'**
+  String destinataireSansTel(String nom);
+
+  /// No description provided for @destinataireAvecTel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Destinataire : {nom} · {telephone}'**
+  String destinataireAvecTel(String nom, String telephone);
+
+  /// No description provided for @poidsTotalLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poids total : {poids} kg'**
+  String poidsTotalLabel(String poids);
+
+  /// No description provided for @typeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type : {type}'**
+  String typeLabel(String type);
+
+  /// No description provided for @publieeLe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Publiée le {date}'**
+  String publieeLe(String date);
+
+  /// No description provided for @valeurLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valeur : '**
+  String get valeurLabel;
+
+  /// No description provided for @grandeValeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Grande valeur'**
+  String get grandeValeur;
+
+  /// No description provided for @faitPartieTourneeGroupee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fait partie d\'une tournée groupée'**
+  String get faitPartieTourneeGroupee;
+
+  /// No description provided for @chronologie.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chronologie'**
+  String get chronologie;
+
+  /// No description provided for @aucuneEtapePourLeMoment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune étape pour le moment.'**
+  String get aucuneEtapePourLeMoment;
+
+  /// No description provided for @statutAvecValeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Statut : {statut}'**
+  String statutAvecValeur(String statut);
+
+  /// No description provided for @suiviGpsActif.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suivi GPS actif'**
+  String get suiviGpsActif;
+
+  /// No description provided for @voirLePlanDeChargement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir le plan de chargement'**
+  String get voirLePlanDeChargement;
+
+  /// No description provided for @signalerUnIncident.
+  ///
+  /// In fr, this message translates to:
+  /// **'Signaler un incident'**
+  String get signalerUnIncident;
+
+  /// No description provided for @confirmerLaLivraison.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmer la livraison'**
+  String get confirmerLaLivraison;
+
+  /// No description provided for @destinataire.
+  ///
+  /// In fr, this message translates to:
+  /// **'Destinataire'**
+  String get destinataire;
+
+  /// No description provided for @grilleDecisionNote.
+  ///
+  /// In fr, this message translates to:
+  /// **'Grille de décision et recours traités par le Bureau — pas encore automatisés côté app.'**
+  String get grilleDecisionNote;
+
+  /// No description provided for @categorieLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'CATÉGORIE'**
+  String get categorieLabel;
+
+  /// No description provided for @descriptionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'DESCRIPTION'**
+  String get descriptionLabel;
+
+  /// No description provided for @detaillezOptionnel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Détaillez ce qui s\'est passé (optionnel)'**
+  String get detaillezOptionnel;
+
+  /// No description provided for @ajouterPhotoOptionnel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une photo (optionnel)'**
+  String get ajouterPhotoOptionnel;
+
+  /// No description provided for @photoJointe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo jointe'**
+  String get photoJointe;
+
+  /// No description provided for @envoyerLeSignalement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyer le signalement'**
+  String get envoyerLeSignalement;
+
+  /// No description provided for @preuveDePriseEnCharge.
+  ///
+  /// In fr, this message translates to:
+  /// **'Preuve de prise en charge'**
+  String get preuveDePriseEnCharge;
+
+  /// No description provided for @preuveDeLivraison.
+  ///
+  /// In fr, this message translates to:
+  /// **'Preuve de livraison'**
+  String get preuveDeLivraison;
+
+  /// No description provided for @photoEtSignatureObligatoires.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une photo et une signature sont obligatoires.'**
+  String get photoEtSignatureObligatoires;
+
+  /// No description provided for @photosAuMoinsUn.
+  ///
+  /// In fr, this message translates to:
+  /// **'PHOTOS (au moins 1)'**
+  String get photosAuMoinsUn;
+
+  /// No description provided for @signatureDuDestinataire.
+  ///
+  /// In fr, this message translates to:
+  /// **'SIGNATURE DU DESTINATAIRE'**
+  String get signatureDuDestinataire;
+
+  /// No description provided for @effacer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer'**
+  String get effacer;
+
+  /// No description provided for @valider.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider'**
+  String get valider;
+
+  /// No description provided for @noteRg070.
+  ///
+  /// In fr, this message translates to:
+  /// **'Photo(s) de la marchandise + signature du destinataire — obligatoire (RG-070).'**
+  String get noteRg070;
+
+  /// No description provided for @categorieRetard.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retard'**
+  String get categorieRetard;
+
+  /// No description provided for @categorieMarchandiseEndommagee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Marchandise endommagée'**
+  String get categorieMarchandiseEndommagee;
+
+  /// No description provided for @categorieAccident.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accident'**
+  String get categorieAccident;
+
+  /// No description provided for @categoriePanneVehicule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Panne véhicule'**
+  String get categoriePanneVehicule;
+
+  /// No description provided for @categorieAutre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre'**
+  String get categorieAutre;
 }
 
 class _AppLocalizationsDelegate

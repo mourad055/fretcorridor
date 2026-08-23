@@ -1,28 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/mission_provider.dart';
 import '../theme/app_theme.dart';
 import 'mission_detail_screen.dart';
 import 'mission_multi_etapes_screen.dart';
 
-const _libellesStatut = {
-  'EN_ATTENTE': 'En attente',
-  'PRISE_EN_CHARGE': 'Prise en charge',
-  'EN_TRANSIT': 'En transit',
-  'LIVREE': 'Livrée',
-  'ANNULEE': 'Annulée',
-};
+Map<String, String> _libellesStatut(AppLocalizations t) => {
+      'EN_ATTENTE': t.statutEnAttente,
+      'PRISE_EN_CHARGE': t.statutPriseEnCharge,
+      'EN_TRANSIT': t.statutEnTransit,
+      'LIVREE': t.statutLivree,
+      'ANNULEE': t.statutAnnulee,
+    };
 
-const _libellesDisponibilite = {
-  'DES_QUE_POSSIBLE': 'Dès que possible',
-  'DATE_PRECISE': 'À date précise',
-  'PLAGE': 'Sur une plage horaire',
-};
+Map<String, String> _libellesDisponibilite(AppLocalizations t) => {
+      'DES_QUE_POSSIBLE': t.disponibiliteDesQuePossible,
+      'DATE_PRECISE': t.disponibiliteDatePrecise,
+      'PLAGE': t.disponibilitePlage,
+    };
 
-const _libellesCollecte = {
-  'DOMICILE': 'Collecte à domicile',
-  'POINT_RELAIS': 'Collecte en point relais',
-};
+Map<String, String> _libellesCollecte(AppLocalizations t) => {
+      'DOMICILE': t.collecteDomicile,
+      'POINT_RELAIS': t.collectePointRelais,
+    };
 
 // Identifiant lisible affiche a l'ecran (mockup "Mes missions") : aucune
 // numerotation sequentielle n'existe cote backend, on derive un code stable
@@ -58,10 +59,11 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(missionProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Mes missions')),
+      appBar: AppBar(title: Text(t.mesMissions)),
       body: RefreshIndicator(
         onRefresh: () => ref.read(missionProvider.notifier).chargerMesMissions(),
         child: state.chargement && state.missions.isEmpty
@@ -69,15 +71,15 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
             : state.erreur != null
                 ? _erreur(state.erreur!)
                 : state.missions.isEmpty
-                    ? ListView(children: const [
-                        SizedBox(height: 80),
+                    ? ListView(children: [
+                        const SizedBox(height: 80),
                         Center(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 32),
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
                             child: Text(
-                              'Aucune mission pour le moment.',
+                              t.aucuneMissionPourLeMoment,
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: AppColors.texteMuet),
+                              style: const TextStyle(color: AppColors.texteMuet),
                             ),
                           ),
                         ),
@@ -86,7 +88,7 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
                         padding: const EdgeInsets.all(16),
                         itemCount: state.missions.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, i) => _carteMission(state.missions[i]),
+                        itemBuilder: (context, i) => _carteMission(t, state.missions[i]),
                       ),
       ),
     );
@@ -101,7 +103,7 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
     ]);
   }
 
-  Widget _carteMission(Mission mission) {
+  Widget _carteMission(AppLocalizations t, Mission mission) {
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -136,7 +138,7 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                           const SizedBox(height: 4),
                           Wrap(crossAxisAlignment: WrapCrossAlignment.center, spacing: 6, children: [
-                            const Text('ID de la mission :', style: TextStyle(fontSize: 11, color: AppColors.texteMuet)),
+                            Text(t.idDeLaMission, style: const TextStyle(fontSize: 11, color: AppColors.texteMuet)),
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(6)),
@@ -158,31 +160,33 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
                   if (mission.typeDisponibilite != null || mission.demandeModeCollecte != null)
                     _ligneMission(Icons.calendar_today_outlined,
                         [
-                          if (mission.typeDisponibilite != null) _libellesDisponibilite[mission.typeDisponibilite] ?? mission.typeDisponibilite!,
-                          if (mission.demandeModeCollecte != null) _libellesCollecte[mission.demandeModeCollecte] ?? mission.demandeModeCollecte!,
+                          if (mission.typeDisponibilite != null) _libellesDisponibilite(t)[mission.typeDisponibilite] ?? mission.typeDisponibilite!,
+                          if (mission.demandeModeCollecte != null) _libellesCollecte(t)[mission.demandeModeCollecte] ?? mission.demandeModeCollecte!,
                         ].join(' · ')),
                   if (mission.destinataireNom != null)
                     _ligneMission(Icons.person_outline,
-                        'Destinataire : ${mission.destinataireNom}${mission.destinataireTelephone != null ? ' · ${mission.destinataireTelephone}' : ''}'),
+                        mission.destinataireTelephone != null
+                            ? t.destinataireAvecTel(mission.destinataireNom!, mission.destinataireTelephone!)
+                            : t.destinataireSansTel(mission.destinataireNom!)),
                   if (mission.poidsTotalKg != null)
-                    _ligneMission(Icons.shopping_bag_outlined, 'Poids total : ${mission.poidsTotalKg!.toStringAsFixed(0)} kg'),
+                    _ligneMission(Icons.shopping_bag_outlined, t.poidsTotalLabel(mission.poidsTotalKg!.toStringAsFixed(0))),
                   if (mission.typeEmballageNom != null)
-                    _ligneMission(Icons.category_outlined, 'Type : ${mission.typeEmballageNom}'),
+                    _ligneMission(Icons.category_outlined, t.typeLabel(mission.typeEmballageNom!)),
                   if (mission.dateCreation != null)
-                    _ligneMission(Icons.access_time, 'Publiée le ${_dateAffichee(mission.dateCreation!)}'),
-                  Text(_libellesStatut[mission.statut] ?? mission.statut,
+                    _ligneMission(Icons.access_time, t.publieeLe(_dateAffichee(mission.dateCreation!))),
+                  Text(_libellesStatut(t)[mission.statut] ?? mission.statut,
                       style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
                   if (mission.grandeValeur == true) ...[
                     const SizedBox(height: 8),
                     Row(children: [
                       const Icon(Icons.star_border, color: AppColors.accent, size: 16),
                       const SizedBox(width: 8),
-                      const Text('Valeur : ', style: TextStyle(fontSize: 13)),
+                      Text(t.valeurLabel, style: const TextStyle(fontSize: 13)),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                         decoration: BoxDecoration(color: AppColors.surfaceClaire, borderRadius: BorderRadius.circular(20)),
-                        child: const Text('Grande valeur',
-                            style: TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.bold)),
+                        child: Text(t.grandeValeur,
+                            style: const TextStyle(color: AppColors.accent, fontSize: 11, fontWeight: FontWeight.bold)),
                       ),
                     ]),
                   ],
@@ -209,12 +213,12 @@ class _MissionsScreenState extends ConsumerState<MissionsScreen> {
                   borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
                   border: Border(top: BorderSide(color: AppColors.bordure)),
                 ),
-                child: const Row(children: [
-                  Icon(Icons.alt_route_outlined, color: AppColors.accent, size: 16),
-                  SizedBox(width: 8),
-                  Text('Fait partie d\'une tournée groupée', style: TextStyle(color: AppColors.accent, fontSize: 12)),
-                  Spacer(),
-                  Icon(Icons.chevron_right, color: AppColors.accent, size: 16),
+                child: Row(children: [
+                  const Icon(Icons.alt_route_outlined, color: AppColors.accent, size: 16),
+                  const SizedBox(width: 8),
+                  Text(t.faitPartieTourneeGroupee, style: const TextStyle(color: AppColors.accent, fontSize: 12)),
+                  const Spacer(),
+                  const Icon(Icons.chevron_right, color: AppColors.accent, size: 16),
                 ]),
               ),
             ),

@@ -343,4 +343,169 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get bureauPrincipal => '(principal)';
+
+  @override
+  String get statutEnAttente => 'En attente';
+
+  @override
+  String get statutPriseEnCharge => 'Prise en charge';
+
+  @override
+  String get statutEnTransit => 'En transit';
+
+  @override
+  String get statutLivree => 'Livrée';
+
+  @override
+  String get statutAnnulee => 'Annulée';
+
+  @override
+  String get etapeLivraison => 'Livraison';
+
+  @override
+  String get incidentLabel => 'Incident';
+
+  @override
+  String get disponibiliteDesQuePossible => 'Dès que possible';
+
+  @override
+  String get disponibiliteDatePrecise => 'À date précise';
+
+  @override
+  String get disponibilitePlage => 'Sur une plage horaire';
+
+  @override
+  String get collecteDomicile => 'Collecte à domicile';
+
+  @override
+  String get collectePointRelais => 'Collecte en point relais';
+
+  @override
+  String get aucuneMissionPourLeMoment => 'Aucune mission pour le moment.';
+
+  @override
+  String get idDeLaMission => 'ID de la mission :';
+
+  @override
+  String destinataireSansTel(String nom) {
+    return 'Destinataire : $nom';
+  }
+
+  @override
+  String destinataireAvecTel(String nom, String telephone) {
+    return 'Destinataire : $nom · $telephone';
+  }
+
+  @override
+  String poidsTotalLabel(String poids) {
+    return 'Poids total : $poids kg';
+  }
+
+  @override
+  String typeLabel(String type) {
+    return 'Type : $type';
+  }
+
+  @override
+  String publieeLe(String date) {
+    return 'Publiée le $date';
+  }
+
+  @override
+  String get valeurLabel => 'Valeur : ';
+
+  @override
+  String get grandeValeur => 'Grande valeur';
+
+  @override
+  String get faitPartieTourneeGroupee => 'Fait partie d\'une tournée groupée';
+
+  @override
+  String get chronologie => 'Chronologie';
+
+  @override
+  String get aucuneEtapePourLeMoment => 'Aucune étape pour le moment.';
+
+  @override
+  String statutAvecValeur(String statut) {
+    return 'Statut : $statut';
+  }
+
+  @override
+  String get suiviGpsActif => 'Suivi GPS actif';
+
+  @override
+  String get voirLePlanDeChargement => 'Voir le plan de chargement';
+
+  @override
+  String get signalerUnIncident => 'Signaler un incident';
+
+  @override
+  String get confirmerLaLivraison => 'Confirmer la livraison';
+
+  @override
+  String get destinataire => 'Destinataire';
+
+  @override
+  String get grilleDecisionNote =>
+      'Grille de décision et recours traités par le Bureau — pas encore automatisés côté app.';
+
+  @override
+  String get categorieLabel => 'CATÉGORIE';
+
+  @override
+  String get descriptionLabel => 'DESCRIPTION';
+
+  @override
+  String get detaillezOptionnel => 'Détaillez ce qui s\'est passé (optionnel)';
+
+  @override
+  String get ajouterPhotoOptionnel => 'Ajouter une photo (optionnel)';
+
+  @override
+  String get photoJointe => 'Photo jointe';
+
+  @override
+  String get envoyerLeSignalement => 'Envoyer le signalement';
+
+  @override
+  String get preuveDePriseEnCharge => 'Preuve de prise en charge';
+
+  @override
+  String get preuveDeLivraison => 'Preuve de livraison';
+
+  @override
+  String get photoEtSignatureObligatoires =>
+      'Une photo et une signature sont obligatoires.';
+
+  @override
+  String get photosAuMoinsUn => 'PHOTOS (au moins 1)';
+
+  @override
+  String get signatureDuDestinataire => 'SIGNATURE DU DESTINATAIRE';
+
+  @override
+  String get effacer => 'Effacer';
+
+  @override
+  String get valider => 'Valider';
+
+  @override
+  String get noteRg070 =>
+      'Photo(s) de la marchandise + signature du destinataire — obligatoire (RG-070).';
+
+  @override
+  String get categorieRetard => 'Retard';
+
+  @override
+  String get categorieMarchandiseEndommagee => 'Marchandise endommagée';
+
+  @override
+  String get categorieAccident => 'Accident';
+
+  @override
+  String get categoriePanneVehicule => 'Panne véhicule';
+
+  @override
+  String get categorieAutre => 'Autre';
 }
