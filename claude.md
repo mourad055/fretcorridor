@@ -171,6 +171,95 @@
 > reste du backend s'appuie. **Si une session future s'y attaque : d'abord
 > obtenir la décision produit sur comment l'affiliation est accordée,
 > avant tout schéma de base de données.**
+>
+> **Suite du 23 août (soir/nuit) : traduction FR/EN des écrans métier
+> terminée dans les deux apps + audit de vérification pour la présentation
+> du 24 août.** L'utilisatrice a demandé de continuer la traduction
+> "écrans métier" au-delà du socle commun (voir plus haut), puis un audit
+> ciblé sur les bugs de capacité/matching trouvés en test live, en vue
+> d'une présentation le lendemain.
+>
+> **Traduction FR/EN : tous les écrans métier des deux apps sont
+> maintenant convertis** (plus aucun `Text('...')` en dur côté écrans
+> listés comme "pas encore convertis" plus haut). Côté app Client :
+> publier une demande, suivi, propositions, paiement, notifications, mes
+> demandes, litige, compléter profil. Côté app Chauffeur : missions
+> (liste + détail), capacité (déclarer + "Mes capacités"), véhicules, KYC,
+> plan de chargement, tournée multi-étapes, enrôlement agent,
+> notifications, carrousel promo. `flutter analyze` propre (0 issue) sur
+> l'ensemble des deux apps après chaque écran. Règle de traduction
+> appliquée partout : le texte dynamique venant du backend (messages
+> d'erreur des providers de paiement, `motifClassement` du Moteur, motifs
+> de litige envoyés en texte libre à service-adm, `EtapeMission.libelle`)
+> reste volontairement en français, non traduit — le traduire côté UI sans
+> toucher ce qui est réellement transmis/persisté côté serveur créerait un
+> décalage entre ce que l'app affiche et ce que le backend reçoit. Chaque
+> occurrence est commentée dans le code au moment où elle a été
+> délibérément laissée de côté.
+>
+> **Incident de coordination pendant cette phase** : une deuxième session
+> Claude Code tournait en parallèle sur le même répertoire de travail
+> (donc directement sur les mêmes fichiers, pas deux clones séparés) pour
+> traiter 4 des écrans Chauffeur restants. Coordination établie par
+> message inter-session, répartition convenue, puis cette deuxième
+> session a été arrêtée par erreur par l'utilisatrice avant d'avoir
+> committé son travail. **Aucune perte** : elle n'avait ajouté que des
+> clés ARB (FR uniquement, pas encore les clés EN ni le câblage Dart), le
+> reste du travail a été repris et terminé dans cette session. Point de
+> vigilance pour une future session parallèle sur ce dépôt : committer
+> plus souvent réduit la fenêtre de perte en cas d'arrêt accidentel.
+>
+> **Audit de vérification du bug de capacité résiduelle (le plus
+> important trouvé en test live, corrigé plus haut le 23 août matin) :
+> confirmé tenant toujours en code et couvert par les tests.** Relecture
+> du code actuel (`AffectationL1Service.calculerAffectationOptimale`,
+> service-opt : l'appel `serviceCapClient.reserver(...)` après
+> `AffectationConfirmee` est bien présent ; `CapaciteService.decrementerCapacite`,
+> service-cap : republie bien `CapaciteDeclaree` quand un reliquat
+> subsiste) + exécution réelle des suites de tests (pas seulement lecture
+> de code) :
+> - `service-opt` (moteur de matching, inclut `AffectationL1ServiceTest`
+>   qui cible directement la réservation de capacité au rang 1) :
+>   **49/49 tests verts**.
+> - `service-cap` (décrément + republication de capacité, inclut
+>   `CapaciteServiceConcurrenceTest`) : **9/9 tests verts**.
+> - `service-mkt` (coefficient poids taxable, autre correctif du même
+>   audit) : **6/6 tests verts**.
+> - `service-trk` (clé interne `X-Internal-Service-Key`, autre correctif
+>   du même audit) : **14/14 tests verts**.
+> - `service-adm` (rôle `ADMINISTRATION` requis pour créer un tenant,
+>   dernier correctif du même audit) : **34/39 tests verts** — les 5 en
+>   échec sont uniquement des tests d'intégration (`TenantControllerIntegrationTest`
+>   et 4 autres) qui échouent à **télécharger l'image Docker `postgres:16`**
+>   (`Can't get Docker image`, pas d'accès réseau sortant dans ce sandbox)
+>   — pas un défaut de code. Le test unitaire de la règle elle-même
+>   (`TenantServiceTest`) passe (2/2). **À vérifier en conditions réelles
+>   avant la présentation** si possible : lancer la stack complète
+>   (`docker compose up`, backend a accès réseau normal hors de ce
+>   sandbox) et rejouer `mvn test` sur `service-adm`, ou simplement tester
+>   manuellement la création de tenant avec un rôle non-ADMINISTRATION
+>   (doit être rejetée en 403).
+>
+> **Rappel Java pour relancer les tests backend sur cette machine** :
+> `JAVA_HOME` pointe par défaut vers Java 17, mais tous les modules
+> backend ciblent Java 21 (`<java.version>21</java.version>`) — préfixer
+> les commandes `mvn` avec `JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64`
+> sous peine d'un échec immédiat ("class file version 65.0... only
+> recognizes up to 61.0").
+>
+> **Conclusion pour la présentation du 24 août** : les bugs de
+> capacité/matching remontés pendant les tests live du 22-23 août sont
+> corrigés dans le code actuel de `dev` et vérifiés par 78 tests verts sur
+> les 5 modules concernés (`service-opt` + `service-cap` + `service-mkt` +
+> `service-trk`, complet ; `service-adm`, complet côté unitaire). Aucun
+> nouveau problème de capacité/matching détecté pendant cette vérification.
+> Traduction FR/EN mobile complète côté écrans métier (socle + tous les
+> écrans listés ci-dessus). Hors périmètre mobile, toujours vrai : portail
+> web "second bureau" (S18) non construit (côté collègue), S13/S14
+> connecteurs flotte/paiements réels, S17 observatoire marché UI, S20
+> exports conformité, Oracle 3D complet (positions/orientations colis) et
+> Phase 4 — ces manques sont documentés plus haut, pas des oublis de
+> dernière minute.
 
 ---
 
