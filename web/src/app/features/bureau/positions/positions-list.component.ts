@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { PositionService } from './position.service';
 import { Position, formatAge } from './position.models';
 
@@ -10,7 +11,7 @@ import { Position, formatAge } from './position.models';
 @Component({
   selector: 'app-positions-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageShellComponent],
   templateUrl: './positions-list.component.html',
 })
 export class PositionsListComponent implements OnInit {

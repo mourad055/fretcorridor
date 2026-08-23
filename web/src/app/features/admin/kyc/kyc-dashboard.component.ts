@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { TranslatePipe } from '@ngx-translate/core';
 import { KycService } from './kyc.service';
 import { KycDossier } from './kyc.models';
@@ -13,7 +14,7 @@ import { libelleTypeActeur } from '../../../shared/components/status-badge/statu
 @Component({
   selector: 'app-kyc-dashboard',
   standalone: true,
-  imports: [CommonModule, TranslatePipe],
+  imports: [CommonModule, PageShellComponent, TranslatePipe],
   templateUrl: './kyc-dashboard.component.html',
 })
 export class KycDashboardComponent implements OnInit {

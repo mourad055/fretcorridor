@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { RapportFinancierAdminService } from './rapport-financier-admin.service';
 import { Ecriture } from '../../../shared/models/ecriture.models';
@@ -15,7 +16,7 @@ import { EspecesTableComponent } from '../../../shared/components/especes-table/
 @Component({
   selector: 'app-rapport-financier-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, EcrituresTableComponent, EspecesTableComponent],
+  imports: [CommonModule, PageShellComponent, FormsModule, EcrituresTableComponent, EspecesTableComponent],
   templateUrl: './rapport-financier-admin.component.html',
 })
 export class RapportFinancierAdminComponent {

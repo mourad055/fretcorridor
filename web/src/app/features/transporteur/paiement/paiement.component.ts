@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { PaiementService } from './paiement.service';
 import { SoldeTransporteur } from './paiement.models';
 import { EcrituresTableComponent } from '../../../shared/components/ecritures-table/ecritures-table.component';
@@ -8,7 +9,7 @@ import { EcrituresTableComponent } from '../../../shared/components/ecritures-ta
 @Component({
   selector: 'app-paiement',
   standalone: true,
-  imports: [CommonModule, EcrituresTableComponent],
+  imports: [CommonModule, PageShellComponent, EcrituresTableComponent],
   templateUrl: './paiement.component.html',
   styleUrl: './paiement.component.css',
 })

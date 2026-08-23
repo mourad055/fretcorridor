@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AxeService } from './axe.service';
 import { Axe } from './axe.models';
@@ -17,7 +18,7 @@ import { StatusBadgeComponent, axeVisibiliteVariant, axeMatchingVariant, axePaie
 @Component({
   selector: 'app-axes-map',
   standalone: true,
-  imports: [CommonModule, CorridorMapComponent, StatusBadgeComponent, TranslatePipe],
+  imports: [CommonModule, PageShellComponent, CorridorMapComponent, StatusBadgeComponent, TranslatePipe],
   templateUrl: './axes-map.component.html',
   styleUrl: './axes-map.component.css',
 })

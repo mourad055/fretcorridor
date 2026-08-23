@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { ConfigurationsService } from './configurations.service';
 import { Configuration } from '../../../shared/models/configuration.models';
@@ -13,7 +14,7 @@ import { Configuration } from '../../../shared/models/configuration.models';
 @Component({
   selector: 'app-configurations',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, PageShellComponent, FormsModule],
   templateUrl: './configurations.component.html',
 })
 export class ConfigurationsComponent implements OnInit {

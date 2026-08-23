@@ -1,5 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DossiersService } from './dossiers.service';
@@ -22,7 +23,7 @@ import {
 @Component({
   selector: 'app-dossiers',
   standalone: true,
-  imports: [CommonModule, FormsModule, StatusBadgeComponent, TranslatePipe],
+  imports: [CommonModule, PageShellComponent, FormsModule, StatusBadgeComponent, TranslatePipe],
   templateUrl: './dossiers.component.html',
 })
 export class DossiersComponent {

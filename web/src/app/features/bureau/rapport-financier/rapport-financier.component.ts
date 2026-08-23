@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { RapportFinancierService } from './rapport-financier.service';
 import { Ecriture } from '../../../shared/models/ecriture.models';
 import { DeclarationEspeces } from '../../../shared/models/declaration-especes.models';
@@ -10,7 +11,7 @@ import { EspecesTableComponent } from '../../../shared/components/especes-table/
 @Component({
   selector: 'app-rapport-financier',
   standalone: true,
-  imports: [CommonModule, EcrituresTableComponent, EspecesTableComponent],
+  imports: [CommonModule, PageShellComponent, EcrituresTableComponent, EspecesTableComponent],
   templateUrl: './rapport-financier.component.html',
 })
 export class RapportFinancierComponent implements OnInit {

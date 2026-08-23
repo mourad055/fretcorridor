@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { BureauChronologieService } from './bureau-chronologie.service';
 import { Mission } from '../../../shared/models/mission.models';
 import { MissionChronologieComponent } from '../../../shared/components/mission-chronologie/mission-chronologie.component';
@@ -8,7 +9,7 @@ import { MissionChronologieComponent } from '../../../shared/components/mission-
 @Component({
   selector: 'app-bureau-chronologie',
   standalone: true,
-  imports: [CommonModule, MissionChronologieComponent],
+  imports: [CommonModule, PageShellComponent, MissionChronologieComponent],
   templateUrl: './bureau-chronologie.component.html',
 })
 export class BureauChronologieComponent implements OnInit {

@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { TenantsService } from './tenants.service';
 import { Tenant } from '../../../shared/models/tenant.models';
@@ -8,7 +9,7 @@ import { Tenant } from '../../../shared/models/tenant.models';
 @Component({
   selector: 'app-tenants',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, PageShellComponent, FormsModule],
   templateUrl: './tenants.component.html',
 })
 export class TenantsComponent implements OnInit {

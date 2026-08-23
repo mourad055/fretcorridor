@@ -1,4 +1,4 @@
-<main class="fc-page">
+<app-page-shell>
   <section class="rapport-financier fc-panel">
     <h2 class="fc-panel__title">Rapport financier</h2>
 
@@ -13,4 +13,4 @@
     <h3 class="fc-panel__title">Paiements en espèces</h3>
     <app-especes-table *ngIf="!loading()" [paiements]="paiementsEspeces()" />
   </section>
-</main>
+</app-page-shell>

@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { NotificationsService } from './notifications.service';
 import { NotificationItem } from '../../../shared/models/notification.models';
 
@@ -7,7 +8,7 @@ import { NotificationItem } from '../../../shared/models/notification.models';
 @Component({
   selector: 'app-notifications',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, PageShellComponent],
   templateUrl: './notifications.component.html',
   styleUrl: './notifications.component.css',
 })

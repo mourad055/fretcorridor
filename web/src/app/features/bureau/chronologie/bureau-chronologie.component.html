@@ -1,4 +1,4 @@
-<main class="fc-page">
+<app-page-shell>
   <section class="bureau-chronologie fc-panel">
     <h2 class="fc-panel__title">Chronologie des missions</h2>
 
@@ -11,4 +11,4 @@
 
     <app-mission-chronologie *ngIf="!loading() && missions().length > 0" [missions]="missions()" />
   </section>
-</main>
+</app-page-shell>

@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { JournalAuditService } from './journal-audit.service';
 import { TenantsService } from '../tenants/tenants.service';
@@ -25,7 +26,7 @@ const TOUS_LES_TENANTS = '';
 @Component({
   selector: 'app-journal-audit',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, PageShellComponent, FormsModule],
   templateUrl: './journal-audit.component.html',
 })
 export class JournalAuditComponent implements OnInit {
