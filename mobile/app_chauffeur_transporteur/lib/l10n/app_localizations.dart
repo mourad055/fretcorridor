@@ -1399,6 +1399,108 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'N° REGISTRE DE COMMERCE (facultatif)'**
   String get numeroRegistreCommerceFacultatif;
+
+  /// No description provided for @enrolerUnChauffeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enrôler un chauffeur'**
+  String get enrolerUnChauffeur;
+
+  /// No description provided for @synchroniserFileOffline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Synchroniser la file offline'**
+  String get synchroniserFileOffline;
+
+  /// No description provided for @enrolementsEnAttenteSync.
+  ///
+  /// In fr, this message translates to:
+  /// **'{n, plural, one{{n} enrôlement en attente de synchronisation (hors ligne).} other{{n} enrôlements en attente de synchronisation (hors ligne).}}'**
+  String enrolementsEnAttenteSync(int n);
+
+  /// No description provided for @nouvelEnrolementTitre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvel enrôlement'**
+  String get nouvelEnrolementTitre;
+
+  /// No description provided for @codeActivationSmsMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le code d\'activation part par SMS directement au téléphone de la personne — jamais au vôtre.'**
+  String get codeActivationSmsMessage;
+
+  /// No description provided for @typeSectionLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'TYPE'**
+  String get typeSectionLabel;
+
+  /// No description provided for @typeChauffeurProprietaireEnrolement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chauffeur-propriétaire'**
+  String get typeChauffeurProprietaireEnrolement;
+
+  /// No description provided for @telephoneDeLaPersonneLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'TÉLÉPHONE DE LA PERSONNE'**
+  String get telephoneDeLaPersonneLabel;
+
+  /// No description provided for @telephoneObligatoire.
+  ///
+  /// In fr, this message translates to:
+  /// **'Téléphone obligatoire'**
+  String get telephoneObligatoire;
+
+  /// No description provided for @formatInvalide.
+  ///
+  /// In fr, this message translates to:
+  /// **'Format invalide'**
+  String get formatInvalide;
+
+  /// No description provided for @envoyerLeCode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoyer le code'**
+  String get envoyerLeCode;
+
+  /// No description provided for @activerLeCompte.
+  ///
+  /// In fr, this message translates to:
+  /// **'Activer le compte'**
+  String get activerLeCompte;
+
+  /// No description provided for @codeEtPinParLaPersonneMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'À faire saisir par la personne elle-même : le code reçu par SMS, puis un code PIN de son choix.'**
+  String get codeEtPinParLaPersonneMessage;
+
+  /// No description provided for @codeRecuParSmsLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'CODE REÇU PAR SMS'**
+  String get codeRecuParSmsLabel;
+
+  /// No description provided for @codeSixChiffres.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code à 6 chiffres'**
+  String get codeSixChiffres;
+
+  /// No description provided for @nouveauCodePinLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'NOUVEAU CODE PIN (4-6 chiffres)'**
+  String get nouveauCodePinLabel;
+
+  /// No description provided for @pinObligatoire.
+  ///
+  /// In fr, this message translates to:
+  /// **'PIN obligatoire'**
+  String get pinObligatoire;
 }
 
 class _AppLocalizationsDelegate

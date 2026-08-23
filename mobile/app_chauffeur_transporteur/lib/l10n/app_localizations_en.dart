@@ -712,4 +712,65 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get numeroRegistreCommerceFacultatif =>
       'BUSINESS REGISTRATION NUMBER (optional)';
+
+  @override
+  String get enrolerUnChauffeur => 'Enroll a driver';
+
+  @override
+  String get synchroniserFileOffline => 'Sync offline queue';
+
+  @override
+  String enrolementsEnAttenteSync(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n enrollments awaiting sync (offline).',
+      one: '$n enrollment awaiting sync (offline).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get nouvelEnrolementTitre => 'New enrollment';
+
+  @override
+  String get codeActivationSmsMessage =>
+      'The activation code is sent by SMS directly to the person\'s phone — never to yours.';
+
+  @override
+  String get typeSectionLabel => 'TYPE';
+
+  @override
+  String get typeChauffeurProprietaireEnrolement => 'Owner-driver';
+
+  @override
+  String get telephoneDeLaPersonneLabel => 'PERSON\'S PHONE NUMBER';
+
+  @override
+  String get telephoneObligatoire => 'Phone number required';
+
+  @override
+  String get formatInvalide => 'Invalid format';
+
+  @override
+  String get envoyerLeCode => 'Send code';
+
+  @override
+  String get activerLeCompte => 'Activate account';
+
+  @override
+  String get codeEtPinParLaPersonneMessage =>
+      'To be entered by the person themselves: the code received by SMS, then a PIN of their choice.';
+
+  @override
+  String get codeRecuParSmsLabel => 'CODE RECEIVED BY SMS';
+
+  @override
+  String get codeSixChiffres => '6-digit code';
+
+  @override
+  String get nouveauCodePinLabel => 'NEW PIN CODE (4-6 digits)';
+
+  @override
+  String get pinObligatoire => 'PIN required';
 }

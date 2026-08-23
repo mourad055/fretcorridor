@@ -716,4 +716,65 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get numeroRegistreCommerceFacultatif =>
       'N° REGISTRE DE COMMERCE (facultatif)';
+
+  @override
+  String get enrolerUnChauffeur => 'Enrôler un chauffeur';
+
+  @override
+  String get synchroniserFileOffline => 'Synchroniser la file offline';
+
+  @override
+  String enrolementsEnAttenteSync(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n enrôlements en attente de synchronisation (hors ligne).',
+      one: '$n enrôlement en attente de synchronisation (hors ligne).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get nouvelEnrolementTitre => 'Nouvel enrôlement';
+
+  @override
+  String get codeActivationSmsMessage =>
+      'Le code d\'activation part par SMS directement au téléphone de la personne — jamais au vôtre.';
+
+  @override
+  String get typeSectionLabel => 'TYPE';
+
+  @override
+  String get typeChauffeurProprietaireEnrolement => 'Chauffeur-propriétaire';
+
+  @override
+  String get telephoneDeLaPersonneLabel => 'TÉLÉPHONE DE LA PERSONNE';
+
+  @override
+  String get telephoneObligatoire => 'Téléphone obligatoire';
+
+  @override
+  String get formatInvalide => 'Format invalide';
+
+  @override
+  String get envoyerLeCode => 'Envoyer le code';
+
+  @override
+  String get activerLeCompte => 'Activer le compte';
+
+  @override
+  String get codeEtPinParLaPersonneMessage =>
+      'À faire saisir par la personne elle-même : le code reçu par SMS, puis un code PIN de son choix.';
+
+  @override
+  String get codeRecuParSmsLabel => 'CODE REÇU PAR SMS';
+
+  @override
+  String get codeSixChiffres => 'Code à 6 chiffres';
+
+  @override
+  String get nouveauCodePinLabel => 'NOUVEAU CODE PIN (4-6 chiffres)';
+
+  @override
+  String get pinObligatoire => 'PIN obligatoire';
 }
