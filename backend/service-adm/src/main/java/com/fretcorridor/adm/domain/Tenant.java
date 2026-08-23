@@ -1,4 +1,4 @@
 package com.fretcorridor.adm.domain;
 
-public record Tenant(String id, String nom, String pays) {
+public record Tenant(String id, String nom, String pays, boolean actif) {
 }

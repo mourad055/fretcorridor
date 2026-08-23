@@ -158,6 +158,19 @@ public class ServiceAdmWebClientAdapter implements AdmPort {
     }
 
     @Override
+    public Mono<TenantVue> modifierTenant(String id, String nom, String pays, boolean actif, String delegationToken) {
+        if (delegationToken == null) {
+            return Mono.error(new AdmServiceIndisponibleException());
+        }
+        return webClient.put()
+                .uri("/api/v1/tenants/{id}", id)
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .bodyValue(Map.of("nom", nom, "pays", pays, "actif", actif))
+                .retrieve()
+                .bodyToMono(TenantVue.class);
+    }
+
+    @Override
     public Flux<EntreeJournalAuditVue> journalAudit(String tenantId, String delegationToken) {
         if (delegationToken == null) {
             return Flux.error(new AdmServiceIndisponibleException());

@@ -26,4 +26,28 @@ class TenantServiceTest {
         assertThatThrownBy(() -> service.creer("tenant-bgft-douala", "Doublon", "Cameroun", "actor-admin-1"))
                 .isInstanceOf(TenantDejaExistantException.class);
     }
+
+    @Test
+    void un_tenant_cree_est_actif_par_defaut() {
+        service.creer("tenant-bgft-douala", "Bureau de fret Douala", "Cameroun", "actor-admin-1");
+
+        assertThat(service.lister()).extracting(Tenant::actif).containsExactly(true);
+    }
+
+    @Test
+    void modifier_un_tenant_met_a_jour_nom_pays_statut_et_journalise() {
+        service.creer("tenant-bgft-douala", "Bureau de fret Douala", "Cameroun", "actor-admin-1");
+
+        Tenant modifie = service.modifier("tenant-bgft-douala", "Bureau de fret Douala (renommé)", "Cameroun", false, "actor-admin-2");
+
+        assertThat(modifie.nom()).isEqualTo("Bureau de fret Douala (renommé)");
+        assertThat(modifie.actif()).isFalse();
+        assertThat(journalAuditPort.lister("tenant-bgft-douala")).anyMatch(e -> e.action().equals("TENANT_MODIFIE"));
+    }
+
+    @Test
+    void modifier_un_tenant_inexistant_est_refuse() {
+        assertThatThrownBy(() -> service.modifier("tenant-inconnu", "X", "Y", true, "actor-admin-1"))
+                .isInstanceOf(TenantIntrouvableException.class);
+    }
 }

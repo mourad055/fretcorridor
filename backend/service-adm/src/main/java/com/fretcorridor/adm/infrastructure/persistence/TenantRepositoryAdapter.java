@@ -18,16 +18,17 @@ public class TenantRepositoryAdapter implements TenantPort {
 
     @Override
     public void sauvegarder(Tenant tenant) {
-        repository.save(new TenantEntity(tenant.id(), tenant.nom(), tenant.pays()));
+        repository.save(new TenantEntity(tenant.id(), tenant.nom(), tenant.pays(), tenant.actif()));
     }
 
     @Override
     public Optional<Tenant> parId(String id) {
-        return repository.findById(id).map(e -> new Tenant(e.getId(), e.getNom(), e.getPays()));
+        return repository.findById(id).map(e -> new Tenant(e.getId(), e.getNom(), e.getPays(), e.isActif()));
     }
 
     @Override
     public List<Tenant> lister() {
-        return repository.findAll().stream().map(e -> new Tenant(e.getId(), e.getNom(), e.getPays())).toList();
+        return repository.findAll().stream()
+                .map(e -> new Tenant(e.getId(), e.getNom(), e.getPays(), e.isActif())).toList();
     }
 }

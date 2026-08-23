@@ -2,6 +2,7 @@ package com.fretcorridor.gateway.infrastructure.rest.adm;
 
 import com.fretcorridor.gateway.domain.adm.AdmPort;
 import com.fretcorridor.gateway.infrastructure.rest.adm.dto.CreerTenantRequest;
+import com.fretcorridor.gateway.infrastructure.rest.adm.dto.ModifierTenantRequest;
 import com.fretcorridor.gateway.infrastructure.rest.adm.dto.TenantResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import jakarta.validation.Valid;
@@ -30,6 +31,14 @@ public class TenantController {
     public Mono<TenantResponse> creer(@Valid @RequestBody CreerTenantRequest request,
                                        @AuthenticationPrincipal AuthenticatedActor actor) {
         return admPort.creerTenant(request.id(), request.nom(), request.pays(), actor.actorId(), actor.delegationToken())
+                .map(TenantResponse::from);
+    }
+
+    /** FE-ADM-04 (audit UX 2026-08-23) : édition nom/pays/statut d'un tenant existant. */
+    @PutMapping("/{id}")
+    public Mono<TenantResponse> modifier(@PathVariable String id, @Valid @RequestBody ModifierTenantRequest request,
+                                          @AuthenticationPrincipal AuthenticatedActor actor) {
+        return admPort.modifierTenant(id, request.nom(), request.pays(), request.actif(), actor.delegationToken())
                 .map(TenantResponse::from);
     }
 }

@@ -2,6 +2,7 @@ package com.fretcorridor.adm.infrastructure.rest;
 
 import com.fretcorridor.adm.domain.TenantService;
 import com.fretcorridor.adm.infrastructure.rest.dto.CreerTenantRequest;
+import com.fretcorridor.adm.infrastructure.rest.dto.ModifierTenantRequest;
 import com.fretcorridor.adm.infrastructure.rest.dto.TenantResponse;
 import com.fretcorridor.adm.infrastructure.security.JwtService;
 import jakarta.validation.Valid;
@@ -49,5 +50,20 @@ public class TenantController {
         String auteur = jwtService.extraireActeurId(token);
         var tenant = tenantService.creer(request.id(), request.nom(), request.pays(), auteur);
         return ResponseEntity.status(201).body(TenantResponse.from(tenant));
+    }
+
+    /** FE-ADM-04 (audit UX 2026-08-23) : édition nom/pays/statut d'un tenant existant, réservée à ADMINISTRATION. */
+    @PutMapping("/{id}")
+    public ResponseEntity<TenantResponse> modifier(@PathVariable String id,
+                                                     @Valid @RequestBody ModifierTenantRequest request,
+                                                     @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        if (!jwtService.extraireRoles(token).contains("ADMINISTRATION")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Seul le role ADMINISTRATION peut modifier un tenant");
+        }
+        String auteur = jwtService.extraireActeurId(token);
+        var tenant = tenantService.modifier(id, request.nom(), request.pays(), request.actif(), auteur);
+        return ResponseEntity.ok(TenantResponse.from(tenant));
     }
 }

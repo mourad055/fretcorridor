@@ -1,5 +1,6 @@
 package com.fretcorridor.adm.infrastructure.persistence;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -13,13 +14,19 @@ public class TenantEntity {
     private String nom;
     private String pays;
 
+    // default true en colonne (ddl-auto=update) : les tenants existants
+    // avant ce champ restent actifs sans migration manuelle.
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean actif;
+
     protected TenantEntity() {
     }
 
-    public TenantEntity(String id, String nom, String pays) {
+    public TenantEntity(String id, String nom, String pays, boolean actif) {
         this.id = id;
         this.nom = nom;
         this.pays = pays;
+        this.actif = actif;
     }
 
     public String getId() {
@@ -32,5 +39,9 @@ public class TenantEntity {
 
     public String getPays() {
         return pays;
+    }
+
+    public boolean isActif() {
+        return actif;
     }
 }

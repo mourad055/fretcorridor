@@ -7,6 +7,7 @@ import com.fretcorridor.adm.domain.DossierNonTrancheException;
 import com.fretcorridor.adm.domain.GrilleDecisionAbsenteException;
 import com.fretcorridor.adm.domain.RecoursMemeOperateurException;
 import com.fretcorridor.adm.domain.TenantDejaExistantException;
+import com.fretcorridor.adm.domain.TenantIntrouvableException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -55,6 +56,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleTenantDejaExistant(TenantDejaExistantException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
         problem.setTitle("Tenant déjà existant");
+        return problem;
+    }
+
+    @ExceptionHandler(TenantIntrouvableException.class)
+    public ProblemDetail handleTenantIntrouvable(TenantIntrouvableException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Tenant introuvable");
         return problem;
     }
 

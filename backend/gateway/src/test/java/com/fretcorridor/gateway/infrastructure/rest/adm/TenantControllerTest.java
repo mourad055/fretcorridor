@@ -55,7 +55,7 @@ class TenantControllerTest {
     @Test
     void an_admin_lists_tenants() {
         String token = tokenFor("+237600000003");
-        when(admPort.tenants(any())).thenReturn(Flux.just(new TenantVue("tenant-bgft-douala", "Bureau Douala", "Cameroun")));
+        when(admPort.tenants(any())).thenReturn(Flux.just(new TenantVue("tenant-bgft-douala", "Bureau Douala", "Cameroun", true)));
 
         webTestClient.get().uri("/api/v1/admin/tenants")
                 .header("Authorization", "Bearer " + token)
@@ -69,7 +69,7 @@ class TenantControllerTest {
     void creer_un_tenant_uses_the_authenticated_actor_as_author() {
         String token = tokenFor("+237600000003");
         when(admPort.creerTenant(eq("tenant-new"), eq("Bureau Neuf"), eq("Tchad"), eq("actor-admin-1"), any()))
-                .thenReturn(Mono.just(new TenantVue("tenant-new", "Bureau Neuf", "Tchad")));
+                .thenReturn(Mono.just(new TenantVue("tenant-new", "Bureau Neuf", "Tchad", true)));
 
         webTestClient.post().uri("/api/v1/admin/tenants")
                 .header("Authorization", "Bearer " + token)
@@ -79,5 +79,33 @@ class TenantControllerTest {
                 .expectStatus().isOk();
 
         verify(admPort).creerTenant(eq("tenant-new"), eq("Bureau Neuf"), eq("Tchad"), eq("actor-admin-1"), any());
+    }
+
+    @Test
+    void modifier_un_tenant_relays_nom_pays_et_statut() {
+        String token = tokenFor("+237600000003");
+        when(admPort.modifierTenant(eq("tenant-bgft-douala"), eq("Bureau Douala renommé"), eq("Cameroun"), eq(false), any()))
+                .thenReturn(Mono.just(new TenantVue("tenant-bgft-douala", "Bureau Douala renommé", "Cameroun", false)));
+
+        webTestClient.put().uri("/api/v1/admin/tenants/{id}", "tenant-bgft-douala")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"nom\": \"Bureau Douala renommé\", \"pays\": \"Cameroun\", \"actif\": false}")
+                .exchange()
+                .expectStatus().isOk();
+
+        verify(admPort).modifierTenant(eq("tenant-bgft-douala"), eq("Bureau Douala renommé"), eq("Cameroun"), eq(false), any());
+    }
+
+    @Test
+    void a_bureau_actor_cannot_modify_a_tenant() {
+        String token = tokenFor("+237600000001");
+
+        webTestClient.put().uri("/api/v1/admin/tenants/{id}", "tenant-bgft-douala")
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue("{\"nom\": \"X\", \"pays\": \"Y\", \"actif\": true}")
+                .exchange()
+                .expectStatus().isForbidden();
     }
 }

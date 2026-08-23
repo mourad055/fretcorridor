@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -98,6 +99,72 @@ class TenantControllerIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"id": "tenant-refuse", "nom": "Bureau", "pays": "Cameroun", "auteur": "actor-1"}
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void modifier_un_tenant_existant_met_a_jour_nom_pays_et_statut() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        mockMvc.perform(post("/api/v1/tenants")
+                        .header("Authorization", "Bearer " + token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id": "%s", "nom": "Bureau de fret Test", "pays": "Cameroun", "auteur": "actor-admin-1"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(put("/api/v1/tenants/{id}", tenantId)
+                        .header("Authorization", "Bearer " + token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nom": "Bureau renommé", "pays": "Tchad", "actif": false}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nom").value("Bureau renommé"))
+                .andExpect(jsonPath("$.pays").value("Tchad"))
+                .andExpect(jsonPath("$.actif").value(false));
+
+        mockMvc.perform(get("/api/v1/tenants")
+                        .header("Authorization", "Bearer " + token()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == '" + tenantId + "')].actif").value(false));
+    }
+
+    @Test
+    void modifier_un_tenant_inexistant_renvoie_404() throws Exception {
+        mockMvc.perform(put("/api/v1/tenants/{id}", "tenant-inexistant-" + System.nanoTime())
+                        .header("Authorization", "Bearer " + token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nom": "X", "pays": "Y", "actif": true}
+                                """))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void modifier_un_tenant_sans_le_role_administration_est_rejete() throws Exception {
+        String tenantId = "tenant-e2e-" + System.nanoTime();
+        mockMvc.perform(post("/api/v1/tenants")
+                        .header("Authorization", "Bearer " + token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"id": "%s", "nom": "Bureau", "pays": "Cameroun", "auteur": "actor-admin-1"}
+                                """.formatted(tenantId)))
+                .andExpect(status().isCreated());
+
+        String tokenSansRole = Jwts.builder()
+                .subject(UUID.randomUUID().toString())
+                .claim("roles", List.of("CHARGEUR"))
+                .claim("tenantId", "tenant-jwt-test")
+                .signWith(Keys.hmacShaKeyFor(jwtSecret.getBytes()))
+                .compact();
+
+        mockMvc.perform(put("/api/v1/tenants/{id}", tenantId)
+                        .header("Authorization", "Bearer " + tokenSansRole)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"nom": "X", "pays": "Y", "actif": true}
                                 """))
                 .andExpect(status().isForbidden());
     }

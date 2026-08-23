@@ -33,6 +33,9 @@ public interface AdmPort {
 
     Mono<TenantVue> creerTenant(String id, String nom, String pays, String auteur, String delegationToken);
 
+    /** FE-ADM-04 (audit UX 2026-08-23) : édition nom/pays/statut d'un tenant existant. */
+    Mono<TenantVue> modifierTenant(String id, String nom, String pays, boolean actif, String delegationToken);
+
     Flux<EntreeJournalAuditVue> journalAudit(String tenantId, String delegationToken);
 
     Mono<String> exporterJournalAudit(String tenantId, String delegationToken);
