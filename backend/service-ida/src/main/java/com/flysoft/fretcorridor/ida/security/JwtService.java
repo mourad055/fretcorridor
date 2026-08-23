@@ -30,12 +30,23 @@ public class JwtService {
     }
 
     public String genererAccessToken(Acteur acteur) {
+        return genererAccessToken(acteur, acteur.getTenantId());
+    }
+
+    // S18 (audit de suivi, 23 aout) : tenantId EFFECTIF distinct du tenant
+    // d'origine de l'acteur (Acteur.tenantId, jamais modifie) - reemis apres
+    // une selection de tenant explicite (cf AffiliationService.selectionner),
+    // uniquement si l'appelant a deja verifie l'affiliation. Le reste du
+    // systeme (tous les autres services) continue de lire tenantId depuis ce
+    // claim sans savoir qu'il differe potentiellement du tenant d'origine -
+    // aucun changement necessaire ailleurs.
+    public String genererAccessToken(Acteur acteur, String tenantIdEffectif) {
         List<String> roles = acteur.getRoles().stream().map(Enum::name).collect(Collectors.toList());
         return Jwts.builder()
                 .subject(acteur.getId().toString())
                 .claim("telephone", acteur.getTelephone())
                 .claim("roles", roles)
-                .claim("tenantId", acteur.getTenantId())
+                .claim("tenantId", tenantIdEffectif)
                 .claim("niveauKyc", acteur.getNiveauKyc().name())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationAccessMs))

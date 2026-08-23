@@ -59,13 +59,25 @@ public class AuthDto {
         private String tenantId;
 
         public static AuthResponse of(String access, String refresh, Acteur acteur) {
+            return of(access, refresh, acteur, acteur.getTenantId());
+        }
+
+        // S18 : tenantId affiche/renvoye = celui EFFECTIVEMENT porte par le
+        // token (cf JwtService.genererAccessToken(Acteur, String)), pas
+        // necessairement le tenant d'origine de l'acteur.
+        public static AuthResponse of(String access, String refresh, Acteur acteur, String tenantIdEffectif) {
             return AuthResponse.builder()
                     .accessToken(access)
                     .refreshToken(refresh)
                     .acteurId(acteur.getId())
                     .roles(acteur.getRoles().stream().map(Enum::name).toList())
-                    .tenantId(acteur.getTenantId())
+                    .tenantId(tenantIdEffectif)
                     .build();
         }
+    }
+
+    // S18 : liste des tenants sous lesquels cet acteur peut operer (tenant
+    // d'origine + affiliations accordees par d'autres bureaux).
+    public record TenantDisponible(String tenantId, boolean origine) {
     }
 }

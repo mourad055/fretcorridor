@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/tenant_selection_provider.dart';
 import '../theme/app_theme.dart';
@@ -55,18 +56,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
       afficherNotification(
         context,
-        message: 'Ce compte est un compte client — utilisez l\'app FretCorridor Client.',
+        message: AppLocalizations.of(context).compteClientMessage,
         couleur: AppColors.erreur,
         icone: Icons.error_outline,
       );
       return;
     }
 
-    // S18 — sélection de tenant seulement si le compte en a plusieurs
-    // (MOCK) ; sinon comportement inchangé, on va directement au KYC.
-    final tenantIdReel = ref.read(authProvider).tenantId ?? '';
-    final besoinSelectionTenant =
-        ref.read(tenantSelectionProvider.notifier).resoudrePourCompte(_telephoneComplet, tenantIdReel);
+    // S18 (audit de suivi, 23 aout) — appel reel : selection de tenant
+    // seulement si le compte est effectivement affilie a plusieurs bureaux
+    // (GET /api/v1/auth/tenants) ; sinon comportement inchange, direct au KYC.
+    final besoinSelectionTenant = await ref.read(tenantSelectionProvider.notifier).resoudrePourCompte();
     if (!mounted) return;
 
     Navigator.pushReplacement(
@@ -78,6 +78,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.texte,
@@ -113,11 +114,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     children: [
                       Center(child: Image.asset('assets/images/logo_fretcorridor.jpeg', height: 36)),
                       const SizedBox(height: 16),
-                      Text('Se connecter', textAlign: TextAlign.center,
+                      Text(t.seConnecter, textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium),
                       const SizedBox(height: 24),
 
-                      const Text('TÉLÉPHONE', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
+                      Text(t.champTelephone, style: const TextStyle(fontSize: 11, letterSpacing: 1.2,
                           color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       IntlPhoneField(
@@ -129,7 +130,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      const Text('CODE', style: TextStyle(fontSize: 11, letterSpacing: 1.2,
+                      Text(t.champCode, style: const TextStyle(fontSize: 11, letterSpacing: 1.2,
                           color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
                       TextFormField(
@@ -147,8 +148,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           ),
                         ),
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'Code obligatoire';
-                          if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return '4 à 6 chiffres';
+                          if (v == null || v.isEmpty) return t.codeObligatoire;
+                          if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return t.codeFormatInvalide;
                           return null;
                         },
                       ),
@@ -182,16 +183,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           child: authState.chargement
                               ? const SizedBox(height: 22, width: 22,
                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                              : const Text('Se connecter',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+                              : Text(t.seConnecter,
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
                         ),
                       ),
                       const SizedBox(height: 16),
                       Center(
                         child: TextButton(
                           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InscriptionScreen())),
-                          child: const Text('Créer un compte',
-                              style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+                          child: Text(t.creerUnCompte,
+                              style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ],

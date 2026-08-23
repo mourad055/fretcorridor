@@ -14,5 +14,5 @@ import com.fretcorridor.gateway.domain.Role;
  * (service-exe/service-not/service-mkt) — jamais le JWT du gateway lui-même,
  * qu'ils ne reconnaissent pas.
  */
-public record AuthenticatedActor(String actorId, Role role, String tenantId, String delegationToken) {
+public record AuthenticatedActor(String actorId, Role role, String tenantId, String delegationToken, String phone) {
 }

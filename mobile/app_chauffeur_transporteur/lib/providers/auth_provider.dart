@@ -122,6 +122,30 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  // S18 (audit de suivi, 23 aout) : reemet un token scope au tenant choisi
+  // (POST /api/v1/auth/tenants/selection, gateway) - remplace le token
+  // courant par le nouveau (meme forme que login/register), tenantId mis a
+  // jour dans le storage ET l'etat.
+  Future<bool> selectionnerTenant(String tenantId) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final response = await _dio.post('/auth/tenants/selection', data: {'tenantId': tenantId});
+      final token = response.data['token'] as String;
+      final role = response.data['role'] as String;
+      final tenantIdEffectif = response.data['tenantId'] as String;
+
+      await _storage.write(key: keyAccessToken, value: token);
+      await _storage.write(key: keyRole, value: role);
+      await _storage.write(key: keyTenantId, value: tenantIdEffectif);
+
+      state = state.copyWith(chargement: false, role: role, tenantId: tenantIdEffectif);
+      return true;
+    } on DioException catch (_) {
+      _afficherErreurTemporaire('Impossible de sélectionner ce bureau. Réessayez.');
+      return false;
+    }
+  }
+
   Future<bool> register({
     required String telephone,
     required String code,

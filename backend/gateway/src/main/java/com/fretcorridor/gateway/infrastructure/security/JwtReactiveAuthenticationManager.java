@@ -40,7 +40,8 @@ public class JwtReactiveAuthenticationManager implements ReactiveAuthenticationM
         // cf javadoc roleOf. Role.valueOf direct = NPE sur token ida.
         Role role = JwtService.roleOf(c);
         var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role));
-        var principal = new AuthenticatedActor(c.getSubject(), role, c.get("tenantId", String.class), JwtService.delegationTokenOf(c));
+        var principal = new AuthenticatedActor(c.getSubject(), role, c.get("tenantId", String.class),
+                JwtService.delegationTokenOf(c), c.get("phone", String.class));
         var authenticated = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         return Mono.just(authenticated);
     }

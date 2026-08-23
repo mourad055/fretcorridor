@@ -1,59 +1,62 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'dio_provider.dart';
 
 class TenantOption {
   final String id;
-  final String nom;
-  const TenantOption({required this.id, required this.nom});
+  final bool origine;
+  const TenantOption({required this.id, required this.origine});
+
+  factory TenantOption.fromJson(Map<String, dynamic> json) =>
+      TenantOption(id: json['tenantId'] as String, origine: json['origine'] as bool);
 }
 
 class TenantSelectionState {
+  final bool chargement;
+  final String? erreur;
   final List<TenantOption> tenants;
-  final String? tenantSelectionneId;
 
-  const TenantSelectionState({this.tenants = const [], this.tenantSelectionneId});
+  const TenantSelectionState({this.chargement = false, this.erreur, this.tenants = const []});
+
+  TenantSelectionState copyWith({bool? chargement, String? erreur, List<TenantOption>? tenants}) {
+    return TenantSelectionState(
+      chargement: chargement ?? this.chargement,
+      erreur: erreur,
+      tenants: tenants ?? this.tenants,
+    );
+  }
 }
 
-/// S18 (Sprint 18, "Second tenant institutionnel") — ⚠️ MOCK, aucun appel
-/// réseau. service-ida + gateway ne renvoient aujourd'hui qu'un seul
-/// tenantId par compte (LoginResponse, cf auth_provider.dart) — aucun
-/// contrat multi-tenant par acteur à ce jour côté serveur. Pour démontrer
-/// le sélecteur sans backend, un seul numéro de test fictif
-/// (_telephoneDemoMultiTenant, arbitraire, à but de démonstration
-/// uniquement) déclenche 2 tenants simulés ; tout autre compte reste
-/// mono-tenant (comportement inchangé, écran sauté automatiquement) — à
-/// remplacer par un vrai GET des tenants du compte une fois
-/// service-ida/gateway prêts côté Web.
+/// S18 (Sprint 18, "Second tenant institutionnel") — appel réel depuis le
+/// 23 août : GET /api/v1/auth/tenants (gateway) renvoie le tenant d'origine
+/// de l'acteur + toute affiliation accordée par un autre bureau (jamais
+/// demandée par le transporteur lui-même — règle produit choisie : c'est le
+/// second bureau qui invite/valide, l'invitation EST la validation).
 class TenantSelectionNotifier extends StateNotifier<TenantSelectionState> {
-  TenantSelectionNotifier() : super(const TenantSelectionState());
+  final Dio _dio;
 
-  static const _telephoneDemoMultiTenant = '+237690000099';
+  TenantSelectionNotifier(this._dio) : super(const TenantSelectionState());
 
-  /// Retourne true si un choix de tenant est nécessaire (plusieurs tenants
-  /// mockés pour ce compte) — false sinon (cas normal, mono-tenant réel,
-  /// aucun écran à afficher).
-  bool resoudrePourCompte(String telephone, String tenantIdReel) {
-    if (telephone.trim() != _telephoneDemoMultiTenant) {
-      state = TenantSelectionState(
-        tenants: [TenantOption(id: tenantIdReel, nom: 'Mon bureau')],
-        tenantSelectionneId: tenantIdReel,
-      );
+  /// Retourne true si un choix de tenant est nécessaire (l'acteur est
+  /// affilié à plusieurs tenants) — false sinon (cas normal, mono-tenant,
+  /// aucun écran à afficher). false aussi en cas d'échec réseau : ne jamais
+  /// bloquer la connexion sur cet appel best-effort (ENF-DIS-04).
+  Future<bool> resoudrePourCompte() async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final response = await _dio.get('/auth/tenants');
+      final tenants = (response.data as List<dynamic>)
+          .map((e) => TenantOption.fromJson(e as Map<String, dynamic>))
+          .toList();
+      state = state.copyWith(chargement: false, tenants: tenants);
+      return tenants.length > 1;
+    } on DioException catch (_) {
+      state = state.copyWith(chargement: false, tenants: const []);
       return false;
     }
-
-    state = TenantSelectionState(
-      tenants: [
-        TenantOption(id: tenantIdReel, nom: 'Bureau Douala (principal)'),
-        const TenantOption(id: 'mock-tenant-s18-002', nom: 'Bureau Yaoundé (démo)'),
-      ],
-    );
-    return true;
-  }
-
-  void selectionner(String tenantId) {
-    state = TenantSelectionState(tenants: state.tenants, tenantSelectionneId: tenantId);
   }
 }
 
 final tenantSelectionProvider = StateNotifierProvider<TenantSelectionNotifier, TenantSelectionState>((ref) {
-  return TenantSelectionNotifier();
+  return TenantSelectionNotifier(ref.watch(dioProvider));
 });
