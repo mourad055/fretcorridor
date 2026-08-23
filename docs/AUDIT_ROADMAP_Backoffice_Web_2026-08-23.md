@@ -97,10 +97,10 @@ Rien ici n'est visible du grand public mais tout le reste en dépend.
 
 | # | Action | Pourquoi en premier | Statut |
 |---|---|---|---|
-| 0.3 | Rendre le filtre `tenantId` du journal d'audit **obligatoire côté UI** (Admin) | Ferme un vrai risque de sécurité déjà documenté, coût minime | À faire |
-| 0.4 | Introduire un composant `app-page-shell` (remplace la structure `.fc-page` dupliquée dans 12 templates) | Prépare sidebar/breadcrumb sans réécrire 12 fichiers plus tard | À faire |
-| 0.5 | Élargir `--fc-content-width` (ou introduire un second token `--fc-content-width-wide` pour les écrans tabulaires denses) | Le correctif structurel le plus simple et le plus visible immédiatement | À faire |
-| 0.6 | Ajouter `axe-core`/`pa11y` au pipeline de test | Objectiver l'audit WCAG AA au lieu de rester déclaratif | À faire |
+| 0.3 | Rendre le filtre `tenantId` du journal d'audit **obligatoire côté UI** (Admin) | Ferme un vrai risque de sécurité déjà documenté, coût minime | ✅ Fait (2026-08-23) — sélecteur de tenant explicite, "tous les tenants" reste possible mais n'est plus un défaut silencieux |
+| 0.4 | Introduire un composant `app-page-shell` (remplace la structure `.fc-page` dupliquée dans 12 templates) | Prépare sidebar/breadcrumb sans réécrire 12 fichiers plus tard | ✅ Fait (2026-08-23) — les 15 écrans migrés (`extraClass` pour les 3 qui scopaient un style local), 153/153 tests verts, build propre |
+| 0.5 | Élargir `--fc-content-width` (ou introduire un second token `--fc-content-width-wide` pour les écrans tabulaires denses) | Le correctif structurel le plus simple et le plus visible immédiatement | ✅ Fait (2026-08-23) — 72rem → 100rem |
+| 0.6 | Ajouter `axe-core`/`pa11y` au pipeline de test | Objectiver l'audit WCAG AA au lieu de rester déclaratif | ✅ Fait (2026-08-23) — `jest-axe` global (`setup-jest.ts`), premiers tests sur `ShellNavComponent`/`JournalAuditComponent`/`PageShellComponent` ; à étendre aux autres écrans (Phase 3.6) |
 
 ### Phase 1 — Fonctionnalités P0 : rendre le backoffice réellement opérationnel
 
