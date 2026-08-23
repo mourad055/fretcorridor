@@ -60,8 +60,12 @@
   --fc-page-padding-y: 1.5rem;
   --fc-touch-min: 3rem;
 
-  /* Largeur de contenu partagée (header + page) pour un alignement centré cohérent */
-  --fc-content-width: 72rem;
+  /* Largeur de contenu partagée (header + page) pour un alignement centré cohérent.
+     100rem (1600px) plutôt que 72rem hérité de V3 : sur poste de travail large
+     (contexte d'usage Bureau/Admin, cf. PRODUCT.md), 72rem laissait des bandes
+     vides sur tout écran >1152px sans qu'aucune règle de DESIGN.md ne le justifie
+     (audit UX 2026-08-23, docs/AUDIT_ROADMAP_Backoffice_Web_2026-08-23.md §2.2). */
+  --fc-content-width: 100rem;
 }
 
 @media (max-width: 720px) {
