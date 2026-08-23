@@ -652,4 +652,71 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get enregistrerModifications => 'Enregistrer les modifications';
+
+  @override
+  String get kyc1Info =>
+      'Ce niveau (KYC 1) vous permet de publier des demandes de transport.';
+
+  @override
+  String get etapeIdentite => 'Identité';
+
+  @override
+  String get etapePieceIdentite => 'Pièce d\'identité';
+
+  @override
+  String get pieceInvalideMessage =>
+      'Cette photo ne ressemble pas à une pièce d\'identité — cadrez bien le document (texte lisible) et réessayez.';
+
+  @override
+  String get phoneLabel => 'Téléphone';
+
+  @override
+  String get typeDeCompte => 'Type de compte';
+
+  @override
+  String get pieceDeposeeLabel => 'Pièce déposée';
+
+  @override
+  String get modifierNumeroTelephone => 'Modifier le numéro de téléphone';
+
+  @override
+  String numeroActuel(String numero) {
+    return 'Numéro actuel : $numero';
+  }
+
+  @override
+  String get confirmezNumeroActuel => 'Confirmez votre numéro actuel';
+
+  @override
+  String get nouveauNumero => 'Nouveau numéro';
+
+  @override
+  String get champObligatoire => 'Champ obligatoire';
+
+  @override
+  String get valider => 'Valider';
+
+  @override
+  String get numeroTelephoneMisAJour => 'Numéro de téléphone mis à jour.';
+
+  @override
+  String get echecModification => 'Échec de la modification.';
+
+  @override
+  String get numeroRccmOptionnel => 'NUMÉRO RCCM (optionnel)';
+
+  @override
+  String get hintRccm => 'Ex : RC/DLA/2024/B/1234';
+
+  @override
+  String get verificationEnCours => 'Vérification…';
+
+  @override
+  String get envoiEnCours => 'Envoi…';
+
+  @override
+  String get prendreEnPhotoPiece => 'Prendre en photo ma pièce d\'identité';
+
+  @override
+  String get enregistrer => 'Enregistrer';
 }
