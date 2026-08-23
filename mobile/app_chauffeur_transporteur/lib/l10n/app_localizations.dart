@@ -1069,6 +1069,120 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Partagez votre position pendant vos missions'**
   String get promoDesc3;
+
+  /// No description provided for @tourneeGroupee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournée groupée'**
+  String get tourneeGroupee;
+
+  /// No description provided for @envoiGroupeEtapes.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoi groupé — {n} étapes'**
+  String envoiGroupeEtapes(int n);
+
+  /// No description provided for @aucuneEtapeTermineePourLeMoment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune étape terminée pour le moment.'**
+  String get aucuneEtapeTermineePourLeMoment;
+
+  /// No description provided for @enlevementLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enlèvement'**
+  String get enlevementLabel;
+
+  /// No description provided for @demandeIdLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande {id}'**
+  String demandeIdLabel(String id);
+
+  /// No description provided for @confirmerEnlevement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmer l\'enlèvement'**
+  String get confirmerEnlevement;
+
+  /// No description provided for @toutesEtapesTerminees.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toutes les étapes de la tournée sont terminées.'**
+  String get toutesEtapesTerminees;
+
+  /// No description provided for @historique.
+  ///
+  /// In fr, this message translates to:
+  /// **'Historique'**
+  String get historique;
+
+  /// No description provided for @aucuneEcriturePourLeMoment.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune écriture pour le moment.'**
+  String get aucuneEcriturePourLeMoment;
+
+  /// No description provided for @soldeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'SOLDE'**
+  String get soldeLabel;
+
+  /// No description provided for @natureEncaissement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Encaissement'**
+  String get natureEncaissement;
+
+  /// No description provided for @natureReversement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Reversement'**
+  String get natureReversement;
+
+  /// No description provided for @natureCommission.
+  ///
+  /// In fr, this message translates to:
+  /// **'Commission'**
+  String get natureCommission;
+
+  /// No description provided for @natureSequestre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Séquestre'**
+  String get natureSequestre;
+
+  /// No description provided for @modeMonnaieElectronique.
+  ///
+  /// In fr, this message translates to:
+  /// **'Monnaie électronique'**
+  String get modeMonnaieElectronique;
+
+  /// No description provided for @modeVirement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Virement'**
+  String get modeVirement;
+
+  /// No description provided for @modeTermeContractuel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Terme contractuel'**
+  String get modeTermeContractuel;
+
+  /// No description provided for @modeEspeces.
+  ///
+  /// In fr, this message translates to:
+  /// **'Espèces'**
+  String get modeEspeces;
+
+  /// No description provided for @regleVia.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réglé via {mode}'**
+  String regleVia(String mode);
 }
 
 class _AppLocalizationsDelegate

@@ -535,4 +535,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get promoDesc3 => 'Share your position during your missions';
+
+  @override
+  String get tourneeGroupee => 'Grouped route';
+
+  @override
+  String envoiGroupeEtapes(int n) {
+    return 'Grouped shipment — $n stops';
+  }
+
+  @override
+  String get aucuneEtapeTermineePourLeMoment => 'No completed stops yet.';
+
+  @override
+  String get enlevementLabel => 'Pickup';
+
+  @override
+  String demandeIdLabel(String id) {
+    return 'Request $id';
+  }
+
+  @override
+  String get confirmerEnlevement => 'Confirm pickup';
+
+  @override
+  String get toutesEtapesTerminees => 'All stops on this route are complete.';
+
+  @override
+  String get historique => 'History';
+
+  @override
+  String get aucuneEcriturePourLeMoment => 'No entries yet.';
+
+  @override
+  String get soldeLabel => 'BALANCE';
+
+  @override
+  String get natureEncaissement => 'Collection';
+
+  @override
+  String get natureReversement => 'Payout';
+
+  @override
+  String get natureCommission => 'Commission';
+
+  @override
+  String get natureSequestre => 'Escrow';
+
+  @override
+  String get modeMonnaieElectronique => 'Mobile money';
+
+  @override
+  String get modeVirement => 'Bank transfer';
+
+  @override
+  String get modeTermeContractuel => 'Contractual term';
+
+  @override
+  String get modeEspeces => 'Cash';
+
+  @override
+  String regleVia(String mode) {
+    return 'Paid via $mode';
+  }
 }

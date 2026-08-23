@@ -537,4 +537,69 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get promoDesc3 => 'Partagez votre position pendant vos missions';
+
+  @override
+  String get tourneeGroupee => 'Tournée groupée';
+
+  @override
+  String envoiGroupeEtapes(int n) {
+    return 'Envoi groupé — $n étapes';
+  }
+
+  @override
+  String get aucuneEtapeTermineePourLeMoment =>
+      'Aucune étape terminée pour le moment.';
+
+  @override
+  String get enlevementLabel => 'Enlèvement';
+
+  @override
+  String demandeIdLabel(String id) {
+    return 'Demande $id';
+  }
+
+  @override
+  String get confirmerEnlevement => 'Confirmer l\'enlèvement';
+
+  @override
+  String get toutesEtapesTerminees =>
+      'Toutes les étapes de la tournée sont terminées.';
+
+  @override
+  String get historique => 'Historique';
+
+  @override
+  String get aucuneEcriturePourLeMoment => 'Aucune écriture pour le moment.';
+
+  @override
+  String get soldeLabel => 'SOLDE';
+
+  @override
+  String get natureEncaissement => 'Encaissement';
+
+  @override
+  String get natureReversement => 'Reversement';
+
+  @override
+  String get natureCommission => 'Commission';
+
+  @override
+  String get natureSequestre => 'Séquestre';
+
+  @override
+  String get modeMonnaieElectronique => 'Monnaie électronique';
+
+  @override
+  String get modeVirement => 'Virement';
+
+  @override
+  String get modeTermeContractuel => 'Terme contractuel';
+
+  @override
+  String get modeEspeces => 'Espèces';
+
+  @override
+  String regleVia(String mode) {
+    return 'Réglé via $mode';
+  }
 }
