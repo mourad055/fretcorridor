@@ -191,5 +191,18 @@
   "modeTermeContractuel": "Terme contractuel",
   "modeEspeces": "Espèces",
   "regleVia": "Réglé via {mode}",
-  "@regleVia": {"placeholders": {"mode": {"type": "String"}}}
+  "@regleVia": {"placeholders": {"mode": {"type": "String"}}},
+  "badgeVisible": "Visible",
+  "badgeMatching": "Matching",
+  "badgePaiement": "Paiement",
+  "ajouter": "Ajouter",
+  "aucunVehiculeEnregistre": "Aucun véhicule enregistré.\nAppuyez sur \"Ajouter\" pour en déclarer un.",
+  "nouveauVehicule": "Nouveau véhicule",
+  "typeDeVehicule": "Type de véhicule",
+  "champObligatoire": "Champ obligatoire",
+  "immatriculationFacultatif": "Immatriculation (facultatif)",
+  "poidsMaxTonnesFacultatif": "Poids max (tonnes, facultatif)",
+  "nombreEssieuxFacultatif": "Nombre d'essieux (facultatif)",
+  "matieresDangereuses": "Matières dangereuses",
+  "enregistrer": "Enregistrer"
 }

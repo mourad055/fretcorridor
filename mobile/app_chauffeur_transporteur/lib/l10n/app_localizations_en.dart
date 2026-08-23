@@ -598,4 +598,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String regleVia(String mode) {
     return 'Paid via $mode';
   }
+
+  @override
+  String get badgeVisible => 'Visible';
+
+  @override
+  String get badgeMatching => 'Matching';
+
+  @override
+  String get badgePaiement => 'Payment';
+
+  @override
+  String get ajouter => 'Add';
+
+  @override
+  String get aucunVehiculeEnregistre =>
+      'No vehicle registered.\nTap \"Add\" to declare one.';
+
+  @override
+  String get nouveauVehicule => 'New vehicle';
+
+  @override
+  String get typeDeVehicule => 'Vehicle type';
+
+  @override
+  String get champObligatoire => 'Required field';
+
+  @override
+  String get immatriculationFacultatif => 'License plate (optional)';
+
+  @override
+  String get poidsMaxTonnesFacultatif => 'Max weight (tonnes, optional)';
+
+  @override
+  String get nombreEssieuxFacultatif => 'Number of axles (optional)';
+
+  @override
+  String get matieresDangereuses => 'Hazardous materials';
+
+  @override
+  String get enregistrer => 'Save';
 }

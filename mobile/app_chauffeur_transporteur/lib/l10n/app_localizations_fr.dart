@@ -602,4 +602,44 @@ class AppLocalizationsFr extends AppLocalizations {
   String regleVia(String mode) {
     return 'Réglé via $mode';
   }
+
+  @override
+  String get badgeVisible => 'Visible';
+
+  @override
+  String get badgeMatching => 'Matching';
+
+  @override
+  String get badgePaiement => 'Paiement';
+
+  @override
+  String get ajouter => 'Ajouter';
+
+  @override
+  String get aucunVehiculeEnregistre =>
+      'Aucun véhicule enregistré.\nAppuyez sur \"Ajouter\" pour en déclarer un.';
+
+  @override
+  String get nouveauVehicule => 'Nouveau véhicule';
+
+  @override
+  String get typeDeVehicule => 'Type de véhicule';
+
+  @override
+  String get champObligatoire => 'Champ obligatoire';
+
+  @override
+  String get immatriculationFacultatif => 'Immatriculation (facultatif)';
+
+  @override
+  String get poidsMaxTonnesFacultatif => 'Poids max (tonnes, facultatif)';
+
+  @override
+  String get nombreEssieuxFacultatif => 'Nombre d\'essieux (facultatif)';
+
+  @override
+  String get matieresDangereuses => 'Matières dangereuses';
+
+  @override
+  String get enregistrer => 'Enregistrer';
 }

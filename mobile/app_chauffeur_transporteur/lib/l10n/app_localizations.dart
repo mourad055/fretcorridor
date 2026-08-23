@@ -1183,6 +1183,84 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Réglé via {mode}'**
   String regleVia(String mode);
+
+  /// No description provided for @badgeVisible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Visible'**
+  String get badgeVisible;
+
+  /// No description provided for @badgeMatching.
+  ///
+  /// In fr, this message translates to:
+  /// **'Matching'**
+  String get badgeMatching;
+
+  /// No description provided for @badgePaiement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paiement'**
+  String get badgePaiement;
+
+  /// No description provided for @ajouter.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter'**
+  String get ajouter;
+
+  /// No description provided for @aucunVehiculeEnregistre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun véhicule enregistré.\nAppuyez sur \"Ajouter\" pour en déclarer un.'**
+  String get aucunVehiculeEnregistre;
+
+  /// No description provided for @nouveauVehicule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau véhicule'**
+  String get nouveauVehicule;
+
+  /// No description provided for @typeDeVehicule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type de véhicule'**
+  String get typeDeVehicule;
+
+  /// No description provided for @champObligatoire.
+  ///
+  /// In fr, this message translates to:
+  /// **'Champ obligatoire'**
+  String get champObligatoire;
+
+  /// No description provided for @immatriculationFacultatif.
+  ///
+  /// In fr, this message translates to:
+  /// **'Immatriculation (facultatif)'**
+  String get immatriculationFacultatif;
+
+  /// No description provided for @poidsMaxTonnesFacultatif.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poids max (tonnes, facultatif)'**
+  String get poidsMaxTonnesFacultatif;
+
+  /// No description provided for @nombreEssieuxFacultatif.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nombre d\'essieux (facultatif)'**
+  String get nombreEssieuxFacultatif;
+
+  /// No description provided for @matieresDangereuses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Matières dangereuses'**
+  String get matieresDangereuses;
+
+  /// No description provided for @enregistrer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer'**
+  String get enregistrer;
 }
 
 class _AppLocalizationsDelegate

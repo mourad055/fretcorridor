@@ -191,5 +191,18 @@
   "modeTermeContractuel": "Contractual term",
   "modeEspeces": "Cash",
   "regleVia": "Paid via {mode}",
-  "@regleVia": {"placeholders": {"mode": {"type": "String"}}}
+  "@regleVia": {"placeholders": {"mode": {"type": "String"}}},
+  "badgeVisible": "Visible",
+  "badgeMatching": "Matching",
+  "badgePaiement": "Payment",
+  "ajouter": "Add",
+  "aucunVehiculeEnregistre": "No vehicle registered.\nTap \"Add\" to declare one.",
+  "nouveauVehicule": "New vehicle",
+  "typeDeVehicule": "Vehicle type",
+  "champObligatoire": "Required field",
+  "immatriculationFacultatif": "License plate (optional)",
+  "poidsMaxTonnesFacultatif": "Max weight (tonnes, optional)",
+  "nombreEssieuxFacultatif": "Number of axles (optional)",
+  "matieresDangereuses": "Hazardous materials",
+  "enregistrer": "Save"
 }
