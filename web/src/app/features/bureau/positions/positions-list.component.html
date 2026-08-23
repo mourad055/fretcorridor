@@ -9,6 +9,8 @@
     </div>
     <div class="fc-empty" *ngIf="!loading() && positions().length === 0">Aucun véhicule en suivi sur votre territoire.</div>
 
+    <app-positions-map *ngIf="!loading() && positions().length > 0" [positions]="positions()" />
+
     <table class="fc-table" *ngIf="!loading() && positions().length > 0">
       <thead>
         <tr>
