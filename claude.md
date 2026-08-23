@@ -1,4 +1,85 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 22 août 2026, après-midi)
+# FretCorridor v4 — Transmission d'état (mise à jour 23 août 2026)
+
+> **Session audit croisé + fix capacité (23 août)** — suite directe de la
+> session mockups/bugs live ci-dessous. Point de départ : l'utilisatrice a
+> reçu un rapport d'audit d'un coéquipier (branche `backend-stevetelecom`,
+> 494 tests, ~15 modules) et a demandé une vérification indépendante
+> complète (web/mobile/moteur) + confirmation que `dev` local était bien
+> synchronisé avec `origin/dev`.
+>
+> **`dev` local était en retard sur `origin/dev`** — les coéquipiers avaient
+> poussé la veille (ALNS, intégration Valhalla, `CalculateurCoutSeptTermes`,
+> `InstrumentationPerfService`, modifs `MatchingCycleService`) sans que la
+> session ne les récupère. Fast-forward propre (`b4790c3..04ebc7a`), aucun
+> conflit. **Leçon** : `git fetch` peut rester bloqué silencieusement sur une
+> invite d'identifiants sans TTY — utiliser `GIT_TERMINAL_PROMPT=0 git fetch`
+> pour échouer vite plutôt que de croire à tort que le dépôt est à jour sur
+> la seule foi d'un `git status` (qui ne lit que le ref distant **en cache**,
+> jamais rafraîchi tant que le fetch n'a pas réussi).
+>
+> **Audit indépendant en 4 volets parallèles** (background agents, jamais
+> confiance aveugle dans le rapport du coéquipier ni dans l'audit du
+> 19 août) : backend/moteur, mobile, web, re-vérification des 18 bloquants
+> du 19/08. Résultat détaillé : `AUDIT_CDC_v4_complet_2026-08-23.md`
+> (racine du dépôt). Verdict global : rapport du coéquipier globalement
+> fiable ; **17/18 bloquants du 19 août confirmés résolus** dans le code
+> actuel ; web intégralement confirmé (47/47 specs, 147 tests exécutés,
+> tous verts) ; mobile : 3 fonctionnalités que le rapport présentait comme
+> acquises sont en réalité des **mocks explicitement annotés dans le code**
+> ("⚠️ MOCK, aucun appel réseau") : plan de chargement (S16), sélection
+> tenant (S18), litige côté app_client (S19).
+>
+> **Bug de capacité résiduelle (le plus important, trouvé la nuit
+> précédente pendant les tests live) : corrigé.** `CapaciteEnAttente`
+> (service-opt) marquait `traitee=true` **définitivement** dès le premier
+> match, sans jamais vérifier le reliquat (`capaciteResiduelleKg`) restant
+> côté service-cap — pire, le rang 1 (affectation directe Kuhn-Munkres,
+> le flux normal) ne décrémentait **jamais** la capacité réelle, seul le
+> flux d'acceptation explicite d'une proposition rang 2/3 le faisait
+> (`ServiceCapClient.reserver`, service-mkt). Un camion de 20T apparié à
+> 500kg voyait ses 19,5T restantes perdues pour le système. **Fix** :
+> nouveau `ServiceCapClient` côté service-opt (même pattern que
+> `ServiceMatClient`), appelé juste après `AffectationConfirmee` pour
+> réserver le poids matché ; `CapaciteService.decrementerCapacite`
+> (service-cap) républie désormais `CapaciteDeclaree` quand un reliquat
+> exploitable subsiste — `CapaciteDeclareeListener` (déjà existant côté
+> opt, non modifié) crée naturellement une nouvelle `CapaciteEnAttente`
+> non traitée. Best-effort (ENF-DIS-04) : un échec réseau ponctuel laisse
+> juste la capacité intacte jusqu'au prochain décrément réussi, jamais de
+> perte de donnée silencieuse.
+>
+> **3 autres corrections du même audit** : `GET /api/opt/affectations/{id}`
+> n'avait aucune vérification de clé interne (seule protection :
+> l'imprévisibilité de l'UUID) — aligné sur le pattern
+> `X-Internal-Service-Key` déjà utilisé partout ailleurs, `ServiceOptClient`
+> (service-trk) transporte désormais la clé. Création de tenant
+> (service-adm) : un JWT valide suffisait sans vérification de rôle —
+> réservé désormais à `ADMINISTRATION`. Poids taxable service-mkt :
+> coefficient volumétrique codé en dur (200.0), incohérent avec le
+> coefficient (333.0) déjà résolu par axe côté service-cap pour la même
+> grandeur physique (RG-101) — résolu désormais depuis `Axe.parametres`,
+> même clé des deux côtés.
+>
+> **3 items mobiles identifiés MAIS volontairement PAS corrigés cette
+> session — à ne pas traiter comme de simples oublis** : (1) plan de
+> chargement S16 — l'événement backend (`PlanChargementConfirmeEvent`)
+> porte lui-même la mention "BROUILLON, contrat non encore validé avec
+> Mobile" ; construire l'intégration sans coordination risquerait un
+> contrat différent de celui qu'un coéquipier a peut-être déjà en tête.
+> (2) sélection tenant S18 — nécessiterait un vrai support multi-tenant
+> côté serveur, alors que tout le système repose sur le hack mono-tenant
+> Phase 1 (ADR 0011, cf plus bas) : décision d'architecture/produit, pas
+> un bug ponctuel. (3) litige côté app_client S19 — l'endpoint réel existe
+> (`POST /api/v1/dossiers`, service-adm) mais exige un champ
+> `delaiTraitement` (Instant) que rien ne définit côté chargeur ; le
+> renseigner aurait exigé d'inventer une règle métier absente du CDC.
+> **Si une session future s'attaque à l'un des trois, commencer par
+> obtenir/valider le contrat ou la décision produit manquante, pas
+> réimplémenter le mock directement.**
+
+---
+
+# Historique (mise à jour 22 août 2026, après-midi)
 
 > **Session bugs live + mockups (22 août, journée)** — suite directe de la
 > session CRUD ci-dessous, tests en continu avec l'utilisatrice.
