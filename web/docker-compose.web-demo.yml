@@ -1,0 +1,15 @@
+# Bloc Docker Compose du web-demo (build via Dockerfile.demo, sans passer
+# par le gateway comme prerequis - permet de tester le front seul sur 8099
+# pendant que web/docker-compose.web.yml (8098) reste le build "officiel"
+# qui depend du gateway).
+# Toujours combine avec infra/docker-compose.yml (reseau infra_default,
+# necessaire pour joindre le gateway/service-geo etc a l'execution).
+#   docker compose -f infra/docker-compose.yml -f web/docker-compose.web-demo.yml up -d
+services:
+  web-demo:
+    build:
+      context: ../web
+      dockerfile: Dockerfile.demo
+    container_name: fretcorridor-web-demo
+    ports:
+      - "8099:80"

@@ -89,7 +89,8 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   private async initialiserCarte(): Promise<void> {
-    const L = await import('leaflet');
+    const LeafletModule: any = await import('leaflet');
+    const L: any = LeafletModule.default ?? LeafletModule;
 
     this.map = L.map(this.mapHost.nativeElement, {
       zoomControl: true,
@@ -117,7 +118,8 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
     if (!this.map || !this.layers) {
       return;
     }
-    const L = await import('leaflet');
+    const LeafletModule: any = await import('leaflet');
+    const L: any = LeafletModule.default ?? LeafletModule;
 
     this.layers.clearLayers();
     this.lignesParAxeId.clear();
