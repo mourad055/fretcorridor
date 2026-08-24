@@ -49,6 +49,7 @@ describe('DossiersComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Litige');
+    expect(fixture.nativeElement.textContent).toContain('1 dossier(s) en attente, dont 1 en retard');
   });
 
   it('ouvre le dossier consolidé et permet de trancher', () => {

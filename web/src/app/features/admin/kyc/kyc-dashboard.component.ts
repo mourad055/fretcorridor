@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -19,6 +19,8 @@ import { libelleTypeActeur } from '../../../shared/components/status-badge/statu
 })
 export class KycDashboardComponent implements OnInit {
   readonly dossiers = signal<KycDossier[]>([]);
+  /** KPI en tête d'écran (audit UX 2026-08-23, §1.6) : le nombre en attente était déjà visible en comptant les lignes, jamais affiché en chiffre. */
+  readonly nombreEnAttente = computed(() => this.dossiers().length);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
   readonly dossierEnCours = signal<string | null>(null);

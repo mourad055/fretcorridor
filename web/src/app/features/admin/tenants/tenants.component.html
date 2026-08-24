@@ -1,6 +1,9 @@
 <app-page-shell>
   <section class="tenants fc-panel">
     <h2 class="fc-panel__title">Gestion des tenants</h2>
+    <p class="fc-page__subtitle" *ngIf="!loading() && tenants().length > 0">
+      {{ tenants().length }} tenant(s), dont {{ nombreActifs() }} actif(s)
+    </p>
 
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
 

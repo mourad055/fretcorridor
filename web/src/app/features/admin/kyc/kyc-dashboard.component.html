@@ -2,6 +2,7 @@
   <header class="fc-page__header">
     <div>
       <h1 class="fc-page__title">Validation KYC</h1>
+      <p class="fc-page__subtitle" *ngIf="!loading()">{{ nombreEnAttente() }} dossier(s) en attente de vérification</p>
     </div>
   </header>
 

@@ -30,6 +30,7 @@ describe('TenantsComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Bureau Douala');
     expect(fixture.nativeElement.textContent).toContain('Actif');
+    expect(fixture.nativeElement.textContent).toContain('1 tenant(s), dont 1 actif(s)');
   });
 
   it('cree un tenant puis rafraichit la liste', () => {

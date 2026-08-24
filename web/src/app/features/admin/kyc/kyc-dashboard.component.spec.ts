@@ -36,6 +36,7 @@ describe('KycDashboardComponent', () => {
     expect(rows).toHaveLength(2);
     expect(fixture.nativeElement.textContent).toContain('Chauffeur');
     expect(fixture.nativeElement.textContent).toContain('Transporteur (personne morale)');
+    expect(fixture.nativeElement.textContent).toContain('2 dossier(s) en attente');
   });
 
   it("retire un dossier de la liste apres validation", () => {

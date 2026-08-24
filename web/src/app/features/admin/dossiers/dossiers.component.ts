@@ -46,6 +46,13 @@ export class DossiersComponent {
   readonly escaladeEnCours = signal(false);
   readonly decisionValide = computed(() => this.decisionTexte().trim().length > 0 && this.motifTexte().trim().length > 0);
 
+  /** KPIs en tête d'écran (audit UX 2026-08-23, §1.6). */
+  readonly nombreEnAttente = computed(() => this.dossiers().filter((d) => d.statut !== 'CLOS').length);
+  readonly nombreEnRetard = computed(() => {
+    const maintenant = Date.now();
+    return this.dossiers().filter((d) => d.statut !== 'CLOS' && new Date(d.delaiTraitement).getTime() < maintenant).length;
+  });
+
   constructor(private readonly dossiersService: DossiersService) {}
 
   consulterFileDeTravail(): void {

@@ -25,6 +25,9 @@ export class TenantsComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly recherche = signal('');
 
+  /** KPI en tête d'écran (audit UX 2026-08-23, §1.6). */
+  readonly nombreActifs = computed(() => this.tenants().filter((t) => t.actif).length);
+
   readonly tenantsFiltres = computed(() => {
     const terme = this.recherche().trim().toLowerCase();
     if (!terme) {
