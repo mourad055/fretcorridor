@@ -53,7 +53,8 @@
       "dossiers": "Dossiers",
       "configuration": "Configuration",
       "tenants": "Tenants",
-      "journalAudit": "Journal d'audit"
+      "journalAudit": "Journal d'audit",
+      "comptes": "Comptes"
     }
   },
   "enum": {

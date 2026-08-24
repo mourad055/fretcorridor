@@ -33,6 +33,7 @@ const ONGLETS_ADMIN: OngletNav[] = [
   { path: '/admin/configurations', labelKey: 'nav.admin.configuration', exact: false },
   { path: '/admin/tenants', labelKey: 'nav.admin.tenants', exact: false },
   { path: '/admin/journal-audit', labelKey: 'nav.admin.journalAudit', exact: false },
+  { path: '/admin/comptes', labelKey: 'nav.admin.comptes', exact: false },
 ];
 
 /**

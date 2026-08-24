@@ -53,7 +53,8 @@
       "dossiers": "Cases",
       "configuration": "Configuration",
       "tenants": "Tenants",
-      "journalAudit": "Audit log"
+      "journalAudit": "Audit log",
+      "comptes": "Accounts"
     }
   },
   "enum": {

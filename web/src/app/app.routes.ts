@@ -19,6 +19,7 @@ import { DossiersComponent } from './features/admin/dossiers/dossiers.component'
 import { ConfigurationsComponent } from './features/admin/configurations/configurations.component';
 import { TenantsComponent } from './features/admin/tenants/tenants.component';
 import { JournalAuditComponent } from './features/admin/journal-audit/journal-audit.component';
+import { ComptesComponent } from './features/admin/comptes/comptes.component';
 import { ShellComponent } from './layout/shell/shell.component';
 import { roleGuard, guestGuard } from './core/auth/role.guard';
 import { AuthService } from './core/auth/auth.service';
@@ -128,6 +129,12 @@ export const routes: Routes = [
       {
         path: 'admin/journal-audit',
         component: JournalAuditComponent,
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' },
+      },
+      {
+        path: 'admin/comptes',
+        component: ComptesComponent,
         canActivate: [roleGuard],
         data: { role: 'ADMIN' },
       },

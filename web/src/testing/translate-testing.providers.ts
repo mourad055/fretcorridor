@@ -61,6 +61,7 @@ const TRADUCTIONS_TEST_FR = {
       configuration: 'Configuration',
       tenants: 'Tenants',
       journalAudit: "Journal d'audit",
+      comptes: 'Comptes',
     },
   },
   enum: {
