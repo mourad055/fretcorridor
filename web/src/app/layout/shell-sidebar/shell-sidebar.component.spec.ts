@@ -28,9 +28,9 @@ describe('ShellSidebarComponent', () => {
     expect(titres.map((t) => t.nativeElement.textContent.trim())).toEqual(['Conformité', 'Finance', 'Configuration']);
 
     const links = fixture.debugElement.queryAll(By.css('.shell-sidebar__link'));
-    expect(links).toHaveLength(8);
+    expect(links).toHaveLength(9);
     expect(links.map((l) => l.nativeElement.textContent.trim())).toEqual(
-      expect.arrayContaining(['Comptes', 'Recherche'])
+      expect.arrayContaining(['Comptes', 'Recherche', 'Notifications'])
     );
   });
 

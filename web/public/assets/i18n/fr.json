@@ -62,7 +62,8 @@
       "tenants": "Tenants",
       "journalAudit": "Journal d'audit",
       "comptes": "Comptes",
-      "recherche": "Recherche"
+      "recherche": "Recherche",
+      "notifications": "Notifications"
     }
   },
   "enum": {

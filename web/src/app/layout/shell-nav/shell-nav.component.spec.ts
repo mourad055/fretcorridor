@@ -60,6 +60,7 @@ describe('ShellNavComponent', () => {
       "Journal d'audit",
       'Comptes',
       'Recherche',
+      'Notifications',
     ]);
   });
 
