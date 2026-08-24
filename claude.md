@@ -1,5 +1,35 @@
 # FretCorridor v4 — Transmission d'état (mise à jour 23 août 2026)
 
+## Règle absolue (méthode de travail) — à respecter dans toute session
+
+**Avant toute action non triviale (créer un script, changer une procédure,
+proposer une méthode de lancement/déploiement), vérifier d'abord (1) que ça
+correspond à la manière de travailler déjà en place dans le projet — chercher
+si une solution existe déjà avant d'en inventer une nouvelle — et (2) que
+c'est cohérent avec le CDC et le Plan d'Exécution.** Ne jamais partir sur une
+solution ad hoc sans avoir d'abord regardé l'existant.
+
+**Incident qui a motivé cette règle (24 août)** : besoin de démarrer les
+microservices backend pour un test live avant une présentation. Un script
+Maven (`infra/start-backend.sh`, `mvn spring-boot:run` par service) a été
+créé et documenté dans le `README.md` **sans vérifier au préalable** si le
+projet avait déjà sa propre méthode. Il en avait une : chaque service porte
+un `docker-compose.service-X.yml` (sous `backend/<service>/`), prévu pour
+être combiné avec `infra/docker-compose.yml` via plusieurs `-f` — c'est
+d'ailleurs comme ça que `service-flt` tournait déjà en conteneur au moment de
+l'incident (vérifiable via `docker inspect <conteneur> --format
+'{{.Config.Labels}}'`, qui liste les fichiers compose d'origine). L'utilisatrice
+a repéré l'écart et fait corriger : script supprimé, `README.md` mis à jour
+avec la vraie commande `docker-compose -f infra/docker-compose.yml -f
+backend/<service>/docker-compose.service-X.yml ... up -d` (un `-f` par
+service), processus Maven arrêtés. **Réflexe à appliquer désormais** :
+`grep`/`find` l'existant (fichiers de config, scripts, conventions déjà
+présentes dans le dépôt) avant de proposer quoi que ce soit de nouveau, et
+vérifier CDC/Plan d'Exécution avant toute décision qui touche à
+l'architecture ou au périmètre d'une fonctionnalité.
+
+---
+
 > **Session audit croisé + fix capacité (23 août)** — suite directe de la
 > session mockups/bugs live ci-dessous. Point de départ : l'utilisatrice a
 > reçu un rapport d'audit d'un coéquipier (branche `backend-stevetelecom`,
