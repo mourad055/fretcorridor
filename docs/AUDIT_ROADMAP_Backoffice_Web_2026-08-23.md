@@ -135,17 +135,17 @@ Rien ici n'est visible du grand public mais tout le reste en dépend.
 
 ### Phase 3 — Confort, densité avancée, diffusion complète (P2)
 
-| # | Action |
-|---|---|
-| 3.1 | Grille en colonnes adaptative sur grand écran (nouveaux breakpoints `--fc-bp-lg`/`--fc-bp-xl`) pour les écrans tabulaires les plus denses |
-| 3.2 | Exports avancés (Excel/PDF) sur tous les modules de reporting, pas seulement CSV |
-| 3.3 | Pagination généralisée sur tous les tableaux (aucun n'en a aujourd'hui) |
-| 3.4 | Confirmation avant actions irréversibles (nouvelle version de config, décision de dossier, création de tenant/compte) |
-| 3.5 | Descriptions/aide contextuelle sur les clés de configuration |
-| 3.6 | Extension complète de la couverture aria/role à tous les écrans (pas seulement les 19 déjà couverts) |
-| 3.7 | FE-TRP-04 — écran de configuration de connecteur flotte tiers (déjà classé "souhaitable"/Phase 2 CDC) |
-| 3.8 | Vue garantie/caution transporteur (backend `GarantieService` déjà présent, jamais exposé en UI) |
-| 3.9 | Libellés lisibles des UUID bruts (transporteur/véhicule) dans les vues Bureau consommées transversalement — piste déjà notée dans `docs/CONTEXTE_SESSION_UI.md` |
+| # | Action | Statut |
+|---|---|---|
+| 3.1 | Grille en colonnes adaptative sur grand écran (nouveaux breakpoints `--fc-bp-lg`/`--fc-bp-xl`) pour les écrans tabulaires les plus denses | ✅ Fait (2026-08-24) — token `--fc-content-width-wide` + `.fc-page--large`, appliqué aux 7 écrans les plus denses |
+| 3.3 | Pagination généralisée sur tous les tableaux (aucun n'en a aujourd'hui) | ✅ Fait (2026-08-24), scope réduit — `EcrituresTableComponent` (donc les 3 rapports financiers + solde transporteur), journal d'audit, tenants, comptes ; KYC/positions/missions/capacités non paginés (listes courtes en pratique, valeur marginale plus faible) |
+| 3.4 | Confirmation avant actions irréversibles (nouvelle version de config, décision de dossier, création de tenant/compte) | ✅ Fait (2026-08-24) — `ConfirmationService`, appliqué aux 4 actions listées (compte : désactivation seulement, pas de flux de création construit) |
+| 3.6 | Extension complète de la couverture aria/role à tous les écrans (pas seulement les 19 déjà couverts) | ✅ Fait partiellement (2026-08-24) — 16 composants supplémentaires couverts par jest-axe, 2 vraies violations trouvées et corrigées (`<th>` vide, `role="presentation"`+`aria-label` invalide sur les cartes Leaflet) ; ~8 fichiers restants (atomes triviaux, axes/positions map déjà couverts indirectement) |
+| 3.2 | Exports avancés (Excel/PDF) sur tous les modules de reporting, pas seulement CSV | ⏸️ Reporté — nécessiterait une nouvelle dépendance lourde (SheetJS/jsPDF), rapport valeur/coût incertain face au CSV déjà présent partout |
+| 3.5 | Descriptions/aide contextuelle sur les clés de configuration | ❌ Non actionnable sans backend — les clés du catalogue (EF-ADM-06) sont du texte libre défini par l'Admin à l'écriture, aucun référentiel fixe à table côté frontend ; nécessiterait d'ajouter un champ `description` à l'entité `Configuration` (service-adm) |
+| 3.7 | FE-TRP-04 — écran de configuration de connecteur flotte tiers (déjà classé "souhaitable"/Phase 2 CDC) | ⏸️ Reporté — aucun backend, construire l'écran créerait une UI qui a l'air fonctionnelle mais ne l'est pas |
+| 3.8 | Vue garantie/caution transporteur (backend `GarantieService` déjà présent, jamais exposé en UI) | ⏸️ Reporté — `GarantiePort` n'a même pas de méthode de lecture par tenant/transporteur (seulement `parMission`), et zéro wiring gateway n'existe pour ce domaine : même ampleur qu'1.1 (nouveau port + adapter + controller + écran), pas fait faute de budget dans cette session |
+| 3.9 | Libellés lisibles des UUID bruts (transporteur/véhicule) dans les vues Bureau consommées transversalement | ❌ Non reproductible aujourd'hui — vérifié : les mocks actuels (`MockCapAdapter`/`MockExeAdapter`) renvoient déjà des libellés lisibles (ex. "Camion 10T — LT 1234 AB"), pas des UUID bruts ; la note de `docs/CONTEXTE_SESSION_UI.md` anticipe un problème qui apparaîtra seulement une fois le vrai `service-flt`/`service-ida` branché (item 0.1), pas un bug présent actuellement côté web |
 
 ---
 
