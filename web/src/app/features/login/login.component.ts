@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
-import { HOME_ROUTE_BY_ROLE } from '../../core/auth/auth.models';
+import { HOME_ROUTE_BY_ROLE, Role, TenantOption } from '../../core/auth/auth.models';
 import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo.component';
 import { LangueSwitchComponent } from '../../shared/components/langue-switch/langue-switch.component';
 import { environment } from '../../../environments/environment';
@@ -18,6 +18,12 @@ interface DemoAccount {
  * FE-WEB-01 : écran de connexion unique (téléphone + code), aucune indication
  * de rôle avant authentification réussie — un seul formulaire pour les trois
  * rôles, la redirection se décide après coup depuis le token (FE-WEB-02).
+ *
+ * S18 : si le compte est rattaché à plusieurs tenants (affiliation accordée
+ * par un second bureau), un choix s'affiche avant d'entrer dans l'app —
+ * identique au flux mobile. Le cas normal (un seul tenant) ne passe jamais
+ * par cet écran. Un échec réseau de la liste ne bloque pas la connexion
+ * (ENF-DIS-04) : on entre avec le tenant d'origine déjà porté par le JWT.
  */
 @Component({
   selector: 'app-login',
@@ -31,6 +37,7 @@ export class LoginComponent {
   readonly code = signal('');
   readonly errorMessage = signal<string | null>(null);
   readonly submitting = signal(false);
+  readonly tenantsAChoisir = signal<TenantOption[] | null>(null);
 
   readonly enableDemoLogin = environment.enableDemoLogin;
   readonly demoAccounts: DemoAccount[] = [
@@ -50,10 +57,7 @@ export class LoginComponent {
     this.submitting.set(true);
 
     this.authService.login({ phone: this.phone(), code: this.code() }).subscribe({
-      next: (response) => {
-        this.submitting.set(false);
-        this.router.navigateByUrl(HOME_ROUTE_BY_ROLE[response.role]);
-      },
+      next: (response) => this.resoudreTenantsPuisNaviguer(response.role),
       error: () => {
         this.submitting.set(false);
         this.errorMessage.set('login.error');
@@ -68,5 +72,48 @@ export class LoginComponent {
     this.phone.set(account.phone);
     this.code.set('1234');
     this.submit();
+  }
+
+  choisirTenant(tenantId: string): void {
+    if (this.submitting()) {
+      return;
+    }
+    this.submitting.set(true);
+    this.errorMessage.set(null);
+    this.authService.selectionnerTenant(tenantId).subscribe({
+      next: (response) => {
+        this.submitting.set(false);
+        void this.router.navigateByUrl(HOME_ROUTE_BY_ROLE[response.role]);
+      },
+      error: () => {
+        this.submitting.set(false);
+        this.errorMessage.set('login.tenant.error');
+      },
+    });
+  }
+
+  annulerSelection(): void {
+    this.authService.logout();
+    this.tenantsAChoisir.set(null);
+    this.errorMessage.set(null);
+    this.phone.set('');
+    this.code.set('');
+  }
+
+  private resoudreTenantsPuisNaviguer(role: Role): void {
+    this.authService.mesTenants().subscribe({
+      next: (tenants) => {
+        this.submitting.set(false);
+        if (tenants.length > 1) {
+          this.tenantsAChoisir.set(tenants);
+          return;
+        }
+        void this.router.navigateByUrl(HOME_ROUTE_BY_ROLE[role]);
+      },
+      error: () => {
+        this.submitting.set(false);
+        void this.router.navigateByUrl(HOME_ROUTE_BY_ROLE[role]);
+      },
+    });
   }
 }

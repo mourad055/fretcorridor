@@ -16,6 +16,12 @@
     },
     "showcase": {
       "title": "FretCorridor"
+    },
+    "tenant": {
+      "title": "Choose a bureau",
+      "hint": "This account is attached to several bureaux. Choose the one you want to operate under.",
+      "origine": "Home bureau",
+      "error": "Unable to select this bureau. Please try again."
     }
   },
   "langue": {
@@ -47,7 +53,8 @@
       "chronologie": "Timeline",
       "rapportFinancier": "Financial report",
       "notifications": "Notifications",
-      "observatoire": "Market watch"
+      "observatoire": "Market watch",
+      "affiliations": "Invite a carrier"
     },
     "transporteur": {
       "capacites": "Capacity",
@@ -130,6 +137,21 @@
     "etapeType": {
       "ENLEVEMENT": "Pickup",
       "LIVRAISON": "Delivery"
+    }
+  },
+  "affiliations": {
+    "titre": "Invite a carrier",
+    "sousTitre": "Attach an already registered driver or carrier to your tenant. The invitation is immediate validation — they do not need to confirm.",
+    "telephone": "Phone number",
+    "placeholder": "+237690000001",
+    "soumettre": "Invite",
+    "confirmation": "Attach {{telephone}} to your tenant? The invitation is immediate validation.",
+    "succes": "{{telephone}} has been attached to your tenant.",
+    "erreur": {
+      "acteurIntrouvable": "No account matches this phone number.",
+      "roleNonAffiliable": "This number does not belong to a driver or carrier — only those roles can be attached.",
+      "indisponible": "Affiliation service unavailable, please try again later.",
+      "generique": "Unable to invite this number."
     }
   }
 }

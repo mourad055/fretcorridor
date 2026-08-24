@@ -33,6 +33,7 @@ describe('ShellNavComponent', () => {
       'Rapport financier',
       'Notifications',
       'Observatoire',
+      'Inviter un transporteur',
     ]);
   });
 
@@ -74,7 +75,7 @@ describe('ShellNavComponent', () => {
 
   // Objective l'audit WCAG AA (DESIGN.md) sur la navigation partagée par les
   // 3 rôles plutôt que de rester déclaratif (audit UX 2026-08-23).
-  it("n'a aucune violation d'accessibilité automatiquement détectable (rôle Bureau, 7 onglets)", async () => {
+  it("n'a aucune violation d'accessibilité automatiquement détectable (rôle Bureau, 8 onglets)", async () => {
     configure({ token: 't', role: 'BUREAU', tenantId: 'tenant-bgft-douala', actorId: 'actor-1' });
     const fixture = TestBed.createComponent(ShellNavComponent);
     fixture.detectChanges();

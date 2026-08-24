@@ -2,7 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoginRequest, LoginResponse, Role, Session } from './auth.models';
+import { LoginRequest, LoginResponse, Role, Session, TenantOption } from './auth.models';
 import { decodeJwtPayload } from './jwt.util';
 
 const STORAGE_KEY = 'fretcorridor.session';
@@ -37,6 +37,24 @@ export class AuthService {
   logout(): void {
     sessionStorage.removeItem(STORAGE_KEY);
     this.sessionSignal.set(null);
+  }
+
+  /**
+   * S18 : tenant d'origine + affiliations accordées par un second bureau.
+   * Le cas normal (un seul tenant) ne déclenche aucun écran de choix.
+   */
+  mesTenants(): Observable<TenantOption[]> {
+    return this.http.get<TenantOption[]>(`${environment.apiBaseUrl}/auth/tenants`);
+  }
+
+  /**
+   * Réémet un JWT scopé au tenant choisi (même forme que login) — le serveur
+   * refuse tout tenant auquel l'acteur n'est pas affilié.
+   */
+  selectionnerTenant(tenantId: string): Observable<LoginResponse> {
+    return this.http
+      .post<LoginResponse>(`${environment.apiBaseUrl}/auth/tenants/selection`, { tenantId })
+      .pipe(tap((response) => this.storeSession(response)));
   }
 
   private storeSession(response: LoginResponse): void {

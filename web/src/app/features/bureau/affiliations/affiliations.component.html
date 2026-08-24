@@ -1,0 +1,31 @@
+<app-page-shell>
+  <section class="affiliations fc-panel">
+    <h2 class="fc-panel__title">{{ 'affiliations.titre' | translate }}</h2>
+    <p class="fc-page__subtitle">{{ 'affiliations.sousTitre' | translate }}</p>
+
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessageKey() as messageKey">{{ messageKey | translate }}</p>
+    <p class="fc-msg fc-msg--success" role="status" *ngIf="succesTelephone() as telephone">
+      {{ 'affiliations.succes' | translate: { telephone: telephone } }}
+    </p>
+
+    <form (ngSubmit)="inviter()">
+      <div class="field">
+        <label class="field__label" for="affiliation-telephone">{{ 'affiliations.telephone' | translate }}</label>
+        <input
+          id="affiliation-telephone"
+          class="field__input"
+          type="tel"
+          autocomplete="tel"
+          [placeholder]="'affiliations.placeholder' | translate"
+          [ngModel]="telephone()"
+          (ngModelChange)="telephone.set($event)"
+          name="telephone"
+          required
+        />
+      </div>
+      <button type="submit" class="fc-btn fc-btn--primary" [disabled]="enCours() || !telephone().trim()">
+        {{ 'affiliations.soumettre' | translate }}
+      </button>
+    </form>
+  </section>
+</app-page-shell>

@@ -61,4 +61,42 @@ describe('AuthService', () => {
     expect(service.isAuthenticated()).toBe(false);
     expect(sessionStorage.getItem('fretcorridor.session')).toBeNull();
   });
+
+  it('liste les tenants disponibles pour le compte connecté', () => {
+    let tenants: { tenantId: string; origine: boolean }[] | undefined;
+    service.mesTenants().subscribe((resultat) => {
+      tenants = resultat;
+    });
+
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/tenants`);
+    expect(req.request.method).toBe('GET');
+    req.flush([
+      { tenantId: 'tenant-bgft-douala', origine: true },
+      { tenantId: 'tenant-bnft-ndjamena', origine: false },
+    ]);
+
+    expect(tenants).toEqual([
+      { tenantId: 'tenant-bgft-douala', origine: true },
+      { tenantId: 'tenant-bnft-ndjamena', origine: false },
+    ]);
+  });
+
+  it('remplace la session par le JWT scopé au tenant choisi', () => {
+    service.login({ phone: '+237600000002', code: '123456' }).subscribe();
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/auth/login`)
+      .flush({ token: fakeToken('TRANSPORTEUR'), role: 'TRANSPORTEUR', tenantId: 'tenant-bgft-douala' });
+
+    service.selectionnerTenant('tenant-bnft-ndjamena').subscribe();
+    const req = httpMock.expectOne(`${environment.apiBaseUrl}/auth/tenants/selection`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ tenantId: 'tenant-bnft-ndjamena' });
+    req.flush({
+      token: fakeToken('TRANSPORTEUR'),
+      role: 'TRANSPORTEUR',
+      tenantId: 'tenant-bnft-ndjamena',
+    });
+
+    expect(service.session()?.tenantId).toBe('tenant-bnft-ndjamena');
+  });
 });

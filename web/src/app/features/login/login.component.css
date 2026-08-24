@@ -132,6 +132,32 @@
   justify-content: center;
 }
 
+/* S18 : choix de tenant après login, uniquement si le compte est multi-bureau. */
+.login-tenants {
+  display: grid;
+  gap: var(--fc-space-4);
+}
+
+.login-tenants__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.login-tenants__btn {
+  justify-content: space-between;
+  text-align: left;
+  min-height: var(--fc-touch-min);
+}
+
+.login-tenants__origine {
+  color: var(--fc-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 /* ── Volet vidéo (droite) ── */
 .login-showcase {
   position: relative;

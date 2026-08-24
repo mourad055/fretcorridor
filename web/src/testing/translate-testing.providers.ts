@@ -24,6 +24,12 @@ const TRADUCTIONS_TEST_FR = {
       bureauTchad: 'Bureau de fret (Tchad)',
     },
     showcase: { title: 'FretCorridor' },
+    tenant: {
+      title: 'Choisir un bureau',
+      hint: 'Ce compte est rattaché à plusieurs bureaux. Choisissez celui sous lequel vous voulez opérer.',
+      origine: 'Bureau principal',
+      error: 'Impossible de sélectionner ce bureau. Réessayez.',
+    },
   },
   langue: {
     fr: 'Français',
@@ -55,6 +61,7 @@ const TRADUCTIONS_TEST_FR = {
       rapportFinancier: 'Rapport financier',
       notifications: 'Notifications',
       observatoire: 'Observatoire',
+      affiliations: 'Inviter un transporteur',
     },
     transporteur: {
       capacites: 'Capacités',
@@ -88,6 +95,23 @@ const TRADUCTIONS_TEST_FR = {
     prioriteDossier: { BASSE: 'Basse', NORMALE: 'Normale', HAUTE: 'Haute' },
     etapeEtat: { A_VENIR: 'À venir', EN_COURS: 'En cours', TERMINEE: 'Terminée' },
     etapeType: { ENLEVEMENT: 'Enlèvement', LIVRAISON: 'Livraison' },
+  },
+  affiliations: {
+    titre: 'Inviter un transporteur',
+    sousTitre:
+      'Rattachez un chauffeur ou transporteur déjà inscrit à votre tenant. L\'invitation vaut validation immédiate — aucune confirmation de sa part n\'est nécessaire.',
+    telephone: 'Numéro de téléphone',
+    placeholder: '+237690000001',
+    soumettre: 'Inviter',
+    confirmation: 'Rattacher {{telephone}} à votre tenant ? L\'invitation vaut validation immédiate.',
+    succes: '{{telephone}} a été rattaché à votre tenant.',
+    erreur: {
+      acteurIntrouvable: 'Aucun compte ne correspond à ce numéro de téléphone.',
+      roleNonAffiliable:
+        'Ce numéro ne correspond pas à un chauffeur ou un transporteur — seuls ces rôles peuvent être rattachés.',
+      indisponible: "Service d'affiliation indisponible, réessayez plus tard.",
+      generique: "Impossible d'inviter ce numéro.",
+    },
   },
 };
 
