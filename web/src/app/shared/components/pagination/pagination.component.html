@@ -1,0 +1,9 @@
+<nav class="pagination" aria-label="Pagination" *ngIf="total > taillePage">
+  <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" [disabled]="page <= 1" (click)="precedent()">
+    Précédent
+  </button>
+  <span class="pagination__etat">Page {{ page }} / {{ totalPages }}</span>
+  <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" [disabled]="page >= totalPages" (click)="suivant()">
+    Suivant
+  </button>
+</nav>

@@ -90,6 +90,25 @@ describe('TenantsComponent', () => {
     expect(fixture.componentInstance.tenantEnEdition()).toBeNull();
   });
 
+  it('pagine au-dela de 20 tenants et revient a la page 1 apres une recherche', () => {
+    const fixture = TestBed.createComponent(TenantsComponent);
+    fixture.detectChanges();
+    const beaucoup = Array.from({ length: 22 }, (_, i) => ({
+      id: `tenant-${i}`,
+      nom: `Bureau ${i}`,
+      pays: 'Cameroun',
+      actif: true,
+    }));
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush(beaucoup);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.tenantsAffiches()).toHaveLength(20);
+
+    fixture.componentInstance.page.set(2);
+    fixture.componentInstance.onRechercheChange('Bureau');
+    expect(fixture.componentInstance.page()).toBe(1);
+  });
+
   it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
     const fixture = TestBed.createComponent(TenantsComponent);
     fixture.detectChanges();

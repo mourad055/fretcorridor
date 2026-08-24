@@ -8,11 +8,11 @@
       <th>Montant</th>
       <th>Date</th>
       <th>Statut</th>
-      <th></th>
+      <th><span class="fc-sr-only">Litige</span></th>
     </tr>
   </thead>
   <tbody>
-    <tr *ngFor="let ecriture of ecritures">
+    <tr *ngFor="let ecriture of ecrituresAffichees">
       <td>{{ ecriture.missionId }}</td>
       <td>{{ ecriture.nature }}</td>
       <td>{{ libelleModePaiement(ecriture.modePaiement) }}</td>
@@ -26,4 +26,5 @@
     </tr>
   </tbody>
 </table>
+<app-pagination [page]="page()" [total]="ecritures.length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
 <div class="fc-empty" *ngIf="ecritures.length === 0">Aucune écriture.</div>

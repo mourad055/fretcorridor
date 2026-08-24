@@ -4,6 +4,10 @@ import { PageShellComponent } from '../../../shared/components/page-shell/page-s
 import { FormsModule } from '@angular/forms';
 import { TenantsService } from './tenants.service';
 import { Tenant } from '../../../shared/models/tenant.models';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
+
+const TAILLE_PAGE = 20;
 
 /**
  * FE-ADM-04 (Sprint 10) : gestion des tenants.
@@ -16,7 +20,7 @@ import { Tenant } from '../../../shared/models/tenant.models';
 @Component({
   selector: 'app-tenants',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, FormsModule],
+  imports: [CommonModule, PageShellComponent, FormsModule, PaginationComponent],
   templateUrl: './tenants.component.html',
 })
 export class TenantsComponent implements OnInit {
@@ -38,6 +42,11 @@ export class TenantsComponent implements OnInit {
     );
   });
 
+  // Pagination (audit UX 2026-08-23, §3.3).
+  readonly page = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly tenantsAffiches = computed(() => paginer(this.tenantsFiltres(), this.page(), this.taillePage));
+
   readonly nouvelId = signal('');
   readonly nouvelNom = signal('');
   readonly nouveauPays = signal('');
@@ -53,8 +62,14 @@ export class TenantsComponent implements OnInit {
     this.charger();
   }
 
+  onRechercheChange(terme: string): void {
+    this.recherche.set(terme);
+    this.page.set(1);
+  }
+
   charger(): void {
     this.loading.set(true);
+    this.page.set(1);
     this.tenantsService.lister().subscribe({
       next: (tenants) => {
         this.tenants.set(tenants);

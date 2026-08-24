@@ -13,7 +13,7 @@
         id="tenants-recherche"
         type="search"
         [ngModel]="recherche()"
-        (ngModelChange)="recherche.set($event)"
+        (ngModelChange)="onRechercheChange($event)"
         placeholder="Identifiant, nom ou pays"
       />
     </div>
@@ -38,7 +38,7 @@
         </tr>
       </thead>
       <tbody>
-        <ng-container *ngFor="let tenant of tenantsFiltres()">
+        <ng-container *ngFor="let tenant of tenantsAffiches()">
           <tr *ngIf="tenantEnEdition() !== tenant.id">
             <td>{{ tenant.id }}</td>
             <td>{{ tenant.nom }}</td>
@@ -87,6 +87,7 @@
         </ng-container>
       </tbody>
     </table>
+    <app-pagination [page]="page()" [total]="tenantsFiltres().length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
 
     <div class="field">
       <label class="field__label" for="tenant-id">Identifiant</label>

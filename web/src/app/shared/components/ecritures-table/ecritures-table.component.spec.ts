@@ -49,6 +49,40 @@ describe('EcrituresTableComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Litige');
   });
 
+  it('pagine au-dela de 20 ecritures et revient a la page 1 quand la liste change', async () => {
+    await TestBed.configureTestingModule({
+      imports: [EcrituresTableComponent],
+      providers: [provideTranslateServiceForTests()],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(EcrituresTableComponent);
+    const beaucoup: Ecriture[] = Array.from({ length: 25 }, (_, i) => ({
+      id: `e${i}`,
+      missionId: `mission-${i}`,
+      typeCompte: 'COMPTE_TRANSPORTEUR',
+      nature: 'REVERSEMENT',
+      sens: 'DEBIT',
+      montant: 10,
+      creeLe: '2026-01-01T00:00:00Z',
+      statut: 'VALIDE',
+      modePaiement: null,
+      litigeActif: false,
+    }));
+    fixture.componentRef.setInput('ecritures', beaucoup);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.queryAll(By.css('tbody tr'))).toHaveLength(20);
+    expect(fixture.nativeElement.textContent).toContain('Page 1 / 2');
+
+    fixture.componentInstance.page.set(2);
+    fixture.detectChanges();
+    expect(fixture.debugElement.queryAll(By.css('tbody tr'))).toHaveLength(5);
+
+    // un nouveau tableau (ex. filtre drill-down cote parent) doit ramener a la page 1
+    fixture.componentRef.setInput('ecritures', beaucoup.slice(0, 3));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.page()).toBe(1);
+  });
+
   it("affiche un message quand la liste est vide", async () => {
     await TestBed.configureTestingModule({
       imports: [EcrituresTableComponent],

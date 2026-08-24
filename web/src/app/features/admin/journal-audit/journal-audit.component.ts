@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,10 @@ import { TenantsService } from '../tenants/tenants.service';
 import { EntreeJournalAudit } from '../../../shared/models/journal-audit.models';
 import { Tenant } from '../../../shared/models/tenant.models';
 import { libelleJournalAction } from '../../../shared/components/status-badge/status-badge.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
+
+const TAILLE_PAGE = 20;
 
 /** Valeur du sélecteur de tenant représentant une consultation transverse à tous les tenants. */
 const TOUS_LES_TENANTS = '';
@@ -26,7 +30,7 @@ const TOUS_LES_TENANTS = '';
 @Component({
   selector: 'app-journal-audit',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, FormsModule],
+  imports: [CommonModule, PageShellComponent, FormsModule, PaginationComponent],
   templateUrl: './journal-audit.component.html',
 })
 export class JournalAuditComponent implements OnInit {
@@ -37,6 +41,12 @@ export class JournalAuditComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly libelleJournalAction = libelleJournalAction;
   readonly tousLesTenants = TOUS_LES_TENANTS;
+
+  // Pagination (audit UX 2026-08-23, §3.3) : journal append-only, le plus
+  // susceptible de tous les écrans de grossir sans limite.
+  readonly page = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly entreesAffichees = computed(() => paginer(this.entrees(), this.page(), this.taillePage));
 
   constructor(
     private readonly journalAuditService: JournalAuditService,
@@ -58,6 +68,7 @@ export class JournalAuditComponent implements OnInit {
 
   private charger(): void {
     this.loading.set(true);
+    this.page.set(1);
     const tenantId = this.tenantIdSelectionne() || undefined;
     this.journalAuditService.lister(tenantId).subscribe({
       next: (entrees) => {

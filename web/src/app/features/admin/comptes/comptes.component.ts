@@ -1,9 +1,13 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { CompteService } from './compte.service';
 import { CompteAdmin, ROLES_ACTEUR, RoleActeur } from './compte.models';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
+
+const TAILLE_PAGE = 20;
 
 /**
  * Gestion des comptes par un Admin (audit UX 2026-08-23,
@@ -20,7 +24,7 @@ import { CompteAdmin, ROLES_ACTEUR, RoleActeur } from './compte.models';
 @Component({
   selector: 'app-comptes',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, FormsModule],
+  imports: [CommonModule, PageShellComponent, FormsModule, PaginationComponent],
   templateUrl: './comptes.component.html',
 })
 export class ComptesComponent {
@@ -34,11 +38,17 @@ export class ComptesComponent {
   readonly compteEnEdition = signal<string | null>(null);
   readonly rolesEdition = signal<Set<RoleActeur>>(new Set());
 
+  // Pagination (audit UX 2026-08-23, §3.3).
+  readonly page = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly comptesAffiches = computed(() => paginer(this.comptes() ?? [], this.page(), this.taillePage));
+
   constructor(private readonly compteService: CompteService) {}
 
   consulter(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.page.set(1);
     this.compteService.lister(this.tenantSelectionne()).subscribe({
       next: (comptes) => {
         this.comptes.set(comptes);

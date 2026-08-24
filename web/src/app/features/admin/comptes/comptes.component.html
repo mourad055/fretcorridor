@@ -37,7 +37,7 @@
         </tr>
       </thead>
       <tbody>
-        <ng-container *ngFor="let compte of comptes()">
+        <ng-container *ngFor="let compte of comptesAffiches()">
           <tr *ngIf="compteEnEdition() !== compte.id">
             <td>{{ libelleActeur(compte) }}</td>
             <td>{{ compte.telephone }}</td>
@@ -78,5 +78,6 @@
         </ng-container>
       </tbody>
     </table>
+    <app-pagination [page]="page()" [total]="comptes()?.length ?? 0" [taillePage]="taillePage" (pageChange)="page.set($event)" />
   </section>
 </app-page-shell>
