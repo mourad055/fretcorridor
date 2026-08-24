@@ -51,6 +51,8 @@
   --fc-z-toast: 100;
 
   /* Breakpoints (référence — utiliser dans les @media) */
+  --fc-bp-xl: 1920px;
+  --fc-bp-lg: 1440px;
   --fc-bp-md: 860px;
   --fc-bp-sm: 720px;
   --fc-bp-xs: 480px;
@@ -66,6 +68,13 @@
      vides sur tout écran >1152px sans qu'aucune règle de DESIGN.md ne le justifie
      (audit UX 2026-08-23, docs/AUDIT_ROADMAP_Backoffice_Web_2026-08-23.md §2.2). */
   --fc-content-width: 100rem;
+
+  /* Variante large (audit UX 2026-08-23, §3.1) : réservée aux écrans
+     tabulaires les plus denses (rapports financiers, journal d'audit,
+     dossiers, comptes) via .fc-page--large — jamais le défaut, un
+     formulaire simple (ex. création de tenant) n'a aucune raison de
+     s'étirer sur 120rem. */
+  --fc-content-width-wide: 120rem;
 }
 
 @media (max-width: 720px) {
@@ -140,6 +149,13 @@ a {
   width: 100%;
   max-width: var(--fc-content-width);
   margin: 0 auto;
+}
+
+/* Écrans tabulaires denses uniquement (audit UX 2026-08-23, §3.1) — via
+   PageShellComponent[extraClass]="'fc-page--large'". Double classe pour la
+   spécificité (l'emporte sur .fc-page seul sans !important). */
+.fc-page.fc-page--large {
+  max-width: var(--fc-content-width-wide);
 }
 
 .fc-page__header {
