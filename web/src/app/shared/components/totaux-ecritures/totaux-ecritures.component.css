@@ -1,0 +1,15 @@
+:host {
+  display: block;
+}
+
+.totaux-ecritures {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fc-space-6);
+}
+
+.totaux-ecritures .fc-dl {
+  flex: 1 1 16rem;
+  min-width: 12rem;
+}

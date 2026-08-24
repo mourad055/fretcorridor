@@ -1,0 +1,48 @@
+:host {
+  display: block;
+}
+
+.repartition-donut {
+  display: flex;
+  align-items: center;
+  gap: var(--fc-space-5);
+  flex-wrap: wrap;
+}
+
+.repartition-donut__svg {
+  width: 6rem;
+  height: 6rem;
+  flex-shrink: 0;
+  transform: rotate(-90deg);
+}
+
+.repartition-donut__fond {
+  fill: none;
+  stroke: var(--fc-border);
+  stroke-width: 14;
+}
+
+.repartition-donut__segment {
+  fill: none;
+  stroke-width: 14;
+  transition: stroke-dasharray var(--fc-duration) var(--fc-ease);
+}
+
+.repartition-donut__legende {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.8125rem;
+  color: var(--fc-text);
+}
+
+.repartition-donut__pastille {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  margin-right: 0.4rem;
+}

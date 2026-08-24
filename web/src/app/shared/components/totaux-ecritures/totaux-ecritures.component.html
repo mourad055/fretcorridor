@@ -1,18 +1,22 @@
-<dl class="fc-dl totaux-ecritures">
-  <div class="fc-dl__row">
-    <dt>Nombre d'écritures</dt>
-    <dd>{{ totaux.nombre }}</dd>
-  </div>
-  <div class="fc-dl__row">
-    <dt>Total crédité</dt>
-    <dd>{{ totaux.totalCredit }}</dd>
-  </div>
-  <div class="fc-dl__row">
-    <dt>Total débité</dt>
-    <dd>{{ totaux.totalDebit }}</dd>
-  </div>
-  <div class="fc-dl__row">
-    <dt>Solde</dt>
-    <dd>{{ totaux.solde }}</dd>
-  </div>
-</dl>
+<div class="totaux-ecritures">
+  <dl class="fc-dl">
+    <div class="fc-dl__row">
+      <dt>Nombre d'écritures</dt>
+      <dd>{{ totaux.nombre }}</dd>
+    </div>
+    <div class="fc-dl__row">
+      <dt>Total crédité</dt>
+      <dd>{{ totaux.totalCredit }}</dd>
+    </div>
+    <div class="fc-dl__row">
+      <dt>Total débité</dt>
+      <dd>{{ totaux.totalDebit }}</dd>
+    </div>
+    <div class="fc-dl__row">
+      <dt>Solde</dt>
+      <dd>{{ totaux.solde }}</dd>
+    </div>
+  </dl>
+
+  <app-repartition-donut *ngIf="totaux.nombre > 0" [segments]="segmentsRepartition" />
+</div>
