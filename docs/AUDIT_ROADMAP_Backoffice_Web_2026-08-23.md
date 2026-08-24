@@ -110,10 +110,10 @@ Rien ici n'est visible du grand public mais tout le reste en dépend.
 | 1.2 | Tenants : édition, statut actif/inactif, vue détail (acteurs rattachés), recherche | Admin | ✅ Édition/statut/recherche faits (2026-08-23) — vue détail (acteurs rattachés) reste à faire, dépend du futur module comptes (1.1) |
 | 1.3 | Écran Observatoire de marché (courbes médiane/IQR par axe, indicateur de déséquilibre) | Bureau | ✅ Fait (2026-08-23) — chiffres bruts pour l'instant (pas de courbe, dataviz repoussée à 2.3), estimation de marché incluse |
 | 1.4 | Écran Alertes de seuil (liste/bannière des alertes actives par axe) | Bureau | ✅ Fait (2026-08-23) — création/liste/suppression, état évaluable/déclenchée |
-| 1.5 | Carte de suivi temps réel pour les positions (réutiliser/dériver le composant Leaflet des axes), tableau en vue de repli | Bureau |
-| 1.6 | KPIs en tête de chaque écran "dashboard" des 3 rôles (dossiers en attente/retard, KYC en attente, écart de réconciliation, tenants actifs, solde ventilé transporteur...) — chiffres simples avant tout graphique | Admin, Bureau, Transporteur |
-| 1.7 | Agrégation + export sur les 3 rapports financiers (Admin, Bureau, Transporteur) : totaux, ventilation par période/mode, export CSV a minima | Les 3 |
-| 1.8 | Traçabilité renforcée sur la consultation de dossier (qui a déjà consulté, cohérent avec le gap ENF-SEC-02 déjà connu côté backend) | Admin |
+| 1.5 | Carte de suivi temps réel pour les positions (réutiliser/dériver le composant Leaflet des axes), tableau en vue de repli | Bureau | ✅ Fait (2026-08-23) — `PositionsMapComponent`, marqueurs ponctuels |
+| 1.6 | KPIs en tête de chaque écran "dashboard" des 3 rôles (dossiers en attente/retard, KYC en attente, écart de réconciliation, tenants actifs, solde ventilé transporteur...) — chiffres simples avant tout graphique | Admin, Bureau, Transporteur | ✅ Fait (2026-08-23) pour KYC/dossiers/tenants (Admin) et les 3 rapports financiers (1.7) ; écart de réconciliation restant hors périmètre (pas d'écran dédié) |
+| 1.7 | Agrégation + export sur les 3 rapports financiers (Admin, Bureau, Transporteur) : totaux, ventilation par période/mode, export CSV a minima | Les 3 | ✅ Fait (2026-08-23) — `TotauxEcrituresComponent` + export CSV client, ventilation par période restant à faire (P2) |
+| 1.8 | Traçabilité renforcée sur la consultation de dossier (qui a déjà consulté, cohérent avec le gap ENF-SEC-02 déjà connu côté backend) | Admin | ✅ Fait (2026-08-23) — `DOSSIER_CONSULTE` journalisé côté `service-adm` |
 
 ### Phase 2 — Navigation, dataviz et fonctionnalités P1
 
