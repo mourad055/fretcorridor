@@ -117,19 +117,21 @@ Rien ici n'est visible du grand public mais tout le reste en dépend.
 
 ### Phase 2 — Navigation, dataviz et fonctionnalités P1
 
-| # | Action | Rôle |
-|---|---|---|
-| 2.1 | `ShellSidebarComponent` (sidebar gauche rétractable, groupes logiques par rôle) réutilisant les données déjà exposées par `ShellNavComponent` — garder la nav horizontale actuelle en fallback mobile/drawer | Transverse |
-| 2.2 | Breadcrumb minimal (rôle > écran) intégré à `app-page-shell` | Transverse |
-| 2.3 | Premier lot de widgets dashboard réutilisables : `fc-stat-tile`, `fc-sparkline` (librairie recommandée : `ngx-charts`, SVG natif Angular, thémable, accessible — voir §6) | Transverse, déployé d'abord sur KYC dashboard + rapports financiers |
-| 2.4 | Historique des décisions KYC passées (validées/rejetées), pas seulement la file en attente | Admin |
-| 2.5 | Recherche globale transverse (par ID mission/acteur/dossier/tenant) | Admin |
-| 2.6 | Centre de notifications internes Admin (escalades, écarts de réconciliation, KYC en retard) | Admin |
-| 2.7 | Drill-down mission → dossier → paiement (aujourd'hui les écrans sont cloisonnés) | Bureau, Admin |
-| 2.8 | Compteur de notifications non lues + filtres + actions (marquer lu/archiver) | Bureau |
-| 2.9 | Vue de gestion de flotte structurée (entité Véhicule distincte du trajet ponctuel, disponibilité récurrente) | Transporteur |
-| 2.10 | Alertes documents KYC/assurance expirant | Transporteur |
-| 2.11 | Widgets `fc-courbe-temporelle`, `fc-repartition`, `fc-jauge-seuil` diffusés sur les rapports financiers des 3 rôles | Transverse |
+**Correction post-investigation (2026-08-24)** : plusieurs items se sont révélés bloqués par des mocks déjà connus (KYC, capacités/missions Transporteur, notifications Bureau — tous `TODO(mobile)`, porteur Mobile) — les construire aurait ajouté de la UI sur des données qui n'existent pas réellement. Reportés en fin de tableau avec le blocage explicite plutôt que faits à moitié.
+
+| # | Action | Rôle | Statut |
+|---|---|---|---|
+| 2.1 | `ShellSidebarComponent` (sidebar gauche rétractable, groupes logiques par rôle) réutilisant les données déjà exposées par `ShellNavComponent` — garder la nav horizontale actuelle en fallback mobile/drawer | Transverse | ✅ Fait (2026-08-24) — bascule CSS pure à 860px, vérifié visuellement (Playwright) sur les deux formats |
+| 2.3 | Premier lot de widgets dashboard réutilisables (librairie recommandée : `ngx-charts` — écarté pour ce premier widget, SVG maison à la place, cf. §6) | Transverse, déployé sur les 3 rapports financiers | ✅ Fait (2026-08-24) — `RepartitionDonutComponent` (donut crédit/débit) intégré à `TotauxEcrituresComponent`, donc diffusé aux 3 rôles d'un coup ; vérifié visuellement |
+| 2.5 | Recherche globale transverse (par ID mission/acteur/dossier/tenant) | Admin | ✅ Fait (2026-08-24), scope réduit — Tenants + Journal d'audit (sources déjà cross-tenant réelles) ; Comptes/Dossiers hors scope (fan-out par tenant, complexité reportée) |
+| 2.6 | Centre de notifications internes Admin (escalades, écarts de réconciliation, KYC en retard) | Admin | ✅ Fait (2026-08-24), scope réduit — dossiers en retard agrégés sur tous les tenants réels ; écarts de réconciliation/KYC en retard hors scope (KYC mocké, cf. §8) |
+| 2.7 | Drill-down mission → dossier → paiement (aujourd'hui les écrans sont cloisonnés) | Bureau, Admin | ✅ Fait (2026-08-24) pour Bureau (Missions → Rapport financier, filtre `missionId`) ; Admin (dossier → écritures) déjà couvert nativement par le dossier consolidé existant |
+| 2.2 | Breadcrumb minimal (rôle > écran) intégré à `app-page-shell` | Transverse | ⏸️ Reporté — faible valeur à la structure actuelle de l'appli (aucune page de détail imbriquée au-delà d'un niveau ; le panel title + la sidebar active suffisent aujourd'hui). À reconsidérer si des pages de détail à plusieurs niveaux apparaissent |
+| 2.4 | Historique des décisions KYC passées (validées/rejetées), pas seulement la file en attente | Admin | ❌ Bloqué — `MockIdaKycAdapter` (cf. §8) ne persiste rien, aucun historique récupérable tant que le mock n'est pas remplacé |
+| 2.8 | Compteur de notifications non lues + filtres + actions (marquer lu/archiver) | Bureau | ❌ Bloqué — `MockNotAdapter` (`TODO(mobile)`, découvert le 24/08) : les notifications Bureau sont un journal d'emails envoyés, pas un inbox — aucune notion de "lu/non lu" n'existe côté backend, l'inventer côté web serait un état fictif perdu au prochain rechargement |
+| 2.9 | Vue de gestion de flotte structurée (entité Véhicule distincte du trajet ponctuel, disponibilité récurrente) | Transporteur | ❌ Bloqué — dépend des capacités/missions Transporteur, déjà identifiées comme mockées et hors périmètre Web en Phase 0 (item 0.1, porteur Mobile) |
+| 2.10 | Alertes documents KYC/assurance expirant | Transporteur | ❌ Bloqué — dépend de dates d'expiration de documents KYC réels, indisponibles derrière le mock (§8) |
+| 2.11 | Widgets `fc-courbe-temporelle`, `fc-repartition`, `fc-jauge-seuil` diffusés sur les rapports financiers des 3 rôles | Transverse | Partiel — `fc-repartition` (donut) fait via 2.3 ; courbe-temporelle/jauge-seuil restent à faire (Phase 3) |
 
 ### Phase 3 — Confort, densité avancée, diffusion complète (P2)
 
@@ -180,3 +182,5 @@ En construisant 1.1 (gestion des comptes), investigation du gateway a révélé 
 Contrairement aux items 0.1/0.2 (Phase 0), **rien n'interdit architecturalement de corriger ceci** : le pattern gateway → service-ida en appel synchrone est déjà utilisé en production ailleurs (`RealIdaProfilAdapter`, `RealAffiliationAdapter`, et le nouveau `RealIdaCompteAdminAdapter` de ce commit) — c'est uniquement que personne n'a encore écrit l'équivalent `RealIdaKycAdapter` ni les endpoints service-ida associés (liste des KYC en attente par tenant + décision, distincts des endpoints de complétion de profil déjà là dans `KycController`).
 
 **Non corrigé dans cette session** (scope déjà large pour une seule session) — proposé comme prochain chantier Phase 1/2 : ajouter à `service-ida` un pendant admin de `KycController` (liste par tenant + décision, avec journalisation), puis `RealIdaKycAdapter` côté gateway pour remplacer le mock. Même ampleur que 1.1, mêmes garde-fous (rôle ADMINISTRATION vérifié dans le JWT, tenant scoping).
+
+**Deuxième découverte du même type (2026-08-24, Phase 2)** : en investiguant 2.8 (compteur de notifications Bureau), `NotificationPort` s'est révélé lié à `MockNotAdapter` (4 notifications codées en dur, `TODO(mobile)` — service-not jamais livré). Contrairement au KYC, le modèle actuel (`Notification` = un email envoyé, pas un message avec état lu/non lu) ne porte même pas le concept nécessaire à 2.8 — corriger ceci demanderait à la fois de brancher le vrai service-not ET de faire évoluer son modèle de données pour porter un état de lecture, une décision produit qui dépasse le cadre de cet audit UX.
