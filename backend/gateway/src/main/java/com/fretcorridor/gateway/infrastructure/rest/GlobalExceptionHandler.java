@@ -14,6 +14,8 @@ import com.fretcorridor.gateway.domain.exe.MissionIntrouvableException;
 import com.fretcorridor.gateway.domain.flt.FltServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.flt.PositionRefuseeException;
 import com.fretcorridor.gateway.domain.flt.VehiculeRefuseException;
+import com.fretcorridor.gateway.domain.ida.CompteAdminServiceIndisponibleException;
+import com.fretcorridor.gateway.domain.ida.CompteIntrouvableException;
 import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
 import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
@@ -98,6 +100,20 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleProfilServiceIndisponible(ProfilServiceIndisponibleException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
         problem.setTitle("Service d'identité indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(CompteAdminServiceIndisponibleException.class)
+    public ProblemDetail handleCompteAdminServiceIndisponible(CompteAdminServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service d'identité indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(CompteIntrouvableException.class)
+    public ProblemDetail handleCompteIntrouvable(CompteIntrouvableException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Compte introuvable");
         return problem;
     }
 
