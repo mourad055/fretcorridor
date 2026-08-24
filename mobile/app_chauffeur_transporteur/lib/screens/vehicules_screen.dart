@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/vehicule_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -30,15 +31,16 @@ class _VehiculesScreenState extends ConsumerState<VehiculesScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(vehiculeProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Ma flotte')),
+      appBar: AppBar(title: Text(t.maFlotte)),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _ouvrirFormulaireAjout,
         backgroundColor: AppColors.accent,
         icon: const Icon(Icons.add, color: AppColors.texteBouton),
-        label: const Text('Ajouter', style: TextStyle(color: AppColors.texteBouton, fontWeight: FontWeight.bold)),
+        label: Text(t.ajouter, style: const TextStyle(color: AppColors.texteBouton, fontWeight: FontWeight.bold)),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(vehiculeProvider.notifier).chargerMesVehicules(),
@@ -47,13 +49,13 @@ class _VehiculesScreenState extends ConsumerState<VehiculesScreen> {
             : state.erreur != null
                 ? _erreur(state.erreur!)
                 : state.vehicules.isEmpty
-                    ? ListView(children: const [
-                        SizedBox(height: 80),
+                    ? ListView(children: [
+                        const SizedBox(height: 80),
                         Center(
                           child: Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 32),
-                            child: Text('Aucun véhicule enregistré.\nAppuyez sur "Ajouter" pour en déclarer un.',
-                                textAlign: TextAlign.center, style: TextStyle(color: AppColors.texteMuet)),
+                            padding: const EdgeInsets.symmetric(horizontal: 32),
+                            child: Text(t.aucunVehiculeEnregistre,
+                                textAlign: TextAlign.center, style: const TextStyle(color: AppColors.texteMuet)),
                           ),
                         ),
                       ])
@@ -143,6 +145,7 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(vehiculeProvider);
+    final t = AppLocalizations.of(context);
 
     return Padding(
       padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 24),
@@ -152,30 +155,30 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Nouveau véhicule', style: Theme.of(context).textTheme.headlineMedium),
+            Text(t.nouveauVehicule, style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 20),
             TextFormField(
               controller: _typeCtrl,
-              decoration: const InputDecoration(labelText: 'Type de véhicule'),
-              validator: (v) => (v == null || v.trim().isEmpty) ? 'Champ obligatoire' : null,
+              decoration: InputDecoration(labelText: t.typeDeVehicule),
+              validator: (v) => (v == null || v.trim().isEmpty) ? t.champObligatoire : null,
             ),
             const SizedBox(height: 12),
-            TextFormField(controller: _immatCtrl, decoration: const InputDecoration(labelText: 'Immatriculation (facultatif)')),
+            TextFormField(controller: _immatCtrl, decoration: InputDecoration(labelText: t.immatriculationFacultatif)),
             const SizedBox(height: 12),
             TextFormField(
               controller: _poidsMaxCtrl,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Poids max (tonnes, facultatif)'),
+              decoration: InputDecoration(labelText: t.poidsMaxTonnesFacultatif),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _essieuxCtrl,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Nombre d\'essieux (facultatif)'),
+              decoration: InputDecoration(labelText: t.nombreEssieuxFacultatif),
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Matières dangereuses'),
+              title: Text(t.matieresDangereuses),
               value: _matieresDangereuses,
               onChanged: (v) => setState(() => _matieresDangereuses = v),
               activeThumbColor: AppColors.accent,
@@ -193,7 +196,7 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
                 style: ElevatedButton.styleFrom(backgroundColor: AppColors.accent),
                 child: state.chargement
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                    : const Text('Enregistrer', style: TextStyle(color: AppColors.texteBouton, fontWeight: FontWeight.bold)),
+                    : Text(t.enregistrer, style: const TextStyle(color: AppColors.texteBouton, fontWeight: FontWeight.bold)),
               ),
             ),
           ],

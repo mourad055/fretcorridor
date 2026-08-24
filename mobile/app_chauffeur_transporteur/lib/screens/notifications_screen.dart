@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/notification_provider.dart';
 import '../providers/proposition_retour_provider.dart';
 import '../theme/app_theme.dart';
@@ -33,10 +34,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(notificationProvider);
     final propositionsEnAttente = ref.watch(propositionRetourProvider).enAttente;
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Notifications')),
+      appBar: AppBar(title: Text(t.notifications)),
       body: RefreshIndicator(
         onRefresh: () => Future.wait([
           ref.read(notificationProvider.notifier).charger(),
@@ -47,15 +49,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             : state.erreur != null
                 ? _erreur(state.erreur!)
                 : state.notifications.isEmpty && propositionsEnAttente.isEmpty
-                    ? ListView(children: const [
-                        SizedBox(height: 80),
-                        Center(child: Text('Aucune notification.', style: TextStyle(color: AppColors.texteMuet))),
+                    ? ListView(children: [
+                        const SizedBox(height: 80),
+                        Center(child: Text(t.aucuneNotification, style: const TextStyle(color: AppColors.texteMuet))),
                       ])
                     : ListView(
                         padding: const EdgeInsets.all(16),
                         children: [
                           for (final p in propositionsEnAttente) ...[
-                            _cartePropositionRetour(p),
+                            _cartePropositionRetour(t, p),
                             const SizedBox(height: 8),
                           ],
                           for (final n in state.notifications) ...[
@@ -70,7 +72,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   // S12 — proposition de mission retour après une livraison, avec
   // acceptation/refus par le chauffeur (voir proposition_retour_provider.dart).
-  Widget _cartePropositionRetour(PropositionRetour p) {
+  Widget _cartePropositionRetour(AppLocalizations t, PropositionRetour p) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
@@ -105,7 +107,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   side: const BorderSide(color: AppColors.erreur),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Refuser', style: TextStyle(color: AppColors.erreur)),
+                child: Text(t.refuser, style: const TextStyle(color: AppColors.erreur)),
               ),
             ),
             const SizedBox(width: 10),
@@ -116,7 +118,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   backgroundColor: AppColors.accent,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text('Accepter', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+                child: Text(t.accepter, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
               ),
             ),
           ]),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/axes_provider.dart';
 import '../theme/app_theme.dart';
 
@@ -27,10 +28,11 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(axesProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: const Text('Axes')),
+      appBar: AppBar(title: Text(t.axes)),
       body: RefreshIndicator(
         onRefresh: () => ref.read(axesProvider.notifier).charger(),
         child: state.chargement && state.axes.isEmpty
@@ -41,7 +43,7 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
                     padding: const EdgeInsets.all(16),
                     itemCount: state.axes.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
-                    itemBuilder: (context, i) => _carteAxe(state.axes[i], state.axeSelectionneId),
+                    itemBuilder: (context, i) => _carteAxe(t, state.axes[i], state.axeSelectionneId),
                   ),
       ),
     );
@@ -56,7 +58,7 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
     ]);
   }
 
-  Widget _carteAxe(Axe axe, String? axeSelectionneId) {
+  Widget _carteAxe(AppLocalizations t, Axe axe, String? axeSelectionneId) {
     final selectionne = axe.id == axeSelectionneId;
     return InkWell(
       onTap: () => ref.read(axesProvider.notifier).selectionner(axe.id),
@@ -83,9 +85,9 @@ class _AxesScreenState extends ConsumerState<AxesScreen> {
             ]),
             const SizedBox(height: 12),
             Wrap(spacing: 8, runSpacing: 8, children: [
-              _badge('Visible', axe.visibiliteActive),
-              _badge('Matching', axe.matchingActif),
-              _badge('Paiement', axe.paiementActif),
+              _badge(t.badgeVisible, axe.visibiliteActive),
+              _badge(t.badgeMatching, axe.matchingActif),
+              _badge(t.badgePaiement, axe.paiementActif),
             ]),
           ],
         ),

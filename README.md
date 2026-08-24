@@ -26,10 +26,32 @@ Ce dépôt reflète le développement actif du périmètre **Web** (Personne 2).
 
 ```bash
 cd infra
-docker compose up -d
+docker compose up -d   # ou "docker-compose up -d" si le plugin V2 n'est pas installé
 ```
 
 Démarre PostgreSQL 16 + PostGIS, Redis 7, Kafka + Zookeeper, MinIO.
+
+Chaque microservice porte son propre `docker-compose.service-X.yml` (sous
+`backend/<service>/`), à combiner avec celui de `infra/` via plusieurs `-f` :
+
+```bash
+docker-compose -f infra/docker-compose.yml \
+  -f backend/service-ida/docker-compose.service-ida.yml \
+  -f backend/gateway/docker-compose.gateway.yml \
+  -f backend/service-cap/docker-compose.service-cap.yml \
+  -f backend/service-opt/docker-compose.service-opt.yml \
+  -f backend/service-mkt/docker-compose.service-mkt.yml \
+  -f backend/service-exe/docker-compose.service-exe.yml \
+  -f backend/service-not/docker-compose.service-not.yml \
+  -f backend/service-mat/docker-compose.service-mat.yml \
+  -f backend/service-trk/docker-compose.service-trk.yml \
+  -f backend/service-geo/docker-compose.service-geo.yml \
+  -f backend/service-adm/docker-compose.service-adm.yml \
+  -f backend/service-pay/docker-compose.service-pay.yml \
+  -f backend/service-flt/docker-compose.service-flt.yml \
+  -f backend/service-bur/docker-compose.service-bur.yml \
+  up -d
+```
 
 ## Contrats d'API
 

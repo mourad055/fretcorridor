@@ -1285,6 +1285,132 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Enregistrer les modifications'**
   String get enregistrerModifications;
+
+  /// No description provided for @kyc1Info.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce niveau (KYC 1) vous permet de publier des demandes de transport.'**
+  String get kyc1Info;
+
+  /// No description provided for @etapeIdentite.
+  ///
+  /// In fr, this message translates to:
+  /// **'Identité'**
+  String get etapeIdentite;
+
+  /// No description provided for @etapePieceIdentite.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pièce d\'identité'**
+  String get etapePieceIdentite;
+
+  /// No description provided for @pieceInvalideMessage.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette photo ne ressemble pas à une pièce d\'identité — cadrez bien le document (texte lisible) et réessayez.'**
+  String get pieceInvalideMessage;
+
+  /// No description provided for @phoneLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Téléphone'**
+  String get phoneLabel;
+
+  /// No description provided for @typeDeCompte.
+  ///
+  /// In fr, this message translates to:
+  /// **'Type de compte'**
+  String get typeDeCompte;
+
+  /// No description provided for @pieceDeposeeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pièce déposée'**
+  String get pieceDeposeeLabel;
+
+  /// No description provided for @modifierNumeroTelephone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le numéro de téléphone'**
+  String get modifierNumeroTelephone;
+
+  /// No description provided for @numeroActuel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro actuel : {numero}'**
+  String numeroActuel(String numero);
+
+  /// No description provided for @confirmezNumeroActuel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmez votre numéro actuel'**
+  String get confirmezNumeroActuel;
+
+  /// No description provided for @nouveauNumero.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau numéro'**
+  String get nouveauNumero;
+
+  /// No description provided for @champObligatoire.
+  ///
+  /// In fr, this message translates to:
+  /// **'Champ obligatoire'**
+  String get champObligatoire;
+
+  /// No description provided for @valider.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider'**
+  String get valider;
+
+  /// No description provided for @numeroTelephoneMisAJour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro de téléphone mis à jour.'**
+  String get numeroTelephoneMisAJour;
+
+  /// No description provided for @echecModification.
+  ///
+  /// In fr, this message translates to:
+  /// **'Échec de la modification.'**
+  String get echecModification;
+
+  /// No description provided for @numeroRccmOptionnel.
+  ///
+  /// In fr, this message translates to:
+  /// **'NUMÉRO RCCM (optionnel)'**
+  String get numeroRccmOptionnel;
+
+  /// No description provided for @hintRccm.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ex : RC/DLA/2024/B/1234'**
+  String get hintRccm;
+
+  /// No description provided for @verificationEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vérification…'**
+  String get verificationEnCours;
+
+  /// No description provided for @envoiEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Envoi…'**
+  String get envoiEnCours;
+
+  /// No description provided for @prendreEnPhotoPiece.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prendre en photo ma pièce d\'identité'**
+  String get prendreEnPhotoPiece;
+
+  /// No description provided for @enregistrer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer'**
+  String get enregistrer;
 }
 
 class _AppLocalizationsDelegate

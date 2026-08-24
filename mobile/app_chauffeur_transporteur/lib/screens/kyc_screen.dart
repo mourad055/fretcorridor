@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../providers/kyc_provider.dart';
 import '../theme/app_theme.dart';
@@ -81,7 +82,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
       if (mounted) {
         afficherNotification(
           context,
-          message: 'Cette photo ne ressemble pas à une pièce d\'identité — cadrez bien le document (texte lisible) et réessayez.',
+          message: AppLocalizations.of(context).kycPhotoNonReconnue,
           couleur: AppColors.erreur,
           icone: Icons.error_outline,
         );
@@ -119,6 +120,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   Widget build(BuildContext context) {
     final kycState = ref.watch(kycProvider);
     final profil = kycState.profil;
+    final t = AppLocalizations.of(context);
 
     // Bascule automatique vers l'accueil dès que le profil devient complet
     // (transition NIVEAU_0 -> NIVEAU_1), avec une notification brève plutôt
@@ -129,7 +131,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
       if (!etaitComplet && estComplet) {
         afficherNotification(
           context,
-          message: 'Profil complété ✅',
+          message: t.profilCompleteEmoji,
           couleur: AppColors.succes,
           icone: Icons.check_circle,
         );
@@ -173,7 +175,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
                       child: const Icon(Icons.person, color: Colors.white, size: 30),
                     ),
                     const SizedBox(width: 14),
-                    Text('Mon profil',
+                    Text(t.monProfil,
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: Colors.white)),
                   ]),
                 ],
@@ -184,19 +186,19 @@ class _KycScreenState extends ConsumerState<KycScreen> {
             child: kycState.chargement && profil == null
                 ? const Center(child: CircularProgressIndicator())
                 : profil != null && profil.niveauKyc != 'NIVEAU_0'
-                    ? _profilComplete(kycState, profil)
-                    : _checklist(kycState, profil),
+                    ? _profilComplete(t, kycState, profil)
+                    : _checklist(t, kycState, profil),
           ),
         ],
       ),
     );
   }
 
-  Widget _profilComplete(KycState kycState, Profil profil) {
+  Widget _profilComplete(AppLocalizations t, KycState kycState, Profil profil) {
     if (_modeEdition) {
       return SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: _formulaireIdentite(kycState),
+        child: _formulaireIdentite(t, kycState),
       );
     }
 
@@ -238,11 +240,11 @@ class _KycScreenState extends ConsumerState<KycScreen> {
           ),
           const SizedBox(height: 28),
 
-          _ligneInfo(Icons.phone_outlined, 'Téléphone', telephone ?? '—', onEdit: () => _modifierTelephone(telephone)),
-          _ligneInfo(Icons.badge_outlined, 'Type de compte',
-              profil.type == 'ENTREPRISE' ? 'Entreprise' : 'Particulier'),
+          _ligneInfo(t, Icons.phone_outlined, t.telephoneLabel, telephone ?? '—', onEdit: () => _modifierTelephone(t, telephone)),
+          _ligneInfo(t, Icons.badge_outlined, t.typeDeCompte,
+              profil.type == 'ENTREPRISE' ? t.entreprise : t.particulier),
           if (profil.pieces.isNotEmpty)
-            _ligneInfo(Icons.description_outlined, 'Pièce déposée', profil.pieces.first.typeDocument),
+            _ligneInfo(t, Icons.description_outlined, t.pieceDeposeeLabel, profil.pieces.first.typeDocument),
 
           const SizedBox(height: 24),
           SizedBox(
@@ -251,7 +253,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
             child: OutlinedButton.icon(
               onPressed: () => _ouvrirEdition(profil),
               icon: const Icon(Icons.edit_outlined, color: AppColors.accent, size: 18),
-              label: const Text('Modifier', style: TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
+              label: Text(t.modifier, style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: AppColors.accent),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -263,7 +265,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     );
   }
 
-  Widget _ligneInfo(IconData icone, String label, String valeur, {VoidCallback? onEdit}) {
+  Widget _ligneInfo(AppLocalizations t, IconData icone, String label, String valeur, {VoidCallback? onEdit}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -289,7 +291,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
             IconButton(
               icon: const Icon(Icons.edit_outlined, color: AppColors.accent, size: 18),
               onPressed: onEdit,
-              tooltip: 'Modifier',
+              tooltip: t.modifier,
             ),
         ],
       ),
@@ -312,7 +314,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
   // numéro doit être re-saisi et confirmé côté serveur avant d'accepter le
   // nouveau — évite qu'un tiers ayant accès à l'appareil déverrouillé ne
   // s'approprie silencieusement le compte.
-  Future<void> _modifierTelephone(String? telephoneActuel) async {
+  Future<void> _modifierTelephone(AppLocalizations t, String? telephoneActuel) async {
     final ancienCtrl = TextEditingController();
     final nouveauCtrl = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -320,39 +322,39 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     final confirme = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Modifier le numéro de téléphone'),
+        title: Text(t.modifierNumeroTelephone),
         content: Form(
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Numéro actuel : ${telephoneActuel ?? '—'}',
+              Text(t.numeroActuelLabel(telephoneActuel ?? '—'),
                   style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
               const SizedBox(height: 16),
               TextFormField(
                 controller: ancienCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: _decorationDialogue('Confirmez votre numéro actuel', Icons.phone_outlined),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Champ obligatoire' : null,
+                decoration: _decorationDialogue(t.confirmezNumeroActuel, Icons.phone_outlined),
+                validator: (v) => (v == null || v.trim().isEmpty) ? t.champObligatoire : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: nouveauCtrl,
                 keyboardType: TextInputType.phone,
-                decoration: _decorationDialogue('Nouveau numéro', Icons.phone_iphone_outlined),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Champ obligatoire' : null,
+                decoration: _decorationDialogue(t.nouveauNumero, Icons.phone_iphone_outlined),
+                validator: (v) => (v == null || v.trim().isEmpty) ? t.champObligatoire : null,
               ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Annuler')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.annuler)),
           ElevatedButton(
             onPressed: () {
               if (formKey.currentState!.validate()) Navigator.pop(dialogContext, true);
             },
-            child: const Text('Valider'),
+            child: Text(t.valider),
           ),
         ],
       ),
@@ -365,13 +367,13 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     final erreur = ref.read(authProvider).erreur;
     afficherNotification(
       context,
-      message: succes ? 'Numéro de téléphone mis à jour.' : (erreur ?? 'Échec de la modification.'),
+      message: succes ? t.numeroTelephoneMisAJour : (erreur ?? t.echecModification),
       couleur: succes ? AppColors.succes : AppColors.erreur,
       icone: succes ? Icons.check_circle : Icons.error_outline,
     );
   }
 
-  Widget _checklist(KycState kycState, Profil? profil) {
+  Widget _checklist(AppLocalizations t, KycState kycState, Profil? profil) {
     final identiteDeclaree = profil?.identiteDeclaree ?? false;
     final pieceDeposee = profil?.pieceDeposee ?? false;
 
@@ -380,23 +382,23 @@ class _KycScreenState extends ConsumerState<KycScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Complétez votre profil', style: Theme.of(context).textTheme.headlineMedium),
+          Text(t.completezVotreProfil, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 4),
-          const Text('Identité déclarée et pièce déposée — condition pour publier ou accepter une mission (RG-011).',
-              style: TextStyle(fontSize: 13, color: AppColors.texteMuet)),
+          Text(t.identitePieceCondition,
+              style: const TextStyle(fontSize: 13, color: AppColors.texteMuet)),
           const SizedBox(height: 24),
 
-          _etape(numero: 1, titre: 'Identité', fait: identiteDeclaree,
+          _etape(numero: 1, titre: t.identite, fait: identiteDeclaree,
               contenu: identiteDeclaree
                   ? _resumeIdentite(profil!)
-                  : _formulaireIdentite(kycState, avecBouton: false)),
+                  : _formulaireIdentite(t, kycState, avecBouton: false)),
           const SizedBox(height: 16),
-          _etape(numero: 2, titre: 'Pièce d\'identité', fait: pieceDeposee,
-              contenu: pieceDeposee ? _resumePieces(profil!) : _boutonDepot(kycState)),
+          _etape(numero: 2, titre: t.pieceIdentite, fait: pieceDeposee,
+              contenu: pieceDeposee ? _resumePieces(profil!) : _boutonDepot(t, kycState)),
 
           if (!identiteDeclaree) ...[
             const SizedBox(height: 16),
-            _boutonEnregistrer(kycState),
+            _boutonEnregistrer(t, kycState),
           ],
 
           if (kycState.erreur != null) ...[
@@ -467,7 +469,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     );
   }
 
-  Widget _boutonDepot(KycState kycState) {
+  Widget _boutonDepot(AppLocalizations t, KycState kycState) {
     final occupe = kycState.depotEnCours || _verificationEnCours;
     return SizedBox(
       width: double.infinity,
@@ -478,7 +480,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
             ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2.5))
             : const Icon(Icons.camera_alt_outlined, color: AppColors.accent),
         label: Text(
-            _verificationEnCours ? 'Vérification…' : (kycState.depotEnCours ? 'Envoi…' : 'Prendre en photo ma pièce d\'identité'),
+            _verificationEnCours ? t.verificationEnCours : (kycState.depotEnCours ? t.envoiEnCours : t.prendrePhotoIdentite),
             style: const TextStyle(color: AppColors.accent, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: AppColors.accent),
@@ -488,7 +490,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
     );
   }
 
-  Widget _boutonEnregistrer(KycState kycState) {
+  Widget _boutonEnregistrer(AppLocalizations t, KycState kycState) {
     return SizedBox(
       width: double.infinity,
       height: 48,
@@ -501,56 +503,56 @@ class _KycScreenState extends ConsumerState<KycScreen> {
         child: kycState.chargement
             ? const SizedBox(
                 height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-            : const Text('Enregistrer',
-                style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+            : Text(t.enregistrer,
+                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
       ),
     );
   }
 
-  Widget _formulaireIdentite(KycState kycState, {bool avecBouton = true}) {
+  Widget _formulaireIdentite(AppLocalizations t, KycState kycState, {bool avecBouton = true}) {
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SegmentedButton<_TypeProfil>(
-            segments: const [
-              ButtonSegment(value: _TypeProfil.particulier, label: Text('Particulier')),
-              ButtonSegment(value: _TypeProfil.entreprise, label: Text('Entreprise')),
+            segments: [
+              ButtonSegment(value: _TypeProfil.particulier, label: Text(t.particulier)),
+              ButtonSegment(value: _TypeProfil.entreprise, label: Text(t.entreprise)),
             ],
             selected: {_type},
             onSelectionChanged: (s) => setState(() => _type = s.first),
           ),
           const SizedBox(height: 16),
 
-          if (_type == _TypeProfil.particulier) ..._champsParticulier() else ..._champsEntreprise(),
+          if (_type == _TypeProfil.particulier) ..._champsParticulier(t) else ..._champsEntreprise(t),
 
           if (avecBouton) ...[
             const SizedBox(height: 16),
-            _boutonEnregistrer(kycState),
+            _boutonEnregistrer(t, kycState),
           ],
         ],
       ),
     );
   }
 
-  List<Widget> _champsParticulier() {
+  List<Widget> _champsParticulier(AppLocalizations t) {
     return [
-      _champ('NOM', _nomCtrl, obligatoire: true),
+      _champ(t, t.labelNom, _nomCtrl, obligatoire: true),
       const SizedBox(height: 12),
-      _champ('PRÉNOM', _prenomCtrl, obligatoire: true),
+      _champ(t, t.labelPrenom, _prenomCtrl, obligatoire: true),
     ];
   }
 
-  List<Widget> _champsEntreprise() {
+  List<Widget> _champsEntreprise(AppLocalizations t) {
     return [
-      _champ('RAISON SOCIALE', _raisonSocialeCtrl, obligatoire: true),
+      _champ(t, t.labelRaisonSociale, _raisonSocialeCtrl, obligatoire: true),
       const SizedBox(height: 12),
-      _champ('N° REGISTRE DE COMMERCE (facultatif)', _rccmCtrl, obligatoire: false),
+      _champ(t, t.numeroRegistreCommerceFacultatif, _rccmCtrl, obligatoire: false),
     ];
   }
 
-  Widget _champ(String label, TextEditingController controller, {required bool obligatoire}) {
+  Widget _champ(AppLocalizations t, String label, TextEditingController controller, {required bool obligatoire}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -568,7 +570,7 @@ class _KycScreenState extends ConsumerState<KycScreen> {
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.accent)),
           ),
-          validator: obligatoire ? (v) => (v == null || v.trim().isEmpty) ? 'Champ obligatoire' : null : null,
+          validator: obligatoire ? (v) => (v == null || v.trim().isEmpty) ? t.champObligatoire : null : null,
         ),
       ],
     );

@@ -650,4 +650,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enregistrerModifications => 'Save changes';
+
+  @override
+  String get kyc1Info => 'This level (KYC 1) lets you post transport requests.';
+
+  @override
+  String get etapeIdentite => 'Identity';
+
+  @override
+  String get etapePieceIdentite => 'ID document';
+
+  @override
+  String get pieceInvalideMessage =>
+      'This photo doesn\'t look like an ID document — frame the document well (readable text) and try again.';
+
+  @override
+  String get phoneLabel => 'Phone';
+
+  @override
+  String get typeDeCompte => 'Account type';
+
+  @override
+  String get pieceDeposeeLabel => 'Document submitted';
+
+  @override
+  String get modifierNumeroTelephone => 'Change phone number';
+
+  @override
+  String numeroActuel(String numero) {
+    return 'Current number: $numero';
+  }
+
+  @override
+  String get confirmezNumeroActuel => 'Confirm your current number';
+
+  @override
+  String get nouveauNumero => 'New number';
+
+  @override
+  String get champObligatoire => 'Required field';
+
+  @override
+  String get valider => 'Confirm';
+
+  @override
+  String get numeroTelephoneMisAJour => 'Phone number updated.';
+
+  @override
+  String get echecModification => 'Failed to update.';
+
+  @override
+  String get numeroRccmOptionnel => 'RCCM NUMBER (optional)';
+
+  @override
+  String get hintRccm => 'E.g.: RC/DLA/2024/B/1234';
+
+  @override
+  String get verificationEnCours => 'Checking…';
+
+  @override
+  String get envoiEnCours => 'Sending…';
+
+  @override
+  String get prendreEnPhotoPiece => 'Take a photo of my ID document';
+
+  @override
+  String get enregistrer => 'Save';
 }

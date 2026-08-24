@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/mission_provider.dart';
 import '../providers/position_provider.dart';
 import '../theme/app_theme.dart';
@@ -19,28 +20,28 @@ class _Preuve {
   const _Preuve({required this.photos, required this.signature});
 }
 
-const _categoriesIncident = [
-  'Retard',
-  'Marchandise endommagée',
-  'Accident',
-  'Panne véhicule',
-  'Autre',
-];
+List<String> _categoriesIncident(AppLocalizations t) => [
+      t.categorieRetard,
+      t.categorieMarchandiseEndommagee,
+      t.categorieAccident,
+      t.categoriePanneVehicule,
+      t.categorieAutre,
+    ];
 
-const _libellesStatut = {
-  'EN_ATTENTE': 'En attente',
-  'PRISE_EN_CHARGE': 'Prise en charge',
-  'EN_TRANSIT': 'En transit',
-  'LIVREE': 'Livrée',
-  'ANNULEE': 'Annulée',
-};
+Map<String, String> _libellesStatut(AppLocalizations t) => {
+      'EN_ATTENTE': t.statutEnAttente,
+      'PRISE_EN_CHARGE': t.statutPriseEnCharge,
+      'EN_TRANSIT': t.statutEnTransit,
+      'LIVREE': t.statutLivree,
+      'ANNULEE': t.statutAnnulee,
+    };
 
-const _libellesEtape = {
-  'PRISE_EN_CHARGE': 'Prise en charge',
-  'EN_TRANSIT': 'En transit',
-  'LIVRAISON': 'Livraison',
-  'INCIDENT': 'Incident',
-};
+Map<String, String> _libellesEtape(AppLocalizations t) => {
+      'PRISE_EN_CHARGE': t.statutPriseEnCharge,
+      'EN_TRANSIT': t.statutEnTransit,
+      'LIVRAISON': t.etapeLivraison,
+      'INCIDENT': t.incidentLabel,
+    };
 
 // S7 : détail + progression d'une mission (prise en charge → en transit →
 // livraison, ou incident). Démarre/arrête automatiquement le suivi GPS (S6)
@@ -119,6 +120,7 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
     final state = ref.watch(missionProvider);
     final detail = state.detail;
     final positionState = ref.watch(positionProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -165,8 +167,8 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Destinataire',
-                                  style: TextStyle(fontSize: 11, color: AppColors.texteMuet, letterSpacing: 0.5)),
+                              Text(t.destinataire,
+                                  style: const TextStyle(fontSize: 11, color: AppColors.texteMuet, letterSpacing: 0.5)),
                               Text(
                                 '${widget.mission.destinataireNom}'
                                 '${widget.mission.destinataireTelephone != null ? ' · ${widget.mission.destinataireTelephone}' : ''}',
@@ -186,10 +188,10 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(color: AppColors.succes.withValues(alpha: 0.4)),
                       ),
-                      child: const Row(children: [
-                        Icon(Icons.gps_fixed, color: AppColors.succes, size: 18),
-                        SizedBox(width: 8),
-                        Text('Suivi GPS actif', style: TextStyle(color: AppColors.succes, fontSize: 13)),
+                      child: Row(children: [
+                        const Icon(Icons.gps_fixed, color: AppColors.succes, size: 18),
+                        const SizedBox(width: 8),
+                        Text(t.suiviGpsActif, style: const TextStyle(color: AppColors.succes, fontSize: 13)),
                       ]),
                     ),
                   // BUG CORRIGE (retour utilisateur direct, 22 aout) : le
@@ -229,11 +231,11 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                       ]),
                     ),
 
-                  Text('Statut : ${_libellesStatut[detail?.statut ?? widget.mission.statut] ?? widget.mission.statut}',
+                  Text(t.statutAvecValeur(_libellesStatut(t)[detail?.statut ?? widget.mission.statut] ?? widget.mission.statut),
                       style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 20),
 
-                  if (detail != null) _actions(detail, state.chargement),
+                  if (detail != null) _actions(t, detail, state.chargement),
                   const SizedBox(height: 12),
                   // S16 (audit de suivi, 23 août) : le Moteur ne calcule un plan de
                   // chargement que pour une Tournée consolidée (multi-étapes) -
@@ -252,7 +254,7 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                                     missionIdFiltre: widget.mission.missionId,
                                   ))),
                       icon: const Icon(Icons.view_in_ar_outlined, size: 18),
-                      label: const Text('Voir le plan de chargement'),
+                      label: Text(t.voirLePlanDeChargement),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.texte,
                         side: const BorderSide(color: AppColors.bordure),
@@ -262,23 +264,23 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  Text('Chronologie', style: Theme.of(context).textTheme.titleMedium),
+                  Text(t.chronologie, style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
                   if (detail == null || detail.etapes.isEmpty)
-                    const Text('Aucune étape pour le moment.', style: TextStyle(color: AppColors.texteMuet))
+                    Text(t.aucuneEtapePourLeMoment, style: const TextStyle(color: AppColors.texteMuet))
                   else
-                    ...detail.etapes.map(_carteEtape),
+                    ...detail.etapes.map((e) => _carteEtape(t, e)),
                 ],
               ),
             ),
     );
   }
 
-  Widget _actions(MissionDetail detail, bool chargement) {
+  Widget _actions(AppLocalizations t, MissionDetail detail, bool chargement) {
     final Map<String, String> suivantes = switch (detail.statut) {
-      'EN_ATTENTE' => {'PRISE_EN_CHARGE': 'Prise en charge'},
-      'PRISE_EN_CHARGE' => {'EN_TRANSIT': 'En transit'},
-      'EN_TRANSIT' => {'LIVRAISON': 'Confirmer la livraison'},
+      'EN_ATTENTE' => {'PRISE_EN_CHARGE': t.statutPriseEnCharge},
+      'PRISE_EN_CHARGE' => {'EN_TRANSIT': t.statutEnTransit},
+      'EN_TRANSIT' => {'LIVRAISON': t.confirmerLaLivraison},
       _ => {},
     };
 
@@ -310,14 +312,14 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
                 side: const BorderSide(color: AppColors.erreur),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('Signaler un incident', style: TextStyle(color: AppColors.erreur)),
+              child: Text(t.signalerUnIncident, style: const TextStyle(color: AppColors.erreur)),
             ),
           ),
       ],
     );
   }
 
-  Widget _carteEtape(Etape etape) {
+  Widget _carteEtape(AppLocalizations t, Etape etape) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -334,7 +336,7 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(_libellesEtape[etape.type] ?? etape.type, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(_libellesEtape(t)[etape.type] ?? etape.type, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               Text(etape.libelle, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
             ],
           ),
@@ -357,7 +359,7 @@ class _FormulaireIncident extends StatefulWidget {
 class _FormulaireIncidentState extends State<_FormulaireIncident> {
   final _descriptionCtrl = TextEditingController();
   final _picker = ImagePicker();
-  String _categorie = _categoriesIncident.first;
+  String? _categorie;
   File? _photo;
 
   @override
@@ -380,20 +382,23 @@ class _FormulaireIncidentState extends State<_FormulaireIncident> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final categories = _categoriesIncident(t);
+    _categorie ??= categories.first;
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Signaler un incident', style: Theme.of(context).textTheme.titleMedium),
+          Text(t.signalerUnIncident, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
-          const Text(
-            'Grille de décision et recours traités par le Bureau — pas encore automatisés côté app.',
-            style: TextStyle(color: AppColors.texteMuet, fontSize: 11.5),
+          Text(
+            t.grilleDecisionNote,
+            style: const TextStyle(color: AppColors.texteMuet, fontSize: 11.5),
           ),
           const SizedBox(height: 20),
-          const Text('CATÉGORIE', style: TextStyle(fontSize: 11, letterSpacing: 1.1,
+          Text(t.categorieLabel, style: const TextStyle(fontSize: 11, letterSpacing: 1.1,
               color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
@@ -403,18 +408,18 @@ class _FormulaireIncidentState extends State<_FormulaireIncident> {
               fillColor: AppColors.surface,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
             ),
-            items: _categoriesIncident.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
             onChanged: (v) => setState(() => _categorie = v!),
           ),
           const SizedBox(height: 16),
-          const Text('DESCRIPTION', style: TextStyle(fontSize: 11, letterSpacing: 1.1,
+          Text(t.descriptionLabel, style: const TextStyle(fontSize: 11, letterSpacing: 1.1,
               color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextField(
             controller: _descriptionCtrl,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'Détaillez ce qui s\'est passé (optionnel)',
+              hintText: t.detaillezOptionnel,
               filled: true,
               fillColor: AppColors.surface,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
@@ -425,7 +430,7 @@ class _FormulaireIncidentState extends State<_FormulaireIncident> {
             OutlinedButton.icon(
               onPressed: _choisirPhoto,
               icon: const Icon(Icons.camera_alt_outlined, size: 18),
-              label: Text(_photo == null ? 'Ajouter une photo (optionnel)' : 'Photo jointe'),
+              label: Text(_photo == null ? t.ajouterPhotoOptionnel : t.photoJointe),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.texte,
                 side: const BorderSide(color: AppColors.bordure),
@@ -447,7 +452,7 @@ class _FormulaireIncidentState extends State<_FormulaireIncident> {
                 backgroundColor: AppColors.accent,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
-              child: const Text('Envoyer le signalement', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+              child: Text(t.envoyerLeSignalement, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
             ),
           ),
         ],
@@ -487,7 +492,7 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
   Future<void> _valider() async {
     final padState = _signatureKey.currentState;
     if (_photos.isEmpty || padState == null || padState.estVide) {
-      afficherNotification(context, message: 'Une photo et une signature sont obligatoires.', couleur: AppColors.erreur, icone: Icons.error_outline);
+      afficherNotification(context, message: AppLocalizations.of(context).photoEtSignatureObligatoires, couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     setState(() => _envoiEnCours = true);
@@ -503,7 +508,8 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
 
   @override
   Widget build(BuildContext context) {
-    final titre = widget.typeEtape == 'PRISE_EN_CHARGE' ? 'Preuve de prise en charge' : 'Preuve de livraison';
+    final t = AppLocalizations.of(context);
+    final titre = widget.typeEtape == 'PRISE_EN_CHARGE' ? t.preuveDePriseEnCharge : t.preuveDeLivraison;
     return Padding(
       padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
       child: Column(
@@ -512,12 +518,12 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
         children: [
           Text(titre, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 4),
-          const Text(
-            'Photo(s) de la marchandise + signature du destinataire — obligatoire (RG-070).',
-            style: TextStyle(color: AppColors.texteMuet, fontSize: 11.5),
+          Text(
+            t.noteRg070,
+            style: const TextStyle(color: AppColors.texteMuet, fontSize: 11.5),
           ),
           const SizedBox(height: 20),
-          const Text('PHOTOS (au moins 1)', style: TextStyle(fontSize: 11, letterSpacing: 1.1,
+          Text(t.photosAuMoinsUn, style: const TextStyle(fontSize: 11, letterSpacing: 1.1,
               color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Wrap(
@@ -546,7 +552,7 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
             ],
           ),
           const SizedBox(height: 20),
-          const Text('SIGNATURE DU DESTINATAIRE', style: TextStyle(fontSize: 11, letterSpacing: 1.1,
+          Text(t.signatureDuDestinataire, style: const TextStyle(fontSize: 11, letterSpacing: 1.1,
               color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           SignaturePad(key: _signatureKey),
@@ -554,7 +560,7 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
             alignment: Alignment.centerRight,
             child: TextButton(
               onPressed: () => setState(() => _signatureKey.currentState?.effacer()),
-              child: const Text('Effacer'),
+              child: Text(t.effacer),
             ),
           ),
           const SizedBox(height: 12),
@@ -569,7 +575,7 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
               ),
               child: _envoiEnCours
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Valider', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
+                  : Text(t.valider, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
             ),
           ),
         ],

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 
 class _Bandeau {
@@ -11,26 +12,26 @@ class _Bandeau {
   const _Bandeau({required this.icone, required this.titre, required this.description, required this.couleurs});
 }
 
-const _bandeaux = [
-  _Bandeau(
-    icone: Icons.local_shipping_outlined,
-    titre: 'Trouvez des missions rapidement',
-    description: 'Déclarez votre capacité, recevez des propositions sur vos axes',
-    couleurs: [Color(0xFFDC2626), Color(0xFFB91C1C)],
-  ),
-  _Bandeau(
-    icone: Icons.account_balance_wallet_outlined,
-    titre: 'Paiement sécurisé',
-    description: 'Suivez vos gains et vos paiements directement dans l\'app',
-    couleurs: [Color(0xFF1F2937), Color(0xFF111827)],
-  ),
-  _Bandeau(
-    icone: Icons.gps_fixed,
-    titre: 'Suivi GPS en temps réel',
-    description: 'Partagez votre position pendant vos missions',
-    couleurs: [Color(0xFFB45309), Color(0xFF92400E)],
-  ),
-];
+List<_Bandeau> _bandeaux(AppLocalizations t) => [
+      _Bandeau(
+        icone: Icons.local_shipping_outlined,
+        titre: t.promoTitre1,
+        description: t.promoDesc1,
+        couleurs: const [Color(0xFFDC2626), Color(0xFFB91C1C)],
+      ),
+      _Bandeau(
+        icone: Icons.account_balance_wallet_outlined,
+        titre: t.promoTitre2,
+        description: t.promoDesc2,
+        couleurs: const [Color(0xFF1F2937), Color(0xFF111827)],
+      ),
+      _Bandeau(
+        icone: Icons.gps_fixed,
+        titre: t.promoTitre3,
+        description: t.promoDesc3,
+        couleurs: const [Color(0xFFB45309), Color(0xFF92400E)],
+      ),
+    ];
 
 // Même carrousel promotionnel que l'app Client (image défilante avec
 // indicateurs), contenu adapté au rôle Chauffeur/Transporteur.
@@ -46,12 +47,14 @@ class _PromoCarouselState extends State<PromoCarousel> {
   Timer? _timer;
   int _page = 0;
 
+  static const _nombreBandeaux = 3;
+
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 4), (_) {
       if (!mounted) return;
-      _page = (_page + 1) % _bandeaux.length;
+      _page = (_page + 1) % _nombreBandeaux;
       _controller.animateToPage(_page, duration: const Duration(milliseconds: 500), curve: Curves.easeInOut);
     });
   }
@@ -65,6 +68,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final bandeaux = _bandeaux(AppLocalizations.of(context));
     return Column(
       children: [
         SizedBox(
@@ -72,9 +76,9 @@ class _PromoCarouselState extends State<PromoCarousel> {
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (i) => setState(() => _page = i),
-            itemCount: _bandeaux.length,
+            itemCount: bandeaux.length,
             itemBuilder: (context, i) {
-              final b = _bandeaux[i];
+              final b = bandeaux[i];
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 padding: const EdgeInsets.all(18),
@@ -109,7 +113,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(_bandeaux.length, (i) {
+          children: List.generate(bandeaux.length, (i) {
             final actif = i == _page;
             return AnimatedContainer(
               duration: const Duration(milliseconds: 200),

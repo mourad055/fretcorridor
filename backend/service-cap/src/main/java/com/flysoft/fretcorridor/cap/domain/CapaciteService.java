@@ -143,6 +143,14 @@ public class CapaciteService {
     @Transactional
     public void supprimer(UUID capaciteId, String tenantId) {
         Capacite capacite = capaciteAppartenantA(capaciteId, tenantId);
+        // decrement_log est un journal d'idempotence scope a cette capacite
+        // (EF-CAP-07) : une fois la capacite supprimee, plus rien ne peut
+        // rejouer un decrement dessus, donc son journal n'a plus lieu
+        // d'etre. Sans ca, FK decrement_log_capacite_id_fkey bloque la
+        // suppression de toute capacite deja decrementee au moins une fois.
+        entityManager.createNativeQuery("DELETE FROM cap.decrement_log WHERE capacite_id = :capaciteId")
+                .setParameter("capaciteId", capaciteId)
+                .executeUpdate();
         capaciteRepository.delete(capacite);
     }
 

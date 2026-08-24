@@ -342,4 +342,581 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get bureauPrincipal => '(main)';
+
+  @override
+  String get statutEnAttente => 'Pending';
+
+  @override
+  String get statutPriseEnCharge => 'Picked up';
+
+  @override
+  String get statutEnTransit => 'In transit';
+
+  @override
+  String get statutLivree => 'Delivered';
+
+  @override
+  String get statutAnnulee => 'Cancelled';
+
+  @override
+  String get etapeLivraison => 'Delivery';
+
+  @override
+  String get incidentLabel => 'Incident';
+
+  @override
+  String get disponibiliteDesQuePossible => 'As soon as possible';
+
+  @override
+  String get disponibiliteDatePrecise => 'On a set date';
+
+  @override
+  String get disponibilitePlage => 'Within a time window';
+
+  @override
+  String get collecteDomicile => 'Pickup at address';
+
+  @override
+  String get collectePointRelais => 'Pickup at relay point';
+
+  @override
+  String get aucuneMissionPourLeMoment => 'No missions for now.';
+
+  @override
+  String get idDeLaMission => 'Mission ID:';
+
+  @override
+  String destinataireSansTel(String nom) {
+    return 'Recipient: $nom';
+  }
+
+  @override
+  String destinataireAvecTel(String nom, String telephone) {
+    return 'Recipient: $nom · $telephone';
+  }
+
+  @override
+  String poidsTotalLabel(String poids) {
+    return 'Total weight: $poids kg';
+  }
+
+  @override
+  String typeLabel(String type) {
+    return 'Type: $type';
+  }
+
+  @override
+  String publieeLe(String date) {
+    return 'Published on $date';
+  }
+
+  @override
+  String get valeurLabel => 'Value: ';
+
+  @override
+  String get grandeValeur => 'High value';
+
+  @override
+  String get faitPartieTourneeGroupee => 'Part of a consolidated route';
+
+  @override
+  String get chronologie => 'Timeline';
+
+  @override
+  String get aucuneEtapePourLeMoment => 'No steps for now.';
+
+  @override
+  String statutAvecValeur(String statut) {
+    return 'Status: $statut';
+  }
+
+  @override
+  String get suiviGpsActif => 'GPS tracking active';
+
+  @override
+  String get voirLePlanDeChargement => 'View loading plan';
+
+  @override
+  String get signalerUnIncident => 'Report an incident';
+
+  @override
+  String get confirmerLaLivraison => 'Confirm delivery';
+
+  @override
+  String get destinataire => 'Recipient';
+
+  @override
+  String get grilleDecisionNote =>
+      'Decision and appeal process handled by the office — not yet automated in the app.';
+
+  @override
+  String get categorieLabel => 'CATEGORY';
+
+  @override
+  String get descriptionLabel => 'DESCRIPTION';
+
+  @override
+  String get detaillezOptionnel => 'Describe what happened (optional)';
+
+  @override
+  String get ajouterPhotoOptionnel => 'Add a photo (optional)';
+
+  @override
+  String get photoJointe => 'Photo attached';
+
+  @override
+  String get envoyerLeSignalement => 'Send report';
+
+  @override
+  String get preuveDePriseEnCharge => 'Pickup proof';
+
+  @override
+  String get preuveDeLivraison => 'Delivery proof';
+
+  @override
+  String get photoEtSignatureObligatoires =>
+      'A photo and a signature are required.';
+
+  @override
+  String get photosAuMoinsUn => 'PHOTOS (at least 1)';
+
+  @override
+  String get signatureDuDestinataire => 'RECIPIENT\'S SIGNATURE';
+
+  @override
+  String get effacer => 'Clear';
+
+  @override
+  String get valider => 'Confirm';
+
+  @override
+  String get noteRg070 =>
+      'Photo(s) of the goods + recipient\'s signature — required (RG-070).';
+
+  @override
+  String get categorieRetard => 'Delay';
+
+  @override
+  String get categorieMarchandiseEndommagee => 'Damaged goods';
+
+  @override
+  String get categorieAccident => 'Accident';
+
+  @override
+  String get categoriePanneVehicule => 'Vehicle breakdown';
+
+  @override
+  String get categorieAutre => 'Other';
+
+  @override
+  String get aucuneNotification => 'No notifications.';
+
+  @override
+  String get refuser => 'Decline';
+
+  @override
+  String get accepter => 'Accept';
+
+  @override
+  String get promoTitre1 => 'Find missions quickly';
+
+  @override
+  String get promoDesc1 =>
+      'Declare your capacity, receive offers on your routes';
+
+  @override
+  String get promoTitre2 => 'Secure payment';
+
+  @override
+  String get promoDesc2 => 'Track your earnings and payments right in the app';
+
+  @override
+  String get promoTitre3 => 'Real-time GPS tracking';
+
+  @override
+  String get promoDesc3 => 'Share your position during your missions';
+
+  @override
+  String get tourneeGroupee => 'Grouped route';
+
+  @override
+  String envoiGroupeEtapes(int n) {
+    return 'Grouped shipment — $n stops';
+  }
+
+  @override
+  String get aucuneEtapeTermineePourLeMoment => 'No completed stops yet.';
+
+  @override
+  String get enlevementLabel => 'Pickup';
+
+  @override
+  String demandeIdLabel(String id) {
+    return 'Request $id';
+  }
+
+  @override
+  String get confirmerEnlevement => 'Confirm pickup';
+
+  @override
+  String get toutesEtapesTerminees => 'All stops on this route are complete.';
+
+  @override
+  String get historique => 'History';
+
+  @override
+  String get aucuneEcriturePourLeMoment => 'No entries yet.';
+
+  @override
+  String get soldeLabel => 'BALANCE';
+
+  @override
+  String get natureEncaissement => 'Collection';
+
+  @override
+  String get natureReversement => 'Payout';
+
+  @override
+  String get natureCommission => 'Commission';
+
+  @override
+  String get natureSequestre => 'Escrow';
+
+  @override
+  String get modeMonnaieElectronique => 'Mobile money';
+
+  @override
+  String get modeVirement => 'Bank transfer';
+
+  @override
+  String get modeTermeContractuel => 'Contractual term';
+
+  @override
+  String get modeEspeces => 'Cash';
+
+  @override
+  String regleVia(String mode) {
+    return 'Paid via $mode';
+  }
+
+  @override
+  String get badgeVisible => 'Visible';
+
+  @override
+  String get badgeMatching => 'Matching';
+
+  @override
+  String get badgePaiement => 'Payment';
+
+  @override
+  String get ajouter => 'Add';
+
+  @override
+  String get aucunVehiculeEnregistre =>
+      'No vehicle registered.\nTap \"Add\" to declare one.';
+
+  @override
+  String get nouveauVehicule => 'New vehicle';
+
+  @override
+  String get typeDeVehicule => 'Vehicle type';
+
+  @override
+  String get champObligatoire => 'Required field';
+
+  @override
+  String get immatriculationFacultatif => 'License plate (optional)';
+
+  @override
+  String get poidsMaxTonnesFacultatif => 'Max weight (tonnes, optional)';
+
+  @override
+  String get nombreEssieuxFacultatif => 'Number of axles (optional)';
+
+  @override
+  String get matieresDangereuses => 'Hazardous materials';
+
+  @override
+  String get enregistrer => 'Save';
+
+  @override
+  String get kycPhotoNonReconnue =>
+      'This photo doesn\'t look like an ID document — frame the document clearly (readable text) and try again.';
+
+  @override
+  String get profilCompleteEmoji => 'Profile completed ✅';
+
+  @override
+  String get telephoneLabel => 'Phone';
+
+  @override
+  String get typeDeCompte => 'Account type';
+
+  @override
+  String get entreprise => 'Business';
+
+  @override
+  String get particulier => 'Individual';
+
+  @override
+  String get pieceDeposeeLabel => 'Document submitted';
+
+  @override
+  String get modifier => 'Edit';
+
+  @override
+  String get modifierNumeroTelephone => 'Change phone number';
+
+  @override
+  String numeroActuelLabel(String telephone) {
+    return 'Current number: $telephone';
+  }
+
+  @override
+  String get confirmezNumeroActuel => 'Confirm your current number';
+
+  @override
+  String get nouveauNumero => 'New number';
+
+  @override
+  String get annuler => 'Cancel';
+
+  @override
+  String get numeroTelephoneMisAJour => 'Phone number updated.';
+
+  @override
+  String get echecModification => 'Update failed.';
+
+  @override
+  String get completezVotreProfil => 'Complete your profile';
+
+  @override
+  String get identitePieceCondition =>
+      'Declared identity and submitted document — required to publish or accept a mission (RG-011).';
+
+  @override
+  String get identite => 'Identity';
+
+  @override
+  String get pieceIdentite => 'ID document';
+
+  @override
+  String get verificationEnCours => 'Checking…';
+
+  @override
+  String get envoiEnCours => 'Sending…';
+
+  @override
+  String get prendrePhotoIdentite => 'Take a photo of my ID document';
+
+  @override
+  String get numeroRegistreCommerceFacultatif =>
+      'BUSINESS REGISTRATION NUMBER (optional)';
+
+  @override
+  String get enrolerUnChauffeur => 'Enroll a driver';
+
+  @override
+  String get synchroniserFileOffline => 'Sync offline queue';
+
+  @override
+  String enrolementsEnAttenteSync(int n) {
+    String _temp0 = intl.Intl.pluralLogic(
+      n,
+      locale: localeName,
+      other: '$n enrollments awaiting sync (offline).',
+      one: '$n enrollment awaiting sync (offline).',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get nouvelEnrolementTitre => 'New enrollment';
+
+  @override
+  String get codeActivationSmsMessage =>
+      'The activation code is sent by SMS directly to the person\'s phone — never to yours.';
+
+  @override
+  String get typeSectionLabel => 'TYPE';
+
+  @override
+  String get typeChauffeurProprietaireEnrolement => 'Owner-driver';
+
+  @override
+  String get telephoneDeLaPersonneLabel => 'PERSON\'S PHONE NUMBER';
+
+  @override
+  String get telephoneObligatoire => 'Phone number required';
+
+  @override
+  String get formatInvalide => 'Invalid format';
+
+  @override
+  String get envoyerLeCode => 'Send code';
+
+  @override
+  String get activerLeCompte => 'Activate account';
+
+  @override
+  String get codeEtPinParLaPersonneMessage =>
+      'To be entered by the person themselves: the code received by SMS, then a PIN of their choice.';
+
+  @override
+  String get codeRecuParSmsLabel => 'CODE RECEIVED BY SMS';
+
+  @override
+  String get codeSixChiffres => '6-digit code';
+
+  @override
+  String get nouveauCodePinLabel => 'NEW PIN CODE (4-6 digits)';
+
+  @override
+  String get pinObligatoire => 'PIN required';
+
+  @override
+  String get planDeChargementTitre => 'Loading plan';
+
+  @override
+  String get planChargementNonDisponibleMessage =>
+      'Loading plan not yet available for this route — the Engine hasn\'t computed it yet (or this route is too simple to require one).';
+
+  @override
+  String etapePlanLabel(int rang, String type, String demandeId) {
+    return 'Step $rang — $type — Request $demandeId';
+  }
+
+  @override
+  String get repartitionApproximativeMessage =>
+      'Approximate distribution (total weight spread evenly across axles)';
+
+  @override
+  String get choisissezUnAxe => 'Choose a corridor.';
+
+  @override
+  String get choisissezUnVehicule => 'Choose a vehicle.';
+
+  @override
+  String get choisissezUneDateDepart => 'Choose a departure date.';
+
+  @override
+  String get capaciteModifiee => 'Capacity updated.';
+
+  @override
+  String get nouvelleCapaciteAncienneEchouee =>
+      'New capacity declared, but the previous one couldn\'t be deleted.';
+
+  @override
+  String capacitePubliee(String kg) {
+    return 'Capacity published — $kg taxable kg.';
+  }
+
+  @override
+  String get capaciteEnregistree => 'Capacity saved.';
+
+  @override
+  String get modifierLaCapacite => 'Edit capacity';
+
+  @override
+  String get mesCapacites => 'My capacities';
+
+  @override
+  String get axeLabel => 'CORRIDOR';
+
+  @override
+  String get chargementEnCours => 'Loading…';
+
+  @override
+  String get choisirUnAxe => 'Choose a corridor';
+
+  @override
+  String get vehiculeLabel => 'VEHICLE';
+
+  @override
+  String get gererMaFlotte => 'Manage my fleet';
+
+  @override
+  String get aucunVehiculeAjoutezEnUn =>
+      'No vehicle — add one via \"Manage my fleet\".';
+
+  @override
+  String get choisirUnVehicule => 'Choose a vehicle';
+
+  @override
+  String get poidsDisponibleKgLabel => 'AVAILABLE WEIGHT (KG)';
+
+  @override
+  String get nombreInvalide => 'Invalid number';
+
+  @override
+  String get departLabel => 'DEPARTURE';
+
+  @override
+  String get choisirDateEtHeure => 'Choose a date and time';
+
+  @override
+  String get declarerLaCapacite => 'Declare capacity';
+
+  @override
+  String get enregistrerLesModifications => 'Save changes';
+
+  @override
+  String get supprimerCetteCapacite => 'Delete this capacity?';
+
+  @override
+  String get actionDefinitive => 'This action is permanent.';
+
+  @override
+  String get supprimer => 'Delete';
+
+  @override
+  String get capaciteSupprimee => 'Capacity deleted.';
+
+  @override
+  String get suppressionImpossible => 'Deletion isn\'t possible right now.';
+
+  @override
+  String get jourLun => 'Mon.';
+
+  @override
+  String get jourMar => 'Tue.';
+
+  @override
+  String get jourMer => 'Wed.';
+
+  @override
+  String get jourJeu => 'Thu.';
+
+  @override
+  String get jourVen => 'Fri.';
+
+  @override
+  String get jourSam => 'Sat.';
+
+  @override
+  String get jourDim => 'Sun.';
+
+  @override
+  String get aucuneCapaciteDeclareePourLeMoment => 'No capacity declared yet';
+
+  @override
+  String get expiree => 'Expired';
+
+  @override
+  String get publiee => 'Published';
+
+  @override
+  String kgDisponibles(String kg) {
+    return '$kg kg available';
+  }
+
+  @override
+  String departLabelValeur(String date) {
+    return 'Departure: $date';
+  }
+
+  @override
+  String declareeLe(String date) {
+    return 'Declared on $date';
+  }
 }

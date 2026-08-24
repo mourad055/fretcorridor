@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/axes_provider.dart';
 import '../providers/capacite_provider.dart';
 import '../providers/vehicule_provider.dart';
@@ -71,17 +72,18 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
   }
 
   Future<void> _declarer(List<VehiculeFlotte> vehicules) async {
+    final t = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_axeId == null) {
-      afficherNotification(context, message: 'Choisissez un axe.', couleur: AppColors.erreur, icone: Icons.error_outline);
+      afficherNotification(context, message: t.choisissezUnAxe, couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     if (_vehiculeId == null) {
-      afficherNotification(context, message: 'Choisissez un véhicule.', couleur: AppColors.erreur, icone: Icons.error_outline);
+      afficherNotification(context, message: t.choisissezUnVehicule, couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     if (_dateDepart == null) {
-      afficherNotification(context, message: 'Choisissez une date de départ.', couleur: AppColors.erreur, icone: Icons.error_outline);
+      afficherNotification(context, message: t.choisissezUneDateDepart, couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
 
@@ -110,8 +112,8 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
       afficherNotification(
         context,
         message: succesSuppression
-            ? 'Capacité modifiée.'
-            : 'Nouvelle capacité déclarée, mais l\'ancienne n\'a pas pu être supprimée.',
+            ? t.capaciteModifiee
+            : t.nouvelleCapaciteAncienneEchouee,
         couleur: succesSuppression ? AppColors.succes : AppColors.erreur,
         icone: succesSuppression ? Icons.check_circle : Icons.error_outline,
       );
@@ -122,8 +124,8 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
     afficherNotification(
       context,
       message: capacite.publiee
-          ? 'Capacité publiée — ${capacite.poidsTaxableKg.round()} kg taxables.'
-          : 'Capacité enregistrée.',
+          ? t.capacitePubliee(capacite.poidsTaxableKg.round().toString())
+          : t.capaciteEnregistree,
       couleur: AppColors.succes,
       icone: Icons.check_circle,
     );
@@ -136,15 +138,16 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
     final state = ref.watch(capaciteProvider);
     final axesState = ref.watch(axesProvider);
     final vehiculeState = ref.watch(vehiculeProvider);
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
       appBar: AppBar(
-        title: Text(widget.capaciteAModifier == null ? 'Déclarer une capacité' : 'Modifier la capacité'),
+        title: Text(widget.capaciteAModifier == null ? t.declarerCapacite : t.modifierLaCapacite),
         actions: [
           IconButton(
             icon: const Icon(Icons.list_alt),
-            tooltip: 'Mes capacités',
+            tooltip: t.mesCapacites,
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MesCapacitesScreen())),
           ),
         ],
@@ -160,12 +163,12 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
                 if (state.erreur != null) _bandeauErreur(state.erreur!),
                 const SizedBox(height: 8),
 
-                _label('AXE'),
+                _label(t.axeLabel),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   initialValue: _axeId,
                   decoration: _decoration(),
-                  hint: Text(axesState.chargement ? 'Chargement…' : 'Choisir un axe'),
+                  hint: Text(axesState.chargement ? t.chargementEnCours : t.choisirUnAxe),
                   items: axesState.axes
                       .map((a) => DropdownMenuItem(value: a.id, child: Text('${a.origine} → ${a.destination}')))
                       .toList(),
@@ -174,11 +177,11 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
                 const SizedBox(height: 16),
 
                 Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                  _label('VÉHICULE'),
+                  _label(t.vehiculeLabel),
                   TextButton(
                     onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VehiculesScreen()))
                         .then((_) => ref.read(vehiculeProvider.notifier).chargerMesVehicules()),
-                    child: const Text('Gérer ma flotte', style: TextStyle(fontSize: 12)),
+                    child: Text(t.gererMaFlotte, style: const TextStyle(fontSize: 12)),
                   ),
                 ]),
                 const SizedBox(height: 8),
@@ -191,14 +194,14 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
                           border: Border.all(color: AppColors.bordure),
                         ),
                         child: Text(
-                          vehiculeState.chargement ? 'Chargement…' : 'Aucun véhicule — ajoutez-en un via "Gérer ma flotte".',
+                          vehiculeState.chargement ? t.chargementEnCours : t.aucunVehiculeAjoutezEnUn,
                           style: const TextStyle(color: AppColors.texteMuet, fontSize: 13),
                         ),
                       )
                     : DropdownButtonFormField<String>(
                         initialValue: _vehiculeId,
                         decoration: _decoration(),
-                        hint: const Text('Choisir un véhicule'),
+                        hint: Text(t.choisirUnVehicule),
                         items: vehiculeState.vehicules
                             .map((v) => DropdownMenuItem(value: v.id, child: Text(v.typeVehicule)))
                             .toList(),
@@ -206,22 +209,22 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
                       ),
                 const SizedBox(height: 16),
 
-                _label('POIDS DISPONIBLE (KG)'),
+                _label(t.poidsDisponibleKgLabel),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _poidsCtrl,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: _decoration(hint: 'Ex : 9500', suffixe: 'kg'),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Champ obligatoire';
+                    if (v == null || v.isEmpty) return t.champObligatoire;
                     final n = double.tryParse(v);
-                    if (n == null || n <= 0) return 'Nombre invalide';
+                    if (n == null || n <= 0) return t.nombreInvalide;
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
 
-                _label('DÉPART'),
+                _label(t.departLabel),
                 const SizedBox(height: 8),
                 InkWell(
                   onTap: _choisirDate,
@@ -229,7 +232,7 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
                     decoration: _decoration(),
                     child: Text(
                       _dateDepart == null
-                          ? 'Choisir une date et une heure'
+                          ? t.choisirDateEtHeure
                           : '${_dateDepart!.day}/${_dateDepart!.month}/${_dateDepart!.year} — '
                               '${_dateDepart!.hour.toString().padLeft(2, '0')}:${_dateDepart!.minute.toString().padLeft(2, '0')}',
                       style: TextStyle(color: _dateDepart == null ? AppColors.texteMuet : AppColors.texte),
@@ -249,7 +252,7 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
                     ),
                     child: state.chargement
                         ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                        : Text(widget.capaciteAModifier == null ? 'Déclarer la capacité' : 'Enregistrer les modifications',
+                        : Text(widget.capaciteAModifier == null ? t.declarerLaCapacite : t.enregistrerLesModifications,
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
                   ),
                 ),

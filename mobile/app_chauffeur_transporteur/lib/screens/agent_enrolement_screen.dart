@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/agent_enrolement_provider.dart';
 import '../theme/app_theme.dart';
 
-const _typesActeurEnrolables = {
-  'CHAUFFEUR': 'Chauffeur',
-  'TRANSPORTEUR': 'Transporteur',
-  'CHAUFFEUR_PROPRIETAIRE': 'Chauffeur-propriétaire',
-};
+Map<String, String> _typesActeurEnrolables(AppLocalizations t) => {
+      'CHAUFFEUR': t.typeChauffeur,
+      'TRANSPORTEUR': t.typeTransporteur,
+      'CHAUFFEUR_PROPRIETAIRE': t.typeChauffeurProprietaireEnrolement,
+    };
 
 // UC-IDA-03 : enrôlement assisté par agent de terrain (EF-IDA-06). RG-019 —
 // le PIN est saisi par la personne enrôlée elle-même après réception du
@@ -61,16 +62,17 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
     final state = ref.watch(agentEnrolementProvider);
     final enrolement = state.dernierEnrolement;
     final enAttenteActivation = enrolement != null && enrolement.statut == 'EN_ATTENTE';
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: AppColors.fond,
       appBar: AppBar(
-        title: const Text('Enrôler un chauffeur'),
+        title: Text(t.enrolerUnChauffeur),
         actions: [
           if (state.fileAttente.isNotEmpty)
             IconButton(
               icon: const Icon(Icons.sync, color: AppColors.accent),
-              tooltip: 'Synchroniser la file offline',
+              tooltip: t.synchroniserFileOffline,
               onPressed: () => ref.read(agentEnrolementProvider.notifier).synchroniserFileAttente(),
             ),
         ],
@@ -81,12 +83,12 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (state.fileAttente.isNotEmpty) _bandeauFileAttente(state.fileAttente.length),
+              if (state.fileAttente.isNotEmpty) _bandeauFileAttente(t, state.fileAttente.length),
               if (state.succes != null) _bandeau(state.succes!, AppColors.succes, Icons.check_circle),
               if (state.erreur != null) _bandeau(state.erreur!, AppColors.erreur, Icons.warning_amber),
               const SizedBox(height: 12),
 
-              if (!enAttenteActivation) _formulaireInitier(state) else _formulaireActiver(state, enrolement),
+              if (!enAttenteActivation) _formulaireInitier(t, state) else _formulaireActiver(t, state, enrolement),
             ],
           ),
         ),
@@ -94,7 +96,7 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
     );
   }
 
-  Widget _bandeauFileAttente(int nombre) {
+  Widget _bandeauFileAttente(AppLocalizations t, int nombre) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -108,7 +110,7 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            '$nombre enrôlement${nombre > 1 ? 's' : ''} en attente de synchronisation (hors ligne).',
+            t.enrolementsEnAttenteSync(nombre),
             style: const TextStyle(color: AppColors.accent, fontSize: 13),
           ),
         ),
@@ -133,19 +135,19 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
     );
   }
 
-  Widget _formulaireInitier(AgentEnrolementState state) {
+  Widget _formulaireInitier(AppLocalizations t, AgentEnrolementState state) {
     return Form(
       key: _formInitierKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Nouvel enrôlement', style: Theme.of(context).textTheme.headlineMedium),
+          Text(t.nouvelEnrolementTitre, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 4),
-          const Text('Le code d\'activation part par SMS directement au téléphone de la personne — jamais au vôtre.',
-              style: TextStyle(fontSize: 13, color: AppColors.texteMuet)),
+          Text(t.codeActivationSmsMessage,
+              style: const TextStyle(fontSize: 13, color: AppColors.texteMuet)),
           const SizedBox(height: 20),
 
-          const Text('TYPE', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+          Text(t.typeSectionLabel, style: const TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             initialValue: _typeActeur,
@@ -154,14 +156,14 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
               fillColor: AppColors.surface,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
             ),
-            items: _typesActeurEnrolables.entries
+            items: _typesActeurEnrolables(t).entries
                 .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
                 .toList(),
             onChanged: (v) => setState(() => _typeActeur = v!),
           ),
           const SizedBox(height: 16),
 
-          const Text('TÉLÉPHONE DE LA PERSONNE', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+          Text(t.telephoneDeLaPersonneLabel, style: const TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextFormField(
             controller: _telCtrl,
@@ -175,8 +177,8 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
               prefixIcon: const Icon(Icons.phone, color: AppColors.texteMuet),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return 'Téléphone obligatoire';
-              if (!RegExp(r'^\+?[0-9]{9,15}$').hasMatch(v)) return 'Format invalide';
+              if (v == null || v.isEmpty) return t.telephoneObligatoire;
+              if (!RegExp(r'^\+?[0-9]{9,15}$').hasMatch(v)) return t.formatInvalide;
               return null;
             },
           ),
@@ -190,7 +192,7 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
               icon: state.chargement
                   ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                   : const Icon(Icons.sms_outlined, color: AppColors.texteBouton),
-              label: Text(state.chargement ? 'Envoi…' : 'Envoyer le code',
+              label: Text(state.chargement ? t.envoiEnCours : t.envoyerLeCode,
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.texteBouton)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
@@ -203,15 +205,15 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
     );
   }
 
-  Widget _formulaireActiver(AgentEnrolementState state, EnrolementActif enrolement) {
+  Widget _formulaireActiver(AppLocalizations t, AgentEnrolementState state, EnrolementActif enrolement) {
     return Form(
       key: _formActiverKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Activer le compte', style: Theme.of(context).textTheme.headlineMedium),
+          Text(t.activerLeCompte, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 4),
-          Text('${enrolement.telephone} — ${_typesActeurEnrolables[enrolement.typeActeur] ?? enrolement.typeActeur}',
+          Text('${enrolement.telephone} — ${_typesActeurEnrolables(t)[enrolement.typeActeur] ?? enrolement.typeActeur}',
               style: const TextStyle(color: AppColors.texteMuet, fontSize: 13)),
           const SizedBox(height: 8),
           Container(
@@ -221,20 +223,20 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.bordure),
             ),
-            child: const Row(children: [
-              Icon(Icons.info_outline, color: AppColors.accentProfond, size: 18),
-              SizedBox(width: 8),
+            child: Row(children: [
+              const Icon(Icons.info_outline, color: AppColors.accentProfond, size: 18),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'À faire saisir par la personne elle-même : le code reçu par SMS, puis un code PIN de son choix.',
-                  style: TextStyle(color: AppColors.texteMuet, fontSize: 12),
+                  t.codeEtPinParLaPersonneMessage,
+                  style: const TextStyle(color: AppColors.texteMuet, fontSize: 12),
                 ),
               ),
             ]),
           ),
           const SizedBox(height: 20),
 
-          const Text('CODE REÇU PAR SMS', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+          Text(t.codeRecuParSmsLabel, style: const TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextFormField(
             controller: _otpCtrl,
@@ -248,11 +250,11 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
               fillColor: AppColors.surface,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
             ),
-            validator: (v) => (v == null || v.length != 6) ? 'Code à 6 chiffres' : null,
+            validator: (v) => (v == null || v.length != 6) ? t.codeSixChiffres : null,
           ),
           const SizedBox(height: 16),
 
-          const Text('NOUVEAU CODE PIN (4-6 chiffres)', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+          Text(t.nouveauCodePinLabel, style: const TextStyle(fontSize: 11, letterSpacing: 1.2, color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           TextFormField(
             controller: _pinCtrl,
@@ -268,8 +270,8 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
             ),
             validator: (v) {
-              if (v == null || v.isEmpty) return 'PIN obligatoire';
-              if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return '4 à 6 chiffres';
+              if (v == null || v.isEmpty) return t.pinObligatoire;
+              if (!RegExp(r'^[0-9]{4,6}$').hasMatch(v)) return t.codeFormatInvalide;
               return null;
             },
           ),
@@ -286,14 +288,14 @@ class _AgentEnrolementScreenState extends ConsumerState<AgentEnrolementScreen> {
               ),
               child: state.chargement
                   ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
-                  : const Text('Activer le compte',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  : Text(t.activerLeCompte,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
             ),
           ),
           const SizedBox(height: 12),
           TextButton(
             onPressed: () => ref.read(agentEnrolementProvider.notifier).reinitialiser(),
-            child: const Text('Nouvel enrôlement', style: TextStyle(color: AppColors.texteMuet)),
+            child: Text(t.nouvelEnrolementTitre, style: const TextStyle(color: AppColors.texteMuet)),
           ),
         ],
       ),
