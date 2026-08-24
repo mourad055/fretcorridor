@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { EcrituresTableComponent } from './ecritures-table.component';
 import { Ecriture } from '../../models/ecriture.models';
 import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
@@ -93,5 +94,18 @@ describe('EcrituresTableComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Aucune écriture');
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    await TestBed.configureTestingModule({
+      imports: [EcrituresTableComponent],
+      providers: [provideTranslateServiceForTests()],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(EcrituresTableComponent);
+    fixture.componentRef.setInput('ecritures', ECRITURES);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

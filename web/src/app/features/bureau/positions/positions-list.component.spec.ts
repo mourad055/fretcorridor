@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { PositionsListComponent } from './positions-list.component';
 import { environment } from '../../../../environments/environment';
 
@@ -63,5 +64,15 @@ describe('PositionsListComponent', () => {
 
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));
     expect(alert.nativeElement.textContent).toContain('Impossible de charger');
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = TestBed.createComponent(PositionsListComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/positions`).flush(POSITIONS);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { MissionsListComponent } from './missions-list.component';
 import { environment } from '../../../../environments/environment';
 import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
@@ -116,5 +117,15 @@ describe('MissionsListComponent', () => {
     expect(requete.request.responseType).toBe('text');
     requete.flush('id,axeId,transporteurNom,origine,destination,enlevementLe,statut\n');
     expect(fixture.componentInstance.exportEnCours()).toBe(false);
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = TestBed.createComponent(MissionsListComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/missions-appariees`).flush(MISSIONS);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

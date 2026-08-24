@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { ConfigurationsComponent } from './configurations.component';
 import { environment } from '../../../../environments/environment';
 
@@ -153,5 +154,14 @@ describe('ConfigurationsComponent', () => {
     fixture.componentInstance.consulter();
 
     httpMock.expectNone(`${environment.apiBaseUrl}/admin/configurations//historique`);
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = creerEtIgnorerLeCatalogue([
+      { cle: 'seuil-agregation-bur', perimetre: 'GLOBAL', valeur: '3', auteur: 'actor-admin-1', version: 1, creeLe: '2026-08-05T00:00:00Z' },
+    ]);
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

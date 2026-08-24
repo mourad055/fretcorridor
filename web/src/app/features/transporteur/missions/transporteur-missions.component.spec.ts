@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { TransporteurMissionsComponent } from './transporteur-missions.component';
 import { environment } from '../../../../environments/environment';
 import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
@@ -61,5 +62,15 @@ describe('TransporteurMissionsComponent', () => {
 
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));
     expect(alert.nativeElement.textContent).toContain('Impossible de charger');
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = TestBed.createComponent(TransporteurMissionsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/transporteur/missions`).flush(MISSIONS);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

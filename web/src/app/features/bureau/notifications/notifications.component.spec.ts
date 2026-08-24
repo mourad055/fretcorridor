@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { axe } from 'jest-axe';
 import { NotificationsComponent } from './notifications.component';
 import { environment } from '../../../../environments/environment';
 
@@ -61,5 +62,15 @@ describe('NotificationsComponent', () => {
 
     const alert = fixture.nativeElement.querySelector('[role="alert"]');
     expect(alert.textContent).toContain('Impossible de charger');
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = TestBed.createComponent(NotificationsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/notifications`).flush(NOTIFICATIONS);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

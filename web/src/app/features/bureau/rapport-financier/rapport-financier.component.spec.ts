@@ -4,6 +4,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { of } from 'rxjs';
+import { axe } from 'jest-axe';
 import { RapportFinancierComponent } from './rapport-financier.component';
 import { environment } from '../../../../environments/environment';
 import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
@@ -94,5 +95,20 @@ describe('RapportFinancierComponent', () => {
     expect(fixture.componentInstance.ecrituresAffichees()).toHaveLength(1);
     expect(fixture.componentInstance.totaux().totalCredit).toBe(500);
     expect(fixture.nativeElement.textContent).toContain('Filtré sur la mission mission-1');
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    configure();
+    const fixture = TestBed.createComponent(RapportFinancierComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/rapport-financier`).flush([
+      { id: 'e1', missionId: 'mission-1', typeCompte: 'COMPTE_SEQUESTRE_PRESTATAIRE', nature: 'ENCAISSEMENT', sens: 'CREDIT', montant: 500, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: 'VIREMENT', litigeActif: false },
+    ]);
+    httpMock.expectOne(`${environment.apiBaseUrl}/bureau/paiements-especes`).flush([]);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

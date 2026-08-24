@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { PaiementComponent } from './paiement.component';
 import { environment } from '../../../../environments/environment';
 import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
@@ -47,5 +48,21 @@ describe('PaiementComponent', () => {
 
     const alert = fixture.debugElement.query(By.css('[role="alert"]'));
     expect(alert.nativeElement.textContent).toContain('Impossible de charger');
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = TestBed.createComponent(PaiementComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/transporteur/paiement`).flush({
+      solde: 150,
+      historique: [
+        { id: 'e1', missionId: 'mission-1', typeCompte: 'COMPTE_TRANSPORTEUR', nature: 'REVERSEMENT', sens: 'DEBIT', montant: 150, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: null, litigeActif: false },
+      ],
+    });
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

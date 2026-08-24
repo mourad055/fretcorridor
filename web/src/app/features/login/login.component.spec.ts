@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { provideRouter, Router } from '@angular/router';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { LoginComponent } from './login.component';
 import { environment } from '../../../environments/environment';
 import { provideTranslateServiceForTests } from '../../../testing/translate-testing.providers';
@@ -104,5 +105,13 @@ describe('LoginComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.debugElement.query(By.css('app-langue-switch'))).toBeTruthy();
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

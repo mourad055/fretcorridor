@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { DossiersComponent } from './dossiers.component';
 import { environment } from '../../../../environments/environment';
 import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
@@ -185,5 +186,17 @@ describe('DossiersComponent', () => {
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
 
     expect(fixture.componentInstance.escaladeEnCours()).toBe(false);
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    const fixture = TestBed.createComponent(DossiersComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.consulterFileDeTravail();
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([DOSSIER]);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });

@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { axe } from 'jest-axe';
 import { EspecesTableComponent } from './especes-table.component';
 import { DeclarationEspeces } from '../../models/declaration-especes.models';
 
@@ -25,5 +26,15 @@ describe('EspecesTableComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Aucun paiement en espèces');
+  });
+
+  it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
+    await TestBed.configureTestingModule({ imports: [EspecesTableComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(EspecesTableComponent);
+    fixture.componentRef.setInput('paiements', PAIEMENTS);
+    fixture.detectChanges();
+
+    const resultats = await axe(fixture.nativeElement);
+    expect(resultats).toHaveNoViolations();
   });
 });
