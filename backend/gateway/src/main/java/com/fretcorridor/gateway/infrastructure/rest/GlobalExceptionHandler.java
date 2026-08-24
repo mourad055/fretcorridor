@@ -3,6 +3,9 @@ package com.fretcorridor.gateway.infrastructure.rest;
 import com.fretcorridor.gateway.domain.AuthenticationServiceUnavailableException;
 import com.fretcorridor.gateway.domain.InvalidCredentialsException;
 import com.fretcorridor.gateway.domain.RegistrationRefuseeException;
+import com.fretcorridor.gateway.domain.affiliation.AffiliationRefuseeException;
+import com.fretcorridor.gateway.domain.affiliation.AffiliationServiceIndisponibleException;
+import com.fretcorridor.gateway.domain.affiliation.TenantNonAuthoriseException;
 import com.fretcorridor.gateway.domain.agent.AgentServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.agent.EnrolementIntrouvableException;
 import com.fretcorridor.gateway.domain.agent.EnrolementRefuseException;
@@ -191,6 +194,30 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleCapaciteRefusee(CapaciteRefuseeException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
         problem.setTitle("Déclaration de capacité refusée");
+        return problem;
+    }
+
+    // S18 (audit UX 2026-08-24) : ces 3 exceptions n'avaient jamais été
+    // rattachées ici — une invitation refusée ou une sélection de tenant
+    // refusée produisait un 500 opaque au lieu du vrai motif.
+    @ExceptionHandler(AffiliationRefuseeException.class)
+    public ProblemDetail handleAffiliationRefusee(AffiliationRefuseeException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Invitation refusée");
+        return problem;
+    }
+
+    @ExceptionHandler(AffiliationServiceIndisponibleException.class)
+    public ProblemDetail handleAffiliationServiceIndisponible(AffiliationServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service d'affiliation indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(TenantNonAuthoriseException.class)
+    public ProblemDetail handleTenantNonAutorise(TenantNonAuthoriseException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Tenant non autorisé");
         return problem;
     }
 

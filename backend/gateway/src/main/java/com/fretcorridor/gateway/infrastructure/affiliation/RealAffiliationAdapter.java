@@ -3,6 +3,7 @@ package com.fretcorridor.gateway.infrastructure.affiliation;
 import com.fretcorridor.gateway.domain.Actor;
 import com.fretcorridor.gateway.domain.Role;
 import com.fretcorridor.gateway.domain.affiliation.AffiliationPort;
+import com.fretcorridor.gateway.domain.affiliation.AffiliationRefuseeException;
 import com.fretcorridor.gateway.domain.affiliation.AffiliationServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.affiliation.TenantNonAuthoriseException;
 import com.fretcorridor.gateway.domain.affiliation.TenantOption;
@@ -80,11 +81,16 @@ public class RealAffiliationAdapter implements AffiliationPort {
                 .bodyValue(Map.of("telephone", telephoneTransporteur))
                 .retrieve()
                 .bodyToMono(Void.class)
-                .onErrorMap(e -> new AffiliationServiceIndisponibleException());
+                .onErrorMap(this::estRefus, e -> new AffiliationRefuseeException(messageDe(e)))
+                .onErrorMap(e -> !(e instanceof AffiliationRefuseeException), e -> new AffiliationServiceIndisponibleException());
     }
 
     private boolean estRefus(Throwable e) {
         return e instanceof WebClientResponseException wcre && wcre.getStatusCode().value() == 400;
+    }
+
+    private String messageDe(Throwable e) {
+        return e instanceof WebClientResponseException wcre ? wcre.getResponseBodyAsString() : "Requête refusée";
     }
 
     private record TenantDisponibleDto(String tenantId, boolean origine) {
