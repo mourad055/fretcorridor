@@ -29,7 +29,14 @@ describe('ComptesComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  beforeEach(() => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    jest.restoreAllMocks();
+  });
 
   it('ne charge rien tant que Consulter n\'a pas ete clique', () => {
     const fixture = TestBed.createComponent(ComptesComponent);
@@ -64,6 +71,25 @@ describe('ComptesComponent', () => {
     reqStatut.flush({ ...COMPTE, actif: false });
 
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([{ ...COMPTE, actif: false }]);
+  });
+
+  it('ne desactive rien si la confirmation est annulee, mais reactive sans confirmation', () => {
+    (window.confirm as jest.Mock).mockReturnValue(false);
+    const fixture = TestBed.createComponent(ComptesComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.consulter();
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.basculerStatut(COMPTE as never);
+    httpMock.expectNone((r) => r.url === `${environment.apiBaseUrl}/admin/comptes/c1/statut`);
+
+    // reactiver un compte deja inactif ne demande aucune confirmation
+    fixture.componentInstance.basculerStatut({ ...COMPTE, actif: false } as never);
+    const reqReactivation = httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes/c1/statut`);
+    expect(reqReactivation.request.body).toEqual({ actif: true });
+    reqReactivation.flush({ ...COMPTE, actif: true });
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
   });
 
   it('change les roles d\'un compte via le formulaire d\'edition', () => {

@@ -6,6 +6,7 @@ import { TenantsService } from './tenants.service';
 import { Tenant } from '../../../shared/models/tenant.models';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { paginer } from '../../../shared/utils/pagination';
+import { ConfirmationService } from '../../../shared/services/confirmation.service';
 
 const TAILLE_PAGE = 20;
 
@@ -56,7 +57,10 @@ export class TenantsComponent implements OnInit {
   readonly editPays = signal('');
   readonly editActif = signal(true);
 
-  constructor(private readonly tenantsService: TenantsService) {}
+  constructor(
+    private readonly tenantsService: TenantsService,
+    private readonly confirmationService: ConfirmationService
+  ) {}
 
   ngOnInit(): void {
     this.charger();
@@ -83,6 +87,12 @@ export class TenantsComponent implements OnInit {
   }
 
   creer(): void {
+    const confirme = this.confirmationService.confirmer(
+      `Créer le tenant « ${this.nouvelNom()} » (${this.nouvelId()}) ?`
+    );
+    if (!confirme) {
+      return;
+    }
     this.tenantsService.creer(this.nouvelId(), this.nouvelNom(), this.nouveauPays()).subscribe({
       next: () => {
         this.nouvelId.set('');

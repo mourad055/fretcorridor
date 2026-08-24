@@ -36,7 +36,14 @@ describe('DossiersComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  beforeEach(() => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    jest.restoreAllMocks();
+  });
 
   it('affiche la file de travail après consultation', () => {
     const fixture = TestBed.createComponent(DossiersComponent);
@@ -77,6 +84,24 @@ describe('DossiersComponent', () => {
     req.flush({ ...DOSSIER, statut: 'CLOS' });
 
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
+  });
+
+  it('ne tranche rien si la confirmation est annulee', () => {
+    (window.confirm as jest.Mock).mockReturnValue(false);
+    const fixture = TestBed.createComponent(DossiersComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.ouvrirDossier('dossier-1');
+    httpMock
+      .expectOne(`${environment.apiBaseUrl}/admin/dossiers/dossier-1`)
+      .flush({ dossier: DOSSIER, mission: null, ecritures: [] });
+    fixture.detectChanges();
+
+    fixture.componentInstance.decisionTexte.set('RESOLU');
+    fixture.componentInstance.motifTexte.set('Preuve conforme');
+    fixture.componentInstance.trancher();
+
+    httpMock.expectNone(`${environment.apiBaseUrl}/admin/dossiers/dossier-1/decision`);
   });
 
   it('désactive les actions de la ligne pendant la prise en charge', () => {

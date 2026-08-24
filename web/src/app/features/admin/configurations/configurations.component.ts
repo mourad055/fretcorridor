@@ -4,6 +4,7 @@ import { PageShellComponent } from '../../../shared/components/page-shell/page-s
 import { FormsModule } from '@angular/forms';
 import { ConfigurationsService } from './configurations.service';
 import { Configuration } from '../../../shared/models/configuration.models';
+import { ConfirmationService } from '../../../shared/services/confirmation.service';
 
 /**
  * FE-ADM-03/EF-ADM-06 : chaque redéfinition crée une nouvelle version, jamais
@@ -28,7 +29,10 @@ export class ConfigurationsComponent implements OnInit {
   readonly consulte = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
-  constructor(private readonly configurationsService: ConfigurationsService) {}
+  constructor(
+    private readonly configurationsService: ConfigurationsService,
+    private readonly confirmationService: ConfirmationService
+  ) {}
 
   ngOnInit(): void {
     this.chargerCatalogue();
@@ -73,6 +77,12 @@ export class ConfigurationsComponent implements OnInit {
   }
 
   definir(): void {
+    const confirme = this.confirmationService.confirmer(
+      `Définir une nouvelle version de « ${this.cle()} » avec la valeur « ${this.nouvelleValeur()} » ? Cette action crée une nouvelle version, jamais réversible en place.`
+    );
+    if (!confirme) {
+      return;
+    }
     this.loading.set(true);
     this.errorMessage.set(null);
     this.configurationsService.definir(this.cle(), this.nouvelleValeur()).subscribe({

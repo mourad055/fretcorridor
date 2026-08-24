@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { DossiersService } from './dossiers.service';
 import { Dossier, DossierConsolide } from '../../../shared/models/dossier.models';
+import { ConfirmationService } from '../../../shared/services/confirmation.service';
 import {
   StatusBadgeComponent,
   dossierStatusVariant,
@@ -53,7 +54,10 @@ export class DossiersComponent {
     return this.dossiers().filter((d) => d.statut !== 'CLOS' && new Date(d.delaiTraitement).getTime() < maintenant).length;
   });
 
-  constructor(private readonly dossiersService: DossiersService) {}
+  constructor(
+    private readonly dossiersService: DossiersService,
+    private readonly confirmationService: ConfirmationService
+  ) {}
 
   consulterFileDeTravail(): void {
     this.loading.set(true);
@@ -107,6 +111,12 @@ export class DossiersComponent {
   trancher(): void {
     const consolide = this.dossierConsolide();
     if (!consolide || !this.decisionValide()) {
+      return;
+    }
+    const confirme = this.confirmationService.confirmer(
+      `Trancher le dossier ${consolide.dossier.id} avec la décision « ${this.decisionTexte()} » ? Cette décision est définitive.`
+    );
+    if (!confirme) {
       return;
     }
     this.trancheEnCours.set(true);

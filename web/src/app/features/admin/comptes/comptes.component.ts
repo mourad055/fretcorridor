@@ -6,6 +6,7 @@ import { CompteService } from './compte.service';
 import { CompteAdmin, ROLES_ACTEUR, RoleActeur } from './compte.models';
 import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
 import { paginer } from '../../../shared/utils/pagination';
+import { ConfirmationService } from '../../../shared/services/confirmation.service';
 
 const TAILLE_PAGE = 20;
 
@@ -43,7 +44,10 @@ export class ComptesComponent {
   readonly taillePage = TAILLE_PAGE;
   readonly comptesAffiches = computed(() => paginer(this.comptes() ?? [], this.page(), this.taillePage));
 
-  constructor(private readonly compteService: CompteService) {}
+  constructor(
+    private readonly compteService: CompteService,
+    private readonly confirmationService: ConfirmationService
+  ) {}
 
   consulter(): void {
     this.loading.set(true);
@@ -62,6 +66,16 @@ export class ComptesComponent {
   }
 
   basculerStatut(compte: CompteAdmin): void {
+    // Confirmation uniquement à la désactivation (audit UX §3.4) : réactiver
+    // un compte n'est pas l'action risquée, pas besoin d'un garde-fou.
+    if (compte.actif) {
+      const confirme = this.confirmationService.confirmer(
+        `Désactiver le compte de ${this.libelleActeur(compte)} ? Il ne pourra plus se connecter tant qu'il n'est pas réactivé.`
+      );
+      if (!confirme) {
+        return;
+      }
+    }
     this.compteService.changerStatut(compte.id, this.tenantSelectionne(), !compte.actif).subscribe({
       next: () => this.consulter(),
       error: () => this.errorMessage.set('Impossible de changer le statut de ce compte.'),

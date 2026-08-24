@@ -17,7 +17,14 @@ describe('ConfigurationsComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  beforeEach(() => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    jest.restoreAllMocks();
+  });
 
   /** Chaque test flush le catalogue chargé par ngOnInit avant de continuer. */
   function creerEtIgnorerLeCatalogue(catalogue: unknown[] = []) {
@@ -81,6 +88,17 @@ describe('ConfigurationsComponent', () => {
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/configurations`).flush([]);
 
     expect(fixture.componentInstance.nouvelleValeur()).toBe('');
+  });
+
+  it('ne fait aucun appel reseau si la confirmation est annulee', () => {
+    (window.confirm as jest.Mock).mockReturnValue(false);
+    const fixture = creerEtIgnorerLeCatalogue();
+
+    fixture.componentInstance.cle.set('seuil-agregation-bur');
+    fixture.componentInstance.nouvelleValeur.set('5');
+    fixture.componentInstance.definir();
+
+    httpMock.expectNone(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur`);
   });
 
   it('affiche un skeleton pendant la consultation puis le masque', () => {

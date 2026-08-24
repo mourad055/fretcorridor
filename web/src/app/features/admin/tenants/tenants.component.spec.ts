@@ -17,7 +17,14 @@ describe('TenantsComponent', () => {
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => httpMock.verify());
+  beforeEach(() => {
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    jest.restoreAllMocks();
+  });
 
   it('affiche les tenants au chargement, avec leur statut', () => {
     const fixture = TestBed.createComponent(TenantsComponent);
@@ -47,6 +54,20 @@ describe('TenantsComponent', () => {
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([]);
 
     expect(fixture.componentInstance.nouvelId()).toBe('');
+  });
+
+  it('ne cree rien si la confirmation est annulee', () => {
+    (window.confirm as jest.Mock).mockReturnValue(false);
+    const fixture = TestBed.createComponent(TenantsComponent);
+    fixture.detectChanges();
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([]);
+
+    fixture.componentInstance.nouvelId.set('tenant-new');
+    fixture.componentInstance.nouvelNom.set('Bureau Neuf');
+    fixture.componentInstance.nouveauPays.set('Tchad');
+    fixture.componentInstance.creer();
+
+    httpMock.expectNone((r) => r.url === `${environment.apiBaseUrl}/admin/tenants` && r.method === 'POST');
   });
 
   it('filtre les tenants affiches par la recherche', () => {
