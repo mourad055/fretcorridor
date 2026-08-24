@@ -60,12 +60,25 @@ public class CoutController {
         return coutCompositeService.calculerCoutsLot(request.demandeId(), request.axeId(), candidats);
     }
 
+    // CDC S8.5.3 : seuls ces 4 criteres sont des scores normalises [0,1]
+    // (GAIN_REMPLISSAGE, FIABILITE, RISQUE_AXE, VALEUR_RETOUR - cf
+    // CalculateurCoutSeptTermes cote service-opt, chacun deja borne a la
+    // source). KM_APPROCHE, KM_DETOUR et ECART_TEMPOREL sont des mesures
+    // physiques brutes (km, heures) par construction non bornees a 1 - les
+    // poids a1..a3 du modele de ponderation (mat.modele_ponderation)
+    // compensent leur echelle propre. Les leur imposer [0,1] rejetait tout
+    // candidat a plus de 1 km d'approche ou plus d'1h d'ecart de fenetre,
+    // soit la quasi-totalite des cas reels.
+    private static final java.util.Set<String> CRITERES_NORMALISES_0_1 =
+            java.util.Set.of("GAIN_REMPLISSAGE", "FIABILITE", "RISQUE_AXE", "VALEUR_RETOUR");
+
     /**
      * Controle manuel au-dela de ce que Bean Validation exprime facilement sur
      * les valeurs d'une Map (pas de validateur standard pour "chaque valeur
-     * d'une Map<String,Double> doit etre finie et dans [0,1]") : rejet explicite
-     * en 400 plutot que de laisser une valeur aberrante (NaN, Infinity, hors
-     * echelle) fausser silencieusement un cout ensuite utilise pour Kuhn-Munkres.
+     * d'une Map<String,Double> doit etre finie et, pour les criteres qui le
+     * sont, dans [0,1]") : rejet explicite en 400 plutot que de laisser une
+     * valeur aberrante (NaN, Infinity, negative pour un terme physique)
+     * fausser silencieusement un cout ensuite utilise pour Kuhn-Munkres.
      */
     private void validerValeursCriteres(CoutLotRequest request) {
         for (PaireCandidatRequest candidat : request.candidats()) {
@@ -78,10 +91,15 @@ public class CoutController {
                 }
 
                 Double valeur = entree.getValue();
-                if (valeur == null || !Double.isFinite(valeur) || valeur < 0.0 || valeur > 1.0) {
+                boolean normalise = CRITERES_NORMALISES_0_1.contains(entree.getKey());
+                boolean invalide = valeur == null || !Double.isFinite(valeur) || valeur < 0.0
+                        || (normalise && valeur > 1.0);
+                if (invalide) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "Valeur de critere hors limites pour " + entree.getKey()
-                                    + " (attendu : nombre fini entre 0 et 1, recu " + valeur + ")");
+                                    + " (attendu : nombre fini "
+                                    + (normalise ? "entre 0 et 1" : ">= 0")
+                                    + ", recu " + valeur + ")");
                 }
             }
         }
