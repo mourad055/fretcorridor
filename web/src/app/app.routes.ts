@@ -20,6 +20,7 @@ import { ConfigurationsComponent } from './features/admin/configurations/configu
 import { TenantsComponent } from './features/admin/tenants/tenants.component';
 import { JournalAuditComponent } from './features/admin/journal-audit/journal-audit.component';
 import { ComptesComponent } from './features/admin/comptes/comptes.component';
+import { RechercheComponent } from './features/admin/recherche/recherche.component';
 import { ShellComponent } from './layout/shell/shell.component';
 import { roleGuard, guestGuard } from './core/auth/role.guard';
 import { AuthService } from './core/auth/auth.service';
@@ -135,6 +136,12 @@ export const routes: Routes = [
       {
         path: 'admin/comptes',
         component: ComptesComponent,
+        canActivate: [roleGuard],
+        data: { role: 'ADMIN' },
+      },
+      {
+        path: 'admin/recherche',
+        component: RechercheComponent,
         canActivate: [roleGuard],
         data: { role: 'ADMIN' },
       },

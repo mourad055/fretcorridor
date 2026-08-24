@@ -42,6 +42,7 @@ const ONGLETS_ADMIN: OngletNav[] = [
   { path: '/admin/tenants', labelKey: 'nav.admin.tenants', exact: false, groupeKey: 'nav.groupe.configuration' },
   { path: '/admin/journal-audit', labelKey: 'nav.admin.journalAudit', exact: false, groupeKey: 'nav.groupe.conformite' },
   { path: '/admin/comptes', labelKey: 'nav.admin.comptes', exact: false, groupeKey: 'nav.groupe.configuration' },
+  { path: '/admin/recherche', labelKey: 'nav.admin.recherche', exact: false },
 ];
 
 export function ongletsPourRole(role: Role | undefined): OngletNav[] {

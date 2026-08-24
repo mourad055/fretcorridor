@@ -61,7 +61,8 @@
       "configuration": "Configuration",
       "tenants": "Tenants",
       "journalAudit": "Audit log",
-      "comptes": "Accounts"
+      "comptes": "Accounts",
+      "recherche": "Search"
     }
   },
   "enum": {

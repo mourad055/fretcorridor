@@ -28,8 +28,10 @@ describe('ShellSidebarComponent', () => {
     expect(titres.map((t) => t.nativeElement.textContent.trim())).toEqual(['Conformité', 'Finance', 'Configuration']);
 
     const links = fixture.debugElement.queryAll(By.css('.shell-sidebar__link'));
-    expect(links).toHaveLength(7);
-    expect(links.map((l) => l.nativeElement.textContent.trim())).toContain('Comptes');
+    expect(links).toHaveLength(8);
+    expect(links.map((l) => l.nativeElement.textContent.trim())).toEqual(
+      expect.arrayContaining(['Comptes', 'Recherche'])
+    );
   });
 
   it("n'affiche aucun titre de groupe pour le rôle Transporteur (onglets non groupés)", () => {
