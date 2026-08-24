@@ -9,13 +9,18 @@
     </div>
 
     <ng-container *ngIf="!loading()">
+      <p class="fc-msg" *ngIf="missionIdFiltre() as missionId">
+        Filtré sur la mission {{ missionId }} —
+        <a [routerLink]="[]" (click)="reinitialiserFiltre()">Voir tout le territoire</a>
+      </p>
+
       <app-totaux-ecritures [totaux]="totaux()" />
       <div class="fc-actions">
-        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()" [disabled]="ecritures().length === 0">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()" [disabled]="ecrituresAffichees().length === 0">
           Exporter en CSV
         </button>
       </div>
-      <app-ecritures-table [ecritures]="ecritures()" />
+      <app-ecritures-table [ecritures]="ecrituresAffichees()" />
 
       <h3 class="fc-panel__title">Paiements en espèces</h3>
       <app-especes-table [paiements]="paiementsEspeces()" />

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { MissionsListComponent } from './missions-list.component';
 import { environment } from '../../../../environments/environment';
@@ -24,7 +25,7 @@ describe('MissionsListComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [MissionsListComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests(), provideRouter([])],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
@@ -96,6 +97,11 @@ describe('MissionsListComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Mission mission-1');
     expect(fixture.nativeElement.textContent).toContain('Douala → Yaoundé');
+
+    const lienEcritures: HTMLAnchorElement = fixture.debugElement.query(By.css('.mission-detail a')).nativeElement;
+    expect(lienEcritures.getAttribute('href')).toContain('/bureau/rapport-financier');
+    expect(lienEcritures.getAttribute('href')).toContain('missionId=mission-1');
+    expect(lienEcritures.textContent).toContain('Voir les écritures');
   });
 
   it('déclenche le téléchargement du CSV export en cliquant sur Exporter', () => {

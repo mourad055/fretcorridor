@@ -90,6 +90,9 @@
       </dl>
       <div class="fc-actions">
         <button type="button" class="fc-btn fc-btn--ghost" (click)="fermerDetail()">Fermer</button>
+        <a class="fc-btn fc-btn--primary" [routerLink]="['/bureau/rapport-financier']" [queryParams]="{ missionId: mission.id }">
+          Voir les écritures de cette mission
+        </a>
       </div>
     </div>
   </section>

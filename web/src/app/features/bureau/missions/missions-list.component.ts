@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -18,7 +19,7 @@ import {
 @Component({
   selector: 'app-missions-list',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, FormsModule, StatusBadgeComponent, TranslatePipe],
+  imports: [CommonModule, RouterLink, PageShellComponent, FormsModule, StatusBadgeComponent, TranslatePipe],
   templateUrl: './missions-list.component.html',
 })
 export class MissionsListComponent implements OnInit {
