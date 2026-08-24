@@ -59,16 +59,45 @@
   margin-left: auto;
 }
 
-.shell__main {
+/* Sidebar desktop (audit UX 2026-08-23, §2.1) : cachée par défaut, activée
+   au-delà de --fc-bp-md (860px) — sous ce seuil, app-shell-nav (onglets
+   horizontaux, repli existant) reste le seul mode de navigation. */
+.shell__nav-mobile {
+  display: block;
+}
+
+.shell__sidebar {
+  display: none;
+}
+
+.shell__body {
   flex: 1;
   display: flex;
   justify-content: center;
+  gap: var(--fc-space-6);
+  max-width: var(--fc-content-width);
+  width: 100%;
+  margin: 0 auto;
   padding: var(--fc-page-padding-y) var(--fc-page-padding-x);
+}
+
+.shell__main {
+  flex: 1;
+  min-width: 0;
 }
 
 .shell__main-inner {
   width: 100%;
-  max-width: var(--fc-content-width);
+}
+
+@media (min-width: 860px) {
+  .shell__nav-mobile {
+    display: none;
+  }
+
+  .shell__sidebar {
+    display: block;
+  }
 }
 
 @media (max-width: 480px) {

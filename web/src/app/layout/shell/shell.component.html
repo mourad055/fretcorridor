@@ -20,11 +20,15 @@
     </div>
   </header>
 
-  <app-shell-nav />
+  <app-shell-nav class="shell__nav-mobile" />
 
-  <main class="shell__main">
-    <div class="shell__main-inner">
-      <router-outlet />
-    </div>
-  </main>
+  <div class="shell__body">
+    <app-shell-sidebar class="shell__sidebar" />
+
+    <main class="shell__main">
+      <div class="shell__main-inner">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
 </div>

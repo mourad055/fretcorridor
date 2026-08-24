@@ -33,6 +33,13 @@
     "navAriaLabel": "Main navigation"
   },
   "nav": {
+    "groupe": {
+      "supervision": "Oversight",
+      "exploitation": "Operations",
+      "conformite": "Compliance",
+      "finance": "Finance",
+      "configuration": "Configuration"
+    },
     "bureau": {
       "axes": "Routes",
       "missions": "Matched loads",

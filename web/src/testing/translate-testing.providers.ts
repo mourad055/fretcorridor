@@ -40,6 +40,13 @@ const TRADUCTIONS_TEST_FR = {
     navAriaLabel: 'Navigation principale',
   },
   nav: {
+    groupe: {
+      supervision: 'Supervision',
+      exploitation: 'Exploitation',
+      conformite: 'Conformité',
+      finance: 'Finance',
+      configuration: 'Configuration',
+    },
     bureau: {
       axes: 'Axes',
       missions: 'Missions appariées',

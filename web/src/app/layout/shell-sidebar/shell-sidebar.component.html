@@ -1,0 +1,17 @@
+<nav class="shell-sidebar" [attr.aria-label]="'shell.navAriaLabel' | translate">
+  <div class="shell-sidebar__groupe" *ngFor="let groupe of groupes()">
+    <h2 class="shell-sidebar__groupe-titre" *ngIf="groupe.groupeKey">{{ groupe.groupeKey | translate }}</h2>
+    <ul class="shell-sidebar__liste">
+      <li *ngFor="let onglet of groupe.items">
+        <a
+          class="shell-sidebar__link"
+          [routerLink]="onglet.path"
+          [routerLinkActive]="'shell-sidebar__link--active'"
+          [routerLinkActiveOptions]="{ exact: onglet.exact }"
+        >
+          {{ onglet.labelKey | translate }}
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
