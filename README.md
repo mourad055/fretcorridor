@@ -26,10 +26,18 @@ Ce dépôt reflète le développement actif du périmètre **Web** (Personne 2).
 
 ```bash
 cd infra
-docker compose up -d
+docker compose up -d   # ou "docker-compose up -d" si le plugin V2 n'est pas installé
 ```
 
 Démarre PostgreSQL 16 + PostGIS, Redis 7, Kafka + Zookeeper, MinIO.
+
+Puis, pour démarrer les microservices Spring Boot nécessaires aux tests (mobile Client + Chauffeur) :
+
+```bash
+cd infra
+./start-backend.sh   # démarre les 12 services en arrière-plan, logs dans infra/logs/
+./stop-backend.sh    # pour tout arrêter
+```
 
 ## Contrats d'API
 
