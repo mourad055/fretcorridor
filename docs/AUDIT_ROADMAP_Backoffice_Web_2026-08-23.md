@@ -106,7 +106,7 @@ Rien ici n'est visible du grand public mais tout le reste en dépend.
 
 | # | Action | Rôle |
 |---|---|---|
-| 1.1 | **Module de gestion des comptes utilisateurs** (créer / désactiver / réactiver / réinitialiser le moyen d'authentification / changer de rôle, par tenant) | Admin |
+| 1.1 | **Module de gestion des comptes utilisateurs** (créer / désactiver / réactiver / réinitialiser le moyen d'authentification / changer de rôle, par tenant) | Admin | ✅ Statut/rôles faits (2026-08-24) — lister/désactiver/réactiver/changer les rôles, via 3 nouveaux endpoints `service-ida` (`/api/ida/comptes`) relayés par la gateway. **Création de compte et réinitialisation de PIN volontairement hors périmètre** — voir §3 |
 | 1.2 | Tenants : édition, statut actif/inactif, vue détail (acteurs rattachés), recherche | Admin | ✅ Édition/statut/recherche faits (2026-08-23) — vue détail (acteurs rattachés) reste à faire, dépend du futur module comptes (1.1) |
 | 1.3 | Écran Observatoire de marché (courbes médiane/IQR par axe, indicateur de déséquilibre) | Bureau | ✅ Fait (2026-08-23) — chiffres bruts pour l'instant (pas de courbe, dataviz repoussée à 2.3), estimation de marché incluse |
 | 1.4 | Écran Alertes de seuil (liste/bannière des alertes actives par axe) | Bureau | ✅ Fait (2026-08-23) — création/liste/suppression, état évaluable/déclenchée |
@@ -170,3 +170,13 @@ Recommandation : **`ngx-charts`** (composants Angular natifs, rendu SVG donc th�
 
 - Les écarts de sécurité backend déjà documentés dans `docs/AUDIT_CDC_v4_complet_2026-08-19.md` et `docs/AUDIT_dev_Web_2026-08-20.md` (ex. `RoleProtectedSampleController` toujours ouvert, secret JWT `service-ida` non paramétrable) ne sont pas répétés ici — ils restent pilotés par ces documents. Le point 0.2 (transporteurId) est repris ici uniquement parce qu'il conditionne directement la fiabilité de l'UI paiement.
 - Aucune proposition ne concerne les applications mobiles (`mobile/app_client`, `mobile/app_chauffeur_transporteur`) ni le Moteur — hors périmètre de cet audit, qui porte exclusivement sur `web/`.
+- **Réinitialisation du PIN d'un compte (1.1)** : nécessiterait un flux OTP/SMS dédié pour rester sûr (un admin ne doit jamais pouvoir lire/définir directement le PIN d'un tiers) — non construit, à concevoir séparément si le besoin se confirme.
+- **Création de compte depuis l'écran Admin (1.1)** : l'inscription/enrôlement passe déjà par des flux dédiés (inscription légère mobile, enrôlement agent terrain) ; dupliquer un chemin de création côté Admin suppose de décider quel flux reproduire (OTP SMS ?), non tranché ici.
+
+## 8. Découverte notable en cours de Phase 1 (2026-08-24, hors scope initial de l'audit du 23/08)
+
+En construisant 1.1 (gestion des comptes), investigation du gateway a révélé que **l'écran KYC Admin (`/admin/kyc`) tourne intégralement sur un mock** : `KycPort` est toujours lié à `MockIdaKycAdapter` (3 dossiers codés en dur, jamais persistés), alors que `AUDIT_CDC_v4_complet_2026-08-19.md` ne le signalait pas comme tel. Un admin qui valide/rejette un KYC aujourd'hui agit sur des données de démonstration, pas sur de vrais dossiers `service-ida`.
+
+Contrairement aux items 0.1/0.2 (Phase 0), **rien n'interdit architecturalement de corriger ceci** : le pattern gateway → service-ida en appel synchrone est déjà utilisé en production ailleurs (`RealIdaProfilAdapter`, `RealAffiliationAdapter`, et le nouveau `RealIdaCompteAdminAdapter` de ce commit) — c'est uniquement que personne n'a encore écrit l'équivalent `RealIdaKycAdapter` ni les endpoints service-ida associés (liste des KYC en attente par tenant + décision, distincts des endpoints de complétion de profil déjà là dans `KycController`).
+
+**Non corrigé dans cette session** (scope déjà large pour une seule session) — proposé comme prochain chantier Phase 1/2 : ajouter à `service-ida` un pendant admin de `KycController` (liste par tenant + décision, avec journalisation), puis `RealIdaKycAdapter` côté gateway pour remplacer le mock. Même ampleur que 1.1, mêmes garde-fous (rôle ADMINISTRATION vérifié dans le JWT, tenant scoping).
