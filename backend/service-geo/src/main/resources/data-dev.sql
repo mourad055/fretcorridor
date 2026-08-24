@@ -33,3 +33,15 @@ VALUES
     ('20000000-0000-0000-0000-000000000004', 'N''Djamena - Garoua', '10000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000005', true, true, true,  '{}'::jsonb, 'tenant-bnft-ndjamena', now()),
     ('20000000-0000-0000-0000-000000000005', 'Garoua - N''Djamena', '10000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000004', true, true, false, '{}'::jsonb, 'tenant-bnft-ndjamena', now())
 ON CONFLICT (id) DO NOTHING;
+
+-- Axes MARKETPLACE_CM : tenant assigne par defaut a l'inscription publique
+-- chargeur (cf. Acteur.tenantId cote service-ida, "MARKETPLACE_CM par
+-- defaut"). Sans ca, un compte Chargeur fraichement auto-inscrit ne voit
+-- jamais aucun axe (le selecteur de dio_provider.dart/axes_provider.dart
+-- reste vide, aucune erreur affichee) - trouve le 24/08 en debug croise
+-- avec un coequipier dont le compte de test retombait sur ce tenant.
+INSERT INTO axe (id, nom, hub_origine_id, hub_destination_id, visibilite_active, matching_actif, paiement_actif, parametres, tenant_id, date_creation)
+VALUES
+    ('20000000-0000-0000-0000-000000000006', 'Douala - Yaoundé', '10000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000002', true, true, true, '{}'::jsonb, 'MARKETPLACE_CM', now()),
+    ('20000000-0000-0000-0000-000000000007', 'Yaoundé - Douala', '10000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000001', true, true, true, '{}'::jsonb, 'MARKETPLACE_CM', now())
+ON CONFLICT (id) DO NOTHING;
