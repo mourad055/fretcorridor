@@ -161,6 +161,7 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
               _label(t.champTelephone),
               IntlPhoneField(
                 initialCountryCode: 'CM',
+                disableLengthCheck: true,
                 dropdownTextStyle: const TextStyle(color: AppColors.texte),
                 decoration: _decoration('', Icons.phone).copyWith(hintText: null),
                 onChanged: (phone) => _telephoneComplet = phone.completeNumber,

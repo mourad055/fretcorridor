@@ -159,9 +159,24 @@ class PositionNotifier extends StateNotifier<PositionState> {
     }
 
     try {
-      final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
-      );
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 8),
+          ),
+        );
+      } on TimeoutException {
+        // Pas de fix haute precision dans le delai (frequent en interieur) -
+        // repli sur la derniere position connue plutot que de bloquer ce
+        // tick indefiniment et de ne jamais alimenter le suivi cote Client.
+        position = await Geolocator.getLastKnownPosition();
+      }
+      if (position == null) {
+        state = state.copyWith(erreur: 'Position GPS indisponible.');
+        return;
+      }
       final capture = PositionAEnvoyer(
         missionId: missionId,
         latitude: position.latitude,

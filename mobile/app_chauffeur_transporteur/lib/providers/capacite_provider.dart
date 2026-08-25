@@ -136,10 +136,16 @@ class CapaciteNotifier extends StateNotifier<CapaciteState> {
     }
     try {
       return await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 8),
+        ),
       );
     } catch (_) {
-      return null;
+      // Pas de fix frais dans le delai (frequent en interieur) - repli sur
+      // la derniere position connue (cache reseau/fused) plutot que de
+      // bloquer indefiniment la declaration de capacite.
+      return Geolocator.getLastKnownPosition();
     }
   }
 
