@@ -36,7 +36,13 @@
       "admin": "Administration"
     },
     "logout": "Log out",
-    "navAriaLabel": "Main navigation"
+    "navAriaLabel": "Main navigation",
+    "tenant": {
+      "bgftDouala": "BGFT Douala",
+      "bnftNdjamena": "BNFT N'Djamena",
+      "flysoft": "Flysoft",
+      "marketplace": "Cameroon marketplace"
+    }
   },
   "nav": {
     "groupe": {

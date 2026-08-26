@@ -44,6 +44,12 @@ const TRADUCTIONS_TEST_FR = {
     },
     logout: 'Déconnexion',
     navAriaLabel: 'Navigation principale',
+    tenant: {
+      bgftDouala: 'BGFT Douala',
+      bnftNdjamena: "BNFT N'Djamena",
+      flysoft: 'Flysoft',
+      marketplace: 'Marketplace Cameroun',
+    },
   },
   nav: {
     groupe: {

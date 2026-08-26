@@ -2,12 +2,13 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { HOME_ROUTE_BY_ROLE, Role, TenantOption } from '../../core/auth/auth.models';
 import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo.component';
 import { LangueSwitchComponent } from '../../shared/components/langue-switch/langue-switch.component';
 import { environment } from '../../../environments/environment';
+import { cleLibelleTenant } from '../../shared/utils/libelle-tenant';
 
 interface DemoAccount {
   labelKey: string;
@@ -49,8 +50,14 @@ export class LoginComponent {
 
   constructor(
     private readonly authService: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly translate: TranslateService
   ) {}
+
+  libelleTenant(tenantId: string): string {
+    const cle = cleLibelleTenant(tenantId);
+    return cle ? this.translate.instant(cle) : tenantId;
+  }
 
   submit(): void {
     this.errorMessage.set(null);

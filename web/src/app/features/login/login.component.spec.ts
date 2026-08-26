@@ -149,7 +149,8 @@ describe('LoginComponent', () => {
 
     expect(navigateSpy).not.toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Choisir un bureau');
-    expect(fixture.nativeElement.textContent).toContain('tenant-bnft-ndjamena');
+    expect(fixture.nativeElement.textContent).toContain("BNFT N'Djamena");
+    expect(fixture.nativeElement.textContent).toContain('BGFT Douala');
     expect(fixture.nativeElement.textContent).toContain('Bureau principal');
   });
 
