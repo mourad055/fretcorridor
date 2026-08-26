@@ -106,7 +106,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let etat of alertes()">
+        <tr *ngFor="let etat of alertesAffichees()">
           <td>{{ libelleAxe(etat.alerte.axeId) }}</td>
           <td>{{ libelleIndicateurObservatoire(etat.alerte.indicateur) }}</td>
           <td>{{ libelleComparateur(etat.alerte.comparateur) }} {{ etat.alerte.seuil }}</td>
@@ -121,6 +121,7 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="pageAlertes()" [total]="alertes().length" [taillePage]="taillePage" (pageChange)="pageAlertes.set($event)" />
 
     <form class="observatoire__nouvelle-alerte" (ngSubmit)="configurerAlerte()">
       <h3>Configurer une nouvelle alerte</h3>

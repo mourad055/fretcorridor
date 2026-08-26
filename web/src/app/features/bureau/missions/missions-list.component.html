@@ -43,7 +43,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let mission of missions()">
+        <tr *ngFor="let mission of missionsAffiches()">
           <td>{{ mission.transporteurNom }}</td>
           <td>{{ mission.axeId }}</td>
           <td>{{ mission.origine }}</td>
@@ -63,6 +63,7 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="page()" [total]="missions().length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
 
     <div class="mission-detail fc-panel" *ngIf="missionSelectionnee() as mission">
       <h3 class="fc-panel__title">Mission {{ mission.id }}</h3>

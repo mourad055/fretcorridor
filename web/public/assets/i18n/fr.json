@@ -92,16 +92,22 @@
       "REJETE": "Rejeté"
     },
     "axeVisibilite": {
-      "ACTIVE": "Visible",
+      "ACTIVE": "Visible sur le corridor",
       "INACTIVE": "Masqué"
     },
     "axeMatching": {
-      "ACTIVE": "Matching actif",
-      "INACTIVE": "Matching inactif"
+      "ACTIVE": "Appariement auto",
+      "INACTIVE": "Appariement arrêté"
     },
     "axePaiement": {
-      "ACTIVE": "Paiement actif",
-      "INACTIVE": "Paiement inactif"
+      "ACTIVE": "Paiements ouverts",
+      "INACTIVE": "Paiements fermés"
+    },
+    "axeLegende": {
+      "priorite": "Couleur dominante sur la carte : paiements > appariement > visible",
+      "visibilite": "Visible sur le corridor",
+      "matching": "Appariement auto",
+      "paiement": "Paiements ouverts"
     },
     "ecritureStatut": {
       "VALIDE": "Validée",

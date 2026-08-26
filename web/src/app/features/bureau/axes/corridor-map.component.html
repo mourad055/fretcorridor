@@ -1,9 +1,21 @@
 <div class="corridor-map">
-  <ul class="corridor-map__legend" aria-label="Légende de la carte">
-    <li><span class="corridor-map__swatch corridor-map__swatch--visibilite"></span>Visibilité</li>
-    <li><span class="corridor-map__swatch corridor-map__swatch--matching"></span>Matching</li>
-    <li><span class="corridor-map__swatch corridor-map__swatch--paiement"></span>Paiement</li>
-  </ul>
+  <div class="corridor-map__legend-block">
+    <p class="corridor-map__legend-hint">{{ 'enum.axeLegende.priorite' | translate }}</p>
+    <ul class="corridor-map__legend" [attr.aria-label]="'enum.axeLegende.priorite' | translate">
+      <li>
+        <span class="corridor-map__swatch corridor-map__swatch--paiement"></span>
+        {{ 'enum.axeLegende.paiement' | translate }}
+      </li>
+      <li>
+        <span class="corridor-map__swatch corridor-map__swatch--matching"></span>
+        {{ 'enum.axeLegende.matching' | translate }}
+      </li>
+      <li>
+        <span class="corridor-map__swatch corridor-map__swatch--visibilite"></span>
+        {{ 'enum.axeLegende.visibilite' | translate }}
+      </li>
+    </ul>
+  </div>
 
   <div class="corridor-map__frame">
     <div #mapHost class="corridor-map__host" role="img" aria-label="Carte du corridor CEMAC"></div>

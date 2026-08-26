@@ -1,10 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { ConfigurationsService } from './configurations.service';
 import { Configuration } from '../../../shared/models/configuration.models';
 import { ConfirmationService } from '../../../shared/services/confirmation.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
+
+const TAILLE_PAGE = 20;
 
 /**
  * FE-ADM-03/EF-ADM-06 : chaque redéfinition crée une nouvelle version, jamais
@@ -15,7 +19,7 @@ import { ConfirmationService } from '../../../shared/services/confirmation.servi
 @Component({
   selector: 'app-configurations',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, FormsModule],
+  imports: [CommonModule, PageShellComponent, FormsModule, PaginationComponent],
   templateUrl: './configurations.component.html',
 })
 export class ConfigurationsComponent implements OnInit {
@@ -29,6 +33,12 @@ export class ConfigurationsComponent implements OnInit {
   readonly consulte = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
+  readonly pageCatalogue = signal(1);
+  readonly pageHistorique = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly catalogueAffiche = computed(() => paginer(this.catalogue(), this.pageCatalogue(), this.taillePage));
+  readonly historiqueAffiche = computed(() => paginer(this.historique(), this.pageHistorique(), this.taillePage));
+
   constructor(
     private readonly configurationsService: ConfigurationsService,
     private readonly confirmationService: ConfirmationService
@@ -40,6 +50,7 @@ export class ConfigurationsComponent implements OnInit {
 
   private chargerCatalogue(): void {
     this.catalogueLoading.set(true);
+    this.pageCatalogue.set(1);
     this.configurationsService.catalogue().subscribe({
       next: (catalogue) => {
         this.catalogue.set(catalogue);
@@ -63,6 +74,7 @@ export class ConfigurationsComponent implements OnInit {
     }
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.pageHistorique.set(1);
     this.configurationsService.historique(this.cle()).subscribe({
       next: (historique) => {
         this.historique.set(historique);

@@ -27,7 +27,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let capacite of capacites()">
+        <tr *ngFor="let capacite of capacitesAffiches()">
           <td>{{ capacite.vehicule }}</td>
           <td>{{ capacite.origine }}</td>
           <td>{{ capacite.destination }}</td>
@@ -38,5 +38,6 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="page()" [total]="capacites().length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
   </section>
 </app-page-shell>

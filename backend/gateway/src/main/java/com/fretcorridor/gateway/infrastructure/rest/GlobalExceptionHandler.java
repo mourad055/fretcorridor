@@ -24,6 +24,7 @@ import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
 import com.fretcorridor.gateway.domain.not.NotServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.KycDossierIntrouvableException;
+import com.fretcorridor.gateway.domain.kyc.KycServiceIndisponibleException;
 import com.fretcorridor.gateway.infrastructure.rest.ida.ProfilController;
 import com.fretcorridor.gateway.infrastructure.rest.kyc.KycController;
 import org.springframework.http.HttpStatus;
@@ -68,6 +69,13 @@ public class GlobalExceptionHandler {
                 .orElse("Requête invalide");
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
         problem.setTitle("Requête invalide");
+        return problem;
+    }
+
+    @ExceptionHandler(KycServiceIndisponibleException.class)
+    public ProblemDetail handleKycServiceIndisponible(KycServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service KYC indisponible");
         return problem;
     }
 

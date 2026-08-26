@@ -8,7 +8,7 @@
     <div class="fc-filters">
       <div class="fc-filters__field">
         <label class="fc-filters__label" for="dossiers-tenant">Tenant</label>
-        <select id="dossiers-tenant" class="fc-filters__select" [ngModel]="tenantSelectionne()" (ngModelChange)="tenantSelectionne.set($event)">
+        <select id="dossiers-tenant" class="fc-filters__select" [ngModel]="tenantSelectionne()" (ngModelChange)="onTenantChange($event)">
           <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
         </select>
       </div>
@@ -37,7 +37,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let dossier of dossiers()">
+        <tr *ngFor="let dossier of dossiersAffiches()">
           <td>{{ dossier.missionId }}</td>
           <td>{{ libelleTypeDossier(dossier.type) | translate }}</td>
           <td>{{ libellePrioriteDossier(dossier.priorite) | translate }}</td>
@@ -66,6 +66,7 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="page()" [total]="dossiers().length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
 
     <div class="dossier-consolide fc-panel" *ngIf="dossierConsolide() as consolide">
       <h3 class="fc-panel__title">Dossier {{ consolide.dossier.id }}</h3>

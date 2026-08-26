@@ -8,6 +8,18 @@
   gap: var(--fc-space-3);
 }
 
+.corridor-map__legend-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--fc-space-2);
+}
+
+.corridor-map__legend-hint {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--fc-muted);
+}
+
 .corridor-map__legend {
   display: flex;
   flex-wrap: wrap;
@@ -33,16 +45,17 @@
   border-radius: 999px;
 }
 
+/* Alignés sur les badges actifs du tableau (neutral / primary / success). */
 .corridor-map__swatch--visibilite {
-  background: #a1a1aa;
+  background: var(--fc-muted);
 }
 
 .corridor-map__swatch--matching {
-  background: #d40f16;
+  background: var(--fc-primary);
 }
 
 .corridor-map__swatch--paiement {
-  background: #067647;
+  background: var(--fc-success);
 }
 
 .corridor-map__frame {

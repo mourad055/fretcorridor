@@ -6,6 +6,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { DossiersService } from './dossiers.service';
 import { Dossier, DossierConsolide } from '../../../shared/models/dossier.models';
 import { ConfirmationService } from '../../../shared/services/confirmation.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
 import {
   StatusBadgeComponent,
   dossierStatusVariant,
@@ -14,6 +16,8 @@ import {
   libellePrioriteDossier,
   libelleEtapeEtat,
 } from '../../../shared/components/status-badge/status-badge.component';
+
+const TAILLE_PAGE = 20;
 
 /**
  * FE-ADM-01/02 (Sprint 10) : un admin traite un dossier de bout en bout —
@@ -24,7 +28,7 @@ import {
 @Component({
   selector: 'app-dossiers',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, FormsModule, StatusBadgeComponent, TranslatePipe],
+  imports: [CommonModule, PageShellComponent, FormsModule, StatusBadgeComponent, TranslatePipe, PaginationComponent],
   templateUrl: './dossiers.component.html',
 })
 export class DossiersComponent {
@@ -47,6 +51,11 @@ export class DossiersComponent {
   readonly escaladeEnCours = signal(false);
   readonly decisionValide = computed(() => this.decisionTexte().trim().length > 0 && this.motifTexte().trim().length > 0);
 
+  // Pagination (audit UX 2026-08-23, §3.3).
+  readonly page = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly dossiersAffiches = computed(() => paginer(this.dossiers(), this.page(), this.taillePage));
+
   /** KPIs en tête d'écran (audit UX 2026-08-23, §1.6). */
   readonly nombreEnAttente = computed(() => this.dossiers().filter((d) => d.statut !== 'CLOS').length);
   readonly nombreEnRetard = computed(() => {
@@ -59,9 +68,15 @@ export class DossiersComponent {
     private readonly confirmationService: ConfirmationService
   ) {}
 
+  onTenantChange(tenant: string): void {
+    this.tenantSelectionne.set(tenant);
+    this.page.set(1);
+  }
+
   consulterFileDeTravail(): void {
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.page.set(1);
     this.dossiersService.fileDeTravail(this.tenantSelectionne()).subscribe({
       next: (dossiers) => {
         this.dossiers.set(dossiers);

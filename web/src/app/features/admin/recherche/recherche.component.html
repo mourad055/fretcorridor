@@ -35,7 +35,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let resultat of resultats()">
+        <tr *ngFor="let resultat of resultatsAffiches()">
           <td>{{ libelleType(resultat.type) }}</td>
           <td>{{ resultat.titre }}</td>
           <td>{{ resultat.detail }}</td>
@@ -43,5 +43,6 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="page()" [total]="(resultats() ?? []).length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
   </section>
 </app-page-shell>

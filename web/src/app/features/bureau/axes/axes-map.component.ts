@@ -1,11 +1,15 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AxeService } from './axe.service';
 import { Axe } from './axe.models';
 import { CorridorMapComponent } from './corridor-map.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
 import { StatusBadgeComponent, axeVisibiliteVariant, axeMatchingVariant, axePaiementVariant, libelleAxeVisibilite, libelleAxeMatching, libelleAxePaiement } from '../../../shared/components/status-badge/status-badge.component';
+
+const TAILLE_PAGE = 20;
 
 /**
  * FE-BUR-01 (Sprint 3) : un Bureau voit une carte des axes de son tenant.
@@ -18,7 +22,7 @@ import { StatusBadgeComponent, axeVisibiliteVariant, axeMatchingVariant, axePaie
 @Component({
   selector: 'app-axes-map',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, CorridorMapComponent, StatusBadgeComponent, TranslatePipe],
+  imports: [CommonModule, PageShellComponent, CorridorMapComponent, StatusBadgeComponent, TranslatePipe, PaginationComponent],
   templateUrl: './axes-map.component.html',
   styleUrl: './axes-map.component.css',
 })
@@ -28,6 +32,10 @@ export class AxesMapComponent implements OnInit {
   readonly errorMessage = signal<string | null>(null);
   readonly axeSelectionneId = signal<string | null>(null);
 
+  readonly page = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly axesAffiches = computed(() => paginer(this.axes(), this.page(), this.taillePage));
+
   selectionnerAxe(axeId: string): void {
     this.axeSelectionneId.update((actuel) => (actuel === axeId ? null : axeId));
   }
@@ -35,6 +43,7 @@ export class AxesMapComponent implements OnInit {
   constructor(private readonly axeService: AxeService) {}
 
   ngOnInit(): void {
+    this.page.set(1);
     this.axeService.list().subscribe({
       next: (axes) => {
         this.axes.set(axes);

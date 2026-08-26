@@ -92,16 +92,22 @@
       "REJETE": "Rejected"
     },
     "axeVisibilite": {
-      "ACTIVE": "Visible",
+      "ACTIVE": "Visible on the corridor",
       "INACTIVE": "Hidden"
     },
     "axeMatching": {
-      "ACTIVE": "Matching active",
-      "INACTIVE": "Matching inactive"
+      "ACTIVE": "Auto-matching on",
+      "INACTIVE": "Auto-matching off"
     },
     "axePaiement": {
-      "ACTIVE": "Payment active",
-      "INACTIVE": "Payment inactive"
+      "ACTIVE": "Payments open",
+      "INACTIVE": "Payments closed"
+    },
+    "axeLegende": {
+      "priorite": "Dominant map colour: payments > matching > visible",
+      "visibilite": "Visible on the corridor",
+      "matching": "Auto-matching on",
+      "paiement": "Payments open"
     },
     "ecritureStatut": {
       "VALIDE": "Cleared",

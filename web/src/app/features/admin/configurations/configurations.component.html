@@ -22,7 +22,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let configuration of catalogue()">
+        <tr *ngFor="let configuration of catalogueAffiche()">
           <td>{{ configuration.cle }}</td>
           <td>{{ configuration.valeur }}</td>
           <td>{{ configuration.version }}</td>
@@ -34,6 +34,7 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="pageCatalogue()" [total]="catalogue().length" [taillePage]="taillePage" (pageChange)="pageCatalogue.set($event)" />
 
     <h3>Historique et modification</h3>
     <div class="fc-filters">
@@ -60,7 +61,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let version of historique()">
+        <tr *ngFor="let version of historiqueAffiche()">
           <td>{{ version.version }}</td>
           <td>{{ version.valeur }}</td>
           <td>{{ version.auteur }}</td>
@@ -68,6 +69,7 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="pageHistorique()" [total]="historique().length" [taillePage]="taillePage" (pageChange)="pageHistorique.set($event)" />
 
     <div class="field">
       <label class="field__label" for="configuration-valeur">Nouvelle valeur</label>

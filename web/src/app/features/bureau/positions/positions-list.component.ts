@@ -1,9 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { PositionService } from './position.service';
 import { Position, formatAge } from './position.models';
 import { PositionsMapComponent } from './positions-map.component';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
+
+const TAILLE_PAGE = 20;
 
 /**
  * FE-TRK-04 / RG-043 (Sprint 6) : un Bureau voit le suivi temps réel de son
@@ -17,7 +21,7 @@ import { PositionsMapComponent } from './positions-map.component';
 @Component({
   selector: 'app-positions-list',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, PositionsMapComponent],
+  imports: [CommonModule, PageShellComponent, PositionsMapComponent, PaginationComponent],
   templateUrl: './positions-list.component.html',
 })
 export class PositionsListComponent implements OnInit {
@@ -25,9 +29,14 @@ export class PositionsListComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
 
+  readonly page = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly positionsAffiches = computed(() => paginer(this.positions(), this.page(), this.taillePage));
+
   constructor(private readonly positionService: PositionService) {}
 
   ngOnInit(): void {
+    this.page.set(1);
     this.positionService.list().subscribe({
       next: (positions) => {
         this.positions.set(positions);

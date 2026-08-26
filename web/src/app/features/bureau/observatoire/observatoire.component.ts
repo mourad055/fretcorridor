@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
@@ -6,10 +6,14 @@ import { AxeService } from '../axes/axe.service';
 import { Axe } from '../axes/axe.models';
 import { ObservatoireService } from './observatoire.service';
 import { AlerteSeuil, Comparateur, EtatAlerte, Indicateur, ObservatoireAxe } from './observatoire.models';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
 import {
   libelleComparateur,
   libelleIndicateurObservatoire,
 } from '../../../shared/components/status-badge/status-badge.component';
+
+const TAILLE_PAGE = 20;
 
 const INDICATEURS: Indicateur[] = ['NOMBRE_MISSIONS', 'PRIX_MEDIANE', 'TAUX_DESEQUILIBRE_DIRECTIONNEL'];
 const COMPARATEURS: Comparateur[] = ['SUPERIEUR', 'INFERIEUR'];
@@ -25,7 +29,7 @@ const COMPARATEURS: Comparateur[] = ['SUPERIEUR', 'INFERIEUR'];
 @Component({
   selector: 'app-observatoire',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageShellComponent],
+  imports: [CommonModule, FormsModule, PageShellComponent, PaginationComponent],
   templateUrl: './observatoire.component.html',
 })
 export class ObservatoireComponent implements OnInit {
@@ -49,6 +53,10 @@ export class ObservatoireComponent implements OnInit {
   readonly nouvelleAlerteIndicateur = signal<Indicateur>('NOMBRE_MISSIONS');
   readonly nouvelleAlerteComparateur = signal<Comparateur>('SUPERIEUR');
   readonly nouvelleAlerteSeuil = signal<number | null>(null);
+
+  readonly pageAlertes = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly alertesAffichees = computed(() => paginer(this.alertes(), this.pageAlertes(), this.taillePage));
 
   constructor(
     private readonly axeService: AxeService,
@@ -92,6 +100,7 @@ export class ObservatoireComponent implements OnInit {
 
   private chargerAlertes(): void {
     this.loadingAlertes.set(true);
+    this.pageAlertes.set(1);
     this.observatoireService.etatAlertes().subscribe({
       next: (etats) => {
         this.alertes.set(etats);
