@@ -101,15 +101,21 @@ class AffectationL1ServiceTest {
         assertThat(rang1.missionId()).isNotNull();
         assertThat(rang1.motifClassement()).isEqualTo("Affectation optimale L1 (Kuhn-Munkres)");
 
+        // Le classement 2e/3e reste base sur le cout composite (matrice
+        // service-mat, ligne 74-78 ci-dessus : intermediaire=20000 <
+        // plusChere=30000), mais le PRIX affiche vient desormais d'un vrai
+        // calcul tarifaire (meme axe/type de vehicule/poids pour les 3
+        // candidats de ce test -> meme prix tarife pour les 2 alternatives,
+        // contrairement a l'ancien score de cout qui, lui, differait).
         PropositionEmiseEvent rang2 = propositions.stream().filter(p -> p.rang() == 2).findFirst().orElseThrow();
         assertThat(rang2.capaciteId()).isEqualTo(capaciteIntermediaire);
         assertThat(rang2.missionId()).isNull();
-        assertThat(rang2.prixTransport()).isEqualByComparingTo("20000");
+        assertThat(rang2.prixTransport()).isEqualByComparingTo("10000");
 
         PropositionEmiseEvent rang3 = propositions.stream().filter(p -> p.rang() == 3).findFirst().orElseThrow();
         assertThat(rang3.capaciteId()).isEqualTo(capacitePlusChere);
         assertThat(rang3.missionId()).isNull();
-        assertThat(rang3.prixTransport()).isEqualByComparingTo("30000");
+        assertThat(rang3.prixTransport()).isEqualByComparingTo("10000");
     }
 
     @Test
