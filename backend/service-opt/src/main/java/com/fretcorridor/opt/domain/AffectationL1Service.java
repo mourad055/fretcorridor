@@ -325,14 +325,26 @@ public class AffectationL1Service {
 
     /**
      * RG-039/EF-MKT-07 : jusqu'à 2 alternatives supplémentaires (rang 2/3),
-     * classées par coût croissant parmi les candidats non retenus de cette
-     * demande. Purement informationnelles -- aucune Affectation créée, prix
-     * estimé (pas ferme, RG-041) directement dérivé du coût composite
-     * (service-mat), sans recalcul tarification/itinéraire Valhalla pour
-     * limiter le surcoût réseau sur des candidats qui peuvent ne jamais être
-     * acceptés. missionId volontairement null -- distingue une vraie
-     * affectation committée (rang 1) d'une simple alternative (cf
-     * Proposition.missionId, service-mkt, colonne nullable).
+     * classées par coût composite croissant parmi les candidats non retenus
+     * de cette demande (le coût composite sert uniquement à les CLASSER,
+     * jamais à les CHIFFRER). Purement informationnelles -- aucune
+     * Affectation créée, prix estimé (pas ferme, RG-041) recalculé via
+     * TarificationL4Service sans itinéraire Valhalla (distanceMetres=null)
+     * pour limiter le surcoût réseau sur des candidats qui peuvent ne jamais
+     * être acceptés -- un régime FORFAITAIRE_VEHICULE produit quand même un
+     * vrai prix sans distance ; seul un régime POIDS_TAXABLE repasse alors en
+     * mode dégradé, auquel cas l'alternative est omise plutôt que de publier
+     * un prix inventé (ENF-DIS-04).
+     *
+     * BUG CORRIGE (26/08) : publiait auparavant BigDecimal.valueOf(cout) --
+     * le score composite [0,1] pondéré (service-mat) lui-même, jamais un prix
+     * en XAF -- d'où des propositions "2e/3e meilleur prix" affichées à ~2.2
+     * XAF côté app Client à côté d'un rang 1 à plusieurs dizaines de milliers
+     * de XAF.
+     *
+     * missionId volontairement null -- distingue une vraie affectation
+     * committée (rang 1) d'une simple alternative (cf Proposition.missionId,
+     * service-mkt, colonne nullable).
      */
     private void publierAlternatives(UUID demandeId, DemandeAvecCandidats demande, double[] coutsLigne,
                                       List<UUID> capacitesReference, UUID[] cycleMatchingIdsLigne, int indiceRetenu) {
@@ -352,6 +364,17 @@ public class AffectationL1Service {
 
         int rang = 2;
         for (CandidatAlternatif candidat : autres.stream().limit(2).toList()) {
+            CandidatCoutDto candidatDto = demande.candidats().get(candidat.indice());
+            TarificationResultat tarification = tarificationL4Service.calculer(
+                    demande.axeId(), candidatDto.typeVehicule(), demande.poidsTaxableKg(), null, BigDecimal.ZERO);
+            if (tarification.modeDegrade()) {
+                // Pas de barème forfaitaire applicable sans distance -- on
+                // n'invente jamais de prix (ENF-DIS-04), cette alternative
+                // est simplement omise plutôt que d'afficher un prix bidon.
+                rang++;
+                continue;
+            }
+
             PropositionEmiseEvent alternative = new PropositionEmiseEvent(
                     UUID.randomUUID(),
                     cycleMatchingIdsLigne[candidat.indice()],
@@ -361,8 +384,8 @@ public class AffectationL1Service {
                     demande.axeId(),
                     rang,
                     rang == 2 ? "2e meilleur prix" : "3e meilleur prix",
-                    BigDecimal.valueOf(candidat.cout()),
-                    null,
+                    tarification.prixTransport(),
+                    tarification.commissionPlateforme(),
                     "XAF",
                     0,
                     null,
