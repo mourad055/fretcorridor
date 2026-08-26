@@ -1,4 +1,4 @@
-# FretCorridor v4 — Transmission d'état (mise à jour 23 août 2026)
+# FretCorridor v4 — Transmission d'état (mise à jour 26 août 2026)
 
 ## Règle absolue (méthode de travail) — à respecter dans toute session
 
@@ -29,6 +29,128 @@ vérifier CDC/Plan d'Exécution avant toute décision qui touche à
 l'architecture ou au périmètre d'une fonctionnalité.
 
 ---
+
+> **Session diagnostic GPS + 2 bugs tenant + audit CDC complet (26 août)** —
+> suite directe des sessions des 24-25 août (résumées ci-dessous faute
+> d'avoir été consignées ici sur le moment ; détail complet dans
+> `recap-session-2026-08-24.md`, racine du dépôt).
+>
+> **Résumé 25 août, jamais noté ici** : validation téléphone — un premier
+> correctif (`disableLengthCheck: true` sur `IntlPhoneField`, les 5 écrans
+> login/inscription des 2 apps + destinataire) avait désactivé toute
+> validation de longueur pour corriger un rejet silencieux, alors que la
+> librairie applique déjà la bonne longueur par pays nativement. Corrigé
+> deux fois de suite sur retour explicite de l'utilisatrice avant de
+> revenir aux réglages par défaut. Repli `getLastKnownPosition()` avant
+> `getCurrentPosition()` ajouté côté `capacite_provider.dart` et
+> `position_provider.dart` (un fix `getCurrentPosition` haute précision
+> pouvait rester bloqué indéfiniment en intérieur).
+>
+> **26 août — diagnostic GPS "aucune position envoyée" : cause réelle
+> trouvée par élimination, PAS un bug de code.** Traces `debugPrint`
+> temporaires ajoutées à chaque étape de `_envoyerUnePosition()`
+> (`position_provider.dart`) pour observer en direct sur téléphone. Dès que
+> le backend (12 services) et le tunnel `adb reverse` sont réellement up,
+> le suivi fonctionne immédiatement (`getLastKnownPosition()` ~20ms,
+> `_envoyer -> true`, confirmé en base `service_flt.positions` toutes les
+> 30s) — le symptôme du 25/08 venait d'un backend resté arrêté après un
+> incident de sécurité (voir plus bas), pas d'un défaut Flutter/Riverpod.
+> Traces retirées après confirmation, `gradle.properties` corrigé
+> (`-Xmx8G` → `-Xmx1536m` : la machine de test a 7,5 Go de RAM, un heap
+> Gradle de 8 Go déclenchait des kills OOM systématiques une fois le
+> backend + Docker déjà en mémoire — un process `claude` lui-même a été
+> tué une fois par l'OOM killer pendant cette session).
+>
+> **Mais un VRAI bug de suivi GPS existait quand même, trouvé ensuite en
+> testant côté app Client** : l'écran "Suivi" affichait "Position GPS pas
+> encore disponible" en boucle malgré une mission "Prise en charge" et des
+> positions bien reçues en base. Cause : `PositionController.getDerniere`
+> (service-flt) filtrait `GET /positions/mission/{id}/derniere` par le
+> `tenantId` du JWT du **lecteur** (le chargeur, ex. `MARKETPLACE_CM`),
+> alors que la position est enregistrée sous le tenant du **chauffeur**
+> qui exécute la mission (ex. `tenant-bgft-douala`) — même classe de bug
+> que celui déjà corrigé le 22 août sur `MissionController.getChronologiePourDemande`
+> (voir plus bas dans l'historique), pas encore traité côté service-flt à
+> l'époque. Corrigé en filtrant uniquement par `missionId` (UUID déjà
+> suffisant, non devinable), comme la chronologie le fait déjà. Commit
+> `fea3877`.
+>
+> **Rappel utile trouvé en creusant ce bug (concept tenant, souvent mal
+> compris)** : un tenant = un **Bureau de Gestion du Fret Terrestre**
+> institutionnel réel (BGFT = Douala), PAS un split par rôle
+> chargeur/transporteur — confirmé par l'ADR 0010/0011. En Phase 1, il
+> n'existe qu'un seul vrai Bureau (`tenant-bgft-douala`), auquel tout
+> chauffeur/transporteur est assigné automatiquement à l'inscription
+> (`AuthService.java`, service-ida, constante en dur, jamais un choix
+> utilisateur) ; `MARKETPLACE_CM` n'est pas un Bureau, juste la valeur par
+> défaut d'un chargeur auto-inscrit. Le S18 ("second bureau") vérifié ce
+> jour est un vrai mécanisme d'**affiliation a posteriori** (le Bureau
+> invite un compte existant vers son tenant, fonctionnel de bout en bout
+> web→gateway→service-ida→DB) mais **pas** la création d'un second Bureau
+> institutionnel complet — pas de choix de tenant à l'inscription nulle
+> part, mobile ou web.
+>
+> **Second bug trouvé en creusant une question sur les prix affichés** :
+> l'écran Propositions montrait un rang 1 à 50 000 XAF puis des rangs 2/3 à
+> "2.22 XAF" / "2.23 XAF" — absurde. Cause : `AffectationL1Service.publierAlternatives`
+> (service-opt) republiait `BigDecimal.valueOf(candidat.cout())`, le score
+> composite Kuhn-Munkres normalisé [0,1] (service-mat, sert uniquement à
+> **classer** les candidats) comme s'il s'agissait d'un prix XAF pour les
+> rangs 2/3, alors que le rang 1 utilise un vrai calcul tarifaire
+> (`TarificationL4Service`). Corrigé pour recalculer un vrai prix pour les
+> alternatives aussi (sans itinéraire Valhalla, `distanceMetres=null`,
+> même intention réseau déjà documentée) ; alternative omise plutôt
+> qu'inventée si le régime de tarification repasse en mode dégradé
+> (ENF-DIS-04). Commit `baf8a30`. **A cassé `AffectationL1ServiceTest`**
+> (le mock attendait encore l'ancien score comme prix) — réparé dans la
+> foulée, commit `1226fa4` : avec un même axe/type de véhicule pour tous
+> les candidats du test, le vrai prix tarifé est désormais identique pour
+> les 2 alternatives (attendu, le prix dépend du poids/distance/type de
+> véhicule, pas de la capacité précise choisie).
+>
+> **Audit CDC complet en 3 volets parallèles** (background agents,
+> re-vérification indépendante du code, aucune confiance aveugle dans les
+> audits précédents) : backend/moteur, mobile (2 apps), web. Résultat
+> détaillé : `AUDIT_CDC_v4_complet_2026-08-26.md` (racine du dépôt).
+> Verdict global : les 5 points ouverts par l'audit du 23/08 tous résolus,
+> S17 (observatoire marché) passé d'absent à fait côté web depuis le
+> 23/08, S18/S19/S16 mobile confirmés démockés. Manques inchangés : S13
+> (connecteurs flotte), S14 (paiement MoMo/Orange réel — toujours
+> `MockPrestatairePaiementAdapter`), S20 (export PDF/Excel — CSV
+> seulement), suivi GPS mobile toujours pas un vrai service arrière-plan
+> Android, photo de litige chauffeur jamais transmise (pas d'endpoint
+> upload service-adm).
+>
+> **`dev` synchronisé pendant cette session** : 3 commits d'un coéquipier
+> récupérés par fast-forward propre (`1226fa4..4835894`, aucun conflit) —
+> migration `V9__corriger_tenant_id_axes_selon_data_dev.sql` (service-geo,
+> corrige des axes de démo mal tenantés), KYC réel côté gateway/service-ida
+> (`RealIdaKycAdapter` remplace le mock, `KycAdminController`), portail
+> Bureau : carte OSRM pour les axes, pagination, légende, libellé tenant
+> lisible (`libelle-tenant.ts`, affiche "BGFT Douala" au lieu de
+> `MARKETPLACE_CM`/`tenant-bgft-douala` bruts).
+>
+> **Incident de sécurité pendant cette session, transparence totale** :
+> des commandes `adb` destinées à l'écran de connexion de l'app ont atterri
+> par erreur dans le volet de réponse rapide WhatsApp d'une notification,
+> avec un numéro de téléphone pré-rempli à côté d'un bouton d'envoi.
+> Aucun envoi n'a eu lieu — arrêt immédiat avant tout tap sur "envoyer",
+> retour arrière (`KEYCODE_BACK` ×2), vérification par capture d'écran que
+> rien n'était parti, signalé immédiatement à l'utilisatrice. Elle a
+> demandé un arrêt complet puis une reprise explicite avant de continuer.
+> **Leçon** : vérifier par capture d'écran l'état exact avant chaque tap
+> `adb` quand plusieurs écrans/notifications peuvent se superposer, plutôt
+> que d'enchaîner des taps à l'aveugle sur des coordonnées supposées.
+>
+> **`README.md` et ce fichier étaient périmés (dernière modification
+> 24 août)** malgré ~60 commits (mobile + web + backend) depuis — mis à
+> jour cette session sur demande explicite de l'utilisatrice. Un rappel :
+> penser à les tenir à jour à la fin de chaque session, pas seulement
+> quand on le remarque deux jours plus tard.
+
+---
+
+# Historique (mise à jour 24 août 2026)
 
 > **Session audit croisé + fix capacité (23 août)** — suite directe de la
 > session mockups/bugs live ci-dessous. Point de départ : l'utilisatrice a

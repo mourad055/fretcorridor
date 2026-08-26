@@ -12,7 +12,7 @@ Monorepo unique partagé par une équipe de 3 personnes : Mobile, Web, Moteur. R
 | `web/`, `backend/gateway`, `backend/service-pay/bur/adm` | Personne 2 — Web | App Angular unique (3 rôles) + microservices associés |
 | `backend/service-mat/opt/trk/geo` | Personne 3 — Moteur | Matching, planification, optimisation, géospatial |
 
-Ce dépôt reflète le développement actif du périmètre **Web** (Personne 2). Les autres dossiers sont scaffoldés en placeholders (README + arborescence), sans logique métier, pour que les coéquipiers puissent y déposer leur travail. Voir `docs/PRD_FretCorridor_Web.md` pour le détail du périmètre Web.
+Les trois périmètres (Mobile, Web, Moteur) sont désormais actifs, avec logique métier réelle branchée de bout en bout — ce n'est plus un scaffold placeholder pour un seul porteur. État détaillé à jour, sprint par sprint et fichier:ligne à l'appui, dans `AUDIT_CDC_v4_complet_2026-08-26.md` (racine du dépôt, le plus récent d'une série d'audits datés). Voir `docs/PRD_FretCorridor_Web.md` pour le détail du périmètre Web.
 
 ## Documents de référence (`docs/`)
 
