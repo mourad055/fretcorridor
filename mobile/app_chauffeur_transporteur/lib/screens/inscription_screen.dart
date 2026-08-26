@@ -161,7 +161,6 @@ class _InscriptionScreenState extends ConsumerState<InscriptionScreen> {
                       const SizedBox(height: 8),
                       IntlPhoneField(
                         initialCountryCode: 'CM',
-                        disableLengthCheck: true,
                         decoration: _decoration(null),
                         dropdownTextStyle: const TextStyle(color: AppColors.texte),
                         style: const TextStyle(color: AppColors.texte, fontSize: 15),

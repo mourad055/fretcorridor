@@ -113,7 +113,7 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                                       if (axe != null)
                                         Text('${axe.origine} → ${axe.destination}',
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.accent)),
-                                      Text(t.kgDisponibles(c.poidsKg.toStringAsFixed(0)),
+                                      Text(t.kgDisponibles(c.capaciteResiduelleKg.toStringAsFixed(0)),
                                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                                     ],
                                   ),

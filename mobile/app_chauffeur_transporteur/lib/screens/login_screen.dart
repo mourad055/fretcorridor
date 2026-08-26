@@ -123,7 +123,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       const SizedBox(height: 8),
                       IntlPhoneField(
                         initialCountryCode: 'CM',
-                        disableLengthCheck: true,
                         dropdownTextStyle: const TextStyle(color: AppColors.texte),
                         style: const TextStyle(color: AppColors.texte, fontSize: 15),
                         decoration: _decoration(),

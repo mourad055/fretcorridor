@@ -59,6 +59,16 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
   void initState() {
     super.initState();
     Future.microtask(() => ref.read(missionProvider.notifier).chargerDetail(widget.mission.missionId));
+    // Reprise du suivi GPS pour une mission deja en cours (PRISE_EN_CHARGE/
+    // EN_TRANSIT) : sans ca, le suivi ne redemarre qu'au moment precis d'un
+    // appui sur une transition d'etape (_avancer ci-dessous) et reste mort
+    // tant qu'on rouvre juste l'ecran d'une mission deja avancee - y compris
+    // apres un simple redemarrage de l'app (le Timer est en memoire, jamais
+    // persiste). Documente comme comportement prevu (cf commentaire de
+    // classe) mais jamais cable ici jusqu'ici.
+    if (widget.mission.statut == 'PRISE_EN_CHARGE' || widget.mission.statut == 'EN_TRANSIT') {
+      Future.microtask(() => ref.read(positionProvider.notifier).demarrerSuivi(widget.mission.missionId));
+    }
   }
 
   // RG-070/EF-EXE-03 : PRISE_EN_CHARGE/LIVRAISON exigent une preuve minimale

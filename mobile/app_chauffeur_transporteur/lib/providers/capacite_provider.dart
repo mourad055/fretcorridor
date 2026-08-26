@@ -10,6 +10,7 @@ class CapaciteDeclaree {
   final String modeDeclaration;
   final double poidsKg;
   final double poidsTaxableKg;
+  final double capaciteResiduelleKg;
   final bool publiee;
   final bool expiree;
   final DateTime? dateDepart;
@@ -22,6 +23,7 @@ class CapaciteDeclaree {
     required this.modeDeclaration,
     required this.poidsKg,
     required this.poidsTaxableKg,
+    required this.capaciteResiduelleKg,
     required this.publiee,
     this.expiree = false,
     this.dateDepart,
@@ -35,6 +37,9 @@ class CapaciteDeclaree {
         modeDeclaration: json['modeDeclaration'] as String,
         poidsKg: (json['poidsKg'] as num).toDouble(),
         poidsTaxableKg: (json['poidsTaxableKg'] as num).toDouble(),
+        // Repli sur poidsKg : ancien decrement deja applique avant ce champ
+        // (voir CapaciteResponse cote service-cap), ne devrait plus arriver.
+        capaciteResiduelleKg: (json['capaciteResiduelleKg'] as num?)?.toDouble() ?? (json['poidsKg'] as num).toDouble(),
         publiee: json['publiee'] as bool,
         expiree: json['expiree'] as bool? ?? false,
         dateDepart: json['dateDepart'] != null ? DateTime.tryParse(json['dateDepart'] as String)?.toLocal() : null,
@@ -134,18 +139,19 @@ class CapaciteNotifier extends StateNotifier<CapaciteState> {
     if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
       return null;
     }
+    // Priorite au cache (voir position_provider.dart : un fix frais peut
+    // rester bloque indefiniment en interieur, meme avec timeLimit).
+    final derniereConnue = await Geolocator.getLastKnownPosition();
+    if (derniereConnue != null) return derniereConnue;
     try {
       return await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.medium,
-          timeLimit: Duration(seconds: 8),
+          timeLimit: Duration(seconds: 10),
         ),
       );
     } catch (_) {
-      // Pas de fix frais dans le delai (frequent en interieur) - repli sur
-      // la derniere position connue (cache reseau/fused) plutot que de
-      // bloquer indefiniment la declaration de capacite.
-      return Geolocator.getLastKnownPosition();
+      return null;
     }
   }
 

@@ -159,19 +159,26 @@ class PositionNotifier extends StateNotifier<PositionState> {
     }
 
     try {
-      Position? position;
-      try {
-        position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            timeLimit: Duration(seconds: 8),
-          ),
-        );
-      } on TimeoutException {
-        // Pas de fix haute precision dans le delai (frequent en interieur) -
-        // repli sur la derniere position connue plutot que de bloquer ce
-        // tick indefiniment et de ne jamais alimenter le suivi cote Client.
-        position = await Geolocator.getLastKnownPosition();
+      // Priorite au cache (quasi instantane) plutot qu'un fix haute precision
+      // frais : constate en test qu'un fix "high accuracy" peut rester
+      // bloque en interieur bien au-dela de tout delai raisonnable (le
+      // Future de Geolocator ne se resout jamais, meme avec timeLimit),
+      // laissant chaque tick de _intervalleEnvoi mort - le suivi cote Client
+      // ne reçoit alors jamais rien. Une position en cache, meme un peu
+      // datee, alimente le suivi immediatement ; le prochain tick (30s)
+      // retente et affine si un fix frais finit par arriver entre-temps.
+      Position? position = await Geolocator.getLastKnownPosition();
+      if (position == null) {
+        try {
+          position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.medium,
+              timeLimit: Duration(seconds: 10),
+            ),
+          );
+        } catch (_) {
+          position = null;
+        }
       }
       if (position == null) {
         state = state.copyWith(erreur: 'Position GPS indisponible.');

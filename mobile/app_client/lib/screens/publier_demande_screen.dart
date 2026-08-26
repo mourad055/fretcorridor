@@ -452,7 +452,6 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
               _label(t.champTelephone),
               IntlPhoneField(
                 initialCountryCode: 'CM',
-                disableLengthCheck: true,
                 decoration: _decoration('', Icons.phone).copyWith(hintText: null),
                 dropdownTextStyle: const TextStyle(color: AppColors.texte),
                 onChanged: (phone) => _destinataireTelephone = phone.completeNumber,
