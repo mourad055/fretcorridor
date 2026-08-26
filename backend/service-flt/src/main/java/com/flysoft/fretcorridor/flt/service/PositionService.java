@@ -68,9 +68,19 @@ public class PositionService {
 
     // Consommée par l'app Client (S6) — peut renvoyer "absent" tant qu'aucun
     // chauffeur n'envoie de position pour cette mission.
+    //
+    // FIX 26/08 : filtrait aussi par tenantId (celui du chargeur qui consulte
+    // le suivi), alors que la position est enregistrée sous le tenant du
+    // chauffeur/transporteur qui l'a affrété — les deux diffèrent dès qu'une
+    // demande d'un tenant est servie par un transporteur d'un autre tenant
+    // (marketplace multi-tenant, cf. chronologie côté service-exe qui ne
+    // filtre déjà pas par tenant pour la même raison). Résultat : le suivi
+    // affichait "position pas encore disponible" en permanence dans ce cas,
+    // alors que le chauffeur envoyait bien sa position. missionId (UUID) est
+    // déjà un identifiant suffisant, non devinable.
     @Transactional(readOnly = true)
-    public Optional<PositionDto.DernierePositionResponse> getDernierePosition(UUID missionId, String tenantId) {
-        return positionRepository.findFirstByMissionIdAndTenantIdOrderByHorodatageDesc(missionId, tenantId)
+    public Optional<PositionDto.DernierePositionResponse> getDernierePosition(UUID missionId) {
+        return positionRepository.findFirstByMissionIdOrderByHorodatageDesc(missionId)
                 .map(PositionDto.DernierePositionResponse::fromEntity);
     }
 }

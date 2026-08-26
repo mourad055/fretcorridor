@@ -31,13 +31,15 @@ public class PositionController {
         }
     }
 
-    // Consommée par l'app Client (S6) — 204 si aucune position pour l'instant
+    // Consommée par l'app Client (S6) — 204 si aucune position pour l'instant.
+    // Pas de filtre par tenant ici : le chargeur qui consulte le suivi et le
+    // transporteur qui a affrété la mission peuvent appartenir à des tenants
+    // différents (marketplace), cf. commentaire PositionService.getDernierePosition.
     @GetMapping("/mission/{missionId}/derniere")
     public ResponseEntity<?> getDerniere(
             @PathVariable UUID missionId, @RequestHeader("Authorization") String authHeader) {
         try {
-            String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
-            return positionService.getDernierePosition(missionId, tenantId)
+            return positionService.getDernierePosition(missionId)
                     .<ResponseEntity<?>>map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.noContent().build());
         } catch (RuntimeException e) {
