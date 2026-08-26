@@ -147,7 +147,9 @@ class PositionNotifier extends StateNotifier<PositionState> {
 
   Future<void> _envoyerUnePosition() async {
     final missionId = state.missionId;
-    if (missionId == null) return;
+    if (missionId == null) {
+      return;
+    }
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
