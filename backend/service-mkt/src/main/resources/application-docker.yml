@@ -3,3 +3,16 @@ spring:
     url: jdbc:postgresql://postgres:5432/fretcorridor
   kafka:
     bootstrap-servers: kafka:29092
+  client:
+    service-geo:
+      base-url: http://service-geo:8084
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
+    service-cap:
+      base-url: http://service-cap:8096
+      connect-timeout-ms: 500
+      read-timeout-ms: 1500
+    service-not:
+      base-url: http://service-not:8094
+      connect-timeout-ms: 500
+      read-timeout-ms: 1500

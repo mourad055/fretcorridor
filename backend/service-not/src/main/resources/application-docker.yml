@@ -6,3 +6,9 @@ spring:
   client:
     service-cap:
       base-url: http://service-cap:8096
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
+    service-flt:
+      base-url: http://service-flt:8083
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
