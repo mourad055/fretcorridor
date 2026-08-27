@@ -26,6 +26,27 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     }
   }
 
+  // BUG CORRIGE (retour utilisatrice 24/08) : voir le commentaire equivalent
+  // dans app_chauffeur_transporteur/lib/screens/notifications_screen.dart --
+  // meme correctif, meme portee (titre retraduit via `type`, corps laisse en
+  // francais).
+  String _titreLocalise(AppLocalizations t, String type, String titreServeur) {
+    switch (type) {
+      case 'PROPOSITION_RECUE':
+        return t.notifTitrePropositionRecue;
+      case 'STATUT_MISSION':
+        return t.notifTitreStatutMission;
+      case 'INFO_GENERALE':
+        return t.notifTitreInfoGenerale;
+      case 'PROPOSITION_RETOUR':
+        return t.notifTitrePropositionRetour;
+      case 'ALERTE_ECART':
+        return t.notifTitreAlerteEcart;
+      default:
+        return titreServeur;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(notificationProvider);
@@ -74,7 +95,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(n.titre, style: TextStyle(
+                                    Text(_titreLocalise(t, n.type, n.titre), style: TextStyle(
                                         fontWeight: n.lue ? FontWeight.normal : FontWeight.bold, fontSize: 13)),
                                     const SizedBox(height: 2),
                                     Text(n.corps, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
