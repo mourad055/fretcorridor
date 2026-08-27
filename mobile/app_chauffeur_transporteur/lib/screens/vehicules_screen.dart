@@ -24,8 +24,98 @@ class _VehiculesScreenState extends ConsumerState<VehiculesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.fond,
-      builder: (_) => const _FormulaireAjoutVehicule(),
+      builder: (_) => const _FormulaireVehicule(),
     );
+  }
+
+  // CRUD véhicule (retour utilisatrice 21/08) : voir le détail, modifier ou
+  // supprimer un véhicule déjà déclaré, pas seulement déclarer/lister.
+  Future<void> _ouvrirDetail(VehiculeFlotte v) async {
+    final t = AppLocalizations.of(context);
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.fond,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(v.typeVehicule, style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 12),
+            if (v.immatriculation != null) _ligneDetail(Icons.badge_outlined, v.immatriculation!),
+            if (v.profilPoidsMaxTonnes != null)
+              _ligneDetail(Icons.scale_outlined, t.poidsMaxLabel(v.profilPoidsMaxTonnes!.toStringAsFixed(1))),
+            if (v.profilNombreEssieux != null)
+              _ligneDetail(Icons.settings_input_component_outlined, t.essieuxLabel('${v.profilNombreEssieux}')),
+            if (v.profilMatieresDangereuses)
+              _ligneDetail(Icons.warning_amber, t.matieresDangereuses),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: AppColors.fond,
+                      builder: (_) => _FormulaireVehicule(existant: v),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined, color: AppColors.accent),
+                  label: Text(t.modifier, style: const TextStyle(color: AppColors.accent)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    await _confirmerSuppression(v);
+                  },
+                  style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.erreur)),
+                  icon: const Icon(Icons.delete_outline, color: AppColors.erreur),
+                  label: Text(t.supprimer, style: const TextStyle(color: AppColors.erreur)),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _ligneDetail(IconData icone, String texte) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(children: [
+        Icon(icone, size: 16, color: AppColors.texteMuet),
+        const SizedBox(width: 8),
+        Text(texte, style: const TextStyle(fontSize: 13)),
+      ]),
+    );
+  }
+
+  Future<void> _confirmerSuppression(VehiculeFlotte v) async {
+    final t = AppLocalizations.of(context);
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(t.supprimerCeVehicule),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.annuler)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(t.supprimer, style: const TextStyle(color: AppColors.erreur)),
+          ),
+        ],
+      ),
+    );
+    if (confirme == true) {
+      await ref.read(vehiculeProvider.notifier).supprimer(v.id);
+    }
   }
 
   @override
@@ -79,47 +169,65 @@ class _VehiculesScreenState extends ConsumerState<VehiculesScreen> {
   }
 
   Widget _carteVehicule(VehiculeFlotte v) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bordure),
-      ),
-      child: Row(children: [
-        const Icon(Icons.local_shipping_outlined, color: AppColors.accent),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(v.typeVehicule, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              if (v.immatriculation != null)
-                Text(v.immatriculation!, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
-            ],
-          ),
+    return InkWell(
+      onTap: () => _ouvrirDetail(v),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.bordure),
         ),
-        if (v.profilMatieresDangereuses)
-          const Icon(Icons.warning_amber, color: AppColors.accent, size: 18),
-      ]),
+        child: Row(children: [
+          const Icon(Icons.local_shipping_outlined, color: AppColors.accent),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(v.typeVehicule, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                if (v.immatriculation != null)
+                  Text(v.immatriculation!, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+              ],
+            ),
+          ),
+          if (v.profilMatieresDangereuses)
+            const Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Icon(Icons.warning_amber, color: AppColors.accent, size: 18),
+            ),
+          const Icon(Icons.chevron_right, color: AppColors.texteMuet),
+        ]),
+      ),
     );
   }
 }
 
-class _FormulaireAjoutVehicule extends ConsumerStatefulWidget {
-  const _FormulaireAjoutVehicule();
+// CRUD véhicule (retour utilisatrice 21/08) : même formulaire pour créer et
+// modifier -- `existant` non-null bascule en mode édition (titre, appel
+// modifier() plutôt que declarer(), champs pré-remplis). Reste un popup qui
+// se ferme après soumission (showModalBottomSheet + Navigator.pop), déjà le
+// cas pour la création.
+class _FormulaireVehicule extends ConsumerStatefulWidget {
+  final VehiculeFlotte? existant;
+  const _FormulaireVehicule({this.existant});
 
   @override
-  ConsumerState<_FormulaireAjoutVehicule> createState() => _FormulaireAjoutVehiculeState();
+  ConsumerState<_FormulaireVehicule> createState() => _FormulaireVehiculeState();
 }
 
-class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicule> {
+class _FormulaireVehiculeState extends ConsumerState<_FormulaireVehicule> {
   final _formKey = GlobalKey<FormState>();
-  final _typeCtrl = TextEditingController();
-  final _immatCtrl = TextEditingController();
-  final _poidsMaxCtrl = TextEditingController();
-  final _essieuxCtrl = TextEditingController();
-  bool _matieresDangereuses = false;
+  late final _typeCtrl = TextEditingController(text: widget.existant?.typeVehicule);
+  late final _immatCtrl = TextEditingController(text: widget.existant?.immatriculation);
+  late final _poidsMaxCtrl =
+      TextEditingController(text: widget.existant?.profilPoidsMaxTonnes?.toString());
+  late final _essieuxCtrl =
+      TextEditingController(text: widget.existant?.profilNombreEssieux?.toString());
+  late bool _matieresDangereuses = widget.existant?.profilMatieresDangereuses ?? false;
+
+  bool get _modeEdition => widget.existant != null;
 
   @override
   void dispose() {
@@ -132,13 +240,23 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
 
   Future<void> _valider() async {
     if (!_formKey.currentState!.validate()) return;
-    final succes = await ref.read(vehiculeProvider.notifier).declarer(
-          typeVehicule: _typeCtrl.text.trim(),
-          immatriculation: _immatCtrl.text.trim().isEmpty ? null : _immatCtrl.text.trim(),
-          profilPoidsMaxTonnes: double.tryParse(_poidsMaxCtrl.text),
-          profilNombreEssieux: int.tryParse(_essieuxCtrl.text),
-          profilMatieresDangereuses: _matieresDangereuses,
-        );
+    final notifier = ref.read(vehiculeProvider.notifier);
+    final succes = _modeEdition
+        ? await notifier.modifier(
+            id: widget.existant!.id,
+            typeVehicule: _typeCtrl.text.trim(),
+            immatriculation: _immatCtrl.text.trim().isEmpty ? null : _immatCtrl.text.trim(),
+            profilPoidsMaxTonnes: double.tryParse(_poidsMaxCtrl.text),
+            profilNombreEssieux: int.tryParse(_essieuxCtrl.text),
+            profilMatieresDangereuses: _matieresDangereuses,
+          )
+        : await notifier.declarer(
+            typeVehicule: _typeCtrl.text.trim(),
+            immatriculation: _immatCtrl.text.trim().isEmpty ? null : _immatCtrl.text.trim(),
+            profilPoidsMaxTonnes: double.tryParse(_poidsMaxCtrl.text),
+            profilNombreEssieux: int.tryParse(_essieuxCtrl.text),
+            profilMatieresDangereuses: _matieresDangereuses,
+          );
     if (succes && mounted) Navigator.pop(context);
   }
 
@@ -155,7 +273,8 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(t.nouveauVehicule, style: Theme.of(context).textTheme.headlineMedium),
+            Text(_modeEdition ? t.modifierLeVehicule : t.nouveauVehicule,
+                style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 20),
             TextFormField(
               controller: _typeCtrl,

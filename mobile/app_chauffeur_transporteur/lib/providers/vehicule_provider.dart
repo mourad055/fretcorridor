@@ -92,6 +92,48 @@ class VehiculeNotifier extends StateNotifier<VehiculeState> {
     }
   }
 
+  // CRUD véhicule (retour utilisatrice 21/08).
+  Future<bool> modifier({
+    required String id,
+    required String typeVehicule,
+    String? immatriculation,
+    double? profilPoidsMaxTonnes,
+    int? profilNombreEssieux,
+    bool profilMatieresDangereuses = false,
+  }) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final response = await _dio.put('/vehicules/$id', data: {
+        'typeVehicule': typeVehicule,
+        'immatriculation': immatriculation,
+        'profilPoidsMaxTonnes': profilPoidsMaxTonnes,
+        'profilNombreEssieux': profilNombreEssieux,
+        'profilMatieresDangereuses': profilMatieresDangereuses,
+      });
+      final modifie = VehiculeFlotte.fromJson(response.data);
+      state = state.copyWith(
+        chargement: false,
+        vehicules: [for (final v in state.vehicules) if (v.id == id) modifie else v],
+      );
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      return false;
+    }
+  }
+
+  Future<bool> supprimer(String id) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      await _dio.delete('/vehicules/$id');
+      state = state.copyWith(chargement: false, vehicules: state.vehicules.where((v) => v.id != id).toList());
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      return false;
+    }
+  }
+
   String _messageErreur(DioException e) {
     if (e.response?.statusCode == 400) {
       return (e.response?.data is Map ? e.response?.data['detail'] as String? : null) ?? 'Requête refusée.';
