@@ -1,12 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
 import 'inscription_screen.dart';
 
 // Page d'accueil publique — première chose vue par un visiteur.
-class WelcomeScreen extends StatelessWidget {
+//
+// Vraie vidéo en boucle en arrière-plan (chargement de colis dans une
+// camionnette) — illustration statique (hero_illustration.png) conservée
+// comme repli le temps que la vidéo s'initialise, pour ne jamais laisser
+// un flash noir/vide à l'ouverture (même principe que l'app
+// Chauffeur/Transporteur, cf. son welcome_screen.dart).
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  late final VideoPlayerController _videoController;
+
+  @override
+  void initState() {
+    super.initState();
+    _videoController = VideoPlayerController.asset('assets/videos/chargement_colis_hero.mp4')
+      ..setLooping(true)
+      ..setVolume(0)
+      ..initialize().then((_) {
+        if (!mounted) return;
+        setState(() {});
+        _videoController.play();
+      });
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,16 +48,28 @@ class WelcomeScreen extends StatelessWidget {
       backgroundColor: AppColors.fond,
       body: Column(
         children: [
-          // ── Zone héro (illustration originale + dégradé de lisibilité) ──
+          // ── Zone héro (vidéo/illustration + dégradé de lisibilité) ──
           Expanded(
             flex: 11,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.asset(
-                  'assets/images/hero_illustration.png',
-                  fit: BoxFit.cover,
-                ),
+                if (_videoController.value.isInitialized)
+                  SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoController.value.size.width,
+                        height: _videoController.value.size.height,
+                        child: VideoPlayer(_videoController),
+                      ),
+                    ),
+                  )
+                else
+                  Image.asset(
+                    'assets/images/hero_illustration.png',
+                    fit: BoxFit.cover,
+                  ),
                 // Dégradé pour que le texte reste lisible sur l'illustration
                 Container(
                   decoration: const BoxDecoration(
