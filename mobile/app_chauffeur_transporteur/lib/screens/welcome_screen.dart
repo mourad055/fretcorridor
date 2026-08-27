@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import '../l10n/app_localizations.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
@@ -8,11 +9,10 @@ import 'inscription_screen.dart';
 // formulaire (même structure que l'app Client, cf. mobile/app_client/lib/
 // screens/welcome_screen.dart).
 //
-// Effet de zoom lent (Ken Burns) sur l'illustration statique — simule un
-// arrière-plan vivant sans le coût d'une vraie vidéo (taille d'app, données
-// mobiles, décodage). Remplacement par une vraie vidéo en boucle prévu dans
-// une session ultérieure (cf. échange du 21 août, contrainte de données
-// mobiles ce soir-là).
+// Vraie vidéo en boucle en arrière-plan (remplace l'effet Ken Burns sur
+// image statique, cf. échange du 21 août) — illustration statique
+// (hero_illustration.png) conservée comme repli le temps que la vidéo
+// s'initialise, pour ne jamais laisser un flash noir/vide à l'ouverture.
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -20,23 +20,25 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
-  late final AnimationController _zoomController;
-  late final Animation<double> _zoom;
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  late final VideoPlayerController _videoController;
 
   @override
   void initState() {
     super.initState();
-    _zoomController = AnimationController(vsync: this, duration: const Duration(seconds: 14))
-      ..repeat(reverse: true);
-    _zoom = Tween<double>(begin: 1.0, end: 1.12).animate(
-      CurvedAnimation(parent: _zoomController, curve: Curves.easeInOut),
-    );
+    _videoController = VideoPlayerController.asset('assets/videos/camion_route_hero.mp4')
+      ..setLooping(true)
+      ..setVolume(0)
+      ..initialize().then((_) {
+        if (!mounted) return;
+        setState(() {});
+        _videoController.play();
+      });
   }
 
   @override
   void dispose() {
-    _zoomController.dispose();
+    _videoController.dispose();
     super.dispose();
   }
 
@@ -52,11 +54,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             child: Stack(
               fit: StackFit.expand,
               children: [
-                AnimatedBuilder(
-                  animation: _zoom,
-                  builder: (context, child) => Transform.scale(scale: _zoom.value, child: child),
-                  child: Image.asset('assets/images/hero_illustration.png', fit: BoxFit.cover),
-                ),
+                if (_videoController.value.isInitialized)
+                  SizedBox.expand(
+                    child: FittedBox(
+                      fit: BoxFit.cover,
+                      child: SizedBox(
+                        width: _videoController.value.size.width,
+                        height: _videoController.value.size.height,
+                        child: VideoPlayer(_videoController),
+                      ),
+                    ),
+                  )
+                else
+                  Image.asset('assets/images/hero_illustration.png', fit: BoxFit.cover),
                 Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
