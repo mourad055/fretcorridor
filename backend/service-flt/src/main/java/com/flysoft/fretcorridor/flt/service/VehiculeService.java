@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -49,5 +51,42 @@ public class VehiculeService {
     public List<VehiculeDto.VehiculeResponse> listerMesVehicules(UUID proprietaireActeurId, String tenantId) {
         return vehiculeRepository.findByProprietaireActeurIdAndTenantIdOrderByDateCreationDesc(proprietaireActeurId, tenantId)
                 .stream().map(VehiculeDto.VehiculeResponse::fromEntity).collect(Collectors.toList());
+    }
+
+    // CRUD véhicule (retour utilisatrice 21/08) : modifier/supprimer un
+    // véhicule déjà déclaré. Même garde IDOR que consulter() ci-dessus --
+    // "introuvable" pour "n'existe pas" et "pas le vôtre", jamais de 403 qui
+    // confirmerait l'existence d'un véhicule d'un autre acteur/tenant.
+    @Transactional
+    public VehiculeDto.VehiculeResponse modifier(UUID vehiculeId, UUID proprietaireActeurId, String tenantId,
+                                                   VehiculeDto.DeclarerRequest request) {
+        Vehicule vehicule = trouverAppartenant(vehiculeId, proprietaireActeurId, tenantId);
+        vehicule.setTypeVehicule(request.getTypeVehicule());
+        vehicule.setImmatriculation(request.getImmatriculation());
+        vehicule.setProfilHauteurMetres(request.getProfilHauteurMetres());
+        vehicule.setProfilLargeurMetres(request.getProfilLargeurMetres());
+        vehicule.setProfilLongueurMetres(request.getProfilLongueurMetres());
+        vehicule.setProfilPoidsMaxTonnes(request.getProfilPoidsMaxTonnes());
+        vehicule.setProfilChargeMaxParEssieuTonnes(request.getProfilChargeMaxParEssieuTonnes());
+        vehicule.setProfilNombreEssieux(request.getProfilNombreEssieux());
+        vehicule.setProfilMatieresDangereuses(request.isProfilMatieresDangereuses());
+        try {
+            vehicule = vehiculeRepository.save(vehicule);
+        } catch (DataIntegrityViolationException doublon) {
+            throw new ImmatriculationDejaUtiliseeException(request.getImmatriculation());
+        }
+        return VehiculeDto.VehiculeResponse.fromEntity(vehicule);
+    }
+
+    @Transactional
+    public void supprimer(UUID vehiculeId, UUID proprietaireActeurId, String tenantId) {
+        Vehicule vehicule = trouverAppartenant(vehiculeId, proprietaireActeurId, tenantId);
+        vehiculeRepository.delete(vehicule);
+    }
+
+    private Vehicule trouverAppartenant(UUID vehiculeId, UUID proprietaireActeurId, String tenantId) {
+        return vehiculeRepository.findById(vehiculeId)
+                .filter(v -> proprietaireActeurId.equals(v.getProprietaireActeurId()) && tenantId.equals(v.getTenantId()))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Vehicule introuvable : " + vehiculeId));
     }
 }

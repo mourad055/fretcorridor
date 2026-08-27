@@ -92,4 +92,29 @@ public class VehiculeController {
         }
         return ResponseEntity.ok(VehiculeDto.VehiculeResponse.fromEntity(vehicule));
     }
+
+    // CRUD véhicule (retour utilisatrice 21/08).
+    @PutMapping("/{id}")
+    public ResponseEntity<?> modifier(
+            @PathVariable UUID id,
+            @Valid @RequestBody VehiculeDto.DeclarerRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        UUID acteurId = jwtService.extraireActeurId(authHeader.substring(7));
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        try {
+            return ResponseEntity.ok(vehiculeService.modifier(id, acteurId, tenantId, request));
+        } catch (ImmatriculationDejaUtiliseeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> supprimer(
+            @PathVariable UUID id,
+            @RequestHeader("Authorization") String authHeader) {
+        UUID acteurId = jwtService.extraireActeurId(authHeader.substring(7));
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        vehiculeService.supprimer(id, acteurId, tenantId);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -39,4 +39,23 @@ public class VehiculeController {
     public Flux<VehiculeResponse> mesVehicules(@AuthenticationPrincipal AuthenticatedActor actor) {
         return vehiculePort.mesVehicules(actor.delegationToken()).map(VehiculeResponse::from);
     }
+
+    // CRUD véhicule (retour utilisatrice 21/08).
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<VehiculeResponse>> modifier(@PathVariable String id,
+                                                              @Valid @RequestBody DeclarerVehiculeRequest request,
+                                                              @AuthenticationPrincipal AuthenticatedActor actor) {
+        var declaration = new DeclarationVehicule(request.typeVehicule(), request.immatriculation(),
+                request.profilHauteurMetres(), request.profilLargeurMetres(), request.profilLongueurMetres(),
+                request.profilPoidsMaxTonnes(), request.profilChargeMaxParEssieuTonnes(), request.profilNombreEssieux(),
+                request.profilMatieresDangereuses());
+        return vehiculePort.modifier(actor.delegationToken(), id, declaration)
+                .map(v -> ResponseEntity.ok(VehiculeResponse.from(v)));
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> supprimer(@PathVariable String id, @AuthenticationPrincipal AuthenticatedActor actor) {
+        return vehiculePort.supprimer(actor.delegationToken(), id)
+                .thenReturn(ResponseEntity.noContent().<Void>build());
+    }
 }

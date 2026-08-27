@@ -79,6 +79,46 @@ public class RealVehiculeAdapter implements VehiculePort {
                 .onErrorMap(e -> new FltServiceIndisponibleException());
     }
 
+    @Override
+    public Mono<Vehicule> modifier(String delegationToken, String vehiculeId, DeclarationVehicule declaration) {
+        if (delegationToken == null) {
+            return Mono.error(new FltServiceIndisponibleException());
+        }
+        Map<String, Object> corps = new HashMap<>();
+        corps.put("typeVehicule", declaration.typeVehicule());
+        corps.put("immatriculation", declaration.immatriculation());
+        corps.put("profilHauteurMetres", declaration.profilHauteurMetres());
+        corps.put("profilLargeurMetres", declaration.profilLargeurMetres());
+        corps.put("profilLongueurMetres", declaration.profilLongueurMetres());
+        corps.put("profilPoidsMaxTonnes", declaration.profilPoidsMaxTonnes());
+        corps.put("profilChargeMaxParEssieuTonnes", declaration.profilChargeMaxParEssieuTonnes());
+        corps.put("profilNombreEssieux", declaration.profilNombreEssieux());
+        corps.put("profilMatieresDangereuses", declaration.profilMatieresDangereuses());
+
+        return webClient.put()
+                .uri("/api/flt/vehicules/{id}", vehiculeId)
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .bodyValue(corps)
+                .retrieve()
+                .bodyToMono(VehiculeDto.class)
+                .map(VehiculeDto::versVehicule)
+                .onErrorMap(this::estRefus, e -> new VehiculeRefuseException(messageDe(e)))
+                .onErrorMap(e -> !(e instanceof VehiculeRefuseException), e -> new FltServiceIndisponibleException());
+    }
+
+    @Override
+    public Mono<Void> supprimer(String delegationToken, String vehiculeId) {
+        if (delegationToken == null) {
+            return Mono.error(new FltServiceIndisponibleException());
+        }
+        return webClient.delete()
+                .uri("/api/flt/vehicules/{id}", vehiculeId)
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .retrieve()
+                .bodyToMono(Void.class)
+                .onErrorMap(e -> new FltServiceIndisponibleException());
+    }
+
     private boolean estRefus(Throwable e) {
         return e instanceof WebClientResponseException wcre && wcre.getStatusCode().value() == 400;
     }
