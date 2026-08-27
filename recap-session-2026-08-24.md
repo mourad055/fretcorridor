@@ -16,6 +16,22 @@
 
 **Double-décrément de la capacité résiduelle sur un match rang 1 (auto-confirmé)** : quand le matching confirme automatiquement le meilleur candidat (rang 1), `AffectationL1Service` (service-opt) réserve déjà la capacité (`serviceCapClient.reserver(..., missionId)`, cf commentaire "BUG CORRIGE, audit de suivi 23 août" dans le code). Mais la `Proposition` correspondante reste visible côté Marketplace en `EN_ATTENTE`, et quand le chargeur l'accepte manuellement, `DemandeService.accepterProposition()` (service-mkt) réserve la capacité **une deuxième fois** (`serviceCapClient.reserver(..., propositionId)`) — deux entrées distinctes dans `cap.decrement_log` (clés d'idempotence différentes : mission puis proposition) pour un seul match. Repéré le 24/08 sur une demande de 1 kg (résiduel passé de 9000 à 8998 au lieu de 8999) — sur un volume réaliste, l'écart serait doublé et visible. Fix probable : soit ne pas créer de `Proposition` "EN_ATTENTE" pour un rang 1 déjà auto-confirmé, soit faire vérifier à `accepterProposition()` qu'aucune affectation n'existe déjà pour cette demande avant de réserver. À investiguer proprement (touche la logique rang 1 vs rang 2/3), reporté à une session ultérieure sur demande explicite de l'utilisatrice.
 
+## Retours produit/UX du 24-25 août — backlog (collés par l'utilisatrice le 27/08, à traiter plus tard)
+
+Note de l'utilisatrice : un premier lot de retours collés le 27/08 (datés du 21/08) contenait des remarques déjà résolues entre-temps — erreur de sa part, à ignorer. Voici le lot confirmé correct, daté du 24 et 25 août :
+
+- **Notifications pas traduites en anglais** malgré le changement de langue dans les paramètres — l'infrastructure FR/EN (`flutter_localizations`, `.arb`) couvre les écrans mais pas le contenu des notifications elles-mêmes.
+- **Changement de numéro de téléphone (dans le profil)** : doit suivre exactement la même logique de validation que les formulaires (indicatif pays + nombre de chiffres attendu selon le pays, via `IntlPhoneField` — cf. le fix du 25/08 qui a remis les réglages par défaut de la librairie sur les formulaires de login/inscription). Actuellement l'écran de modification du numéro ne semble pas appliquer la même contrainte.
+- **Numéro du destinataire** (dans le formulaire de publication de demande) : même souci, pas de contrainte de nombre de chiffres par pays.
+- **Upload de photos du camion** : fonction pour prendre en photo/filmer les deux côtés de la carte grise du véhicule (formulaire de déclaration/CRUD véhicule).
+- **CRUD complet sur "camion"** (rejoint l'item déjà noté ci-dessus le 24/08) : pouvoir voir les informations d'un véhicule déclaré, pas seulement le créer/lister.
+- **Flux d'acceptation/refus de mission par notification** : quand une demande est matchée à un chauffeur/transporteur, il doit recevoir une notification avec un choix explicite accepter/refuser — s'il accepte, la mission entre dans "Mes missions" ; s'il refuse, la demande doit repartir automatiquement vers un autre chauffeur. À comparer avec le comportement actuel du matching (affectation optimale L1 auto-confirmée sans étape d'acceptation côté chauffeur) — écart de flux à clarifier avec l'utilisatrice avant de coder quoi que ce soit ici, ça touche potentiellement à une décision produit sur le rang 1.
+- **Formulaires de création (véhicule, capacité)** : devraient se fermer automatiquement après soumission (popup/modal) plutôt que de rester affichés à l'écran.
+- **App Client — boutons "Envoyer une marchandise" / "Mon profil"** actuellement au centre de l'écran d'accueil : à remplacer par des icônes en bas de page (barre de navigation basse), inspiration Pinterest fournie par l'utilisatrice mais non exploitable techniquement (l'outil de récupération web ne peut pas analyser le rendu visuel des épingles Pinterest — demander des captures d'écran directes à la place).
+- **Revoir le rendu visuel de plusieurs écrans** (mêmes liens Pinterest en référence) : page de connexion, écran "Suivi", écran d'accueil ("Bonjour, ...") — nature exacte du changement à préciser avec des captures d'écran.
+
+**Pas encore investigué ni codé** — backlog pur, à prioriser avec l'utilisatrice avant la prochaine session de travail.
+
 ## Suite le 25/08 (matinée, avant présentation)
 
 | # | Sujet | Détail |
