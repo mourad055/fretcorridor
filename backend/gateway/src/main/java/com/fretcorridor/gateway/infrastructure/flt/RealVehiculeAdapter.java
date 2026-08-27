@@ -6,7 +6,9 @@ import com.fretcorridor.gateway.domain.flt.Vehicule;
 import com.fretcorridor.gateway.domain.flt.VehiculePort;
 import com.fretcorridor.gateway.domain.flt.VehiculeRefuseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -119,6 +121,31 @@ public class RealVehiculeAdapter implements VehiculePort {
                 .onErrorMap(e -> new FltServiceIndisponibleException());
     }
 
+    @Override
+    public Mono<Vehicule> deposerPhotos(String delegationToken, String vehiculeId, FilePart recto, FilePart verso) {
+        if (delegationToken == null) {
+            return Mono.error(new FltServiceIndisponibleException());
+        }
+        MultipartBodyBuilder builder = new MultipartBodyBuilder();
+        if (recto != null) {
+            builder.asyncPart("recto", recto.content(), org.springframework.core.io.buffer.DataBuffer.class)
+                    .filename(recto.filename());
+        }
+        if (verso != null) {
+            builder.asyncPart("verso", verso.content(), org.springframework.core.io.buffer.DataBuffer.class)
+                    .filename(verso.filename());
+        }
+
+        return webClient.post()
+                .uri("/api/flt/vehicules/{id}/photos", vehiculeId)
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .body(org.springframework.web.reactive.function.BodyInserters.fromMultipartData(builder.build()))
+                .retrieve()
+                .bodyToMono(VehiculeDto.class)
+                .map(VehiculeDto::versVehicule)
+                .onErrorMap(e -> new FltServiceIndisponibleException());
+    }
+
     private boolean estRefus(Throwable e) {
         return e instanceof WebClientResponseException wcre && wcre.getStatusCode().value() == 400;
     }
@@ -130,11 +157,13 @@ public class RealVehiculeAdapter implements VehiculePort {
     private record VehiculeDto(String id, String typeVehicule, String immatriculation, Double profilHauteurMetres,
                                 Double profilLargeurMetres, Double profilLongueurMetres, Double profilPoidsMaxTonnes,
                                 Double profilChargeMaxParEssieuTonnes, Integer profilNombreEssieux,
-                                Boolean profilMatieresDangereuses, String dateCreation) {
+                                Boolean profilMatieresDangereuses, String dateCreation,
+                                Boolean photoCarteGriseRectoDeposee, Boolean photoCarteGriseVersoDeposee) {
         Vehicule versVehicule() {
             return new Vehicule(id, typeVehicule, immatriculation, profilHauteurMetres, profilLargeurMetres,
                     profilLongueurMetres, profilPoidsMaxTonnes, profilChargeMaxParEssieuTonnes, profilNombreEssieux,
-                    Boolean.TRUE.equals(profilMatieresDangereuses), dateCreation);
+                    Boolean.TRUE.equals(profilMatieresDangereuses), dateCreation,
+                    Boolean.TRUE.equals(photoCarteGriseRectoDeposee), Boolean.TRUE.equals(photoCarteGriseVersoDeposee));
         }
     }
 }

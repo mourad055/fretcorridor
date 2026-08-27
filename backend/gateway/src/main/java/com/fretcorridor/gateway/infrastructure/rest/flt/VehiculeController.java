@@ -7,7 +7,9 @@ import com.fretcorridor.gateway.infrastructure.rest.flt.dto.VehiculeResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -57,5 +59,16 @@ public class VehiculeController {
     public Mono<ResponseEntity<Void>> supprimer(@PathVariable String id, @AuthenticationPrincipal AuthenticatedActor actor) {
         return vehiculePort.supprimer(actor.delegationToken(), id)
                 .thenReturn(ResponseEntity.noContent().<Void>build());
+    }
+
+    // Photos de carte grise recto/verso (retour utilisatrice 24/08).
+    @PostMapping(value = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<VehiculeResponse>> deposerPhotos(
+            @PathVariable String id,
+            @RequestPart(value = "recto", required = false) FilePart recto,
+            @RequestPart(value = "verso", required = false) FilePart verso,
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+        return vehiculePort.deposerPhotos(actor.delegationToken(), id, recto, verso)
+                .map(v -> ResponseEntity.ok(VehiculeResponse.from(v)));
     }
 }

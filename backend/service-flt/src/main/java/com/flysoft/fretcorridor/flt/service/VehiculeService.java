@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class VehiculeService {
 
     private final VehiculeRepository vehiculeRepository;
+    private final VehiculePhotoStorageService photoStorageService;
 
     @Transactional
     public VehiculeDto.VehiculeResponse declarer(UUID proprietaireActeurId, String tenantId, VehiculeDto.DeclarerRequest request) {
@@ -82,6 +84,20 @@ public class VehiculeService {
     public void supprimer(UUID vehiculeId, UUID proprietaireActeurId, String tenantId) {
         Vehicule vehicule = trouverAppartenant(vehiculeId, proprietaireActeurId, tenantId);
         vehiculeRepository.delete(vehicule);
+    }
+
+    // Photos de carte grise recto/verso (retour utilisatrice 24/08).
+    @Transactional
+    public VehiculeDto.VehiculeResponse deposerPhotos(UUID vehiculeId, UUID proprietaireActeurId, String tenantId,
+                                                         MultipartFile recto, MultipartFile verso) {
+        Vehicule vehicule = trouverAppartenant(vehiculeId, proprietaireActeurId, tenantId);
+        if (recto != null && !recto.isEmpty()) {
+            vehicule.setPhotoCarteGriseRectoKey(photoStorageService.deposer(tenantId, vehiculeId, "recto", recto));
+        }
+        if (verso != null && !verso.isEmpty()) {
+            vehicule.setPhotoCarteGriseVersoKey(photoStorageService.deposer(tenantId, vehiculeId, "verso", verso));
+        }
+        return VehiculeDto.VehiculeResponse.fromEntity(vehiculeRepository.save(vehicule));
     }
 
     private Vehicule trouverAppartenant(UUID vehiculeId, UUID proprietaireActeurId, String tenantId) {

@@ -44,6 +44,13 @@ public class Vehicule {
     @Builder.Default
     private boolean profilMatieresDangereuses = false;
 
+    // Photos de la carte grise (retour utilisatrice 24/08) -- clés d'objet
+    // MinIO (VehiculePhotoStorageService), jamais l'URL/le contenu stockés
+    // ici directement (même principe que les preuves de mission côté
+    // service-exe).
+    private String photoCarteGriseRectoKey;
+    private String photoCarteGriseVersoKey;
+
     @Column(nullable = false)
     private String tenantId;
 
