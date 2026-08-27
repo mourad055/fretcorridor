@@ -200,6 +200,8 @@
   "nouveauVehicule": "New vehicle",
   "modifierLeVehicule": "Edit vehicle",
   "supprimerCeVehicule": "Delete this vehicle?",
+  "carteGriseRecto": "Registration card (front)",
+  "carteGriseVerso": "Registration card (back)",
   "poidsMaxLabel": "Max weight: {poids} t",
   "@poidsMaxLabel": {"placeholders": {"poids": {"type": "String"}}},
   "essieuxLabel": "Axles: {nombre}",

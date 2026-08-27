@@ -9,6 +9,8 @@ class VehiculeFlotte {
   final double? profilPoidsMaxTonnes;
   final int? profilNombreEssieux;
   final bool profilMatieresDangereuses;
+  final bool photoCarteGriseRectoDeposee;
+  final bool photoCarteGriseVersoDeposee;
 
   const VehiculeFlotte({
     required this.id,
@@ -17,6 +19,8 @@ class VehiculeFlotte {
     this.profilPoidsMaxTonnes,
     this.profilNombreEssieux,
     this.profilMatieresDangereuses = false,
+    this.photoCarteGriseRectoDeposee = false,
+    this.photoCarteGriseVersoDeposee = false,
   });
 
   factory VehiculeFlotte.fromJson(Map<String, dynamic> json) => VehiculeFlotte(
@@ -26,6 +30,8 @@ class VehiculeFlotte {
         profilPoidsMaxTonnes: (json['profilPoidsMaxTonnes'] as num?)?.toDouble(),
         profilNombreEssieux: json['profilNombreEssieux'] as int?,
         profilMatieresDangereuses: json['profilMatieresDangereuses'] as bool? ?? false,
+        photoCarteGriseRectoDeposee: json['photoCarteGriseRectoDeposee'] as bool? ?? false,
+        photoCarteGriseVersoDeposee: json['photoCarteGriseVersoDeposee'] as bool? ?? false,
       );
 }
 
@@ -110,6 +116,28 @@ class VehiculeNotifier extends StateNotifier<VehiculeState> {
         'profilNombreEssieux': profilNombreEssieux,
         'profilMatieresDangereuses': profilMatieresDangereuses,
       });
+      final modifie = VehiculeFlotte.fromJson(response.data);
+      state = state.copyWith(
+        chargement: false,
+        vehicules: [for (final v in state.vehicules) if (v.id == id) modifie else v],
+      );
+      return true;
+    } on DioException catch (e) {
+      state = state.copyWith(chargement: false, erreur: _messageErreur(e));
+      return false;
+    }
+  }
+
+  // Photos de carte grise recto/verso (retour utilisatrice 24/08). `recto`
+  // et `verso` sont chacun optionnels (dépôt indépendant de chaque côté).
+  Future<bool> deposerPhotos(String id, {String? cheminRecto, String? cheminVerso}) async {
+    state = state.copyWith(chargement: true, erreur: null);
+    try {
+      final formData = FormData.fromMap({
+        if (cheminRecto != null) 'recto': await MultipartFile.fromFile(cheminRecto, filename: 'recto.jpg'),
+        if (cheminVerso != null) 'verso': await MultipartFile.fromFile(cheminVerso, filename: 'verso.jpg'),
+      });
+      final response = await _dio.post('/vehicules/$id/photos', data: formData);
       final modifie = VehiculeFlotte.fromJson(response.data);
       state = state.copyWith(
         chargement: false,

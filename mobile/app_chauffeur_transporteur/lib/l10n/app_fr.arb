@@ -200,6 +200,8 @@
   "nouveauVehicule": "Nouveau véhicule",
   "modifierLeVehicule": "Modifier le véhicule",
   "supprimerCeVehicule": "Supprimer ce véhicule ?",
+  "carteGriseRecto": "Carte grise (recto)",
+  "carteGriseVerso": "Carte grise (verso)",
   "poidsMaxLabel": "Poids max : {poids} t",
   "@poidsMaxLabel": {"placeholders": {"poids": {"type": "String"}}},
   "essieuxLabel": "Essieux : {nombre}",

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/vehicule_provider.dart';
 import '../theme/app_theme.dart';
@@ -226,6 +227,8 @@ class _FormulaireVehiculeState extends ConsumerState<_FormulaireVehicule> {
   late final _essieuxCtrl =
       TextEditingController(text: widget.existant?.profilNombreEssieux?.toString());
   late bool _matieresDangereuses = widget.existant?.profilMatieresDangereuses ?? false;
+  XFile? _photoRecto;
+  XFile? _photoVerso;
 
   bool get _modeEdition => widget.existant != null;
 
@@ -236,6 +239,22 @@ class _FormulaireVehiculeState extends ConsumerState<_FormulaireVehicule> {
     _poidsMaxCtrl.dispose();
     _essieuxCtrl.dispose();
     super.dispose();
+  }
+
+  // Photos de carte grise recto/verso (retour utilisatrice 24/08) : capture
+  // via l'appareil photo, même pattern que les autres captures de document
+  // de l'app (KYC). Optionnel -- ne bloque jamais l'enregistrement du
+  // véhicule si l'utilisateur n'a pas les photos sous la main tout de suite.
+  Future<void> _prendrePhoto(bool cotePhotoRecto) async {
+    final photo = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 85);
+    if (photo == null) return;
+    setState(() {
+      if (cotePhotoRecto) {
+        _photoRecto = photo;
+      } else {
+        _photoVerso = photo;
+      }
+    });
   }
 
   Future<void> _valider() async {
@@ -257,7 +276,16 @@ class _FormulaireVehiculeState extends ConsumerState<_FormulaireVehicule> {
             profilNombreEssieux: int.tryParse(_essieuxCtrl.text),
             profilMatieresDangereuses: _matieresDangereuses,
           );
-    if (succes && mounted) Navigator.pop(context);
+    if (!succes || !mounted) return;
+
+    if (_photoRecto != null || _photoVerso != null) {
+      // Mode création : l'id du véhicule vient d'être attribué côté
+      // serveur -- declarer() le place en tête de liste (chargerMesVehicules
+      // trie par date de création descendante).
+      final id = _modeEdition ? widget.existant!.id : ref.read(vehiculeProvider).vehicules.first.id;
+      await notifier.deposerPhotos(id, cheminRecto: _photoRecto?.path, cheminVerso: _photoVerso?.path);
+    }
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -302,6 +330,26 @@ class _FormulaireVehiculeState extends ConsumerState<_FormulaireVehicule> {
               onChanged: (v) => setState(() => _matieresDangereuses = v),
               activeThumbColor: AppColors.accent,
             ),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                child: _boutonPhoto(
+                  label: t.carteGriseRecto,
+                  photo: _photoRecto,
+                  dejaDeposee: widget.existant?.photoCarteGriseRectoDeposee ?? false,
+                  onTap: () => _prendrePhoto(true),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _boutonPhoto(
+                  label: t.carteGriseVerso,
+                  photo: _photoVerso,
+                  dejaDeposee: widget.existant?.photoCarteGriseVersoDeposee ?? false,
+                  onTap: () => _prendrePhoto(false),
+                ),
+              ),
+            ]),
             if (state.erreur != null) ...[
               const SizedBox(height: 8),
               Text(state.erreur!, style: const TextStyle(color: AppColors.erreur, fontSize: 13)),
@@ -321,6 +369,27 @@ class _FormulaireVehiculeState extends ConsumerState<_FormulaireVehicule> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _boutonPhoto({
+    required String label,
+    required XFile? photo,
+    required bool dejaDeposee,
+    required VoidCallback onTap,
+  }) {
+    final deposee = photo != null || dejaDeposee;
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: deposee ? AppColors.accent : AppColors.bordure),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+      icon: Icon(deposee ? Icons.check_circle : Icons.camera_alt_outlined,
+          color: deposee ? AppColors.accent : AppColors.texteMuet, size: 18),
+      label: Text(label,
+          style: TextStyle(color: deposee ? AppColors.accent : AppColors.texteMuet, fontSize: 12),
+          textAlign: TextAlign.center),
     );
   }
 }
