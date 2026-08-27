@@ -34,3 +34,7 @@ spring:
       # cf ValhallaClientProperties) plutot que le timeout serre des appels
       # internes. Ne pas copier les valeurs de service-mat ici.
       connect-timeout-ms: 500
+    service-not:
+      base-url: http://service-not:8094
+      connect-timeout-ms: 300
+      read-timeout-ms: 500

@@ -144,6 +144,10 @@ public class CapaciteEnAttente {
     public boolean isTraitee() { return traitee; }
     public void marquerTraitee() { this.traitee = true; }
 
+    // UC-MAT-02 (CDC) : voir le commentaire equivalent sur
+    // DemandeEnAttente.remettreEnAttente() -- meme raisonnement.
+    public void remettreEnAttente() { this.traitee = false; }
+
     public PointGeoDto getPosition() {
         return (positionLatitude == null || positionLongitude == null)
                 ? null : new PointGeoDto(positionLatitude, positionLongitude);

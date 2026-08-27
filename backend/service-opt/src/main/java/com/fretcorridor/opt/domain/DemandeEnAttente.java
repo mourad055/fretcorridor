@@ -137,6 +137,15 @@ public class DemandeEnAttente {
     public Map<String, Double> getValeursCriteres() { return valeursCriteres; }
     public boolean isTraitee() { return traitee; }
     public void marquerTraitee() { this.traitee = true; }
+
+    // UC-MAT-02 (CDC) : un refus ou une expiration de PropositionMission ne
+    // doit jamais perdre silencieusement la demande -- meme classe de bug
+    // que le double-decrement de capacite deja corrige (audit du 23 aout) :
+    // une entree marquee traitee=true est exclue de tout cycle futur
+    // (findByAxeIdAndTraiteeFalse). Remise en file pour le prochain cycle
+    // (RG-045, traitement par lots) plutot qu'une re-tentative immediate sur
+    // le meme candidat refuse.
+    public void remettreEnAttente() { this.traitee = false; }
     public BigDecimal getPoidsTaxableKg() { return poidsTaxableKg; }
     public Instant getFenetreDebut() { return fenetreDebut; }
     public Instant getFenetreFin() { return fenetreFin; }

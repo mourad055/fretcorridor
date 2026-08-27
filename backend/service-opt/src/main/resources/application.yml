@@ -31,6 +31,10 @@ spring:
     valhalla:
       base-url: http://localhost:8002
       connect-timeout-ms: 500
+    service-not:
+      base-url: http://localhost:8094
+      connect-timeout-ms: 300
+      read-timeout-ms: 500
   kafka:
     bootstrap-servers: localhost:9092
     producer:

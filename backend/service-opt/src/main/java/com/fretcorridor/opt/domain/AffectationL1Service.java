@@ -11,6 +11,7 @@ import com.fretcorridor.opt.client.AxeDetailDto;
 import com.fretcorridor.opt.client.ServiceCapClient;
 import com.fretcorridor.opt.client.ServiceGeoClient;
 import com.fretcorridor.opt.client.ServiceMatClient;
+import com.fretcorridor.opt.client.ServiceNotClient;
 import com.fretcorridor.opt.client.ValhallaClient;
 import com.fretcorridor.opt.messaging.AffectationConfirmeeEvent;
 import com.fretcorridor.opt.messaging.OptEventPublisher;
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -50,27 +52,40 @@ public class AffectationL1Service {
 
     private static final Logger log = LoggerFactory.getLogger(AffectationL1Service.class);
 
+    // UC-MAT-02 (CDC) : duree avant expiration silencieuse d'une proposition
+    // non traitee (flux d'exception E1). Le CDC ne fixe pas de duree precise,
+    // seulement "un compte a rebours avant expiration" (RG-050 : 3
+    // interactions au plus, pas une contrainte de temps) -- 15 minutes est un
+    // choix d'implementation raisonnable pour ce MVP, pas une valeur du CDC.
+    static final Duration DUREE_VALIDITE_PROPOSITION = Duration.ofMinutes(15);
+
     private final ServiceMatClient serviceMatClient;
     private final ValhallaClient valhallaClient;
     private final TarificationL4Service tarificationL4Service;
     private final AffectationRepository affectationRepository;
+    private final PropositionMissionRepository propositionMissionRepository;
     private final OptEventPublisher eventPublisher;
     private final ServiceGeoClient serviceGeoClient;
     private final ServiceCapClient serviceCapClient;
+    private final ServiceNotClient serviceNotClient;
 
     public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
                                  TarificationL4Service tarificationL4Service,
                                  AffectationRepository affectationRepository,
+                                 PropositionMissionRepository propositionMissionRepository,
                                  OptEventPublisher eventPublisher,
                                  ServiceGeoClient serviceGeoClient,
-                                 ServiceCapClient serviceCapClient) {
+                                 ServiceCapClient serviceCapClient,
+                                 ServiceNotClient serviceNotClient) {
         this.serviceMatClient = serviceMatClient;
         this.valhallaClient = valhallaClient;
         this.tarificationL4Service = tarificationL4Service;
         this.affectationRepository = affectationRepository;
+        this.propositionMissionRepository = propositionMissionRepository;
         this.eventPublisher = eventPublisher;
         this.serviceGeoClient = serviceGeoClient;
         this.serviceCapClient = serviceCapClient;
+        this.serviceNotClient = serviceNotClient;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
@@ -169,158 +184,217 @@ public class AffectationL1Service {
                     demande.axeId(), candidatRetenu.typeVehicule(), demande.poidsTaxableKg(),
                     distanceMetres, BigDecimal.ZERO);
 
-            Affectation affectation = new Affectation(
-                    demandeId, capaciteId, cycleMatchingIds[i][indiceCapacite], demande.axeId(),
-                    demande.poidsTaxableKg(),
-                    demande.origineDemande().latitude(), demande.origineDemande().longitude(),
-                    demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
-                    itineraire != null ? itineraire.distanceMetres() : null,
-                    itineraire != null ? itineraire.dureeSecondes() : null,
-                    itineraire != null ? itineraire.intervalleConfianceSecondes() : null,
-                    itineraire != null ? itineraire.geometrieEncodee() : null,
-                    BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
-                    tarification.baremeId(), tarification.baremeVersion(), tarification.regime(),
-                    tarification.coutBase(), tarification.coutVariablePoidsTaxable(),
-                    tarification.coutServices(), tarification.facteurTensionApplique(),
-                    tarification.prixTransportAvantPlancher(), tarification.plancherApplique(),
-                    tarification.prixTransport(), tarification.commissionPlateforme(),
-                    tarification.montantVerseTransporteur(), tarification.modeDegrade());
-            UUID missionId = affectationRepository.save(affectation).getId();
-
             resultatsFinaux.add(new AffectationResultat(
                     demandeId,
                     capaciteId,
-                    missionId,
+                    null, // UC-MAT-02 : plus de missionId ici -- voir plus bas
                     BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
                     cycleMatchingIds[i][indiceCapacite],
                     itineraire,
                     tarification));
 
-            // --- Publication Kafka : PropositionEmise (→ service-mkt) ---
-            if (missionId != null && tarification != null) {
-                PropositionEmiseEvent proposition = new PropositionEmiseEvent(
-                        UUID.randomUUID(),
-                        cycleMatchingIds[i][indiceCapacite],
-                        demandeId,
-                        capaciteId,
-                        missionId,
-                        demande.axeId(),
-                        1, // rang 1 pour l'affectation optimale
-                        "Affectation optimale L1 (Kuhn-Munkres)",
-                        tarification.prixTransport(),
-                        tarification.commissionPlateforme(),
-                        "XAF",
-                        itineraire != null ? itineraire.distanceMetres() : 0,
-                        itineraire != null ? (long) itineraire.dureeSecondes() : null,
-                        demande.origineDemande() != null ? "Origine" : null,
-                        demande.destinationDemande() != null ? "Destination" : null,
-                        Instant.now()
-                );
-                eventPublisher.publierPropositionEmise(proposition);
+            // UC-MAT-02 du CDC (page 43, "Notification, acceptation ou refus
+            // d'une mission par le chauffeur") : BUG CORRIGE (26/08) -- le
+            // rang 1 etait jusqu'ici auto-confirme (Affectation creee,
+            // capacite reservee, Mission publiee) SANS jamais demander
+            // l'accord du chauffeur/transporteur, contrairement au flux
+            // explicitement decrit par le CDC (notification -> remuneration
+            // affichee en premier RG-049 -> accepter/refuser en 3
+            // interactions au plus RG-050 -> reservation SEULEMENT a
+            // l'acceptation). Cree desormais une PropositionMission
+            // EN_ATTENTE ; voir PropositionMissionService.accepter() pour la
+            // suite du flux (ex-contenu de ce bloc : Affectation,
+            // AffectationConfirmee, reservation capacite, repartition
+            // conventionnelle -- tout deplace la, inchange sur le fond,
+            // simplement declenche a l'acceptation plutot qu'ici).
+            if (tarification != null) {
+                PropositionMission proposition = new PropositionMission(
+                        demandeId, capaciteId, candidatRetenu.transporteurId(), candidatRetenu.vehiculeId(),
+                        candidatRetenu.typeVehicule(), cycleMatchingIds[i][indiceCapacite], demande.axeId(), 1,
+                        demande.poidsTaxableKg(), origineNom, destinationNom,
+                        demande.origineDemande().latitude(), demande.origineDemande().longitude(),
+                        demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
+                        itineraire != null ? itineraire.distanceMetres() : null,
+                        itineraire != null ? itineraire.dureeSecondes() : null,
+                        itineraire != null ? itineraire.intervalleConfianceSecondes() : null,
+                        itineraire != null ? itineraire.geometrieEncodee() : null,
+                        tarification.prixTransport(), BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
+                        demande.typeEmballageNom(), demande.quantite(),
+                        demande.destinataireNom(), demande.destinataireTelephone(),
+                        demande.modeCollecte(), demande.typeDisponibilite(),
+                        demande.poidsTotalKg(), demande.grandeValeur(),
+                        Instant.now().plus(DUREE_VALIDITE_PROPOSITION));
+
+                if (candidatRetenu.transporteurId() == null) {
+                    // Degradation gracieuse (ENF-DIS-04) : sans transporteur
+                    // resolu, personne a notifier -- la demande reste
+                    // consideree "traitee" ce cycle (comportement inchange,
+                    // cf MatchingCycleService) mais aucune proposition n'est
+                    // creee ; sera reconsideree comme n'importe quelle
+                    // demande non affectee. Log explicite : ce cas ne devrait
+                    // plus arriver depuis le fix S7 (transporteurId toujours
+                    // resolu par CandidatCoutDto).
+                    log.warn("Candidat retenu sans transporteurId pour la demande {} - "
+                            + "aucune PropositionMission creee (UC-MAT-02 impossible sans destinataire).", demandeId);
+                } else {
+                    propositionMissionRepository.save(proposition);
+
+                    serviceNotClient.notifier(
+                            candidatRetenu.transporteurId(),
+                            "Nouvelle mission proposee",
+                            "%s → %s, %s".formatted(
+                                    origineNom != null ? origineNom : "Origine",
+                                    destinationNom != null ? destinationNom : "Destination",
+                                    tarification.prixTransport() != null
+                                            ? "%s XAF".formatted(tarification.prixTransport().toBigInteger())
+                                            : "prix a confirmer"),
+                            "PROPOSITION_MISSION",
+                            proposition.getId(),
+                            null);
+                }
 
                 // RG-039/EF-MKT-07 (CDC : "au plus trois propositions par
                 // demande, ordonnées, motif de classement intelligible") :
-                // rang 1 ci-dessus reste l'affectation Kuhn-Munkres committee
-                // (comportement inchangé) ; rang 2/3 sont des alternatives
-                // purement informationnelles, classees par cout sur la meme
-                // ligne de la matrice -- aucune Affectation/AffectationConfirmee
-                // pour elles, prix estime (pas ferme au sens RG-041 tant que
-                // non accepte explicitement, cf AccepterPropositionService).
+                // rang 2/3 restent des alternatives purement
+                // informationnelles cote chargeur (aucune interaction
+                // chauffeur, hors perimetre UC-MAT-02 pour cette iteration) --
+                // comportement inchange.
                 publierAlternatives(demandeId, demande, matriceCouts[i], capacitesReference,
                         cycleMatchingIds[i], indiceCapacite);
-
-                // --- Publication Kafka : AffectationConfirmee (→ service-exe) ---
-                AffectationConfirmeeEvent confirmation = new AffectationConfirmeeEvent(
-                        UUID.randomUUID(),
-                        missionId,
-                        demandeId,
-                        capaciteId,
-                        candidatRetenu.vehiculeId(),
-                        candidatRetenu.transporteurId(),
-                        null,
-                        demande.axeId(),
-                        demande.origineDemande() != null ? demande.origineDemande().latitude() : 0,
-                        demande.origineDemande() != null ? demande.origineDemande().longitude() : 0,
-                        origineNom,
-                        demande.destinationDemande() != null ? demande.destinationDemande().latitude() : 0,
-                        demande.destinationDemande() != null ? demande.destinationDemande().longitude() : 0,
-                        destinationNom,
-                        itineraire != null ? itineraire.distanceMetres() : null,
-                        itineraire != null ? (long) itineraire.dureeSecondes() : null,
-                        itineraire != null ? (long) itineraire.intervalleConfianceSecondes() : null,
-                        itineraire != null ? itineraire.geometrieEncodee() : null,
-                        tarification.prixTransport(),
-                        tarification.commissionPlateforme(),
-                        tarification.montantVerseTransporteur(),
-                        "XAF",
-                        "DEPOT",
-                        "RETRAIT",
-                        Instant.now(),
-                        demande.typeEmballageNom(),
-                        demande.quantite(),
-                        demande.poidsTaxableKg(),
-                        demande.destinataireNom(),
-                        demande.destinataireTelephone(),
-                        demande.modeCollecte(),
-                        // ^ demandeModeCollecte du record (DOMICILE/POINT_RELAIS) —
-                        // distinct de "modeCollecte"/"modeRemise" plus haut
-                        // (DEPOT/RETRAIT, placeholders itineraire).
-                        demande.typeDisponibilite(),
-                        demande.poidsTotalKg(),
-                        demande.grandeValeur()
-                );
-                eventPublisher.publierAffectationConfirmee(confirmation);
-
-                // BUG CORRIGE (audit de suivi, 23 aout) : reservation reelle de la
-                // capacite cote service-cap, jusqu'ici totalement absente pour le
-                // rang 1 (affectation directe) - voir javadoc ServiceCapClient.
-                // Meme garde que le flux d'acceptation rang 2/3 (service-mkt,
-                // EF-MKT-08) : rien a reserver sans capaciteId/poidsTaxableKg.
-                if (demande.poidsTaxableKg() != null) {
-                    serviceCapClient.reserver(capaciteId, demande.poidsTaxableKg(), missionId.toString());
-                }
-
-                // --- Publication Kafka conditionnelle : RepartitionConventionnelleAppliquee
-                // (-> service-pay, EF-GEO-05/RG-052, Phase 4). Uniquement si l'axe porte une
-                // convention configuree (Axe.parametres.conventionRepartition) - RG-052 :
-                // "en trafic intra-camerounais, aucune cle ne s'applique", donc l'absence de
-                // convention N'EST PAS un mode degrade, c'est le comportement attendu par
-                // defaut pour la grande majorite des axes. Limitation connue (README Phase 4
-                // S3.3, Hub sans champ pays) : ne distingue pas encore "axe transfrontalier
-                // sans convention renseignee" de "axe intra-camerounais normal" - les deux
-                // cas aboutissent au meme silence ici, assume jusqu'a l'ajout de Hub.pays.
-                if (demande.axeId() != null) {
-                    AxeDetailDto axeDetail = serviceGeoClient.axeParId(demande.axeId());
-                    if (axeDetail != null && axeDetail.parametres() != null
-                            && axeDetail.parametres().get("conventionRepartition") instanceof java.util.Map<?, ?> conventionMap) {
-
-                        Object conventionCodeObj = conventionMap.get("conventionCode");
-                        Object partsObj = conventionMap.get("partsPourcent");
-
-                        if (conventionCodeObj != null && partsObj instanceof java.util.Map<?, ?> partsMap) {
-                            java.util.Map<String, Double> parts = new java.util.HashMap<>();
-                            for (var entree : partsMap.entrySet()) {
-                                if (entree.getValue() instanceof Number n) {
-                                    parts.put(entree.getKey().toString(), n.doubleValue());
-                                }
-                            }
-
-                            RepartitionConventionnelleAppliqueeEvent repartition = new RepartitionConventionnelleAppliqueeEvent(
-                                    UUID.randomUUID(),
-                                    missionId,
-                                    demande.axeId(),
-                                    conventionCodeObj.toString(),
-                                    parts,
-                                    Instant.now(),
-                                    false);
-                            eventPublisher.publierRepartitionConventionnelleAppliquee(repartition);
-                        }
-                    }
-                }
             }
         }
 
         return new AffectationLotResultat(false, resultatsFinaux);
+    }
+
+    /**
+     * UC-MAT-02 (CDC) : suite du flux, declenchee par
+     * PropositionMissionService.accepter() -- reprend exactement ce que
+     * faisait AffectationL1Service au sortir du solveur avant le 26/08
+     * (Affectation, AffectationConfirmee, reservation capacite, repartition
+     * conventionnelle), a partir des donnees deja capturees sur la
+     * proposition acceptee. Tarification recalculee (deterministe a partir
+     * de axeId/typeVehicule/poidsTaxableKg/distanceMetres deja stockes)
+     * plutot que dupliquee sur PropositionMission -- voir javadoc de la
+     * migration V22.
+     */
+    Affectation confirmerDepuisProposition(PropositionMission proposition) {
+        TarificationResultat tarification = tarificationL4Service.calculer(
+                proposition.getAxeId(), proposition.getTypeVehicule(), proposition.getPoidsTaxableKg(),
+                proposition.getDistanceMetres(), BigDecimal.ZERO);
+
+        Affectation affectation = new Affectation(
+                proposition.getDemandeId(), proposition.getCapaciteId(), proposition.getCycleMatchingId(),
+                proposition.getAxeId(), proposition.getPoidsTaxableKg(),
+                proposition.getOrigineLatitude(), proposition.getOrigineLongitude(),
+                proposition.getDestinationLatitude(), proposition.getDestinationLongitude(),
+                proposition.getDistanceMetres(), proposition.getDureeSecondes(),
+                proposition.getIntervalleConfianceSecondes(), proposition.getGeometrieEncodee(),
+                proposition.getCoutTotal(),
+                tarification.baremeId(), tarification.baremeVersion(), tarification.regime(),
+                tarification.coutBase(), tarification.coutVariablePoidsTaxable(),
+                tarification.coutServices(), tarification.facteurTensionApplique(),
+                tarification.prixTransportAvantPlancher(), tarification.plancherApplique(),
+                tarification.prixTransport(), tarification.commissionPlateforme(),
+                tarification.montantVerseTransporteur(), tarification.modeDegrade());
+        UUID missionId = affectationRepository.save(affectation).getId();
+
+        PropositionEmiseEvent propositionEvent = new PropositionEmiseEvent(
+                UUID.randomUUID(),
+                proposition.getCycleMatchingId(),
+                proposition.getDemandeId(),
+                proposition.getCapaciteId(),
+                missionId,
+                proposition.getAxeId(),
+                1,
+                "Affectation optimale L1 (Kuhn-Munkres)",
+                tarification.prixTransport(),
+                tarification.commissionPlateforme(),
+                "XAF",
+                proposition.getDistanceMetres() != null ? proposition.getDistanceMetres() : 0,
+                proposition.getDureeSecondes() != null ? proposition.getDureeSecondes().longValue() : null,
+                proposition.getOrigineNom() != null ? "Origine" : null,
+                proposition.getDestinationNom() != null ? "Destination" : null,
+                Instant.now());
+        eventPublisher.publierPropositionEmise(propositionEvent);
+
+        AffectationConfirmeeEvent confirmation = new AffectationConfirmeeEvent(
+                UUID.randomUUID(),
+                missionId,
+                proposition.getDemandeId(),
+                proposition.getCapaciteId(),
+                proposition.getVehiculeId(),
+                proposition.getTransporteurId(),
+                null,
+                proposition.getAxeId(),
+                proposition.getOrigineLatitude(),
+                proposition.getOrigineLongitude(),
+                proposition.getOrigineNom(),
+                proposition.getDestinationLatitude(),
+                proposition.getDestinationLongitude(),
+                proposition.getDestinationNom(),
+                proposition.getDistanceMetres(),
+                proposition.getDureeSecondes() != null ? proposition.getDureeSecondes().longValue() : null,
+                proposition.getIntervalleConfianceSecondes() != null
+                        ? proposition.getIntervalleConfianceSecondes().longValue() : null,
+                proposition.getGeometrieEncodee(),
+                tarification.prixTransport(),
+                tarification.commissionPlateforme(),
+                tarification.montantVerseTransporteur(),
+                "XAF",
+                "DEPOT",
+                "RETRAIT",
+                Instant.now(),
+                proposition.getTypeEmballageNom(),
+                proposition.getQuantite(),
+                proposition.getPoidsTaxableKg(),
+                proposition.getDestinataireNom(),
+                proposition.getDestinataireTelephone(),
+                proposition.getModeCollecte(),
+                proposition.getTypeDisponibilite(),
+                proposition.getPoidsTotalKg(),
+                proposition.getGrandeValeur());
+        eventPublisher.publierAffectationConfirmee(confirmation);
+
+        // BUG CORRIGE (audit de suivi, 23 aout) : reservation reelle de la
+        // capacite cote service-cap -- voir javadoc ServiceCapClient.
+        if (proposition.getPoidsTaxableKg() != null) {
+            serviceCapClient.reserver(proposition.getCapaciteId(), proposition.getPoidsTaxableKg(), missionId.toString());
+        }
+
+        // --- Publication Kafka conditionnelle : RepartitionConventionnelleAppliquee
+        // (-> service-pay, EF-GEO-05/RG-052, Phase 4). Voir commentaire original
+        // (avant deplacement ici) pour le detail de la logique et sa limite connue.
+        if (proposition.getAxeId() != null) {
+            AxeDetailDto axeDetail = serviceGeoClient.axeParId(proposition.getAxeId());
+            if (axeDetail != null && axeDetail.parametres() != null
+                    && axeDetail.parametres().get("conventionRepartition") instanceof java.util.Map<?, ?> conventionMap) {
+
+                Object conventionCodeObj = conventionMap.get("conventionCode");
+                Object partsObj = conventionMap.get("partsPourcent");
+
+                if (conventionCodeObj != null && partsObj instanceof java.util.Map<?, ?> partsMap) {
+                    java.util.Map<String, Double> parts = new java.util.HashMap<>();
+                    for (var entree : partsMap.entrySet()) {
+                        if (entree.getValue() instanceof Number n) {
+                            parts.put(entree.getKey().toString(), n.doubleValue());
+                        }
+                    }
+
+                    RepartitionConventionnelleAppliqueeEvent repartition = new RepartitionConventionnelleAppliqueeEvent(
+                            UUID.randomUUID(),
+                            missionId,
+                            proposition.getAxeId(),
+                            conventionCodeObj.toString(),
+                            parts,
+                            Instant.now(),
+                            false);
+                    eventPublisher.publierRepartitionConventionnelleAppliquee(repartition);
+                }
+            }
+        }
+
+        return affectation;
     }
 
     /**
