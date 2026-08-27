@@ -1,5 +1,5 @@
 import { Ecriture } from '../models/ecriture.models';
-import { calculerTotauxEcritures, ecrituresVersCsv } from './ecritures-totaux';
+import { calculerTotauxEcritures, calculerTotauxPaiementTransporteur, ecrituresVersCsv } from './ecritures-totaux';
 
 function ecriture(partial: Partial<Ecriture>): Ecriture {
   return {
@@ -30,6 +30,16 @@ describe('calculerTotauxEcritures', () => {
 
   it('renvoie des totaux nuls sur une liste vide', () => {
     expect(calculerTotauxEcritures([])).toEqual({ nombre: 0, totalCredit: 0, totalDebit: 0, solde: 0 });
+  });
+});
+
+describe('calculerTotauxPaiementTransporteur', () => {
+  it('somme les reversements reçus comme montant positif', () => {
+    const totaux = calculerTotauxPaiementTransporteur([
+      ecriture({ nature: 'REVERSEMENT', sens: 'DEBIT', montant: 165000 }),
+      ecriture({ id: 'e2', nature: 'REVERSEMENT', sens: 'DEBIT', montant: 92000 }),
+    ]);
+    expect(totaux).toEqual({ nombre: 2, totalCredit: 0, totalDebit: 257000, solde: 257000 });
   });
 });
 

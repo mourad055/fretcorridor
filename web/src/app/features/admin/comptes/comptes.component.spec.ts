@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { axe } from 'jest-axe';
 import { ComptesComponent } from './comptes.component';
 import { environment } from '../../../../environments/environment';
@@ -17,106 +18,118 @@ const COMPTE = {
   niveauKyc: 'NIVEAU_1',
 };
 
+const CHAUFFEUR = {
+  id: 'c2',
+  telephone: '+237610000001',
+  nom: 'bobo',
+  prenom: 'toto',
+  raisonSociale: null,
+  tenantId: 'tenant-bgft-douala',
+  roles: ['CHAUFFEUR'],
+  actif: true,
+  niveauKyc: 'NIVEAU_1',
+};
+
 describe('ComptesComponent', () => {
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ComptesComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  beforeEach(() => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-  });
-
   afterEach(() => {
     httpMock.verify();
-    jest.restoreAllMocks();
   });
 
-  it('ne charge rien tant que Consulter n\'a pas ete clique', () => {
+  it('charge les comptes au demarrage', () => {
     const fixture = TestBed.createComponent(ComptesComponent);
     fixture.detectChanges();
 
-    httpMock.expectNone((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`);
-  });
-
-  it('affiche les comptes du tenant apres consultation', () => {
-    const fixture = TestBed.createComponent(ComptesComponent);
-    fixture.detectChanges();
-
-    fixture.componentInstance.consulter();
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Jean Mbarga');
-    expect(fixture.nativeElement.textContent).toContain('Actif');
   });
 
-  it('bascule le statut d\'un compte puis rafraichit la liste', () => {
+  it('ouvre la modale Voir', () => {
     const fixture = TestBed.createComponent(ComptesComponent);
     fixture.detectChanges();
-    fixture.componentInstance.consulter();
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
     fixture.detectChanges();
 
-    fixture.componentInstance.basculerStatut(COMPTE as never);
+    const voir = fixture.nativeElement.querySelector('button');
+    const voirBtn = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: Element) =>
+      b.textContent?.includes('Voir')
+    ) as HTMLButtonElement;
+    voirBtn.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Canal métier');
+    expect(fixture.nativeElement.querySelector('.fc-modal')).toBeTruthy();
+  });
+
+  it('desactive via modale de confirmation', () => {
+    const fixture = TestBed.createComponent(ComptesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
+    fixture.detectChanges();
+
+    const desactiver = Array.from(fixture.nativeElement.querySelectorAll('button')).find((b: Element) =>
+      b.textContent?.includes('Désactiver')
+    ) as HTMLButtonElement;
+    desactiver.click();
+    fixture.detectChanges();
+
+    const confirmer = Array.from(fixture.nativeElement.querySelectorAll('.fc-modal__footer button')).find((b: Element) =>
+      b.textContent?.includes('Désactiver')
+    ) as HTMLButtonElement;
+    confirmer.click();
 
     const reqStatut = httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes/c1/statut`);
     expect(reqStatut.request.body).toEqual({ actif: false });
     reqStatut.flush({ ...COMPTE, actif: false });
-
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([{ ...COMPTE, actif: false }]);
   });
 
-  it('ne desactive rien si la confirmation est annulee, mais reactive sans confirmation', () => {
-    (window.confirm as jest.Mock).mockReturnValue(false);
+  it('change les roles via modale', () => {
     const fixture = TestBed.createComponent(ComptesComponent);
     fixture.detectChanges();
-    fixture.componentInstance.consulter();
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
     fixture.detectChanges();
 
-    fixture.componentInstance.basculerStatut(COMPTE as never);
-    httpMock.expectNone((r) => r.url === `${environment.apiBaseUrl}/admin/comptes/c1/statut`);
-
-    // reactiver un compte deja inactif ne demande aucune confirmation
-    fixture.componentInstance.basculerStatut({ ...COMPTE, actif: false } as never);
-    const reqReactivation = httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes/c1/statut`);
-    expect(reqReactivation.request.body).toEqual({ actif: true });
-    reqReactivation.flush({ ...COMPTE, actif: true });
-    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
-  });
-
-  it('change les roles d\'un compte via le formulaire d\'edition', () => {
-    const fixture = TestBed.createComponent(ComptesComponent);
-    fixture.detectChanges();
-    fixture.componentInstance.consulter();
-    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
-    fixture.detectChanges();
-
-    fixture.componentInstance.commencerEditionRoles(COMPTE as never);
+    fixture.componentInstance.ouvrirEditionRoles(COMPTE as never);
     fixture.componentInstance.basculerRoleEdition('ADMINISTRATION', true);
     fixture.componentInstance.basculerRoleEdition('BUREAU', false);
+    fixture.detectChanges();
     fixture.componentInstance.enregistrerRoles();
 
     const reqRoles = httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes/c1/roles`);
     expect(reqRoles.request.body).toEqual({ roles: ['ADMINISTRATION'] });
     reqRoles.flush({ ...COMPTE, roles: ['ADMINISTRATION'] });
-
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([{ ...COMPTE, roles: ['ADMINISTRATION'] }]);
+  });
 
-    expect(fixture.componentInstance.compteEnEdition()).toBeNull();
+  it('propose le lien KYC pour un chauffeur', () => {
+    const fixture = TestBed.createComponent(ComptesComponent);
+    fixture.detectChanges();
+    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([CHAUFFEUR]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.voirCompte(CHAUFFEUR as never);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('App Chauffeur / Transporteur mobile');
+    expect(fixture.nativeElement.textContent).toContain('Ouvrir la file KYC');
   });
 
   it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {
     const fixture = TestBed.createComponent(ComptesComponent);
     fixture.detectChanges();
-    fixture.componentInstance.consulter();
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/comptes`).flush([COMPTE]);
     fixture.detectChanges();
 

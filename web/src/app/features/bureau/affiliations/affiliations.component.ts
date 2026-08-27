@@ -51,25 +51,29 @@ export class AffiliationsComponent {
     if (!telephone || this.enCours()) {
       return;
     }
-    const confirme = this.confirmationService.confirmer(
-      this.translate.instant('affiliations.confirmation', { telephone })
-    );
-    if (!confirme) {
-      return;
-    }
-    this.enCours.set(true);
-    this.errorMessageKey.set(null);
-    this.succesTelephone.set(null);
-    this.affiliationService.inviter(telephone).subscribe({
-      next: () => {
-        this.enCours.set(false);
-        this.succesTelephone.set(telephone);
-        this.telephone.set('');
-      },
-      error: (erreur: HttpErrorResponse) => {
-        this.enCours.set(false);
-        this.errorMessageKey.set(cleErreurInvitation(erreur));
-      },
-    });
+    void this.confirmationService
+      .confirmer(this.translate.instant('affiliations.confirmation', { telephone }), {
+        title: this.translate.instant('affiliations.titre'),
+        confirmLabel: this.translate.instant('affiliations.soumettre'),
+      })
+      .then((confirme) => {
+        if (!confirme) {
+          return;
+        }
+        this.enCours.set(true);
+        this.errorMessageKey.set(null);
+        this.succesTelephone.set(null);
+        this.affiliationService.inviter(telephone).subscribe({
+          next: () => {
+            this.enCours.set(false);
+            this.succesTelephone.set(telephone);
+            this.telephone.set('');
+          },
+          error: (erreur: HttpErrorResponse) => {
+            this.enCours.set(false);
+            this.errorMessageKey.set(cleErreurInvitation(erreur));
+          },
+        });
+      });
   }
 }

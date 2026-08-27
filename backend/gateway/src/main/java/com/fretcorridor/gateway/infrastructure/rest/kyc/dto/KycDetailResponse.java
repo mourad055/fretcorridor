@@ -16,11 +16,11 @@ public record KycDetailResponse(
         Set<String> roles,
         List<PieceResponse> pieces
 ) {
-    public record PieceResponse(String typeDocument, String url, LocalDateTime dateDepot) {}
+    public record PieceResponse(String id, String typeDocument, String url, LocalDateTime dateDepot) {}
 
     public static KycDetailResponse from(KycDetail detail) {
         List<PieceResponse> pieces = detail.pieces().stream()
-                .map(p -> new PieceResponse(p.typeDocument(), p.url(), p.dateDepot()))
+                .map(p -> new PieceResponse(p.id(), p.typeDocument(), p.url(), p.dateDepot()))
                 .toList();
         return new KycDetailResponse(
                 detail.id(),

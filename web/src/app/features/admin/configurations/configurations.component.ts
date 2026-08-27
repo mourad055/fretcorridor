@@ -32,6 +32,8 @@ export class ConfigurationsComponent implements OnInit {
   readonly loading = signal(false);
   readonly consulte = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly historiqueOuvert = signal(false);
+  readonly definitionOuverte = signal(false);
 
   readonly pageCatalogue = signal(1);
   readonly pageHistorique = signal(1);
@@ -63,9 +65,34 @@ export class ConfigurationsComponent implements OnInit {
     });
   }
 
-  selectionner(cle: string): void {
+  ouvrirHistorique(cle: string): void {
     this.cle.set(cle);
+    this.historiqueOuvert.set(true);
     this.consulter();
+  }
+
+  fermerHistorique(): void {
+    this.historiqueOuvert.set(false);
+  }
+
+  ouvrirDefinition(cle: string, valeurCourante?: string): void {
+    this.cle.set(cle);
+    if (valeurCourante !== undefined) {
+      this.nouvelleValeur.set(valeurCourante);
+    }
+    this.definitionOuverte.set(true);
+  }
+
+  fermerDefinition(): void {
+    this.definitionOuverte.set(false);
+  }
+
+  valeurHistoriqueCourante(): string {
+    return this.historique()[0]?.valeur ?? '';
+  }
+
+  selectionner(cle: string): void {
+    this.ouvrirHistorique(cle);
   }
 
   consulter(): void {
@@ -89,24 +116,29 @@ export class ConfigurationsComponent implements OnInit {
   }
 
   definir(): void {
-    const confirme = this.confirmationService.confirmer(
-      `Définir une nouvelle version de « ${this.cle()} » avec la valeur « ${this.nouvelleValeur()} » ? Cette action crée une nouvelle version, jamais réversible en place.`
-    );
-    if (!confirme) {
-      return;
-    }
-    this.loading.set(true);
-    this.errorMessage.set(null);
-    this.configurationsService.definir(this.cle(), this.nouvelleValeur()).subscribe({
-      next: () => {
-        this.nouvelleValeur.set('');
-        this.consulter();
-        this.chargerCatalogue();
-      },
-      error: () => {
-        this.errorMessage.set('Impossible de définir cette configuration.');
-        this.loading.set(false);
-      },
-    });
+    void this.confirmationService
+      .confirmer(
+        `Définir une nouvelle version de « ${this.cle()} » avec la valeur « ${this.nouvelleValeur()} » ? Cette action crée une nouvelle version, jamais réversible en place.`,
+        { title: 'Nouvelle version', confirmLabel: 'Enregistrer', danger: true }
+      )
+      .then((confirme) => {
+        if (!confirme) {
+          return;
+        }
+        this.loading.set(true);
+        this.errorMessage.set(null);
+        this.configurationsService.definir(this.cle(), this.nouvelleValeur()).subscribe({
+          next: () => {
+            this.nouvelleValeur.set('');
+            this.definitionOuverte.set(false);
+            this.consulter();
+            this.chargerCatalogue();
+          },
+          error: () => {
+            this.errorMessage.set('Impossible de définir cette configuration.');
+            this.loading.set(false);
+          },
+        });
+      });
   }
 }

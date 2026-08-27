@@ -4,10 +4,12 @@ import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
 import com.fretcorridor.gateway.domain.kyc.KycDetail;
 import com.fretcorridor.gateway.domain.kyc.KycDossier;
 import com.fretcorridor.gateway.domain.kyc.KycDossierIntrouvableException;
+import com.fretcorridor.gateway.domain.kyc.KycPieceContenu;
 import com.fretcorridor.gateway.domain.kyc.KycPort;
 import com.fretcorridor.gateway.domain.kyc.KycServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.KycStatut;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -92,6 +94,35 @@ public class RealIdaKycAdapter implements KycPort {
                 .bodyToMono(ActeurDetailDto.class)
                 .map(ActeurDetailDto::versDetail)
                 .onErrorMap(this::est404, e -> new KycDossierIntrouvableException(acteurId))
+                .onErrorMap(e -> !(e instanceof KycDossierIntrouvableException), e -> new KycServiceIndisponibleException());
+    }
+
+    @Override
+    public Mono<KycPieceContenu> telechargerPiece(
+            String acteurId,
+            String pieceId,
+            String tenantId,
+            String delegationToken) {
+        if (delegationToken == null) {
+            return Mono.error(new KycServiceIndisponibleException());
+        }
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/ida/admin/kyc/{acteurId}/pieces/{pieceId}/content")
+                        .queryParam("tenantId", tenantId)
+                        .build(acteurId, pieceId))
+                .headers(h -> h.setBearerAuth(delegationToken))
+                .exchangeToMono(response -> {
+                    if (response.statusCode().value() == 404) {
+                        return Mono.error(new KycDossierIntrouvableException(pieceId));
+                    }
+                    if (response.statusCode().isError()) {
+                        return Mono.error(new KycServiceIndisponibleException());
+                    }
+                    MediaType contentType = response.headers().contentType().orElse(MediaType.APPLICATION_OCTET_STREAM);
+                    return response.bodyToMono(byte[].class)
+                            .map(body -> new KycPieceContenu(contentType.toString(), body));
+                })
                 .onErrorMap(e -> !(e instanceof KycDossierIntrouvableException), e -> new KycServiceIndisponibleException());
     }
 
@@ -181,6 +212,12 @@ public class RealIdaKycAdapter implements KycPort {
             if (roles == null || roles.isEmpty()) {
                 return "INCONNU";
             }
+            List<String> priorite = List.of("CHAUFFEUR_PROPRIETAIRE", "CHAUFFEUR", "TRANSPORTEUR");
+            for (String role : priorite) {
+                if (roles.contains(role)) {
+                    return role;
+                }
+            }
             return roles.iterator().next();
         }
     }
@@ -197,7 +234,7 @@ public class RealIdaKycAdapter implements KycPort {
     ) {
         KycDetail versDetail() {
             List<KycDetail.Piece> mapped = pieces == null ? List.of() : pieces.stream()
-                    .map(p -> new KycDetail.Piece(p.typeDocument(), p.url(), p.dateDepot()))
+                    .map(p -> new KycDetail.Piece(p.id(), p.typeDocument(), p.url(), p.dateDepot()))
                     .collect(Collectors.toList());
             return new KycDetail(
                     acteurId,
@@ -211,5 +248,5 @@ public class RealIdaKycAdapter implements KycPort {
         }
     }
 
-    private record PieceDto(String typeDocument, String url, LocalDateTime dateDepot) {}
+    private record PieceDto(String id, String typeDocument, String url, LocalDateTime dateDepot) {}
 }

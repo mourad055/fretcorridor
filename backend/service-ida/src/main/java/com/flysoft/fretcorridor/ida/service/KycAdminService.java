@@ -34,16 +34,24 @@ public class KycAdminService {
     private final PieceJustificativeRepository pieceJustificativeRepository;
     private final DocumentStorageService documentStorageService;
 
+    /**
+     * File admin : profil mobile complet (NIVEAU_1) avec au moins une pièce déposée,
+     * en attente de décision VALIDE → N2 ou REJETE.
+     */
     @Transactional(readOnly = true)
     public List<KycAdminDto.ActeurSummary> listerEnAttente(String tenantId) {
         return acteurRepository.findByTenantId(tenantId).stream()
                 .filter(this::estActeurKycEligible)
-                .filter(a -> a.getNiveauKyc() != Acteur.NiveauKyc.NIVEAU_2)
-                .filter(a -> !pieceJustificativeRepository.findByActeurId(a.getId()).isEmpty())
+                .filter(a -> a.getNiveauKyc() == Acteur.NiveauKyc.NIVEAU_1)
+                .filter(a -> possedePieces(a.getId()))
                 .map(KycAdminDto.ActeurSummary::from)
                 .toList();
     }
 
+    /**
+     * NIVEAU_2 : dossiers validés par l'admin (RG-011 — pièces vérifiées).
+     * NIVEAU_1 : profils mobile N1 sans pièce — hors file admin (identité seule).
+     */
     @Transactional(readOnly = true)
     public List<KycAdminDto.ActeurSummary> listerParNiveau(String tenantId, Acteur.NiveauKyc niveau) {
         if (niveau != Acteur.NiveauKyc.NIVEAU_1 && niveau != Acteur.NiveauKyc.NIVEAU_2) {
@@ -51,14 +59,27 @@ public class KycAdminService {
         }
         return acteurRepository.findByTenantIdAndNiveauKyc(tenantId, niveau).stream()
                 .filter(this::estActeurKycEligible)
+                .filter(a -> niveau != Acteur.NiveauKyc.NIVEAU_1 || !possedePieces(a.getId()))
                 .map(KycAdminDto.ActeurSummary::from)
                 .toList();
+    }
+
+    private boolean possedePieces(UUID acteurId) {
+        return !pieceJustificativeRepository.findByActeurId(acteurId).isEmpty();
     }
 
     @Transactional(readOnly = true)
     public KycAdminDto.ActeurDetail getDetail(UUID acteurId, String tenantId) {
         Acteur acteur = acteurKycDuTenant(acteurId, tenantId);
         return KycAdminDto.ActeurDetail.from(acteur, piecesDe(acteur));
+    }
+
+    @Transactional(readOnly = true)
+    public DocumentStorageService.ContenuObjet lirePiece(UUID acteurId, UUID pieceId, String tenantId) {
+        Acteur acteur = acteurKycDuTenant(acteurId, tenantId);
+        var piece = pieceJustificativeRepository.findByIdAndActeurId(pieceId, acteur.getId())
+                .orElseThrow(() -> new RuntimeException("KYC_PIECE_INTROUVABLE"));
+        return documentStorageService.lireContenu(piece.getObjectKey());
     }
 
     @Transactional
@@ -114,6 +135,7 @@ public class KycAdminService {
     private List<KycDto.PieceResponse> piecesDe(Acteur acteur) {
         return pieceJustificativeRepository.findByActeurId(acteur.getId()).stream()
                 .map(p -> KycDto.PieceResponse.builder()
+                        .id(p.getId())
                         .typeDocument(p.getTypeDocument())
                         .url(documentStorageService.urlAcces(p.getObjectKey()))
                         .dateDepot(p.getDateDepot())

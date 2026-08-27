@@ -7,13 +7,17 @@ services:
       context: ../backend/service-exe
     container_name: fretcorridor-service-exe
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker,dev}
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
       # Consomme AffectationConfirmee (service-opt, Moteur) pour matérialiser
       # les missions du chauffeur — cf. AffectationConfirmeeListener.
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     ports:
       - "8093:8093"
     depends_on:
       postgres:
+        condition: service_healthy
+      minio:
         condition: service_healthy

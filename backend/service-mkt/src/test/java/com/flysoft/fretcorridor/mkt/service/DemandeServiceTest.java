@@ -148,17 +148,19 @@ class DemandeServiceTest {
         UUID demandeId = UUID.randomUUID();
         UUID propositionId = UUID.randomUUID();
         UUID capaciteId = UUID.randomUUID();
+        UUID missionId = UUID.randomUUID();
         when(demandeRepository.findByIdAndTenantId(demandeId, TENANT))
                 .thenReturn(Optional.of(Demande.builder().id(demandeId).tenantId(TENANT).poidsTaxableKg(2500.0).build()));
         Proposition p = proposition(propositionId, demandeId, 1, new BigDecimal("50000"));
         p.setCapaciteId(capaciteId);
+        p.setMissionId(missionId);
         when(propositionRepository.findByIdAndDemandeId(propositionId, demandeId)).thenReturn(Optional.of(p));
         when(propositionRepository.findByDemandeIdOrderByRangAsc(demandeId)).thenReturn(List.of(p));
         when(propositionRepository.saveAll(any())).thenAnswer(inv -> inv.getArgument(0));
 
         service.accepterProposition(demandeId, propositionId, TENANT);
 
-        verify(serviceCapClient).reserver(capaciteId, new BigDecimal("2500.0"), propositionId.toString());
+        verify(serviceCapClient).reserver(capaciteId, new BigDecimal("2500.0"), missionId.toString());
     }
 
     // Un echec de reservation reelle ne doit jamais laisser croire que la

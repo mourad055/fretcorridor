@@ -4,26 +4,28 @@ import { provideHttpClient } from '@angular/common/http';
 import { axe } from 'jest-axe';
 import { TenantsComponent } from './tenants.component';
 import { environment } from '../../../../environments/environment';
+import { ConfirmationService } from '../../../shared/services/confirmation.service';
 
 describe('TenantsComponent', () => {
   let httpMock: HttpTestingController;
+  let confirmation: { confirmer: jest.Mock };
 
   beforeEach(async () => {
+    confirmation = { confirmer: jest.fn().mockResolvedValue(true) };
     await TestBed.configureTestingModule({
       imports: [TenantsComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ConfirmationService, useValue: confirmation },
+      ],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  beforeEach(() => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-  });
-
   afterEach(() => {
     httpMock.verify();
-    jest.restoreAllMocks();
   });
 
   it('affiche les tenants au chargement, avec leur statut', () => {
@@ -40,7 +42,7 @@ describe('TenantsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('1 tenant(s), dont 1 actif(s)');
   });
 
-  it('cree un tenant puis rafraichit la liste', () => {
+  it('cree un tenant puis rafraichit la liste', async () => {
     const fixture = TestBed.createComponent(TenantsComponent);
     fixture.detectChanges();
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([]);
@@ -49,6 +51,7 @@ describe('TenantsComponent', () => {
     fixture.componentInstance.nouvelNom.set('Bureau Neuf');
     fixture.componentInstance.nouveauPays.set('Tchad');
     fixture.componentInstance.creer();
+    await fixture.whenStable();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush({});
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([]);
@@ -56,8 +59,8 @@ describe('TenantsComponent', () => {
     expect(fixture.componentInstance.nouvelId()).toBe('');
   });
 
-  it('ne cree rien si la confirmation est annulee', () => {
-    (window.confirm as jest.Mock).mockReturnValue(false);
+  it('ne cree rien si la confirmation est annulee', async () => {
+    confirmation.confirmer.mockResolvedValue(false);
     const fixture = TestBed.createComponent(TenantsComponent);
     fixture.detectChanges();
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([]);
@@ -66,6 +69,7 @@ describe('TenantsComponent', () => {
     fixture.componentInstance.nouvelNom.set('Bureau Neuf');
     fixture.componentInstance.nouveauPays.set('Tchad');
     fixture.componentInstance.creer();
+    await fixture.whenStable();
 
     httpMock.expectNone((r) => r.url === `${environment.apiBaseUrl}/admin/tenants` && r.method === 'POST');
   });

@@ -4,6 +4,7 @@ import com.fretcorridor.gateway.domain.cap.Capacite;
 import com.fretcorridor.gateway.domain.cap.CapaciteEtat;
 import com.fretcorridor.gateway.domain.cap.CapacitePort;
 import com.fretcorridor.gateway.domain.cap.ModeCollecte;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -11,12 +12,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-/**
- * TODO(mobile): remplacer par l'appel réel à service-cap/service-mkt une fois ces
- * services livrés (Sprint 4 Mobile, @estie-glo). Deux transporteurs distincts sont
- * amorcés pour permettre la démonstration et le test de l'isolation par acteur.
- */
+/** Fixture @SpringBootTest — remplace RealCapaciteReadAdapter pendant les tests unitaires d'intégration gateway. */
 @Component
+@Primary
 public class MockCapAdapter implements CapacitePort {
 
     private final List<Capacite> capacites = List.of(
@@ -32,7 +30,10 @@ public class MockCapAdapter implements CapacitePort {
     );
 
     @Override
-    public Flux<Capacite> listerParTransporteur(String transporteurId) {
+    public Flux<Capacite> listerMesCapacites(String transporteurId, String delegationToken) {
+        if (delegationToken == null) {
+            return Flux.empty();
+        }
         return Flux.fromIterable(capacites).filter(c -> c.transporteurId().equals(transporteurId));
     }
 }

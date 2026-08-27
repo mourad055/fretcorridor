@@ -1,0 +1,8 @@
+# Profil dev : charge data-dev.sql après création du schéma Hibernate.
+spring:
+  jpa:
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data-dev.sql

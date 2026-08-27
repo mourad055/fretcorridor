@@ -10,18 +10,17 @@
   top: 0;
   z-index: var(--fc-z-sticky);
   border-bottom: 1px solid var(--fc-border);
-  background: color-mix(in srgb, var(--fc-surface) 92%, transparent);
+  background: color-mix(in srgb, var(--fc-surface) 94%, transparent);
   backdrop-filter: blur(10px);
 }
 
 .shell__header-inner {
-  max-width: var(--fc-content-width);
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--fc-space-2) var(--fc-space-4);
-  padding: 0.6rem var(--fc-page-padding-x);
+  padding: 0.65rem var(--fc-page-padding-x);
 }
 
 .shell__brand {
@@ -59,11 +58,10 @@
   margin-left: auto;
 }
 
-/* Sidebar desktop (audit UX 2026-08-23, §2.1) : cachée par défaut, activée
-   au-delà de --fc-bp-md (860px) — sous ce seuil, app-shell-nav (onglets
-   horizontaux, repli existant) reste le seul mode de navigation. */
 .shell__nav-mobile {
   display: block;
+  border-bottom: 1px solid var(--fc-sidebar-border);
+  background: var(--fc-sidebar-bg);
 }
 
 .shell__sidebar {
@@ -73,11 +71,9 @@
 .shell__body {
   flex: 1;
   display: flex;
-  justify-content: center;
-  gap: var(--fc-space-6);
-  max-width: var(--fc-content-width);
+  align-items: flex-start;
+  gap: var(--fc-space-5);
   width: 100%;
-  margin: 0 auto;
   padding: var(--fc-page-padding-y) var(--fc-page-padding-x);
 }
 
@@ -97,15 +93,50 @@
 
   .shell__sidebar {
     display: block;
+    position: sticky;
+    top: calc(3.25rem + var(--fc-page-padding-y));
+    align-self: flex-start;
+    max-height: calc(100dvh - 5rem);
+    overflow: auto;
+  }
+}
+
+@media (max-width: 859px) {
+  .shell__body {
+    flex-direction: column;
+    gap: var(--fc-space-4);
+    padding-top: var(--fc-space-3);
   }
 }
 
 @media (max-width: 480px) {
+  .shell__header-inner {
+    padding: 0.55rem var(--fc-page-padding-x);
+    gap: var(--fc-space-2);
+  }
+
   .shell__brand {
-    gap: 0.5rem;
+    flex: 1 1 100%;
+    order: 1;
+  }
+
+  .shell__actions {
+    order: 2;
+    margin-left: 0;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .shell__role {
+    font-size: 0.6875rem;
+    padding-left: 0.5rem;
+    max-width: 9rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .shell__tenant {
-    max-width: 8rem;
+    max-width: 100%;
+    flex: 1 1 auto;
   }
 }

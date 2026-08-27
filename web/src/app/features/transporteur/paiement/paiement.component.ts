@@ -5,7 +5,7 @@ import { PaiementService } from './paiement.service';
 import { SoldeTransporteur } from './paiement.models';
 import { EcrituresTableComponent } from '../../../shared/components/ecritures-table/ecritures-table.component';
 import { TotauxEcrituresComponent } from '../../../shared/components/totaux-ecritures/totaux-ecritures.component';
-import { calculerTotauxEcritures, ecrituresVersCsv, telechargerCsv } from '../../../shared/utils/ecritures-totaux';
+import { calculerTotauxPaiementTransporteur, ecrituresVersCsv, telechargerCsv } from '../../../shared/utils/ecritures-totaux';
 
 /** FE-TRP-03 (Sprint 8) : un Transporteur voit son solde et son historique de paiement. */
 @Component({
@@ -20,7 +20,7 @@ export class PaiementComponent implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
 
-  readonly totaux = computed(() => calculerTotauxEcritures(this.solde()?.historique ?? []));
+  readonly totaux = computed(() => calculerTotauxPaiementTransporteur(this.solde()?.historique ?? []));
 
   constructor(private readonly paiementService: PaiementService) {}
 

@@ -10,5 +10,5 @@ import reactor.core.publisher.Flux;
 public interface NotificationPort {
 
     /** ENF-MUL-01 : un Bureau ne voit que les notifications de son propre tenant. */
-    Flux<Notification> listerNotificationsParTenant(String tenantId);
+    Flux<Notification> listerNotificationsParTenant(String tenantId, String delegationToken);
 }

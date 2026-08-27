@@ -10,21 +10,26 @@ import { KycDetail, KycDossier, KycFiltre, KycStatut } from './kyc.models';
 export class KycService {
   constructor(private readonly http: HttpClient) {}
 
-  listPending(): Observable<KycDossier[]> {
-    return this.http.get<KycDossier[]>(`${environment.apiBaseUrl}/admin/kyc/pending`);
-  }
-
-  listByNiveau(niveau: Exclude<KycFiltre, 'pending'>): Observable<KycDossier[]> {
-    return this.http.get<KycDossier[]>(`${environment.apiBaseUrl}/admin/kyc`, {
-      params: { niveau },
+  listPending(tenantId: string): Observable<KycDossier[]> {
+    return this.http.get<KycDossier[]>(`${environment.apiBaseUrl}/admin/kyc/pending`, {
+      params: { tenantId },
     });
   }
 
-  detail(dossierId: string): Observable<KycDetail> {
-    return this.http.get<KycDetail>(`${environment.apiBaseUrl}/admin/kyc/${dossierId}`);
+  listByNiveau(tenantId: string, niveau: Exclude<KycFiltre, 'pending'>): Observable<KycDossier[]> {
+    return this.http.get<KycDossier[]>(`${environment.apiBaseUrl}/admin/kyc`, {
+      params: { tenantId, niveau },
+    });
+  }
+
+  detail(tenantId: string, dossierId: string): Observable<KycDetail> {
+    return this.http.get<KycDetail>(`${environment.apiBaseUrl}/admin/kyc/${dossierId}`, {
+      params: { tenantId },
+    });
   }
 
   decide(
+    tenantId: string,
     dossierId: string,
     decision: Extract<KycStatut, 'VALIDE' | 'REJETE'>,
     motif?: string
@@ -32,7 +37,17 @@ export class KycService {
     return this.http.post<KycDossier>(
       `${environment.apiBaseUrl}/admin/kyc/${dossierId}/decision`,
       { decision, motif: motif ?? null },
-      { headers: { 'X-Idempotency-Key': generateIdempotencyKey() } }
+      {
+        params: { tenantId },
+        headers: { 'X-Idempotency-Key': generateIdempotencyKey() },
+      }
     );
+  }
+
+  chargerPiece(tenantId: string, dossierId: string, pieceId: string): Observable<Blob> {
+    return this.http.get(`${environment.apiBaseUrl}/admin/kyc/${dossierId}/pieces/${pieceId}/content`, {
+      params: { tenantId },
+      responseType: 'blob',
+    });
   }
 }

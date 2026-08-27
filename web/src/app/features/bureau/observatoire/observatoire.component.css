@@ -1,0 +1,56 @@
+.observatoire-filters {
+  align-items: end;
+}
+
+.observatoire-filters__axe {
+  flex: 1 1 16rem;
+  max-width: 22rem;
+}
+
+.observatoire-filters__action {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 720px) {
+  .observatoire-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .observatoire-filters__axe {
+    max-width: none;
+  }
+
+  .observatoire-filters__action {
+    width: 100%;
+  }
+}
+
+.observatoire-alertes__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-3);
+}
+
+@media (max-width: 720px) {
+  .observatoire-alertes__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .observatoire-alertes__header .fc-btn {
+    width: 100%;
+  }
+}
+
+.tenants-toolbar {
+  margin-bottom: var(--fc-space-2);
+}
+
+@media (max-width: 720px) {
+  .tenants-toolbar .fc-btn {
+    width: 100%;
+  }
+}

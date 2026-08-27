@@ -23,6 +23,7 @@ public class NotificationController {
 
     @GetMapping("/api/v1/bureau/notifications")
     public Flux<NotificationResponse> notificationsBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return notificationPort.listerNotificationsParTenant(actor.tenantId()).map(NotificationResponse::from);
+        return notificationPort.listerNotificationsParTenant(actor.tenantId(), actor.delegationToken())
+                .map(NotificationResponse::from);
     }
 }

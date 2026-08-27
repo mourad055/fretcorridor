@@ -21,6 +21,15 @@ export function calculerTotauxEcritures(ecritures: Ecriture[]): TotauxEcritures 
   return { nombre: ecritures.length, totalCredit, totalDebit, solde: totalCredit - totalDebit };
 }
 
+/**
+ * FE-TRP-03 : l'historique transporteur ne contient que des reversements
+ * (montants reçus). Le solde affiché = somme des montants, pas crédit − débit.
+ */
+export function calculerTotauxPaiementTransporteur(ecritures: Ecriture[]): TotauxEcritures {
+  const totalRecu = ecritures.reduce((somme, e) => somme + e.montant, 0);
+  return { nombre: ecritures.length, totalCredit: 0, totalDebit: totalRecu, solde: totalRecu };
+}
+
 const ENTETE_CSV = 'missionId,typeCompte,nature,sens,montant,modePaiement,creeLe,statut';
 
 function champCsv(valeur: string | number | null): string {

@@ -23,6 +23,7 @@ const TAILLE_PAGE = 20;
   standalone: true,
   imports: [CommonModule, PageShellComponent, FormsModule, PaginationComponent],
   templateUrl: './tenants.component.html',
+  styleUrl: './tenants.component.css',
 })
 export class TenantsComponent implements OnInit {
   readonly tenants = signal<Tenant[]>([]);
@@ -51,6 +52,7 @@ export class TenantsComponent implements OnInit {
   readonly nouvelId = signal('');
   readonly nouvelNom = signal('');
   readonly nouveauPays = signal('');
+  readonly creationOuverte = signal(false);
 
   readonly tenantEnEdition = signal<string | null>(null);
   readonly editNom = signal('');
@@ -86,22 +88,35 @@ export class TenantsComponent implements OnInit {
     });
   }
 
+  ouvrirCreation(): void {
+    this.creationOuverte.set(true);
+  }
+
+  fermerCreation(): void {
+    this.creationOuverte.set(false);
+  }
+
   creer(): void {
-    const confirme = this.confirmationService.confirmer(
-      `Créer le tenant « ${this.nouvelNom()} » (${this.nouvelId()}) ?`
-    );
-    if (!confirme) {
-      return;
-    }
-    this.tenantsService.creer(this.nouvelId(), this.nouvelNom(), this.nouveauPays()).subscribe({
-      next: () => {
-        this.nouvelId.set('');
-        this.nouvelNom.set('');
-        this.nouveauPays.set('');
-        this.charger();
-      },
-      error: () => this.errorMessage.set('Impossible de créer ce tenant.'),
-    });
+    void this.confirmationService
+      .confirmer(`Créer le tenant « ${this.nouvelNom()} » (${this.nouvelId()}) ?`, {
+        title: 'Créer le tenant',
+        confirmLabel: 'Créer',
+      })
+      .then((confirme) => {
+        if (!confirme) {
+          return;
+        }
+        this.tenantsService.creer(this.nouvelId(), this.nouvelNom(), this.nouveauPays()).subscribe({
+          next: () => {
+            this.nouvelId.set('');
+            this.nouvelNom.set('');
+            this.nouveauPays.set('');
+            this.creationOuverte.set(false);
+            this.charger();
+          },
+          error: () => this.errorMessage.set('Impossible de créer ce tenant.'),
+        });
+      });
   }
 
   commencerEdition(tenant: Tenant): void {

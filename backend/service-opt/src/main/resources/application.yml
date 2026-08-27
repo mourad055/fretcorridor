@@ -23,7 +23,7 @@ spring:
     service-mat:
       base-url: http://localhost:8086
       connect-timeout-ms: 200
-      read-timeout-ms: 300
+      read-timeout-ms: 1000
     service-cap:
       base-url: http://localhost:8096
       connect-timeout-ms: 200

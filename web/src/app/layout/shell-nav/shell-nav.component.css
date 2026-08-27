@@ -5,10 +5,10 @@
 .shell-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  padding: 0.5rem var(--fc-page-padding-x) 0;
-  max-width: var(--fc-content-width);
-  margin: 0 auto;
+  gap: 0.35rem;
+  padding: 0.55rem var(--fc-page-padding-x) 0.65rem;
+  width: 100%;
+  margin: 0;
 }
 
 .shell-nav__link {
@@ -28,13 +28,14 @@
 }
 
 .shell-nav__link:hover {
-  color: var(--fc-text);
-  background: var(--fc-bg);
+  color: var(--fc-primary);
+  background: color-mix(in srgb, var(--fc-primary) 10%, #ffffff);
 }
 
 .shell-nav__link--active {
   color: var(--fc-primary);
-  background: var(--fc-primary-soft);
+  background: color-mix(in srgb, var(--fc-primary) 14%, #ffffff);
+  box-shadow: inset 0 -2px 0 var(--fc-primary);
 }
 
 @media (max-width: 720px) {

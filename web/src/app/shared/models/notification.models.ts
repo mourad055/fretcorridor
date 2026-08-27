@@ -1,4 +1,4 @@
-export type CanalNotification = 'EMAIL';
+export type CanalNotification = 'EMAIL' | 'IN_APP';
 
 export interface NotificationItem {
   id: string;

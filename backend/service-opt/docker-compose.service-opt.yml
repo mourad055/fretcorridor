@@ -40,7 +40,10 @@ services:
     container_name: fretcorridor-service-opt
     restart: unless-stopped
     environment:
-      SPRING_PROFILES_ACTIVE: docker
+      # docker = URLs internes ; dev = seed barèmes (data-dev.sql), même
+      # pattern que service-geo / service-ida. Sans le profil dev, L4 n'a
+      # aucun barème actif et publie des propositions à prix null.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-docker,dev}
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
     ports:
       - "8085:8085"

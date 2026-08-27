@@ -13,6 +13,7 @@ export interface KycDossier {
 }
 
 export interface KycPiece {
+  id: string;
   typeDocument: string;
   url: string;
   dateDepot: string | null;

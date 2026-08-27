@@ -10,7 +10,7 @@
     "demo": {
       "label": "Comptes de démonstration",
       "bureau": "Bureau de fret",
-      "transporteur": "Transporteur",
+      "transporteur": "Transporteur (mobile / live)",
       "admin": "Administration",
       "bureauTchad": "Bureau de fret (Tchad)"
     },
@@ -129,6 +129,7 @@
     },
     "typeActeur": {
       "CHAUFFEUR": "Chauffeur",
+      "TRANSPORTEUR": "Transporteur",
       "TRANSPORTEUR_PERSONNE_MORALE": "Transporteur (personne morale)"
     },
     "typeDossier": {

@@ -1,0 +1,8 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=dev — jamais en production.
+spring:
+  jpa:
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data-dev.sql

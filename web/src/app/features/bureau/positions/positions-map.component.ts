@@ -48,7 +48,8 @@ export class PositionsMapComponent implements AfterViewInit, OnChanges, OnDestro
   }
 
   private async initialiserCarte(): Promise<void> {
-    const L = await import('leaflet');
+    const LeafletModule: typeof import('leaflet') = await import('leaflet');
+    const L = (LeafletModule as { default?: typeof LeafletModule }).default ?? LeafletModule;
 
     this.map = L.map(this.mapHost.nativeElement, {
       zoomControl: true,
@@ -72,7 +73,8 @@ export class PositionsMapComponent implements AfterViewInit, OnChanges, OnDestro
     if (!this.map || !this.layers) {
       return;
     }
-    const L = await import('leaflet');
+    const LeafletModule: typeof import('leaflet') = await import('leaflet');
+    const L = (LeafletModule as { default?: typeof LeafletModule }).default ?? LeafletModule;
 
     this.layers.clearLayers();
 

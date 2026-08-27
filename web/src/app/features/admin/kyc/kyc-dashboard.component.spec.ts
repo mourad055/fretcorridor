@@ -7,6 +7,7 @@ import { axe } from 'jest-axe';
 import { KycDashboardComponent } from './kyc-dashboard.component';
 import { environment } from '../../../../environments/environment';
 import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
+import { TENANT_ADMIN_DEFAUT } from '../admin-tenants';
 
 const PENDING = [
   {
@@ -43,9 +44,29 @@ const N2 = [
 ];
 
 function flushInitialLists(httpMock: HttpTestingController): void {
-  httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/pending`).flush(PENDING);
-  httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/kyc` && r.params.get('niveau') === 'NIVEAU_1').flush(N1);
-  httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/kyc` && r.params.get('niveau') === 'NIVEAU_2').flush(N2);
+  httpMock
+    .expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc/pending` &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    )
+    .flush(PENDING);
+  httpMock
+    .expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc` &&
+        r.params.get('niveau') === 'NIVEAU_1' &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    )
+    .flush(N1);
+  httpMock
+    .expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc` &&
+        r.params.get('niveau') === 'NIVEAU_2' &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    )
+    .flush(N2);
 }
 
 describe('KycDashboardComponent', () => {
@@ -63,12 +84,10 @@ describe('KycDashboardComponent', () => {
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
   });
 
   afterEach(() => {
     httpMock.verify();
-    jest.restoreAllMocks();
   });
 
   it('affiche la liste des dossiers en attente au chargement', () => {
@@ -81,10 +100,10 @@ describe('KycDashboardComponent', () => {
     expect(rows).toHaveLength(2);
     expect(fixture.nativeElement.textContent).toContain('Chauffeur');
     expect(fixture.nativeElement.textContent).toContain('2 dossier(s) en attente');
-    expect(fixture.nativeElement.textContent).toContain('Validés N1');
+    expect(fixture.nativeElement.textContent).toContain('Profils N1 (mobile)');
   });
 
-  it('filtre sur Validés N2', () => {
+  it('filtre sur Validés admin (N2)', () => {
     const fixture = TestBed.createComponent(KycDashboardComponent);
     fixture.detectChanges();
     flushInitialLists(httpMock);
@@ -92,7 +111,12 @@ describe('KycDashboardComponent', () => {
 
     const kpis = fixture.debugElement.queryAll(By.css('.fc-kpi'));
     kpis[2].nativeElement.click();
-    const req = httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/kyc` && r.params.get('niveau') === 'NIVEAU_2');
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc` &&
+        r.params.get('niveau') === 'NIVEAU_2' &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
     req.flush(N2);
     fixture.detectChanges();
 
@@ -100,7 +124,7 @@ describe('KycDashboardComponent', () => {
     expect(fixture.debugElement.queryAll(By.css('tbody tr'))).toHaveLength(1);
   });
 
-  it('ouvre le détail avec les pièces', () => {
+  it('ouvre la CNI au clic sur la pièce', () => {
     const fixture = TestBed.createComponent(KycDashboardComponent);
     fixture.detectChanges();
     flushInitialLists(httpMock);
@@ -108,20 +132,39 @@ describe('KycDashboardComponent', () => {
 
     const voir = fixture.debugElement.queryAll(By.css('button')).find((b) => b.nativeElement.textContent.includes('Voir détail'));
     voir!.nativeElement.click();
-    httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/kyc-1`).flush({
-      id: 'kyc-1',
-      telephone: '+237677000001',
-      nom: 'Mbarga',
-      prenom: 'Jean',
-      raisonSociale: null,
-      niveauKyc: 'NIVEAU_1',
-      roles: ['CHAUFFEUR'],
-      pieces: [{ typeDocument: 'CNI', url: 'https://minio/cni', dateDepot: '2026-01-01T00:00:00' }],
-    });
+    httpMock
+      .expectOne(
+        (r) =>
+          r.url === `${environment.apiBaseUrl}/admin/kyc/kyc-1` &&
+          r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+      )
+      .flush({
+        id: 'kyc-1',
+        telephone: '+237677000001',
+        nom: 'Mbarga',
+        prenom: 'Jean',
+        raisonSociale: null,
+        niveauKyc: 'NIVEAU_1',
+        roles: ['CHAUFFEUR'],
+        pieces: [{ id: 'piece-1', typeDocument: 'CNI', url: 'https://minio/cni.jpg', dateDepot: '2026-01-01T00:00:00' }],
+      });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Pièces justificatives');
-    expect(fixture.nativeElement.textContent).toContain('CNI');
+    expect(fixture.nativeElement.textContent).toContain('Cliquer pour afficher la pièce');
+
+    const ouvrirPiece = fixture.debugElement.query(By.css('.kyc-piece__open'));
+    ouvrirPiece.nativeElement.click();
+    const contentReq = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc/kyc-1/pieces/piece-1/content` &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
+    contentReq.flush(new Blob(['fake'], { type: 'image/jpeg' }));
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('.fc-modal.fc-modal--lg'))).toBeTruthy();
+    expect(fixture.debugElement.query(By.css('.fc-modal__media'))).toBeTruthy();
   });
 
   it('retire un dossier de la liste apres validation', () => {
@@ -131,14 +174,43 @@ describe('KycDashboardComponent', () => {
     fixture.detectChanges();
 
     const component = fixture.componentInstance;
-    component.decide(PENDING[0] as never, 'VALIDE');
+    component.demanderDecision(PENDING[0] as never, 'VALIDE');
+    fixture.detectChanges();
+    const confirmer = fixture.debugElement.queryAll(By.css('.fc-modal__footer button')).find((b) =>
+      b.nativeElement.textContent.includes('Valider')
+    );
+    confirmer!.nativeElement.click();
 
-    const decisionReq = httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/kyc-1/decision`);
+    const decisionReq = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc/kyc-1/decision` &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
     decisionReq.flush({ ...PENDING[0], statut: 'VALIDE', niveauKyc: 'NIVEAU_2' });
 
-    httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/pending`).flush([PENDING[1]]);
-    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/kyc` && r.params.get('niveau') === 'NIVEAU_1').flush([]);
-    httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/kyc` && r.params.get('niveau') === 'NIVEAU_2').flush([...N2, { ...PENDING[0], niveauKyc: 'NIVEAU_2' }]);
+    httpMock
+      .expectOne(
+        (r) =>
+          r.url === `${environment.apiBaseUrl}/admin/kyc/pending` &&
+          r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+      )
+      .flush([PENDING[1]]);
+    httpMock
+      .expectOne(
+        (r) =>
+          r.url === `${environment.apiBaseUrl}/admin/kyc` &&
+          r.params.get('niveau') === 'NIVEAU_1' &&
+          r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+      )
+      .flush([]);
+    httpMock
+      .expectOne(
+        (r) =>
+          r.url === `${environment.apiBaseUrl}/admin/kyc` &&
+          r.params.get('niveau') === 'NIVEAU_2' &&
+          r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+      )
+      .flush([...N2, { ...PENDING[0], niveauKyc: 'NIVEAU_2' }]);
     fixture.detectChanges();
 
     expect(component.dossiers()).toHaveLength(1);
@@ -149,9 +221,23 @@ describe('KycDashboardComponent', () => {
     const fixture = TestBed.createComponent(KycDashboardComponent);
     fixture.detectChanges();
 
-    const pending = httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/pending`);
-    const n1 = httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/kyc` && r.params.get('niveau') === 'NIVEAU_1');
-    const n2 = httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/kyc` && r.params.get('niveau') === 'NIVEAU_2');
+    const pending = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc/pending` &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
+    const n1 = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc` &&
+        r.params.get('niveau') === 'NIVEAU_1' &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
+    const n2 = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc` &&
+        r.params.get('niveau') === 'NIVEAU_2' &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
     n1.flush([]);
     n2.flush([]);
     pending.flush({ title: 'Erreur' }, { status: 500, statusText: 'Server Error' });

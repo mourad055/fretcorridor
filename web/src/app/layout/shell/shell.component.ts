@@ -6,6 +6,7 @@ import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-log
 import { LangueSwitchComponent } from '../../shared/components/langue-switch/langue-switch.component';
 import { ShellNavComponent } from '../shell-nav/shell-nav.component';
 import { ShellSidebarComponent } from '../shell-sidebar/shell-sidebar.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { cleLibelleTenant } from '../../shared/utils/libelle-tenant';
 
 /**
@@ -21,7 +22,7 @@ import { cleLibelleTenant } from '../../shared/utils/libelle-tenant';
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, BrandLogoComponent, LangueSwitchComponent, ShellNavComponent, ShellSidebarComponent, TranslatePipe],
+  imports: [RouterOutlet, BrandLogoComponent, LangueSwitchComponent, ShellNavComponent, ShellSidebarComponent, ConfirmDialogComponent, TranslatePipe],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.css',
 })

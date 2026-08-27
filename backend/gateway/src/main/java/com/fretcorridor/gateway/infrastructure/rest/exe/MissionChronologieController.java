@@ -23,11 +23,12 @@ public class MissionChronologieController {
 
     @GetMapping("/api/v1/bureau/missions-chronologie")
     public Flux<MissionResponse> chronologieBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return exePort.listerMissionsParTenant(actor.tenantId()).map(MissionResponse::from);
+        return exePort.listerMissionsParTenant(actor.tenantId(), actor.delegationToken()).map(MissionResponse::from);
     }
 
     @GetMapping("/api/v1/transporteur/missions")
     public Flux<MissionResponse> missionsTransporteur(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return exePort.listerMissionsParTransporteur(actor.actorId()).map(MissionResponse::from);
+        return exePort.listerMissionsParTransporteur(actor.tenantId(), actor.actorId(), actor.delegationToken())
+                .map(MissionResponse::from);
     }
 }

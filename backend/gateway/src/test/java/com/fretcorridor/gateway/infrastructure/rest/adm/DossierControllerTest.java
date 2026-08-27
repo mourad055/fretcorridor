@@ -123,7 +123,7 @@ class DossierControllerTest {
         String token = tokenFor("+237600000003");
         when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
         when(admPort.dossier(eq("dossier-1"), any())).thenReturn(Mono.just(dossier("mission-a")));
-        when(exePort.listerMissionsParTenant("tenant-bgft-douala")).thenReturn(Flux.just(
+        when(exePort.listerMissionsParTenant("tenant-bgft-douala", any())).thenReturn(Flux.just(
                 new Mission("mission-a", "tenant-bgft-douala", "actor-transporteur-1", "Transport Étoile SARL",
                         "Douala", "Yaoundé", List.of(new EtapeMission(1, EtapeType.ENLEVEMENT, "Douala", EtapeEtat.TERMINEE)))
         ));
