@@ -93,6 +93,41 @@ class KycAdminServiceTest {
     }
 
     @Test
+    void liste_n1_exclut_les_dossiers_en_attente_admin() {
+        UUID enAttenteId = UUID.randomUUID();
+        UUID profilSansPieceId = UUID.randomUUID();
+        Acteur enAttente = Acteur.builder()
+                .id(enAttenteId)
+                .tenantId(TENANT)
+                .roles(Set.of(RoleActeur.CHAUFFEUR))
+                .nom("Ngono")
+                .prenom("Awa")
+                .niveauKyc(Acteur.NiveauKyc.NIVEAU_1)
+                .build();
+        Acteur profilSansPiece = Acteur.builder()
+                .id(profilSansPieceId)
+                .tenantId(TENANT)
+                .roles(Set.of(RoleActeur.TRANSPORTEUR))
+                .nom("Mbarga")
+                .prenom("Paul")
+                .niveauKyc(Acteur.NiveauKyc.NIVEAU_1)
+                .build();
+
+        when(acteurRepository.findByTenantId(TENANT)).thenReturn(List.of(enAttente, profilSansPiece));
+        when(acteurRepository.findByTenantIdAndNiveauKyc(TENANT, Acteur.NiveauKyc.NIVEAU_1))
+                .thenReturn(List.of(enAttente, profilSansPiece));
+        when(pieceJustificativeRepository.findByActeurId(enAttenteId))
+                .thenReturn(List.of(PieceJustificative.builder().typeDocument("CNI").objectKey("k1").build()));
+        when(pieceJustificativeRepository.findByActeurId(profilSansPieceId)).thenReturn(List.of());
+
+        assertThat(service.listerEnAttente(TENANT)).extracting(KycAdminDto.ActeurSummary::acteurId)
+                .containsExactly(enAttenteId);
+        assertThat(service.listerParNiveau(TENANT, Acteur.NiveauKyc.NIVEAU_1))
+                .extracting(KycAdminDto.ActeurSummary::acteurId)
+                .containsExactly(profilSansPieceId);
+    }
+
+    @Test
     void valide_passe_au_niveau_2() {
         Acteur acteur = chauffeurNiveau1();
         when(acteurRepository.findById(acteurId)).thenReturn(Optional.of(acteur));

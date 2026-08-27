@@ -36,7 +36,8 @@ public class DevDemoAccountAlignment {
                     code_pin = ?,
                     nom = COALESCE(NULLIF(nom, ''), 'Kamga'),
                     prenom = COALESCE(NULLIF(prenom, ''), 'Jean'),
-                    raison_sociale = COALESCE(NULLIF(raison_sociale, ''), 'Transport Étoile SARL')
+                    raison_sociale = COALESCE(NULLIF(raison_sociale, ''), 'Transport Étoile SARL'),
+                    niveau_kyc = 'NIVEAU_2'
                 WHERE telephone = '+237696000001'
                 """, PIN_DEMO_BCRYPT);
         int roleTransporteur = jdbcTemplate.update("""

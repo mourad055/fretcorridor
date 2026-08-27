@@ -100,10 +100,10 @@ describe('KycDashboardComponent', () => {
     expect(rows).toHaveLength(2);
     expect(fixture.nativeElement.textContent).toContain('Chauffeur');
     expect(fixture.nativeElement.textContent).toContain('2 dossier(s) en attente');
-    expect(fixture.nativeElement.textContent).toContain('Validés N1');
+    expect(fixture.nativeElement.textContent).toContain('Profils N1 (mobile)');
   });
 
-  it('filtre sur Validés N2', () => {
+  it('filtre sur Validés admin (N2)', () => {
     const fixture = TestBed.createComponent(KycDashboardComponent);
     fixture.detectChanges();
     flushInitialLists(httpMock);

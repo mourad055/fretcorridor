@@ -30,11 +30,11 @@
     </button>
     <button type="button" class="fc-kpi" [class.fc-kpi--active]="filtre() === 'NIVEAU_1'" (click)="changerFiltre('NIVEAU_1')">
       <span class="fc-kpi__value">{{ compteurs().n1 }}</span>
-      <span class="fc-kpi__label">Validés N1</span>
+      <span class="fc-kpi__label">Profils N1 (mobile)</span>
     </button>
     <button type="button" class="fc-kpi" [class.fc-kpi--active]="filtre() === 'NIVEAU_2'" (click)="changerFiltre('NIVEAU_2')">
       <span class="fc-kpi__value">{{ compteurs().n2 }}</span>
-      <span class="fc-kpi__label">Validés N2</span>
+      <span class="fc-kpi__label">Validés admin (N2)</span>
     </button>
   </section>
 
@@ -51,7 +51,7 @@
           <th>Acteur</th>
           <th>Téléphone</th>
           <th>Type</th>
-          <th>Niveau</th>
+          <th>Statut</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -60,7 +60,7 @@
           <td class="kyc-table__acteur">{{ dossier.acteurNom }}</td>
           <td>{{ dossier.acteurTelephone }}</td>
           <td>{{ libelleTypeActeur(dossier.typeActeur) | translate }}</td>
-          <td>{{ dossier.niveauKyc || '—' }}</td>
+          <td>{{ libelleStatut(dossier) }}</td>
           <td>
             <div class="fc-actions kyc-actions">
               <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="voirDetail(dossier)">
@@ -222,7 +222,7 @@
       </header>
       <div class="fc-modal__body">
         <p class="kyc-confirm__body">
-          Confirmer {{ c.decision === 'VALIDE' ? 'la validation' : 'le rejet' }} du dossier de
+          Confirmer {{ c.decision === 'VALIDE' ? 'la validation admin (passage au niveau N2)' : 'le rejet' }} du dossier de
           <strong>{{ c.dossier.acteurNom }}</strong> ({{ c.dossier.acteurTelephone }}) ?
         </p>
       </div>

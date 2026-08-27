@@ -34,16 +34,24 @@ public class KycAdminService {
     private final PieceJustificativeRepository pieceJustificativeRepository;
     private final DocumentStorageService documentStorageService;
 
+    /**
+     * File admin : profil mobile complet (NIVEAU_1) avec au moins une pièce déposée,
+     * en attente de décision VALIDE → N2 ou REJETE.
+     */
     @Transactional(readOnly = true)
     public List<KycAdminDto.ActeurSummary> listerEnAttente(String tenantId) {
         return acteurRepository.findByTenantId(tenantId).stream()
                 .filter(this::estActeurKycEligible)
-                .filter(a -> a.getNiveauKyc() != Acteur.NiveauKyc.NIVEAU_2)
-                .filter(a -> !pieceJustificativeRepository.findByActeurId(a.getId()).isEmpty())
+                .filter(a -> a.getNiveauKyc() == Acteur.NiveauKyc.NIVEAU_1)
+                .filter(a -> possedePieces(a.getId()))
                 .map(KycAdminDto.ActeurSummary::from)
                 .toList();
     }
 
+    /**
+     * NIVEAU_2 : dossiers validés par l'admin (RG-011 — pièces vérifiées).
+     * NIVEAU_1 : profils mobile N1 sans pièce — hors file admin (identité seule).
+     */
     @Transactional(readOnly = true)
     public List<KycAdminDto.ActeurSummary> listerParNiveau(String tenantId, Acteur.NiveauKyc niveau) {
         if (niveau != Acteur.NiveauKyc.NIVEAU_1 && niveau != Acteur.NiveauKyc.NIVEAU_2) {
@@ -51,8 +59,13 @@ public class KycAdminService {
         }
         return acteurRepository.findByTenantIdAndNiveauKyc(tenantId, niveau).stream()
                 .filter(this::estActeurKycEligible)
+                .filter(a -> niveau != Acteur.NiveauKyc.NIVEAU_1 || !possedePieces(a.getId()))
                 .map(KycAdminDto.ActeurSummary::from)
                 .toList();
+    }
+
+    private boolean possedePieces(UUID acteurId) {
+        return !pieceJustificativeRepository.findByActeurId(acteurId).isEmpty();
     }
 
     @Transactional(readOnly = true)

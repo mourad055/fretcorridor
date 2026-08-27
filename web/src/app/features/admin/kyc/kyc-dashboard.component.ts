@@ -149,6 +149,21 @@ export class KycDashboardComponent implements OnInit, OnDestroy {
     return decision === 'VALIDE' ? 'Valider' : 'Rejeter';
   }
 
+  /** Libellé métier — distinct du code technique niveauKyc (NIVEAU_0/1/2). */
+  libelleStatut(dossier: KycDossier): string {
+    const filtre = this.filtre();
+    if (filtre === 'pending') {
+      return 'En attente admin';
+    }
+    if (filtre === 'NIVEAU_2' || dossier.niveauKyc === 'NIVEAU_2') {
+      return 'Validé admin';
+    }
+    if (filtre === 'NIVEAU_1') {
+      return 'Profil mobile (sans pièce)';
+    }
+    return dossier.niveauKyc ?? '—';
+  }
+
   ouvrirPiece(piece: KycPiece): void {
     const detail = this.detail();
     if (!detail) {
