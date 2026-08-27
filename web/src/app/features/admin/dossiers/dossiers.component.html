@@ -67,65 +67,80 @@
       </tbody>
     </table>
     <app-pagination [page]="page()" [total]="dossiers().length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
+  </section>
 
-    <div class="dossier-consolide fc-panel" *ngIf="dossierConsolide() as consolide">
-      <h3 class="fc-panel__title">Dossier {{ consolide.dossier.id }}</h3>
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="dossierConsolide() as consolide"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dossier-detail-title"
+    (click)="fermerDossier()"
+  >
+    <div class="fc-modal fc-modal--lg" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="dossier-detail-title" class="fc-modal__title">Dossier {{ consolide.dossier.id }}</h2>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="fermerDossier()">Fermer</button>
+      </header>
 
-      <dl class="fc-dl">
-        <div class="fc-dl__row">
-          <dt>Parties</dt>
-          <dd>{{ consolide.dossier.parties.join(', ') }}</dd>
+      <div class="fc-modal__body">
+        <dl class="fc-dl">
+          <div class="fc-dl__row">
+            <dt>Parties</dt>
+            <dd>{{ consolide.dossier.parties.join(', ') }}</dd>
+          </div>
+        </dl>
+
+        <div *ngIf="consolide.mission as mission">
+          <h3 class="fc-panel__title">Chronologie de la mission {{ mission.id }}</h3>
+          <ul class="fc-list">
+            <li class="fc-list__item" *ngFor="let etape of mission.etapes">{{ ('enum.etapeType.' + etape.type) | translate }} — {{ etape.lieu }} ({{ libelleEtapeEtat(etape.etat) | translate }})</li>
+          </ul>
         </div>
-      </dl>
 
-      <div *ngIf="consolide.mission as mission">
-        <h4 class="fc-panel__title">Chronologie de la mission {{ mission.id }}</h4>
-        <ul class="fc-list">
-          <li class="fc-list__item" *ngFor="let etape of mission.etapes">{{ ('enum.etapeType.' + etape.type) | translate }} — {{ etape.lieu }} ({{ libelleEtapeEtat(etape.etat) | translate }})</li>
-        </ul>
+        <div *ngIf="consolide.ecritures.length > 0">
+          <h3 class="fc-panel__title">Écritures</h3>
+          <ul class="fc-list">
+            <li class="fc-list__item" *ngFor="let ecriture of consolide.ecritures">{{ ecriture.nature }} — {{ ecriture.montant }}</li>
+          </ul>
+        </div>
+
+        <fieldset class="field__fieldset" *ngIf="consolide.dossier.statut !== 'CLOS'">
+          <legend class="field__legend">Trancher le dossier</legend>
+
+          <div class="field">
+            <label class="field__label" for="dossier-decision">Décision</label>
+            <input
+              id="dossier-decision"
+              class="field__input"
+              required
+              [ngModel]="decisionTexte()"
+              (ngModelChange)="decisionTexte.set($event)"
+            />
+            <p class="field__hint">Résumez l'issue en une phrase — ex. « Remboursement partiel de 50 % au chargeur ».</p>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="dossier-motif">Motif</label>
+            <textarea
+              id="dossier-motif"
+              class="field__input"
+              rows="3"
+              required
+              [ngModel]="motifTexte()"
+              (ngModelChange)="motifTexte.set($event)"
+            ></textarea>
+            <p class="field__hint">Détaillez les faits et les preuves qui justifient cette décision — ce texte est journalisé et consultable dans l'audit.</p>
+          </div>
+        </fieldset>
       </div>
 
-      <div *ngIf="consolide.ecritures.length > 0">
-        <h4 class="fc-panel__title">Écritures</h4>
-        <ul class="fc-list">
-          <li class="fc-list__item" *ngFor="let ecriture of consolide.ecritures">{{ ecriture.nature }} — {{ ecriture.montant }}</li>
-        </ul>
-      </div>
-
-      <fieldset class="field__fieldset" *ngIf="consolide.dossier.statut !== 'CLOS'">
-        <legend class="field__legend">Trancher le dossier</legend>
-
-        <div class="field">
-          <label class="field__label" for="dossier-decision">Décision</label>
-          <input
-            id="dossier-decision"
-            class="field__input"
-            required
-            [ngModel]="decisionTexte()"
-            (ngModelChange)="decisionTexte.set($event)"
-          />
-          <p class="field__hint">Résumez l'issue en une phrase — ex. « Remboursement partiel de 50 % au chargeur ».</p>
-        </div>
-
-        <div class="field">
-          <label class="field__label" for="dossier-motif">Motif</label>
-          <textarea
-            id="dossier-motif"
-            class="field__input"
-            rows="3"
-            required
-            [ngModel]="motifTexte()"
-            (ngModelChange)="motifTexte.set($event)"
-          ></textarea>
-          <p class="field__hint">Détaillez les faits et les preuves qui justifient cette décision — ce texte est journalisé et consultable dans l'audit.</p>
-        </div>
-
+      <footer class="fc-modal__footer" *ngIf="consolide.dossier.statut !== 'CLOS'">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="fermerDossier()">Annuler</button>
         <button type="button" class="fc-btn fc-btn--primary" [disabled]="trancheEnCours() || !decisionValide()" (click)="trancher()">
           Trancher
         </button>
-      </fieldset>
-
-      <button type="button" class="fc-btn fc-btn--ghost" (click)="fermerDossier()">Fermer</button>
+      </footer>
     </div>
-  </section>
+  </div>
 </app-page-shell>

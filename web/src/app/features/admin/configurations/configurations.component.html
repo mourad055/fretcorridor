@@ -18,7 +18,7 @@
           <th>Version</th>
           <th>Auteur</th>
           <th>Dernière modification</th>
-          <th><span class="fc-sr-only">Actions</span></th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -29,52 +29,91 @@
           <td>{{ configuration.auteur }}</td>
           <td>{{ configuration.creeLe | date: 'short' }}</td>
           <td>
-            <button type="button" class="fc-btn" (click)="selectionner(configuration.cle)">Voir l'historique</button>
+            <div class="fc-actions">
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="ouvrirHistorique(configuration.cle)">Historique</button>
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="ouvrirDefinition(configuration.cle, configuration.valeur)">Nouvelle version</button>
+            </div>
           </td>
         </tr>
       </tbody>
     </table>
     <app-pagination [page]="pageCatalogue()" [total]="catalogue().length" [taillePage]="taillePage" (pageChange)="pageCatalogue.set($event)" />
-
-    <h3>Historique et modification</h3>
-    <div class="fc-filters">
-      <div class="fc-filters__field">
-        <label class="fc-filters__label" for="configuration-cle">Clé</label>
-        <input id="configuration-cle" class="fc-filters__input" [ngModel]="cle()" (ngModelChange)="cle.set($event)" />
-      </div>
-      <button type="button" class="fc-btn fc-btn--primary" [disabled]="loading()" (click)="consulter()">Consulter l'historique</button>
-    </div>
-
-    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-      <div class="fc-skeleton__line"></div>
-      <div class="fc-skeleton__line"></div>
-    </div>
-    <div class="fc-empty" *ngIf="!loading() && consulte() && historique().length === 0">Aucune version enregistrée pour cette configuration.</div>
-
-    <table class="fc-table" *ngIf="!loading() && historique().length > 0">
-      <thead>
-        <tr>
-          <th>Version</th>
-          <th>Valeur</th>
-          <th>Auteur</th>
-          <th>Créée le</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let version of historiqueAffiche()">
-          <td>{{ version.version }}</td>
-          <td>{{ version.valeur }}</td>
-          <td>{{ version.auteur }}</td>
-          <td>{{ version.creeLe | date: 'short' }}</td>
-        </tr>
-      </tbody>
-    </table>
-    <app-pagination [page]="pageHistorique()" [total]="historique().length" [taillePage]="taillePage" (pageChange)="pageHistorique.set($event)" />
-
-    <div class="field">
-      <label class="field__label" for="configuration-valeur">Nouvelle valeur</label>
-      <input id="configuration-valeur" class="field__input" [ngModel]="nouvelleValeur()" (ngModelChange)="nouvelleValeur.set($event)" />
-    </div>
-    <button type="button" class="fc-btn fc-btn--primary" [disabled]="loading()" (click)="definir()">Définir une nouvelle version</button>
   </section>
+
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="historiqueOuvert()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="config-historique-title"
+    (click)="fermerHistorique()"
+  >
+    <div class="fc-modal fc-modal--lg" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="config-historique-title" class="fc-modal__title">Historique — {{ cle() }}</h2>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="fermerHistorique()">Fermer</button>
+      </header>
+      <div class="fc-modal__body">
+        <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
+          <div class="fc-skeleton__line"></div>
+        </div>
+        <div class="fc-empty" *ngIf="!loading() && consulte() && historique().length === 0">Aucune version enregistrée pour cette configuration.</div>
+        <table class="fc-table" *ngIf="!loading() && historique().length > 0">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Valeur</th>
+              <th>Auteur</th>
+              <th>Créée le</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let version of historiqueAffiche()">
+              <td>{{ version.version }}</td>
+              <td>{{ version.valeur }}</td>
+              <td>{{ version.auteur }}</td>
+              <td>{{ version.creeLe | date: 'short' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <app-pagination
+          *ngIf="!loading() && historique().length > taillePage"
+          [page]="pageHistorique()"
+          [total]="historique().length"
+          [taillePage]="taillePage"
+          (pageChange)="pageHistorique.set($event)"
+        />
+      </div>
+      <footer class="fc-modal__footer">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="fermerHistorique()">Fermer</button>
+        <button type="button" class="fc-btn fc-btn--primary" (click)="ouvrirDefinition(cle(), valeurHistoriqueCourante())">Définir une nouvelle version</button>
+      </footer>
+    </div>
+  </div>
+
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="definitionOuverte()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="config-define-title"
+    (click)="fermerDefinition()"
+  >
+    <div class="fc-modal fc-modal--sm" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="config-define-title" class="fc-modal__title">Nouvelle version — {{ cle() }}</h2>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="fermerDefinition()">Fermer</button>
+      </header>
+      <div class="fc-modal__body">
+        <div class="field">
+          <label class="field__label" for="configuration-valeur">Nouvelle valeur</label>
+          <input id="configuration-valeur" class="field__input fc-input" [ngModel]="nouvelleValeur()" (ngModelChange)="nouvelleValeur.set($event)" />
+        </div>
+      </div>
+      <footer class="fc-modal__footer">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="fermerDefinition()">Annuler</button>
+        <button type="button" class="fc-btn fc-btn--primary" [disabled]="loading()" (click)="definir()">Enregistrer</button>
+      </footer>
+    </div>
+  </div>
 </app-page-shell>

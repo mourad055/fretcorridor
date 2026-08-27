@@ -1,4 +1,5 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { Subscription, interval, startWith, switchMap } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { PositionService } from './position.service';
@@ -8,6 +9,8 @@ import { PaginationComponent } from '../../../shared/components/pagination/pagin
 import { paginer } from '../../../shared/utils/pagination';
 
 const TAILLE_PAGE = 20;
+/** RG-043 : suivi temps réel — rechargement périodique côté Bureau. */
+const INTERVALLE_RAFRAICHISSEMENT_MS = 15_000;
 
 /**
  * FE-TRK-04 / RG-043 (Sprint 6) : un Bureau voit le suivi temps réel de son
@@ -24,7 +27,7 @@ const TAILLE_PAGE = 20;
   imports: [CommonModule, PageShellComponent, PositionsMapComponent, PaginationComponent],
   templateUrl: './positions-list.component.html',
 })
-export class PositionsListComponent implements OnInit {
+export class PositionsListComponent implements OnInit, OnDestroy {
   readonly positions = signal<Position[]>([]);
   readonly loading = signal(true);
   readonly errorMessage = signal<string | null>(null);
@@ -33,20 +36,32 @@ export class PositionsListComponent implements OnInit {
   readonly taillePage = TAILLE_PAGE;
   readonly positionsAffiches = computed(() => paginer(this.positions(), this.page(), this.taillePage));
 
+  private abonnement?: Subscription;
+
   constructor(private readonly positionService: PositionService) {}
 
   ngOnInit(): void {
     this.page.set(1);
-    this.positionService.list().subscribe({
-      next: (positions) => {
-        this.positions.set(positions);
-        this.loading.set(false);
-      },
-      error: () => {
-        this.errorMessage.set('Impossible de charger le suivi temps réel.');
-        this.loading.set(false);
-      },
-    });
+    this.abonnement = interval(INTERVALLE_RAFRAICHISSEMENT_MS)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.positionService.list()),
+      )
+      .subscribe({
+        next: (positions) => {
+          this.positions.set(positions);
+          this.loading.set(false);
+          this.errorMessage.set(null);
+        },
+        error: () => {
+          this.errorMessage.set('Impossible de charger le suivi temps réel.');
+          this.loading.set(false);
+        },
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.abonnement?.unsubscribe();
   }
 
   age(position: Position): string {

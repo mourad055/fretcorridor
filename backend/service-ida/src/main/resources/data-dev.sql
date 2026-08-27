@@ -49,3 +49,54 @@ JOIN acteurs a ON a.telephone = v.telephone
 WHERE NOT EXISTS (
     SELECT 1 FROM acteur_roles ar WHERE ar.acteur_id = a.id AND ar.role = v.role
 );
+
+-- Chauffeur mobile (+237696000001) : rôle TRANSPORTEUR en plus de CHAUFFEUR
+-- pour que le portail web affiche les mêmes missions/capacités que l'app mobile
+-- (même acteurId JWT, PRD §5.3).
+UPDATE acteurs SET
+    tenant_id = 'tenant-bgft-douala',
+    code_pin = '$2y$10$Ly67HRqbsix1/e8/MUcpzO35Y63be65zdMLJHoiTWWMkjb6Sg6.xK',
+    nom = COALESCE(NULLIF(nom, ''), 'Kamga'),
+    prenom = COALESCE(NULLIF(prenom, ''), 'Jean'),
+    raison_sociale = COALESCE(NULLIF(raison_sociale, ''), 'Transport Étoile SARL')
+WHERE telephone = '+237696000001';
+
+INSERT INTO acteur_roles (acteur_id, role)
+SELECT a.id, v.role
+FROM (VALUES
+    ('+237696000001', 'CHAUFFEUR'),
+    ('+237696000001', 'TRANSPORTEUR')
+) AS v(telephone, role)
+JOIN acteurs a ON a.telephone = v.telephone
+WHERE NOT EXISTS (
+    SELECT 1 FROM acteur_roles ar WHERE ar.acteur_id = a.id AND ar.role = v.role
+);
+
+-- Libellés des comptes démo web (évite les UUID bruts côté chronologie Bureau).
+UPDATE acteurs SET nom = 'Étoile', prenom = 'Demo', raison_sociale = 'Transport Étoile Demo'
+WHERE telephone = '+237600000002' AND (nom IS NULL OR nom = '');
+
+UPDATE acteurs SET nom = 'Sahel', prenom = 'Logistique', raison_sociale = 'Fourgon Sahel SARL'
+WHERE telephone = '+237600000005' AND (nom IS NULL OR nom = '');
+
+-- FE-ADM-06 : dossier KYC en attente pour l'écran Admin (tenant Flysoft).
+INSERT INTO acteurs (id, telephone, code_pin, tenant_id, niveau_kyc, actif, tentatives_echouees, date_creation, nom, prenom, raison_sociale)
+VALUES
+    ('70000000-0000-0000-0000-000000000001', '+237600000010', '$2y$10$Ly67HRqbsix1/e8/MUcpzO35Y63be65zdMLJHoiTWWMkjb6Sg6.xK', 'tenant-flysoft', 'NIVEAU_1', true, 0, now(), 'Mballa', 'Aïcha', NULL)
+ON CONFLICT (telephone) DO UPDATE SET tenant_id = EXCLUDED.tenant_id;
+
+INSERT INTO acteur_roles (acteur_id, role)
+SELECT a.id, 'TRANSPORTEUR'
+FROM acteurs a
+WHERE a.telephone = '+237600000010'
+  AND NOT EXISTS (
+    SELECT 1 FROM acteur_roles ar WHERE ar.acteur_id = a.id AND ar.role = 'TRANSPORTEUR'
+);
+
+INSERT INTO pieces_justificatives (id, acteur_id, type_document, object_key, date_depot)
+SELECT '80000000-0000-0000-0000-000000000001'::uuid, a.id, 'CNI', 'demo/kyc/en-attente-cni.pdf', now()
+FROM acteurs a
+WHERE a.telephone = '+237600000010'
+  AND NOT EXISTS (
+    SELECT 1 FROM pieces_justificatives p WHERE p.acteur_id = a.id AND p.type_document = 'CNI'
+);

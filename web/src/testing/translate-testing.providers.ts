@@ -102,7 +102,7 @@ const TRADUCTIONS_TEST_FR = {
     missionStatut: { CONFIRMEE: 'Confirmée', EN_COURS: 'En cours', CLOTUREE: 'Clôturée' },
     modeCollecte: { PORTE_A_PORTE: 'Porte à porte', POINT_DEPOT: 'Point de dépôt' },
     capaciteEtat: { PUBLIEE: 'Publiée', APPARIEE: 'Appariée', EXPIREE: 'Expirée' },
-    typeActeur: { CHAUFFEUR: 'Chauffeur', TRANSPORTEUR_PERSONNE_MORALE: 'Transporteur (personne morale)' },
+    typeActeur: { CHAUFFEUR: 'Chauffeur', TRANSPORTEUR: 'Transporteur', TRANSPORTEUR_PERSONNE_MORALE: 'Transporteur (personne morale)' },
     typeDossier: { MODERATION: 'Modération', INCIDENT: 'Incident', LITIGE: 'Litige' },
     prioriteDossier: { BASSE: 'Basse', NORMALE: 'Normale', HAUTE: 'Haute' },
     etapeEtat: { A_VENIR: 'À venir', EN_COURS: 'En cours', TERMINEE: 'Terminée' },

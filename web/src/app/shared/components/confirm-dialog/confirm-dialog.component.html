@@ -1,0 +1,32 @@
+@if (confirmationService.demande(); as demande) {
+  <div
+    class="fc-modal-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="fc-confirm-title"
+    (click)="annuler()"
+  >
+    <div class="fc-modal fc-modal--sm" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="fc-confirm-title" class="fc-modal__title">{{ demande.title }}</h2>
+      </header>
+      <div class="fc-modal__body">
+        <p class="fc-confirm-message">{{ demande.message }}</p>
+      </div>
+      <footer class="fc-modal__footer">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="annuler()">
+          {{ demande.cancelLabel }}
+        </button>
+        <button
+          type="button"
+          class="fc-btn"
+          [class.fc-btn--primary]="!demande.danger"
+          [class.fc-confirm-danger]="demande.danger"
+          (click)="confirmer()"
+        >
+          {{ demande.confirmLabel }}
+        </button>
+      </footer>
+    </div>
+  </div>
+}

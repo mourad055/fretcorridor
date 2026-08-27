@@ -31,6 +31,7 @@ const COMPARATEURS: Comparateur[] = ['SUPERIEUR', 'INFERIEUR'];
   standalone: true,
   imports: [CommonModule, FormsModule, PageShellComponent, PaginationComponent],
   templateUrl: './observatoire.component.html',
+  styleUrl: './observatoire.component.css',
 })
 export class ObservatoireComponent implements OnInit {
   readonly axes = signal<Axe[]>([]);
@@ -53,6 +54,10 @@ export class ObservatoireComponent implements OnInit {
   readonly nouvelleAlerteIndicateur = signal<Indicateur>('NOMBRE_MISSIONS');
   readonly nouvelleAlerteComparateur = signal<Comparateur>('SUPERIEUR');
   readonly nouvelleAlerteSeuil = signal<number | null>(null);
+
+  readonly estimationOuverte = signal(false);
+  readonly nouvelleAlerteOuverte = signal(false);
+  readonly alerteASupprimer = signal<AlerteSeuil | null>(null);
 
   readonly pageAlertes = signal(1);
   readonly taillePage = TAILLE_PAGE;
@@ -124,10 +129,19 @@ export class ObservatoireComponent implements OnInit {
       next: () => {
         this.sourceEstimation.set('');
         this.volumeMensuelEstime.set(null);
+        this.estimationOuverte.set(false);
         this.chargerObservatoire(axeId);
       },
       error: () => this.errorMessage.set("Impossible d'enregistrer l'estimation de marché."),
     });
+  }
+
+  ouvrirEstimation(): void {
+    this.estimationOuverte.set(true);
+  }
+
+  fermerEstimation(): void {
+    this.estimationOuverte.set(false);
   }
 
   configurerAlerte(): void {
@@ -141,13 +155,35 @@ export class ObservatoireComponent implements OnInit {
       .subscribe({
         next: () => {
           this.nouvelleAlerteSeuil.set(null);
+          this.nouvelleAlerteOuverte.set(false);
           this.chargerAlertes();
         },
         error: () => this.errorMessage.set("Impossible de configurer l'alerte."),
       });
   }
 
-  supprimerAlerte(alerte: AlerteSeuil): void {
+  ouvrirNouvelleAlerte(): void {
+    this.nouvelleAlerteOuverte.set(true);
+  }
+
+  fermerNouvelleAlerte(): void {
+    this.nouvelleAlerteOuverte.set(false);
+  }
+
+  demanderSuppressionAlerte(alerte: AlerteSeuil): void {
+    this.alerteASupprimer.set(alerte);
+  }
+
+  annulerSuppressionAlerte(): void {
+    this.alerteASupprimer.set(null);
+  }
+
+  confirmerSuppressionAlerte(): void {
+    const alerte = this.alerteASupprimer();
+    if (!alerte) {
+      return;
+    }
+    this.alerteASupprimer.set(null);
     this.observatoireService.supprimerAlerte(alerte.id).subscribe({
       next: () => this.chargerAlertes(),
       error: () => this.errorMessage.set("Impossible de supprimer l'alerte."),

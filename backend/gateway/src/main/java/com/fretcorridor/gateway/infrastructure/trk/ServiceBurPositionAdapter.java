@@ -51,7 +51,7 @@ public class ServiceBurPositionAdapter implements TrkPort {
                 .map(dto -> new PositionVehicule(
                         dto.missionId().toString(),
                         tenantId,
-                        dto.vehiculeId().toString(), // pas un libellé — cf Javadoc de la classe
+                        dto.libelle() != null ? dto.libelle() : dto.vehiculeId().toString(),
                         dto.latitude(),
                         dto.longitude(),
                         dto.capturedLe()
@@ -62,6 +62,7 @@ public class ServiceBurPositionAdapter implements TrkPort {
     private record PositionBurResponse(
             UUID missionId,
             UUID vehiculeId,
+            String libelle,
             double latitude,
             double longitude,
             Instant capturedLe

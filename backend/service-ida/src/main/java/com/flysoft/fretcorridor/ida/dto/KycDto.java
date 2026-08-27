@@ -64,8 +64,9 @@ public class KycDto {
     @AllArgsConstructor
     @Builder
     public static class PieceResponse {
+        private UUID id;
         private String typeDocument;
-        private String url; // présignée, à durée limitée — jamais persistée telle quelle
+        private String url; // présignée mobile — le backoffice web passe par /content
         private LocalDateTime dateDepot;
     }
 

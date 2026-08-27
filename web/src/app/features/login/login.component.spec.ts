@@ -76,6 +76,37 @@ describe('LoginComponent', () => {
     expect(alert.nativeElement.textContent).toContain('Numéro de téléphone ou code invalide.');
   });
 
+  it('logs in with the transporteur demo account and redirects to /transporteur', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const navigateSpy = jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const component = fixture.componentInstance;
+    const compteTransporteur = component.demoAccounts.find((account) => account.phone === '+237696000001');
+    component.loginAsDemo(compteTransporteur!);
+
+    flushLogin({ token: 'header.eyJzdWIiOiJhIn0.sig', role: 'TRANSPORTEUR', tenantId: 'tenant-bgft-douala' });
+    flushTenants([{ tenantId: 'tenant-bgft-douala', origine: true }]);
+
+    expect(navigateSpy).toHaveBeenCalledWith('/transporteur');
+  });
+
+  it('redirige un role CHAUFFEUR seul vers lespace transporteur web', () => {
+    const fixture = TestBed.createComponent(LoginComponent);
+    fixture.detectChanges();
+    const navigateSpy = jest.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const component = fixture.componentInstance;
+    component.phone.set('+237696000001');
+    component.code.set('1234');
+    component.submit();
+
+    flushLogin({ token: 'header.eyJzdWIiOiJhIn0.sig', role: 'CHAUFFEUR' as never, tenantId: 'tenant-bgft-douala' });
+    flushTenants([{ tenantId: 'tenant-bgft-douala', origine: true }]);
+
+    expect(navigateSpy).toHaveBeenCalledWith('/transporteur');
+  });
+
   it('logs in with the demo account credentials and redirects to its home route', () => {
     const fixture = TestBed.createComponent(LoginComponent);
     fixture.detectChanges();

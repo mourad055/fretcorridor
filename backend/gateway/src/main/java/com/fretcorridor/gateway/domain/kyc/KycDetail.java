@@ -15,5 +15,5 @@ public record KycDetail(
         Set<String> roles,
         List<Piece> pieces
 ) {
-    public record Piece(String typeDocument, String url, LocalDateTime dateDepot) {}
+    public record Piece(String id, String typeDocument, String url, LocalDateTime dateDepot) {}
 }

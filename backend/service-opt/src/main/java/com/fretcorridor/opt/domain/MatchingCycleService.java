@@ -470,17 +470,21 @@ public class MatchingCycleService {
                                                         Double rayonHaversineRepliKm,
                                                         Map<PointGeoDto, String> cacheCellulesH3,
                                                         boolean[] h3Utilise) {
-        PointGeoDto origine = demande.getOrigine();
-        if (origine == null || capacites.isEmpty()) {
+        if (capacites.isEmpty()) {
             return capacites;
+        }
+        PointGeoDto origine = demande.getOrigine();
+        if (origine == null) {
+            return filtrerCapacitePhysique(demande, capacites);
         }
 
         String celluleOrigine = serviceGeoClient.indexZonage(origine.latitude(), origine.longitude());
+        List<CapaciteEnAttente> geospatiales;
         if (celluleOrigine != null) {
             List<String> cellulesEligibles = serviceGeoClient.kRing(celluleOrigine, l0KRing);
             if (!cellulesEligibles.isEmpty()) {
                 h3Utilise[0] = true;
-                return capacites.stream()
+                geospatiales = capacites.stream()
                         .filter(c -> {
                             PointGeoDto position = c.getPosition();
                             if (position == null) {
@@ -493,16 +497,17 @@ public class MatchingCycleService {
                             return cellule == null || cellulesEligibles.contains(cellule);
                         })
                         .toList();
+                return filtrerCapacitePhysique(demande, geospatiales);
             }
         }
 
         // Repli historique : rayon Haversine autour de l'origine (RG-046,
         // "distance d'approche a vide" camion -> point de collecte).
         if (rayonHaversineRepliKm == null) {
-            return capacites;
+            return filtrerCapacitePhysique(demande, capacites);
         }
         double rayonKm = rayonHaversineRepliKm;
-        return capacites.stream()
+        geospatiales = capacites.stream()
                 .filter(c -> {
                     PointGeoDto position = c.getPosition();
                     if (position == null) {
@@ -510,6 +515,27 @@ public class MatchingCycleService {
                     }
                     return HaversineUtils.distance(origine, position) <= rayonKm;
                 })
+                .toList();
+        return filtrerCapacitePhysique(demande, geospatiales);
+    }
+
+    /**
+     * Faisabilité physique (CDC §8.1 / EF-MAT-05) : un camion dont le reliquat
+     * est inférieur au poids taxable de la demande ne doit jamais être proposé.
+     * Sans ce filtre, L1 publie une PropositionEmise puis l'acceptation échoue
+     * en 503 (decrement refuse cote service-cap).
+     */
+    static boolean capacitePhysiquementSuffisante(DemandeEnAttente demande, CapaciteEnAttente capacite) {
+        if (demande.getPoidsTaxableKg() == null || capacite.getCapaciteResiduelleKg() == null) {
+            return true;
+        }
+        return capacite.getCapaciteResiduelleKg().compareTo(demande.getPoidsTaxableKg()) >= 0;
+    }
+
+    private static List<CapaciteEnAttente> filtrerCapacitePhysique(DemandeEnAttente demande,
+                                                                   List<CapaciteEnAttente> capacites) {
+        return capacites.stream()
+                .filter(c -> capacitePhysiquementSuffisante(demande, c))
                 .toList();
     }
 

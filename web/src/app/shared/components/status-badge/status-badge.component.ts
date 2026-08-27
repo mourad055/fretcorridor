@@ -237,6 +237,8 @@ export function libelleTypeActeur(type?: string): string {
   switch (type) {
     case 'CHAUFFEUR':
       return 'enum.typeActeur.CHAUFFEUR';
+    case 'TRANSPORTEUR':
+      return 'enum.typeActeur.TRANSPORTEUR';
     case 'TRANSPORTEUR_PERSONNE_MORALE':
       return 'enum.typeActeur.TRANSPORTEUR_PERSONNE_MORALE';
     default:

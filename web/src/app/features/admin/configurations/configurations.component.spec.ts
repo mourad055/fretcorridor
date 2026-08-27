@@ -1,30 +1,31 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { By } from '@angular/platform-browser';
 import { axe } from 'jest-axe';
 import { ConfigurationsComponent } from './configurations.component';
 import { environment } from '../../../../environments/environment';
+import { ConfirmationService } from '../../../shared/services/confirmation.service';
 
 describe('ConfigurationsComponent', () => {
   let httpMock: HttpTestingController;
+  let confirmation: { confirmer: jest.Mock };
 
   beforeEach(async () => {
+    confirmation = { confirmer: jest.fn().mockResolvedValue(true) };
     await TestBed.configureTestingModule({
       imports: [ConfigurationsComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: ConfirmationService, useValue: confirmation },
+      ],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  beforeEach(() => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-  });
-
   afterEach(() => {
     httpMock.verify();
-    jest.restoreAllMocks();
   });
 
   /** Chaque test flush le catalogue chargé par ngOnInit avant de continuer. */
@@ -65,22 +66,23 @@ describe('ConfigurationsComponent', () => {
   it('affiche l\'historique des versions après consultation', () => {
     const fixture = creerEtIgnorerLeCatalogue();
 
-    fixture.componentInstance.cle.set('seuil-agregation-bur');
-    fixture.componentInstance.consulter();
+    fixture.componentInstance.ouvrirHistorique('seuil-agregation-bur');
     httpMock
       .expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur/historique`)
       .flush([{ cle: 'seuil-agregation-bur', perimetre: 'GLOBAL', valeur: '3', auteur: 'actor-admin-1', version: 1, creeLe: '2026-08-05T00:00:00Z' }]);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('3');
+    expect(fixture.nativeElement.querySelector('.fc-modal')).toBeTruthy();
   });
 
-  it('definit une nouvelle version puis rafraichit l\'historique et le catalogue', () => {
+  it('definit une nouvelle version puis rafraichit l\'historique et le catalogue', async () => {
     const fixture = creerEtIgnorerLeCatalogue();
 
     fixture.componentInstance.cle.set('seuil-agregation-bur');
     fixture.componentInstance.nouvelleValeur.set('5');
     fixture.componentInstance.definir();
+    await fixture.whenStable();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur`).flush({});
     httpMock
@@ -91,13 +93,14 @@ describe('ConfigurationsComponent', () => {
     expect(fixture.componentInstance.nouvelleValeur()).toBe('');
   });
 
-  it('ne fait aucun appel reseau si la confirmation est annulee', () => {
-    (window.confirm as jest.Mock).mockReturnValue(false);
+  it('ne fait aucun appel reseau si la confirmation est annulee', async () => {
+    confirmation.confirmer.mockResolvedValue(false);
     const fixture = creerEtIgnorerLeCatalogue();
 
     fixture.componentInstance.cle.set('seuil-agregation-bur');
     fixture.componentInstance.nouvelleValeur.set('5');
     fixture.componentInstance.definir();
+    await fixture.whenStable();
 
     httpMock.expectNone(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur`);
   });
@@ -105,17 +108,16 @@ describe('ConfigurationsComponent', () => {
   it('affiche un skeleton pendant la consultation puis le masque', () => {
     const fixture = creerEtIgnorerLeCatalogue();
 
-    fixture.componentInstance.cle.set('seuil-agregation-bur');
-    fixture.componentInstance.consulter();
+    fixture.componentInstance.ouvrirHistorique('seuil-agregation-bur');
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.fc-skeleton')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.fc-modal .fc-skeleton')).toBeTruthy();
 
     httpMock
       .expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur/historique`)
       .flush([]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.fc-skeleton')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.fc-modal .fc-skeleton')).toBeFalsy();
   });
 
   it("affiche un état vide après une consultation sans version, pas avant", () => {
@@ -123,29 +125,35 @@ describe('ConfigurationsComponent', () => {
 
     expect(fixture.nativeElement.querySelector('.fc-empty')).toBeTruthy(); // catalogue vide
 
-    fixture.componentInstance.cle.set('seuil-agregation-bur');
-    fixture.componentInstance.consulter();
+    fixture.componentInstance.ouvrirHistorique('seuil-agregation-bur');
     httpMock
       .expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur/historique`)
       .flush([]);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelectorAll('.fc-empty').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.fc-modal .fc-empty').length).toBe(1);
   });
 
-  it('désactive les boutons de consultation/définition pendant le chargement', () => {
+  it('désactive le bouton Enregistrer pendant le chargement de la nouvelle version', async () => {
     const fixture = creerEtIgnorerLeCatalogue();
 
-    fixture.componentInstance.cle.set('seuil-agregation-bur');
-    fixture.componentInstance.consulter();
+    fixture.componentInstance.ouvrirDefinition('seuil-agregation-bur', '5');
     fixture.detectChanges();
 
-    const buttons = fixture.debugElement.queryAll(By.css('button'));
-    buttons.forEach((button) => expect(button.nativeElement.disabled).toBe(true));
+    fixture.componentInstance.definir();
+    await fixture.whenStable();
+    fixture.detectChanges();
 
+    const enregistrer = Array.from(fixture.nativeElement.querySelectorAll('.fc-modal button')).find((b: Element) =>
+      b.textContent?.includes('Enregistrer')
+    ) as HTMLButtonElement;
+    expect(enregistrer.disabled).toBe(true);
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur`).flush({});
     httpMock
       .expectOne(`${environment.apiBaseUrl}/admin/configurations/seuil-agregation-bur/historique`)
       .flush([]);
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/configurations`).flush([]);
   });
 
   it('ne consulte rien si aucune clé n\'est saisie', () => {

@@ -14,3 +14,21 @@
   color: var(--fc-muted);
   font-weight: 600;
 }
+
+@media (max-width: 480px) {
+  .pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--fc-space-2);
+  }
+
+  .pagination .fc-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 7rem;
+  }
+
+  .pagination__etat {
+    flex: 1 1 100%;
+    text-align: center;
+  }
+}

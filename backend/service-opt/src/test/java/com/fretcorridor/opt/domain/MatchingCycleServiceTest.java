@@ -96,4 +96,25 @@ class MatchingCycleServiceTest {
         }
         assertTrue(fenetre >= 0.0, "Borne min doit plancher le raccourcissement");
     }
+
+    @Test
+    void capaciteInsuffisante_estEcarteeDuMatching() {
+        UUID axe = UUID.randomUUID();
+        DemandeEnAttente demande = new DemandeEnAttente(
+                UUID.randomUUID(), axe, UUID.randomUUID(), Map.of(),
+                null, null, new java.math.BigDecimal("475"),
+                null, null, "Bidon", 19, "ti", "+237", "DOMICILE", "DES_QUE_POSSIBLE",
+                475.0, false);
+        CapaciteEnAttente tropPetite = new CapaciteEnAttente(
+                UUID.randomUUID(), axe, null, null, UUID.randomUUID(), Map.of(),
+                null, null, "FOURGON",
+                new java.math.BigDecimal("250"), null);
+        CapaciteEnAttente assezGrande = new CapaciteEnAttente(
+                UUID.randomUUID(), axe, null, null, UUID.randomUUID(), Map.of(),
+                null, null, "FOURGON",
+                new java.math.BigDecimal("5000"), null);
+
+        assertFalse(MatchingCycleService.capacitePhysiquementSuffisante(demande, tropPetite));
+        assertTrue(MatchingCycleService.capacitePhysiquementSuffisante(demande, assezGrande));
+    }
 }

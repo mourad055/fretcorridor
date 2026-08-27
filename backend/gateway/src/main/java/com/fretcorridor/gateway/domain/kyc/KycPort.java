@@ -22,4 +22,10 @@ public interface KycPort {
             String tenantId,
             String delegationToken,
             String motif);
+
+    Mono<KycPieceContenu> telechargerPiece(
+            String acteurId,
+            String pieceId,
+            String tenantId,
+            String delegationToken);
 }

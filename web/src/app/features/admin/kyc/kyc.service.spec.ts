@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { provideHttpClient } from '@angular/common/http';
 import { KycService } from './kyc.service';
 import { environment } from '../../../../environments/environment';
+import { TENANT_ADMIN_DEFAUT } from '../admin-tenants';
 
 describe('KycService', () => {
   let service: KycService;
@@ -20,9 +21,13 @@ describe('KycService', () => {
 
   it('lists the pending dossiers', () => {
     let result: unknown;
-    service.listPending().subscribe((dossiers) => (result = dossiers));
+    service.listPending(TENANT_ADMIN_DEFAUT).subscribe((dossiers) => (result = dossiers));
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/pending`);
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc/pending` &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
     expect(req.request.method).toBe('GET');
     req.flush([{ id: 'kyc-1', acteurNom: 'Jean', acteurTelephone: '+237600', typeActeur: 'CHAUFFEUR', soumisLe: '2026-01-01T00:00:00Z', statut: 'EN_ATTENTE' }]);
 
@@ -30,15 +35,24 @@ describe('KycService', () => {
   });
 
   it('lists dossiers by niveau', () => {
-    service.listByNiveau('NIVEAU_2').subscribe();
-    const req = httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/kyc` && r.params.get('niveau') === 'NIVEAU_2');
+    service.listByNiveau(TENANT_ADMIN_DEFAUT, 'NIVEAU_2').subscribe();
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc` &&
+        r.params.get('niveau') === 'NIVEAU_2' &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
     expect(req.request.method).toBe('GET');
     req.flush([]);
   });
 
   it('loads dossier detail', () => {
-    service.detail('kyc-1').subscribe();
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/kyc-1`);
+    service.detail(TENANT_ADMIN_DEFAUT, 'kyc-1').subscribe();
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc/kyc-1` &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
     expect(req.request.method).toBe('GET');
     req.flush({
       id: 'kyc-1',
@@ -53,9 +67,13 @@ describe('KycService', () => {
   });
 
   it('sends a decision with an idempotency key header', () => {
-    service.decide('kyc-1', 'VALIDE').subscribe();
+    service.decide(TENANT_ADMIN_DEFAUT, 'kyc-1', 'VALIDE').subscribe();
 
-    const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/kyc/kyc-1/decision`);
+    const req = httpMock.expectOne(
+      (r) =>
+        r.url === `${environment.apiBaseUrl}/admin/kyc/kyc-1/decision` &&
+        r.params.get('tenantId') === TENANT_ADMIN_DEFAUT
+    );
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ decision: 'VALIDE', motif: null });
     expect(req.request.headers.has('X-Idempotency-Key')).toBe(true);

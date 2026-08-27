@@ -82,6 +82,20 @@ class ServiceIdaAuthenticationAdapterTest {
     }
 
     @Test
+    void prefere_transporteur_lorsque_chauffeur_et_transporteur_sont_tous_deux_presents() {
+        serviceIda.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        {"accessToken":"t","refreshToken":"r","acteurId":"id-live","roles":["CHAUFFEUR","TRANSPORTEUR"],"tenantId":"tenant-bgft-douala"}
+                        """));
+
+        StepVerifier.create(adapter.authenticate("+237696000001", "1234"))
+                .expectNextMatches(actor -> actor.role() == Role.TRANSPORTEUR)
+                .verifyComplete();
+    }
+
+    @Test
     void maps_a_chauffeur_role_to_the_gateway_chauffeur_role() {
         serviceIda.enqueue(new MockResponse()
                 .setResponseCode(200)

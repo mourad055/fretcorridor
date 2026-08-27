@@ -1,21 +1,29 @@
 <div class="totaux-ecritures">
   <dl class="fc-dl">
     <div class="fc-dl__row">
-      <dt>Nombre d'écritures</dt>
+      <dt>{{ variante === 'transporteur' ? 'Nombre de reversements' : "Nombre d'écritures" }}</dt>
       <dd>{{ totaux.nombre }}</dd>
     </div>
-    <div class="fc-dl__row">
-      <dt>Total crédité</dt>
-      <dd>{{ totaux.totalCredit }}</dd>
-    </div>
-    <div class="fc-dl__row">
-      <dt>Total débité</dt>
-      <dd>{{ totaux.totalDebit }}</dd>
-    </div>
-    <div class="fc-dl__row">
-      <dt>Solde</dt>
-      <dd>{{ totaux.solde }}</dd>
-    </div>
+    <ng-container *ngIf="variante === 'transporteur'; else grandLivre">
+      <div class="fc-dl__row">
+        <dt>Total reçu</dt>
+        <dd>{{ totaux.solde }}</dd>
+      </div>
+    </ng-container>
+    <ng-template #grandLivre>
+      <div class="fc-dl__row">
+        <dt>Total crédité</dt>
+        <dd>{{ totaux.totalCredit }}</dd>
+      </div>
+      <div class="fc-dl__row">
+        <dt>Total débité</dt>
+        <dd>{{ totaux.totalDebit }}</dd>
+      </div>
+      <div class="fc-dl__row">
+        <dt>Solde</dt>
+        <dd>{{ totaux.solde }}</dd>
+      </div>
+    </ng-template>
   </dl>
 
   <app-repartition-donut *ngIf="totaux.nombre > 0" [segments]="segmentsRepartition" />

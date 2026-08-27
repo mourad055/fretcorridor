@@ -61,6 +61,14 @@ public class KycAdminService {
         return KycAdminDto.ActeurDetail.from(acteur, piecesDe(acteur));
     }
 
+    @Transactional(readOnly = true)
+    public DocumentStorageService.ContenuObjet lirePiece(UUID acteurId, UUID pieceId, String tenantId) {
+        Acteur acteur = acteurKycDuTenant(acteurId, tenantId);
+        var piece = pieceJustificativeRepository.findByIdAndActeurId(pieceId, acteur.getId())
+                .orElseThrow(() -> new RuntimeException("KYC_PIECE_INTROUVABLE"));
+        return documentStorageService.lireContenu(piece.getObjectKey());
+    }
+
     @Transactional
     public KycAdminDto.ActeurSummary prendreDecision(
             UUID acteurId, String tenantId, KycAdminDto.DecisionRequest request) {
@@ -114,6 +122,7 @@ public class KycAdminService {
     private List<KycDto.PieceResponse> piecesDe(Acteur acteur) {
         return pieceJustificativeRepository.findByActeurId(acteur.getId()).stream()
                 .map(p -> KycDto.PieceResponse.builder()
+                        .id(p.getId())
                         .typeDocument(p.getTypeDocument())
                         .url(documentStorageService.urlAcces(p.getObjectKey()))
                         .dateDepot(p.getDateDepot())

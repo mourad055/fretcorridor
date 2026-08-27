@@ -128,24 +128,28 @@ export class DossiersComponent {
     if (!consolide || !this.decisionValide()) {
       return;
     }
-    const confirme = this.confirmationService.confirmer(
-      `Trancher le dossier ${consolide.dossier.id} avec la décision « ${this.decisionTexte()} » ? Cette décision est définitive.`
-    );
-    if (!confirme) {
-      return;
-    }
-    this.trancheEnCours.set(true);
-    this.dossiersService.decider(consolide.dossier.id, this.decisionTexte(), this.motifTexte()).subscribe({
-      next: () => {
-        this.trancheEnCours.set(false);
-        this.fermerDossier();
-        this.consulterFileDeTravail();
-      },
-      error: () => {
-        this.errorMessage.set('Impossible d\'enregistrer la décision.');
-        this.trancheEnCours.set(false);
-      },
-    });
+    void this.confirmationService
+      .confirmer(
+        `Trancher le dossier ${consolide.dossier.id} avec la décision « ${this.decisionTexte()} » ? Cette décision est définitive.`,
+        { title: 'Trancher le dossier', confirmLabel: 'Trancher', danger: true }
+      )
+      .then((confirme) => {
+        if (!confirme) {
+          return;
+        }
+        this.trancheEnCours.set(true);
+        this.dossiersService.decider(consolide.dossier.id, this.decisionTexte(), this.motifTexte()).subscribe({
+          next: () => {
+            this.trancheEnCours.set(false);
+            this.fermerDossier();
+            this.consulterFileDeTravail();
+          },
+          error: () => {
+            this.errorMessage.set('Impossible d\'enregistrer la décision.');
+            this.trancheEnCours.set(false);
+          },
+        });
+      });
   }
 
   declencherEscalade(): void {

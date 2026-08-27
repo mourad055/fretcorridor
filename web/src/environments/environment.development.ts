@@ -1,5 +1,8 @@
 export const environment = {
   production: false,
-  apiBaseUrl: 'http://localhost:8082/api/v1', // gateway, jamais un service en direct (cf mobile/dio_provider.dart)
+  // Relatif : web-demo (:8099) et ng serve proxyifient /api/ vers le gateway
+  // (cf web/nginx.conf). localhost:8082 direct reste possible via ng serve
+  // sans Nginx en surchargeant cette variable au build.
+  apiBaseUrl: '/api/v1',
   enableDemoLogin: true,
 };

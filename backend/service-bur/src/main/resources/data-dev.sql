@@ -27,4 +27,25 @@ VALUES
     ('30000000-0000-0000-0000-000000000002', now() - interval '10 minutes',5.0469, 10.2227, '30000000-0000-0000-0000-000000000002', 'tenant-bgft-douala',   '50000000-0000-0000-0000-000000000002'),
     ('30000000-0000-0000-0000-000000000003', now() - interval '5 minutes', 10.7500,14.2000, '30000000-0000-0000-0000-000000000003', 'tenant-bnft-ndjamena', '50000000-0000-0000-0000-000000000003'),
     ('30000000-0000-0000-0000-000000000004', now() - interval '10 minutes',9.8000, 13.8000, '30000000-0000-0000-0000-000000000004', 'tenant-bnft-ndjamena', '50000000-0000-0000-0000-000000000004')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    captured_le = EXCLUDED.captured_le,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude;
+
+-- Alignement demo sur les positions réelles ingérées par service-flt (tests
+-- mobile Yaoundé→N'Djamena, etc.) — écrase les seeds ci-dessus si plus récent.
+INSERT INTO public.positions (id, mission_id, tenant_id, vehicule_id, latitude, longitude, captured_le)
+SELECT gen_random_uuid(), p.mission_id, p.tenant_id, m.vehicule_id, p.latitude, p.longitude, p.horodatage AT TIME ZONE 'UTC'
+FROM (
+    SELECT DISTINCT ON (mission_id) mission_id, tenant_id, latitude, longitude, horodatage
+    FROM service_flt.positions
+    ORDER BY mission_id, horodatage DESC
+) p
+LEFT JOIN service_exe.missions m ON m.id = p.mission_id
+ON CONFLICT (mission_id) DO UPDATE SET
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    captured_le = EXCLUDED.captured_le,
+    vehicule_id = COALESCE(EXCLUDED.vehicule_id, public.positions.vehicule_id),
+    tenant_id = EXCLUDED.tenant_id
+WHERE public.positions.captured_le < EXCLUDED.captured_le;

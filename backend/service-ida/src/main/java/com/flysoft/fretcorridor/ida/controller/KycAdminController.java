@@ -6,6 +6,8 @@ import com.flysoft.fretcorridor.ida.security.JwtService;
 import com.flysoft.fretcorridor.ida.service.KycAdminService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,6 +69,31 @@ public class KycAdminController {
         } catch (RuntimeException e) {
             if ("KYC_ACTEUR_INTROUVABLE".equals(e.getMessage())) {
                 return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{acteurId}/pieces/{pieceId}/content")
+    public ResponseEntity<?> lirePiece(@PathVariable UUID acteurId,
+                                       @PathVariable UUID pieceId,
+                                       @RequestParam String tenantId,
+                                       @RequestHeader("Authorization") String authHeader) {
+        if (!estAdministration(authHeader)) {
+            return ResponseEntity.status(403).body("ROLE_ADMINISTRATION_REQUIS");
+        }
+        try {
+            var contenu = kycAdminService.lirePiece(acteurId, pieceId, tenantId);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contenu.contentType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + contenu.nomFichier() + "\"")
+                    .body(contenu.donnees());
+        } catch (RuntimeException e) {
+            if ("KYC_ACTEUR_INTROUVABLE".equals(e.getMessage()) || "KYC_PIECE_INTROUVABLE".equals(e.getMessage())) {
+                return ResponseEntity.notFound().build();
+            }
+            if ("KYC_PIECE_ILLISIBLE".equals(e.getMessage())) {
+                return ResponseEntity.status(503).body(e.getMessage());
             }
             return ResponseEntity.badRequest().body(e.getMessage());
         }

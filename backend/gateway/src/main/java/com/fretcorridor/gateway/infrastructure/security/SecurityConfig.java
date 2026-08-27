@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .pathMatchers("/actuator/health").permitAll()
                         .pathMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .pathMatchers("/api/v1/bureau/**").hasRole("BUREAU")
-                        .pathMatchers("/api/v1/transporteur/**").hasRole("TRANSPORTEUR")
+                        .pathMatchers("/api/v1/transporteur/**").hasAnyRole("TRANSPORTEUR", "CHAUFFEUR")
                         .pathMatchers("/api/v1/agent/**").hasRole("AGENT")
                         .anyExchange().authenticated())
                 .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION)

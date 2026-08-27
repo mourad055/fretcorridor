@@ -36,3 +36,103 @@ VALUES
     ('60000000-0000-0000-0000-000000000009', 'tenant-bgft-douala',   'mission-demo-bgft-3', 85000.00, now() - interval '30 minutes'),
     ('60000000-0000-0000-0000-00000000000a', 'tenant-bnft-ndjamena', 'mission-demo-bnft-3', 60000.00, now() - interval '30 minutes')
 ON CONFLICT (mission_id) DO NOTHING;
+
+-- Compte mobile live (+237696000001) — portail web Transporteur (PRD §5.3).
+-- beneficiaire_id résolu par téléphone service-ida (UUID réel, pas a0000000-...).
+INSERT INTO sequestres (mission_id, etat, declenche_le, libere_le, tenant_id, transporteur_id, preuve_livraison_reference)
+SELECT
+    'mission-demo-mobile-live-1',
+    'LIBERE',
+    now() - interval '5 hours',
+    now() - interval '4 hours',
+    'tenant-bgft-douala',
+    a.id,
+    'POD-DEMO-MOBILE-LIVE-1'
+FROM service_ida.acteurs a
+WHERE a.telephone = '+237696000001'
+ON CONFLICT (mission_id) DO NOTHING;
+
+INSERT INTO ecritures_miroir (id, tenant_id, mission_id, type_compte, beneficiaire_id, sens, nature, mode_paiement, montant, reference_prestataire, cree_le, statut)
+SELECT
+    '60000000-0000-0000-0000-00000000000b',
+    'tenant-bgft-douala',
+    'mission-demo-mobile-live-1',
+    'COMPTE_SEQUESTRE_PRESTATAIRE',
+    NULL,
+    'CREDIT',
+    'ENCAISSEMENT',
+    'MONNAIE_ELECTRONIQUE',
+    165000.00,
+    'PRESTA-DEMO-MOBILE-LIVE-1',
+    now() - interval '4 hours',
+    'VALIDE'
+FROM service_ida.acteurs a
+WHERE a.telephone = '+237696000001'
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ecritures_miroir (id, tenant_id, mission_id, type_compte, beneficiaire_id, sens, nature, mode_paiement, montant, reference_prestataire, cree_le, statut)
+SELECT
+    '60000000-0000-0000-0000-00000000000c',
+    'tenant-bgft-douala',
+    'mission-demo-mobile-live-1',
+    'COMPTE_TRANSPORTEUR',
+    a.id,
+    'DEBIT',
+    'REVERSEMENT',
+    NULL,
+    165000.00,
+    'PRESTA-DEMO-MOBILE-LIVE-1',
+    now() - interval '3 hours',
+    'VALIDE'
+FROM service_ida.acteurs a
+WHERE a.telephone = '+237696000001'
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO sequestres (mission_id, etat, declenche_le, libere_le, tenant_id, transporteur_id, preuve_livraison_reference)
+SELECT
+    'mission-demo-mobile-live-2',
+    'LIBERE',
+    now() - interval '2 days',
+    now() - interval '2 days' + interval '2 hours',
+    'tenant-bgft-douala',
+    a.id,
+    'POD-DEMO-MOBILE-LIVE-2'
+FROM service_ida.acteurs a
+WHERE a.telephone = '+237696000001'
+ON CONFLICT (mission_id) DO NOTHING;
+
+INSERT INTO ecritures_miroir (id, tenant_id, mission_id, type_compte, beneficiaire_id, sens, nature, mode_paiement, montant, reference_prestataire, cree_le, statut)
+SELECT
+    '60000000-0000-0000-0000-00000000000d',
+    'tenant-bgft-douala',
+    'mission-demo-mobile-live-2',
+    'COMPTE_SEQUESTRE_PRESTATAIRE',
+    NULL,
+    'CREDIT',
+    'ENCAISSEMENT',
+    'MONNAIE_ELECTRONIQUE',
+    92000.00,
+    'PRESTA-DEMO-MOBILE-LIVE-2',
+    now() - interval '2 days' + interval '1 hour',
+    'VALIDE'
+FROM service_ida.acteurs a
+WHERE a.telephone = '+237696000001'
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO ecritures_miroir (id, tenant_id, mission_id, type_compte, beneficiaire_id, sens, nature, mode_paiement, montant, reference_prestataire, cree_le, statut)
+SELECT
+    '60000000-0000-0000-0000-00000000000e',
+    'tenant-bgft-douala',
+    'mission-demo-mobile-live-2',
+    'COMPTE_TRANSPORTEUR',
+    a.id,
+    'DEBIT',
+    'REVERSEMENT',
+    NULL,
+    92000.00,
+    'PRESTA-DEMO-MOBILE-LIVE-2',
+    now() - interval '2 days' + interval '2 hours',
+    'VALIDE'
+FROM service_ida.acteurs a
+WHERE a.telephone = '+237696000001'
+ON CONFLICT (id) DO NOTHING;

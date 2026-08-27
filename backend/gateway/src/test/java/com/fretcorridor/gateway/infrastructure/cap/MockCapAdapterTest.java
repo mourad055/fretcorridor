@@ -11,7 +11,7 @@ class MockCapAdapterTest {
 
     @Test
     void returns_only_the_capacities_of_the_requested_transporteur() {
-        StepVerifier.create(adapter.listerParTransporteur("a0000000-0000-0000-0000-000000000002").collectList())
+        StepVerifier.create(adapter.listerMesCapacites("a0000000-0000-0000-0000-000000000002", "token").collectList())
                 .assertNext(capacites -> assertThat(capacites)
                         .hasSize(2)
                         .allMatch(c -> c.transporteurId().equals("a0000000-0000-0000-0000-000000000002")))
@@ -20,7 +20,7 @@ class MockCapAdapterTest {
 
     @Test
     void returns_a_different_set_for_a_different_transporteur() {
-        StepVerifier.create(adapter.listerParTransporteur("a0000000-0000-0000-0000-000000000005").collectList())
+        StepVerifier.create(adapter.listerMesCapacites("a0000000-0000-0000-0000-000000000005", "token").collectList())
                 .assertNext(capacites -> assertThat(capacites)
                         .hasSize(1)
                         .allMatch(c -> c.transporteurId().equals("a0000000-0000-0000-0000-000000000005")))
@@ -29,7 +29,7 @@ class MockCapAdapterTest {
 
     @Test
     void returns_nothing_for_an_unknown_transporteur() {
-        StepVerifier.create(adapter.listerParTransporteur("actor-inconnu").collectList())
+        StepVerifier.create(adapter.listerMesCapacites("actor-inconnu", "token").collectList())
                 .assertNext(capacites -> assertThat(capacites).isEmpty())
                 .verifyComplete();
     }

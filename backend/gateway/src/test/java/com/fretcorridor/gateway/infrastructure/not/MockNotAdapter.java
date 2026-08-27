@@ -3,18 +3,13 @@ package com.fretcorridor.gateway.infrastructure.not;
 import com.fretcorridor.gateway.domain.not.CanalNotification;
 import com.fretcorridor.gateway.domain.not.Notification;
 import com.fretcorridor.gateway.domain.not.NotificationPort;
-import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-/**
- * TODO(mobile): remplacer par l'appel réel à service-not une fois ce service
- * livré (Sprint 9 Mobile).
- */
-@Component
+/** Double test-only — remplacé en prod par {@link RealNotAdapter}. */
 public class MockNotAdapter implements NotificationPort {
 
     private final List<Notification> notifications = List.of(
@@ -37,7 +32,7 @@ public class MockNotAdapter implements NotificationPort {
     );
 
     @Override
-    public Flux<Notification> listerNotificationsParTenant(String tenantId) {
+    public Flux<Notification> listerNotificationsParTenant(String tenantId, String delegationToken) {
         return Flux.fromIterable(notifications).filter(n -> n.tenantId().equals(tenantId));
     }
 }

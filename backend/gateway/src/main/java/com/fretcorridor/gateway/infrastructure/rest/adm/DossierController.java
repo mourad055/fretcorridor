@@ -51,7 +51,7 @@ public class DossierController {
             if (dossier.missionId() == null) {
                 return Mono.just(new DossierConsolideResponse(dossierResponse, null, java.util.List.of()));
             }
-            Mono<java.util.List<MissionResponse>> mission = exePort.listerMissionsParTenant(dossier.tenantId())
+            Mono<java.util.List<MissionResponse>> mission = exePort.listerMissionsParTenant(dossier.tenantId(), actor.delegationToken())
                     .filter(m -> m.id().equals(dossier.missionId()))
                     .map(MissionResponse::from)
                     .collectList();

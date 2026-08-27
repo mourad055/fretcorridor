@@ -1,0 +1,9 @@
+# Profil actif uniquement quand SPRING_PROFILES_ACTIVE=dev — jamais en
+# production. Charge data-dev.sql (barèmes de démonstration) après les
+# migrations Flyway, conformément au pattern déjà utilisé côté service-geo,
+# service-ida, service-bur, etc.
+spring:
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data-dev.sql

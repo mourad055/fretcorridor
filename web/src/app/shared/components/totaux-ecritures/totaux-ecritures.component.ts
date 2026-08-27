@@ -19,12 +19,13 @@ import { RepartitionDonutComponent, SegmentRepartition } from '../repartition-do
 })
 export class TotauxEcrituresComponent {
   @Input({ required: true }) totaux!: TotauxEcritures;
+  /** `transporteur` : vue FE-TRP-03 (reversements reçus). `bureau` : grand livre complet. */
+  @Input() variante: 'bureau' | 'transporteur' = 'bureau';
 
-  // Hex brut plutôt que var(--fc-success/--fc-danger) : même choix que
-  // CorridorMapComponent (couleurPourAxe) pour les couleurs SVG — cohérence
-  // de style dans le dépôt plutôt qu'une dépendance aux custom properties
-  // dans un attribut de présentation SVG.
   get segmentsRepartition(): SegmentRepartition[] {
+    if (this.variante === 'transporteur') {
+      return [{ label: 'Reçu', valeur: this.totaux.solde, couleur: '#067647' }];
+    }
     return [
       { label: 'Crédité', valeur: this.totaux.totalCredit, couleur: '#067647' },
       { label: 'Débité', valeur: this.totaux.totalDebit, couleur: '#b42318' },

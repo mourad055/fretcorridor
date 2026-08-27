@@ -1,0 +1,9 @@
+.tenants-toolbar {
+  margin-bottom: var(--fc-space-2);
+}
+
+@media (max-width: 720px) {
+  .tenants-toolbar .fc-btn {
+    width: 100%;
+  }
+}

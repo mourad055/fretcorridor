@@ -9,8 +9,15 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      # Manquait — le producteur Kafka restait sur localhost:9092 (invalide
+      # en reseau Docker), bloquant ~60s chaque POST /positions et tuant le
+      # pipeline position-brute → service-trk → position-eta → service-bur
+      # (suivi temps reel du portail Bureau sur :8099).
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     ports:
       - "8092:8083"
     depends_on:
       postgres:
         condition: service_healthy
+      kafka:
+        condition: service_started

@@ -53,7 +53,7 @@ class KycControllerTest {
     void an_admin_sees_the_pending_dossiers() {
         String adminToken = tokenFor("+237600000003");
 
-        webTestClient.get().uri("/api/v1/admin/kyc/pending")
+        webTestClient.get().uri("/api/v1/admin/kyc/pending?tenantId=tenant-flysoft")
                 .header("Authorization", "Bearer " + adminToken)
                 .exchange()
                 .expectStatus().isOk()
@@ -65,7 +65,7 @@ class KycControllerTest {
     void a_bureau_actor_cannot_reach_the_kyc_dashboard() {
         String bureauToken = tokenFor("+237600000001");
 
-        webTestClient.get().uri("/api/v1/admin/kyc/pending")
+        webTestClient.get().uri("/api/v1/admin/kyc/pending?tenantId=tenant-flysoft")
                 .header("Authorization", "Bearer " + bureauToken)
                 .exchange()
                 .expectStatus().isForbidden();
@@ -77,7 +77,7 @@ class KycControllerTest {
         String idempotencyKey = UUID.randomUUID().toString();
         when(admPort.enregistrerAudit(any(), any(), any(), any(), any())).thenReturn(Mono.empty());
 
-        webTestClient.post().uri("/api/v1/admin/kyc/kyc-1/decision")
+        webTestClient.post().uri("/api/v1/admin/kyc/kyc-1/decision?tenantId=tenant-flysoft")
                 .header("Authorization", "Bearer " + adminToken)
                 .header("X-Idempotency-Key", idempotencyKey)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -95,7 +95,7 @@ class KycControllerTest {
     void deciding_without_an_idempotency_key_is_rejected() {
         String adminToken = tokenFor("+237600000003");
 
-        webTestClient.post().uri("/api/v1/admin/kyc/kyc-2/decision")
+        webTestClient.post().uri("/api/v1/admin/kyc/kyc-2/decision?tenantId=tenant-flysoft")
                 .header("Authorization", "Bearer " + adminToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .bodyValue("{\"decision\": \"REJETE\"}")
@@ -107,7 +107,7 @@ class KycControllerTest {
     void deciding_an_unknown_dossier_returns_404() {
         String adminToken = tokenFor("+237600000003");
 
-        webTestClient.post().uri("/api/v1/admin/kyc/kyc-inconnu/decision")
+        webTestClient.post().uri("/api/v1/admin/kyc/kyc-inconnu/decision?tenantId=tenant-flysoft")
                 .header("Authorization", "Bearer " + adminToken)
                 .header("X-Idempotency-Key", UUID.randomUUID().toString())
                 .contentType(MediaType.APPLICATION_JSON)

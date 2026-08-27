@@ -10,7 +10,7 @@
     "demo": {
       "label": "Demo accounts",
       "bureau": "Freight bureau",
-      "transporteur": "Carrier",
+      "transporteur": "Carrier (mobile / live)",
       "admin": "Administration",
       "bureauTchad": "Freight bureau (Chad)"
     },
@@ -129,6 +129,7 @@
     },
     "typeActeur": {
       "CHAUFFEUR": "Driver",
+      "TRANSPORTEUR": "Carrier",
       "TRANSPORTEUR_PERSONNE_MORALE": "Carrier (legal entity)"
     },
     "typeDossier": {

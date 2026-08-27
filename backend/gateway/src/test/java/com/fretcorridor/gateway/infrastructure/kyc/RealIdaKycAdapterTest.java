@@ -61,7 +61,7 @@ class RealIdaKycAdapterTest {
                 .setResponseCode(200)
                 .setHeader("Content-Type", "application/json")
                 .setBody("""
-                        {"acteurId":"a1","telephone":"+237600","nom":"Ngono","prenom":"Awa","raisonSociale":null,"niveauKyc":"NIVEAU_1","roles":["CHAUFFEUR"],"pieces":[{"typeDocument":"CNI","url":"https://minio/x","dateDepot":"2026-01-01T10:00:00"}]}
+                        {"acteurId":"a1","telephone":"+237600","nom":"Ngono","prenom":"Awa","raisonSociale":null,"niveauKyc":"NIVEAU_1","roles":["CHAUFFEUR"],"pieces":[{"id":"p1","typeDocument":"CNI","url":"https://minio/x","dateDepot":"2026-01-01T10:00:00"}]}
                         """));
 
         StepVerifier.create(adapter.detail("a1", "tenant-bgft-douala", "tok"))
@@ -99,6 +99,20 @@ class RealIdaKycAdapterTest {
         StepVerifier.create(adapter.detail("inconnu", "tenant-bgft-douala", "tok"))
                 .expectError(KycDossierIntrouvableException.class)
                 .verify();
+    }
+
+    @Test
+    void maps_transporteur_role_when_chauffeur_also_present() throws InterruptedException {
+        serviceIda.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setHeader("Content-Type", "application/json")
+                .setBody("""
+                        [{"acteurId":"a1","telephone":"+237696000001","nom":"Etoile","prenom":null,"raisonSociale":"Transport Étoile SARL","niveauKyc":"NIVEAU_1","roles":["TRANSPORTEUR","CHAUFFEUR"]}]
+                        """));
+
+        StepVerifier.create(adapter.listerEnAttente("tenant-bgft-douala", "tok").collectList())
+                .assertNext(list -> assertThat(list.get(0).typeActeur()).isEqualTo("CHAUFFEUR"))
+                .verifyComplete();
     }
 
     @Test
