@@ -205,6 +205,24 @@ class ObservatoireServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    /** Missions ingérées sans prix (Kafka / mobile) ne doivent jamais faire planter la médiane. */
+    @Test
+    void missions_sans_prix_n_empechent_pas_le_calcul_des_indicateurs() {
+        ObservatoireService service = new ObservatoireService(repository, estimationPort, 3);
+        UUID axeId = UUID.randomUUID();
+        ajouterMission(axeId, "Douala", "Yaoundé", "100000", MAINTENANT);
+        ajouterMission(axeId, "Douala", "Yaoundé", "120000", MAINTENANT);
+        ajouterMission(axeId, "Douala", "Yaoundé", "140000", MAINTENANT);
+        repository.enregistrer(new MissionAppariee(UUID.randomUUID(), TENANT, axeId, UUID.randomUUID(),
+                "Douala", "Yaoundé", null, null, MAINTENANT), UUID.randomUUID());
+
+        ObservatoireAxe observatoire = service.indicateursPourAxe(TENANT, axeId, MAINTENANT);
+
+        assertThat(observatoire.seuilAtteint()).isTrue();
+        assertThat(observatoire.nombreMissions()).contains(4L);
+        assertThat(observatoire.prixMediane()).hasValueSatisfying(m -> assertThat(m).isEqualByComparingTo("120000"));
+    }
+
     private void ajouterMission(UUID axeId, String origine, String destination, String prix, Instant confirmeeLe) {
         repository.enregistrer(new MissionAppariee(UUID.randomUUID(), TENANT, axeId, UUID.randomUUID(),
                 origine, destination, new BigDecimal(prix), "XAF", confirmeeLe), UUID.randomUUID());

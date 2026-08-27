@@ -22,3 +22,23 @@ spring:
           uri: http://service-not:8094
           predicates:
             - Path=/api/notifications/**
+
+fretcorridor:
+  service-pay:
+    base-url: ${FRETCORRIDOR_SERVICE_PAY_URL:http://service-pay:8088}
+  service-bur:
+    base-url: ${FRETCORRIDOR_SERVICE_BUR_URL:http://service-bur:8083}
+  service-adm:
+    base-url: ${FRETCORRIDOR_SERVICE_ADM_URL:http://service-adm:8095}
+  service-ida:
+    base-url: ${FRETCORRIDOR_SERVICE_IDA_URL:http://service-ida:8081}
+  service-geo:
+    base-url: ${FRETCORRIDOR_SERVICE_GEO_URL:http://service-geo:8084}
+  service-flt:
+    base-url: ${FRETCORRIDOR_SERVICE_FLT_URL:http://service-flt:8092}
+  service-cap:
+    base-url: ${FRETCORRIDOR_SERVICE_CAP_URL:http://service-cap:8096}
+  service-exe:
+    base-url: ${FRETCORRIDOR_SERVICE_EXE_URL:http://service-exe:8093}
+  service-not:
+    base-url: ${FRETCORRIDOR_SERVICE_NOT_URL:http://service-not:8094}

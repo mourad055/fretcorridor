@@ -12,6 +12,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -221,6 +222,9 @@ public class ServiceAdmWebClientAdapter implements AdmPort {
                 .headers(h -> h.setBearerAuth(delegationToken))
                 .bodyValue(body)
                 .retrieve()
-                .bodyToMono(Void.class);
+                .toBodilessEntity()
+                .then()
+                .timeout(Duration.ofSeconds(3))
+                .onErrorResume(ex -> Mono.empty());
     }
 }

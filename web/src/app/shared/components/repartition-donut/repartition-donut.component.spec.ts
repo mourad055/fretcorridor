@@ -11,7 +11,7 @@ describe('RepartitionDonutComponent', () => {
     ];
     fixture.detectChanges();
 
-    const calcules = fixture.componentInstance.segmentsCalcules();
+    const calcules = fixture.componentInstance.segmentsCalcules;
     expect(calcules.map((c) => c.pourcentage)).toEqual([75, 25]);
   });
 

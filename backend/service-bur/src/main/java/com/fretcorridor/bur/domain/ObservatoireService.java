@@ -7,6 +7,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -52,13 +53,26 @@ public class ObservatoireService {
             return ObservatoireAxe.sousLeSeuil(axeId, seuilAgregation);
         }
 
-        List<BigDecimal> prix = missions.stream().map(MissionAppariee::prixTransport).sorted().toList();
+        List<BigDecimal> prix = missions.stream()
+                .map(MissionAppariee::prixTransport)
+                .filter(Objects::nonNull)
+                .sorted()
+                .toList();
+        if (prix.isEmpty()) {
+            return ObservatoireAxe.sousLeSeuil(axeId, seuilAgregation);
+        }
+
+        String devise = missions.stream()
+                .map(MissionAppariee::devise)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse("XAF");
         Optional<EstimationMarcheAxe> estimation = estimationMarcheAxePort.pour(tenantId, axeId);
         BigDecimal couverture = estimation.map(e -> couverturePourcentage(missions, e, maintenant)).orElse(null);
         Instant estimationDefinieLe = estimation.map(EstimationMarcheAxe::definieLe).orElse(null);
 
         return ObservatoireAxe.calcule(axeId, seuilAgregation, missions.size(), mediane(prix),
-                ecartInterquartile(prix), missions.get(0).devise(), tauxDesequilibreDirectionnel(missions),
+                ecartInterquartile(prix), devise, tauxDesequilibreDirectionnel(missions),
                 couverture, estimationDefinieLe);
     }
 

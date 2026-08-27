@@ -1,22 +1,25 @@
-import { AfterViewInit, Directive, ElementRef, OnDestroy, inject } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, NgZone, OnDestroy, inject } from '@angular/core';
 
 /**
  * Parcourt les tableaux `.fc-table` du contenu page et injecte `data-label`
  * depuis les en-têtes — permet le layout cartes mobile (styles.css).
  */
 @Directive({
-  selector: 'main.fc-page',
+  selector: 'app-page-shell, main.fc-page, [fcResponsiveTable]',
   standalone: true,
 })
 export class FcResponsiveTableDirective implements AfterViewInit, OnDestroy {
   private readonly el = inject(ElementRef<HTMLElement>);
+  private readonly zone = inject(NgZone);
   private observer?: MutationObserver;
   private scheduled = false;
 
   ngAfterViewInit(): void {
     this.applyLabels();
-    this.observer = new MutationObserver(() => this.scheduleApply());
-    this.observer.observe(this.el.nativeElement, { childList: true, subtree: true });
+    this.zone.runOutsideAngular(() => {
+      this.observer = new MutationObserver(() => this.scheduleApply());
+      this.observer.observe(this.el.nativeElement, { childList: true, subtree: true });
+    });
   }
 
   ngOnDestroy(): void {
@@ -49,13 +52,15 @@ export class FcResponsiveTableDirective implements AfterViewInit, OnDestroy {
     table.querySelectorAll('tbody tr').forEach((row) => {
       row.querySelectorAll('td').forEach((cell, index) => {
         const label = headers[index];
-        if (label) {
+        if (label && cell.getAttribute('data-label') !== label) {
           cell.setAttribute('data-label', label);
         }
       });
     });
 
-    table.classList.add('fc-table--responsive');
+    if (!table.classList.contains('fc-table--responsive')) {
+      table.classList.add('fc-table--responsive');
+    }
   }
 
   private readHeaders(table: HTMLTableElement): string[] {

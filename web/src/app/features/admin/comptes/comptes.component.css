@@ -23,7 +23,17 @@
 
 .comptes-table__acteur {
   font-weight: 600;
-  white-space: nowrap;
+}
+
+@media (max-width: 859px) {
+  .comptes-table__acteur {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .comptes-table-wrap {
+    overflow-x: visible;
+  }
 }
 
 .comptes-statut {
@@ -124,13 +134,19 @@
   line-height: 1.5;
 }
 
-@media (max-width: 520px) {
-  .comptes-detail div {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 859px) {
   .comptes-actions {
     flex-wrap: wrap;
     justify-content: flex-start;
+  }
+
+  .comptes-actions .fc-btn {
+    white-space: normal;
+  }
+}
+
+@media (max-width: 520px) {
+  .comptes-detail div {
+    grid-template-columns: 1fr;
   }
 }

@@ -1,29 +1,32 @@
-<app-page-shell extraClass="fc-page--large">
+<main class="fc-page fc-page--large">
   <section class="rapport-financier fc-panel">
     <h2 class="fc-panel__title">Rapport financier</h2>
 
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-      <div class="fc-skeleton__line"></div>
-      <div class="fc-skeleton__line"></div>
-    </div>
 
-    <ng-container *ngIf="!loading()">
+    <ng-container *ngIf="vue$ | async as vue; else chargement">
       <p class="fc-msg" *ngIf="missionIdFiltre() as missionId">
         Filtré sur la mission {{ missionId }} —
         <a [routerLink]="[]" (click)="reinitialiserFiltre()">Voir tout le territoire</a>
       </p>
 
-      <app-totaux-ecritures [totaux]="totaux()" />
+      <app-totaux-ecritures [totaux]="vue.totaux" />
       <div class="fc-actions">
-        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()" [disabled]="ecrituresAffichees().length === 0">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter(vue.ecritures)" [disabled]="vue.ecritures.length === 0">
           Exporter en CSV
         </button>
       </div>
-      <app-ecritures-table [ecritures]="ecrituresAffichees()" />
+      <app-ecritures-table [ecritures]="vue.ecritures" />
 
       <h3 class="fc-panel__title">Paiements en espèces</h3>
-      <app-especes-table [paiements]="paiementsEspeces()" />
+      <app-especes-table [paiements]="vue.especes" />
     </ng-container>
+
+    <ng-template #chargement>
+      <div class="fc-skeleton" aria-busy="true">
+        <div class="fc-skeleton__line"></div>
+        <div class="fc-skeleton__line"></div>
+      </div>
+    </ng-template>
   </section>
-</app-page-shell>
+</main>

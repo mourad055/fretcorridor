@@ -8,7 +8,8 @@
         <label class="fc-filters__label" for="recherche-terme">Recherche</label>
         <input
           id="recherche-terme"
-          class="fc-filters__select"
+          type="search"
+          class="fc-filters__input"
           placeholder="Identifiant, nom, action, ressource..."
           [ngModel]="terme()"
           (ngModelChange)="terme.set($event)"

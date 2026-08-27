@@ -9,16 +9,20 @@
     <a class="fc-btn fc-btn--ghost fc-btn--sm" routerLink="/admin/comptes">Gérer les comptes</a>
   </header>
 
-  <section class="fc-panel kyc-toolbar" aria-label="Filtre tenant">
-    <label class="kyc-toolbar__label" for="kyc-tenant">Tenant</label>
-    <select
-      id="kyc-tenant"
-      class="fc-input kyc-toolbar__select"
-      [ngModel]="tenantSelectionne()"
-      (ngModelChange)="tenantSelectionne.set($event); changerTenant()"
-    >
-      <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
-    </select>
+  <section class="fc-panel">
+    <div class="fc-filters" aria-label="Filtre tenant">
+      <div class="fc-filters__field">
+        <label class="fc-filters__label" for="kyc-tenant">Tenant</label>
+        <select
+          id="kyc-tenant"
+          class="fc-filters__select"
+          [ngModel]="tenantSelectionne()"
+          (ngModelChange)="tenantSelectionne.set($event); changerTenant()"
+        >
+          <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
+        </select>
+      </div>
+    </div>
   </section>
 
   <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>

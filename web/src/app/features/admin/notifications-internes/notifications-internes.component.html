@@ -1,24 +1,47 @@
 <app-page-shell>
   <section class="notifications-internes fc-panel">
-    <h2 class="fc-panel__title">Notifications</h2>
-    <p class="fc-page__subtitle" *ngIf="!loading() && alertes() as a">
-      {{ a.length }} dossier(s) en retard, tous tenants confondus
-    </p>
+    <header class="notifications-internes__header">
+      <div>
+        <h2 class="fc-panel__title">Notifications</h2>
+        <p class="fc-page__subtitle" *ngIf="!loading() && alertes() as alertesList">
+          {{ alertesList.length }} dossier(s) en retard, tous tenants confondus
+        </p>
+      </div>
+      <span class="fc-page__count" *ngIf="!loading() && alertes()?.length">{{ alertes()!.length }}</span>
+    </header>
 
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
     <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
       <div class="fc-skeleton__line"></div>
       <div class="fc-skeleton__line"></div>
     </div>
+
     <div class="fc-empty" *ngIf="!loading() && alertes() && alertes()!.length === 0">
       Aucun dossier en retard pour l'instant.
     </div>
 
     <ul class="notifications-internes__liste" *ngIf="!loading() && alertes() && alertes()!.length > 0">
-      <li *ngFor="let alerte of alertes()">
-        <strong>{{ alerte.titre }}</strong>
-        <p>{{ alerte.detail }}</p>
-        <a [routerLink]="['/admin/dossiers']">Traiter dans la file de travail</a>
+      <li *ngFor="let alerte of alertes()" class="notifications-internes__item">
+        <div class="notifications-internes__badges">
+          <app-status-badge [label]="libelleTypeDossier(alerte.type) | translate" variant="neutral" />
+          <app-status-badge
+            [label]="libellePrioriteDossier(alerte.priorite) | translate"
+            [variant]="prioriteVariant(alerte.priorite)"
+          />
+          <app-status-badge
+            [label]="libelleDossierStatut(alerte.statut) | translate"
+            [variant]="dossierStatusVariant(alerte.statut)"
+          />
+        </div>
+        <strong class="notifications-internes__titre">Dossier en retard — {{ alerte.tenantNom }}</strong>
+        <p class="notifications-internes__meta">
+          Délai dépassé le
+          <time [attr.datetime]="alerte.delaiTraitement">{{ alerte.delaiTraitement | date: 'short' }}</time>
+        </p>
+        <a [routerLink]="['/admin/dossiers']" class="fc-btn fc-btn--ghost fc-btn--sm notifications-internes__action">
+          Traiter dans la file de travail
+        </a>
       </li>
     </ul>
   </section>
