@@ -18,6 +18,13 @@ fretcorridor:
   jwt:
     secret: ${FRETCORRIDOR_JWT_SECRET:fretcorridor-v4-secret-dev-uniquement-a-changer-en-prod-CHANGE_ME}
     validity-minutes: 60
+  internal:
+    # UC-MAT-02 (26/08) : necessaire uniquement pour l'entorse temporaire
+    # RealPropositionMissionAdapter -> service-opt, cf. commentaire
+    # fretcorridor.client.service-opt ci-dessous. Meme cle partagee que tous
+    # les autres services (service-cap/mat/not/etc.).
+    service-key: ${FRETCORRIDOR_INTERNAL_SERVICE_KEY:fretcorridor-v4-cle-interne-dev-uniquement-a-changer-en-prod-CHANGE_ME}
+    # ^ utilise par RealPropositionMissionAdapter (fretcorridor.service-opt.base-url ci-dessous)
   service-pay:
     # service-pay est réellement implémenté (contrairement aux autres services
     # de ce périmètre) — appel HTTP réel, pas un mock (cf. docs/adr).
@@ -44,6 +51,20 @@ fretcorridor:
     # (Sprint 10, VehiculePort/RealVehiculeAdapter) et l'envoi de positions
     # GPS (Sprint 6, PositionPort/RealPositionAdapter) — même service.
     base-url: ${FRETCORRIDOR_SERVICE_FLT_URL:http://localhost:8083}
+  service-opt:
+    # ENTORSE TEMPORAIRE (UC-MAT-02, 26/08) : shared-contracts/openapi/opt-api.yaml
+    # et l'ADR 0013 interdisent explicitement tout appel REST direct
+    # cross-porteur vers service-opt (Moteur) -- "le flux OPT -> Mobile passe
+    # exclusivement par evenements Kafka asynchrones". Ce client viole cette
+    # regle pour livrer une demo fonctionnelle de l'acceptation/refus de
+    # mission par le chauffeur dans le delai imparti (branche locale,
+    # feature/retours-ux-27-08, jamais pousse sur dev). A REGULARISER avant
+    # tout merge : migrer vers le patron deja etabli par ADR 0013/0014
+    # (service-opt publie un evenement Kafka, un service porteur Mobile --
+    # service-exe est le candidat naturel, deja proprietaire de "Mission"
+    # cote chauffeur -- le consomme et expose la lecture/les actions en REST)
+    # a coordonner avec le porteur Moteur avant integration.
+    base-url: ${FRETCORRIDOR_SERVICE_OPT_URL:http://localhost:8085}
   service-cap:
     # service-cap (Mobile) : appel réel pour la déclaration de capacité
     # (CapaciteDeclarationPort/RealCapaciteDeclarationAdapter, Sprint 4) et

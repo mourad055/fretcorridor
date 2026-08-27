@@ -23,6 +23,8 @@ import com.fretcorridor.gateway.domain.ida.ProfilCompletionRefuseeException;
 import com.fretcorridor.gateway.domain.ida.ProfilServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.DecisionInvalideException;
 import com.fretcorridor.gateway.domain.not.NotServiceIndisponibleException;
+import com.fretcorridor.gateway.domain.opt.PropositionMissionIndisponibleException;
+import com.fretcorridor.gateway.domain.opt.PropositionMissionServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.kyc.KycDossierIntrouvableException;
 import com.fretcorridor.gateway.domain.kyc.KycServiceIndisponibleException;
 import com.fretcorridor.gateway.infrastructure.rest.ida.ProfilController;
@@ -240,6 +242,21 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleNotServiceIndisponible(NotServiceIndisponibleException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
         problem.setTitle("Service de notifications indisponible");
+        return problem;
+    }
+
+    // UC-MAT-02 (26/08).
+    @ExceptionHandler(PropositionMissionIndisponibleException.class)
+    public ProblemDetail handlePropositionMissionIndisponible(PropositionMissionIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Proposition indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(PropositionMissionServiceIndisponibleException.class)
+    public ProblemDetail handlePropositionMissionServiceIndisponible(PropositionMissionServiceIndisponibleException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        problem.setTitle("Service de matching indisponible");
         return problem;
     }
 }
