@@ -144,9 +144,11 @@ class _MesCapacitesScreenState extends ConsumerState<MesCapacitesScreen> {
                                 if (!c.expiree)
                                   TextButton.icon(
                                     onPressed: () async {
-                                      await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (_) => CapaciteScreen(capaciteAModifier: c)),
+                                      await showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        backgroundColor: AppColors.fond,
+                                        builder: (_) => CapaciteScreen(capaciteAModifier: c),
                                       );
                                       if (context.mounted) ref.read(capaciteProvider.notifier).chargerMesCapacites();
                                     },

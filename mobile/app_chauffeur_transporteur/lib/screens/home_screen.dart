@@ -180,7 +180,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     icone: Icons.local_shipping_outlined,
                     titre: t.declarerCapacite,
                     description: t.declarerCapaciteDescription,
-                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CapaciteScreen())),
+                    onTap: () => showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: AppColors.fond,
+                      builder: (_) => const CapaciteScreen(),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _CarteAction(
