@@ -1,3 +1,10 @@
 spring:
   datasource:
     url: jdbc:postgresql://postgres:5432/fretcorridor
+  kafka:
+    bootstrap-servers: kafka:29092
+  client:
+    service-exe:
+      base-url: http://service-exe:8093
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000

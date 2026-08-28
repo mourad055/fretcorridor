@@ -43,8 +43,8 @@ public class ServiceIdaAuthenticationAdapter implements AuthenticationPort {
     // backend/service-ida/.../entity/RoleActeur.java) — un rôle métier valide
     // absent de cette liste est silencieusement traité comme des identifiants
     // invalides (cf. versActeur), ce qui bloque le login de l'acteur concerné.
-    private static final List<String> ROLES_GATEWAY_CONNUS = List.of(
-            "BUREAU", "TRANSPORTEUR", "ADMINISTRATION",
+    private static final List<String> PRIORITE_ROLES_CONNEXION = List.of(
+            "ADMINISTRATION", "BUREAU", "TRANSPORTEUR",
             "CHAUFFEUR", "CHAUFFEUR_PROPRIETAIRE", "AGENT", "CHARGEUR");
 
     private final WebClient webClient;
@@ -111,9 +111,7 @@ public class ServiceIdaAuthenticationAdapter implements AuthenticationPort {
     }
 
     private Optional<Actor> versActeurInscription(String phone, RegisterResponse response) {
-        return response.roles().stream()
-                .filter(ROLES_GATEWAY_CONNUS::contains)
-                .findFirst()
+        return choisirRolePourConnexion(response.roles())
                 .map(this::mapperRole)
                 .map(role -> new Actor(response.acteurId(), phone, role, response.tenantId(), response.accessToken()));
     }
@@ -122,18 +120,19 @@ public class ServiceIdaAuthenticationAdapter implements AuthenticationPort {
     }
 
     /**
-     * service-ida peut renvoyer plusieurs rôles métier (ex. CHAUFFEUR) que la
-     * gateway ne gère pas ; on retient le premier rôle qu'elle reconnaît. Un
-     * acteur sans rôle reconnu est traité comme un identifiant invalide — ne
-     * pas distinguer les deux cas, pour ne rien révéler à un attaquant sur
-     * l'existence du compte.
+     * service-ida peut renvoyer plusieurs rôles métier ; on retient le rôle le
+     * plus pertinent pour le portail web (priorité TRANSPORTEUR avant CHAUFFEUR).
      */
     private Optional<Actor> versActeur(String phone, LoginResponse response) {
-        return response.roles().stream()
-                .filter(ROLES_GATEWAY_CONNUS::contains)
-                .findFirst()
+        return choisirRolePourConnexion(response.roles())
                 .map(this::mapperRole)
                 .map(role -> new Actor(response.acteurId(), phone, role, response.tenantId(), response.accessToken()));
+    }
+
+    private Optional<String> choisirRolePourConnexion(List<String> roles) {
+        return PRIORITE_ROLES_CONNEXION.stream()
+                .filter(roles::contains)
+                .findFirst();
     }
 
     private Role mapperRole(String role) {

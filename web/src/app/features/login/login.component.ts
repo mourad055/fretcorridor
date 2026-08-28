@@ -2,12 +2,13 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { HOME_ROUTE_BY_ROLE, Role, TenantOption } from '../../core/auth/auth.models';
 import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo.component';
 import { LangueSwitchComponent } from '../../shared/components/langue-switch/langue-switch.component';
 import { environment } from '../../../environments/environment';
+import { cleLibelleTenant } from '../../shared/utils/libelle-tenant';
 
 interface DemoAccount {
   labelKey: string;
@@ -42,15 +43,21 @@ export class LoginComponent {
   readonly enableDemoLogin = environment.enableDemoLogin;
   readonly demoAccounts: DemoAccount[] = [
     { labelKey: 'login.demo.bureau', phone: '+237600000001' },
-    { labelKey: 'login.demo.transporteur', phone: '+237600000002' },
+    { labelKey: 'login.demo.transporteur', phone: '+237696000001' },
     { labelKey: 'login.demo.admin', phone: '+237600000003' },
     { labelKey: 'login.demo.bureauTchad', phone: '+235600000004' },
   ];
 
   constructor(
     private readonly authService: AuthService,
-    private readonly router: Router
+    private readonly router: Router,
+    private readonly translate: TranslateService
   ) {}
+
+  libelleTenant(tenantId: string): string {
+    const cle = cleLibelleTenant(tenantId);
+    return cle ? this.translate.instant(cle) : tenantId;
+  }
 
   submit(): void {
     this.errorMessage.set(null);
@@ -83,7 +90,7 @@ export class LoginComponent {
     this.authService.selectionnerTenant(tenantId).subscribe({
       next: (response) => {
         this.submitting.set(false);
-        void this.router.navigateByUrl(HOME_ROUTE_BY_ROLE[response.role]);
+        void this.router.navigateByUrl(this.routeAccueil(response.role));
       },
       error: () => {
         this.submitting.set(false);
@@ -100,7 +107,7 @@ export class LoginComponent {
     this.code.set('');
   }
 
-  private resoudreTenantsPuisNaviguer(role: Role): void {
+  private resoudreTenantsPuisNaviguer(role: Role | string): void {
     this.authService.mesTenants().subscribe({
       next: (tenants) => {
         this.submitting.set(false);
@@ -108,12 +115,23 @@ export class LoginComponent {
           this.tenantsAChoisir.set(tenants);
           return;
         }
-        void this.router.navigateByUrl(HOME_ROUTE_BY_ROLE[role]);
+        void this.router.navigateByUrl(this.routeAccueil(role));
       },
       error: () => {
         this.submitting.set(false);
-        void this.router.navigateByUrl(HOME_ROUTE_BY_ROLE[role]);
+        void this.router.navigateByUrl(this.routeAccueil(role));
       },
     });
+  }
+
+  /** Route d'accueil web — rôles mobiles chauffeur → espace transporteur. */
+  private routeAccueil(role: Role | string): string {
+    if (role in HOME_ROUTE_BY_ROLE) {
+      return HOME_ROUTE_BY_ROLE[role as Role];
+    }
+    if (role === 'CHAUFFEUR' || role === 'CHAUFFEUR_PROPRIETAIRE') {
+      return HOME_ROUTE_BY_ROLE.TRANSPORTEUR;
+    }
+    return '/login';
   }
 }

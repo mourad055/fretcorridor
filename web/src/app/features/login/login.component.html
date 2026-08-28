@@ -79,7 +79,7 @@
                   [disabled]="submitting()"
                   (click)="choisirTenant(tenant.tenantId)"
                 >
-                  <span>{{ tenant.tenantId }}</span>
+                  <span>{{ libelleTenant(tenant.tenantId) }}</span>
                   <span class="login-tenants__origine" *ngIf="tenant.origine">{{ 'login.tenant.origine' | translate }}</span>
                 </button>
               </li>

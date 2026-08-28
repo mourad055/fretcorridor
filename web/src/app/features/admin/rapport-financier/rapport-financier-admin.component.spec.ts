@@ -21,19 +21,20 @@ describe('RapportFinancierAdminComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('does not fetch anything until the admin clicks Consulter', () => {
+  it('charge le rapport du tenant par defaut a l ouverture', () => {
     const fixture = TestBed.createComponent(RapportFinancierAdminComponent);
     fixture.detectChanges();
 
-    httpMock.expectNone(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bgft-douala`);
-    httpMock.expectNone(`${environment.apiBaseUrl}/admin/paiements-especes/tenant-bgft-douala`);
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bgft-douala`).flush([]);
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/paiements-especes/tenant-bgft-douala`).flush([]);
+    fixture.detectChanges();
+
+    expect(fixture.debugElement.query(By.css('app-ecritures-table'))).toBeTruthy();
   });
 
   it('fetches the report of the selected tenant on demand', () => {
     const fixture = TestBed.createComponent(RapportFinancierAdminComponent);
     fixture.detectChanges();
-
-    fixture.componentInstance.consulter();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bgft-douala`).flush([
       { id: 'e1', missionId: 'mission-1', typeCompte: 'COMPTE_SEQUESTRE_PRESTATAIRE', nature: 'ENCAISSEMENT', sens: 'CREDIT', montant: 500, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: 'VIREMENT', litigeActif: false },
@@ -48,8 +49,6 @@ describe('RapportFinancierAdminComponent', () => {
     const fixture = TestBed.createComponent(RapportFinancierAdminComponent);
     fixture.detectChanges();
 
-    fixture.componentInstance.consulter();
-
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bgft-douala`).flush([
       { id: 'e1', missionId: 'mission-1', typeCompte: 'COMPTE_SEQUESTRE_PRESTATAIRE', nature: 'ENCAISSEMENT', sens: 'CREDIT', montant: 500, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: 'VIREMENT', litigeActif: false },
       { id: 'e2', missionId: 'mission-1', typeCompte: 'COMPTE_TRANSPORTEUR', nature: 'REVERSEMENT', sens: 'DEBIT', montant: 300, creeLe: '2026-01-02T00:00:00Z', statut: 'VALIDE', modePaiement: null, litigeActif: false },
@@ -57,14 +56,15 @@ describe('RapportFinancierAdminComponent', () => {
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/paiements-especes/tenant-bgft-douala`).flush([]);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.totaux()).toEqual({ nombre: 2, totalCredit: 500, totalDebit: 300, solde: 200 });
+    expect(fixture.componentInstance.totauxDe([
+      { id: 'e1', missionId: 'mission-1', typeCompte: 'COMPTE_SEQUESTRE_PRESTATAIRE', nature: 'ENCAISSEMENT', sens: 'CREDIT', montant: 500, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: 'VIREMENT', litigeActif: false },
+      { id: 'e2', missionId: 'mission-1', typeCompte: 'COMPTE_TRANSPORTEUR', nature: 'REVERSEMENT', sens: 'DEBIT', montant: 300, creeLe: '2026-01-02T00:00:00Z', statut: 'VALIDE', modePaiement: null, litigeActif: false },
+    ])).toEqual({ nombre: 2, totalCredit: 500, totalDebit: 300, solde: 200 });
   });
 
   it('fetches the cash payments of the selected tenant on demand', () => {
     const fixture = TestBed.createComponent(RapportFinancierAdminComponent);
     fixture.detectChanges();
-
-    fixture.componentInstance.consulter();
 
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bgft-douala`).flush([]);
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/paiements-especes/tenant-bgft-douala`).flush([
@@ -80,7 +80,6 @@ describe('RapportFinancierAdminComponent', () => {
     const fixture = TestBed.createComponent(RapportFinancierAdminComponent);
     fixture.detectChanges();
 
-    fixture.componentInstance.consulter();
     httpMock.expectOne(`${environment.apiBaseUrl}/admin/rapport-financier/tenant-bgft-douala`).flush([
       { id: 'e1', missionId: 'mission-1', typeCompte: 'COMPTE_SEQUESTRE_PRESTATAIRE', nature: 'ENCAISSEMENT', sens: 'CREDIT', montant: 500, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: 'VIREMENT', litigeActif: false },
     ]);

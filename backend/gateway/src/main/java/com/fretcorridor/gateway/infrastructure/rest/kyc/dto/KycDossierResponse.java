@@ -3,6 +3,7 @@ package com.fretcorridor.gateway.infrastructure.rest.kyc.dto;
 import com.fretcorridor.gateway.domain.kyc.KycDossier;
 
 import java.time.Instant;
+import java.util.Set;
 
 public record KycDossierResponse(
         String id,
@@ -10,7 +11,9 @@ public record KycDossierResponse(
         String acteurTelephone,
         String typeActeur,
         Instant soumisLe,
-        String statut
+        String statut,
+        String niveauKyc,
+        Set<String> roles
 ) {
     public static KycDossierResponse from(KycDossier dossier) {
         return new KycDossierResponse(
@@ -19,7 +22,9 @@ public record KycDossierResponse(
                 dossier.acteurTelephone(),
                 dossier.typeActeur(),
                 dossier.soumisLe(),
-                dossier.statut().name()
+                dossier.statut().name(),
+                dossier.niveauKyc(),
+                dossier.roles()
         );
     }
 }

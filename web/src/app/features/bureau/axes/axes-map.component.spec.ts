@@ -34,7 +34,7 @@ describe('AxesMapComponent', () => {
     const rows = fixture.debugElement.queryAll(By.css('table.axes-table tbody tr'));
     expect(rows).toHaveLength(2);
     expect(fixture.debugElement.query(By.css('app-corridor-map'))).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('Matching');
+    expect(fixture.nativeElement.textContent).toContain('Appariement');
   });
 
   it('sélectionne une ligne au clic puis la désélectionne au second clic', () => {

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
@@ -6,11 +6,15 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MissionService } from './mission.service';
 import { MissionAppariee, MissionsFiltre, StatutMission } from './mission.models';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
 import {
   StatusBadgeComponent,
   missionStatusVariant,
   libelleMissionStatut,
 } from '../../../shared/components/status-badge/status-badge.component';
+
+const TAILLE_PAGE = 20;
 
 /**
  * FE-BUR-01 (Sprint 5) : un Bureau voit les missions appariées de son territoire.
@@ -19,7 +23,7 @@ import {
 @Component({
   selector: 'app-missions-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, PageShellComponent, FormsModule, StatusBadgeComponent, TranslatePipe],
+  imports: [CommonModule, RouterLink, PageShellComponent, FormsModule, StatusBadgeComponent, TranslatePipe, PaginationComponent],
   templateUrl: './missions-list.component.html',
 })
 export class MissionsListComponent implements OnInit {
@@ -34,6 +38,10 @@ export class MissionsListComponent implements OnInit {
   readonly missionSelectionnee = signal<MissionAppariee | null>(null);
   readonly detailEnCours = signal<string | null>(null);
   readonly exportEnCours = signal(false);
+
+  readonly page = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly missionsAffiches = computed(() => paginer(this.missions(), this.page(), this.taillePage));
 
   constructor(private readonly missionService: MissionService) {}
 
@@ -91,6 +99,7 @@ export class MissionsListComponent implements OnInit {
 
   private charger(): void {
     this.loading.set(true);
+    this.page.set(1);
     this.missionService.list(this.filtreActif()).subscribe({
       next: (missions) => {
         this.missions.set(missions);

@@ -262,10 +262,17 @@ public class DemandeService {
         }
 
         if (proposition.getCapaciteId() != null && demande.getPoidsTaxableKg() != null) {
+            // Rang 1 : service-opt a déjà décrémenté avec missionId comme
+            // clé d'idempotence. Réutiliser la même clé évite un second
+            // prélèvement (et le 503 « capacité impossible ») à l'acceptation.
+            // Rang 2/3 : missionId null, la réservation n'a lieu qu'ici.
+            String cleIdempotence = proposition.getMissionId() != null
+                    ? proposition.getMissionId().toString()
+                    : propositionId.toString();
             serviceCapClient.reserver(
                     proposition.getCapaciteId(),
                     java.math.BigDecimal.valueOf(demande.getPoidsTaxableKg()),
-                    propositionId.toString());
+                    cleIdempotence);
         }
 
         List<Proposition> propositionsDeLaDemande = propositionRepository.findByDemandeIdOrderByRangAsc(demandeId);

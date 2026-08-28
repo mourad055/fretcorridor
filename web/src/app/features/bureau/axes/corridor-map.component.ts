@@ -11,16 +11,19 @@ import {
   ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { TranslatePipe } from '@ngx-translate/core';
 import type * as L from 'leaflet';
 import { Axe } from './axe.models';
 import { coordonneesVille } from './villes-cemac';
+import { geometrieRouteOuDroite } from './route-osrm';
 
 const CENTRE_CEMAC: [number, number] = [6.5, 12.5];
 const ZOOM_INITIAL = 5;
 const POIDS_LIGNE = 3;
 const POIDS_LIGNE_SELECTIONNEE = 6;
 
-const COULEUR_VISIBILITE = '#a1a1aa';
+/** Alignés sur --fc-muted / --fc-primary / --fc-success (badges tableau). */
+const COULEUR_VISIBILITE = '#52525b';
 const COULEUR_MATCHING = '#d40f16';
 const COULEUR_PAIEMENT = '#067647';
 
@@ -37,10 +40,13 @@ function couleurPourAxe(axe: Axe): string {
 
 function libelleEtatsAxe(axe: Axe): string {
   const etats: string[] = [];
-  if (axe.visibiliteActive) etats.push('Visible');
-  if (axe.matchingActif) etats.push('Matching actif');
-  if (axe.paiementActif) etats.push('Paiement actif');
-  return etats.length > 0 ? etats.join(', ') : 'Aucun état actif';
+  if (axe.visibiliteActive) etats.push('Visible sur le corridor');
+  else etats.push('Masqué');
+  if (axe.matchingActif) etats.push('Appariement auto');
+  else etats.push('Appariement arrêté');
+  if (axe.paiementActif) etats.push('Paiements ouverts');
+  else etats.push('Paiements fermés');
+  return etats.join(' · ');
 }
 
 /**
@@ -49,11 +55,13 @@ function libelleEtatsAxe(axe: Axe): string {
  * représentation schématique du Sprint 3 — voir docs/adr/0007, addendum
  * Sprint 12. Les coordonnées de hubs proviennent d'un référentiel statique
  * (villes-cemac.ts) en attendant service-geo (Moteur).
+ *
+ * Tracés : OSRM public (route réelle) avec fallback ligne droite (ENF-DIS-04).
  */
 @Component({
   selector: 'app-corridor-map',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TranslatePipe],
   templateUrl: './corridor-map.component.html',
   styleUrl: './corridor-map.component.css',
 })
@@ -76,7 +84,7 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['axes'] && this.viewInitialized) {
-      this.dessinerCouches();
+      void this.dessinerCouches();
     } else if (changes['axeSelectionneId'] && !changes['axeSelectionneId'].firstChange) {
       this.appliquerSelection();
     }
@@ -104,13 +112,9 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
 
     this.layers = L.layerGroup().addTo(this.map);
 
-    // Le conteneur peut ne pas avoir sa taille finale au moment de l'init
-    // (panneau qui vient d'apparaître) : recalculer la taille AVANT de
-    // dessiner les couches, sinon fitBounds se base sur une origine de
-    // pixels obsolète et désaligne la grille de tuiles.
     requestAnimationFrame(() => {
       this.map?.invalidateSize();
-      this.dessinerCouches();
+      void this.dessinerCouches();
     });
   }
 
@@ -127,15 +131,22 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
     const hubsVus = new Set<string>();
     const bounds: L.LatLngExpression[] = [];
 
-    for (const axe of this.axes) {
-      const origine = coordonneesVille(axe.origine);
-      const destination = coordonneesVille(axe.destination);
-      if (!origine || !destination) {
-        continue;
-      }
+    const axesAvecCoords = this.axes
+      .map((axe) => {
+        const origine = coordonneesVille(axe.origine);
+        const destination = coordonneesVille(axe.destination);
+        return origine && destination ? { axe, origine, destination } : null;
+      })
+      .filter((item): item is { axe: Axe; origine: [number, number]; destination: [number, number] } => item !== null);
 
+    const geometries = await Promise.all(
+      axesAvecCoords.map(({ origine, destination }) => geometrieRouteOuDroite(origine, destination))
+    );
+
+    axesAvecCoords.forEach(({ axe, origine, destination }, index) => {
       const couleur = couleurPourAxe(axe);
-      const ligne = L.polyline([origine, destination], {
+      const coords = geometries[index];
+      const ligne = L.polyline(coords, {
         color: couleur,
         weight: POIDS_LIGNE,
         opacity: 0.9,
@@ -143,14 +154,14 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
       });
       ligne.bindPopup(
         `<strong>${this.echapper(axe.origine)} → ${this.echapper(axe.destination)}</strong><br/>` +
-          `${axe.distanceKm} km — ${this.echapper(libelleEtatsAxe(axe))}`
+          `${axe.distanceKm} km<br/>${this.echapper(libelleEtatsAxe(axe))}`
       );
       ligne.on('click', () => this.axeSelectionne.emit(axe.id));
-      this.layers.addLayer(ligne);
+      this.layers!.addLayer(ligne);
       this.lignesParAxeId.set(axe.id, ligne);
       bounds.push(origine, destination);
 
-      for (const [nom, coords] of [
+      for (const [nom, hubCoords] of [
         [axe.origine, origine],
         [axe.destination, destination],
       ] as const) {
@@ -158,7 +169,7 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
           continue;
         }
         hubsVus.add(nom);
-        const marqueur = L.circleMarker(coords, {
+        const marqueur = L.circleMarker(hubCoords, {
           radius: 7,
           color: '#0a0a0a',
           weight: 1.5,
@@ -166,14 +177,11 @@ export class CorridorMapComponent implements AfterViewInit, OnChanges, OnDestroy
           fillOpacity: 1,
         });
         marqueur.bindPopup(`<strong>${this.echapper(nom)}</strong>`);
-        this.layers.addLayer(marqueur);
+        this.layers!.addLayer(marqueur);
       }
-    }
+    });
 
     if (bounds.length > 0 && this.map) {
-      // animate: false — sinon les tuiles du zoom initial (5) restent
-      // visibles sous celles du zoom final pendant la transition animée,
-      // produisant un damier incohérent (cf. docs/adr/0007, addendum Sprint 12).
       this.map.fitBounds(L.latLngBounds(bounds), { padding: [36, 36], maxZoom: 8, animate: false });
     } else {
       this.map?.setView(CENTRE_CEMAC, ZOOM_INITIAL);

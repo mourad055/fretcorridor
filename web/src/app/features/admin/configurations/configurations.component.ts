@@ -1,10 +1,14 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { FormsModule } from '@angular/forms';
 import { ConfigurationsService } from './configurations.service';
 import { Configuration } from '../../../shared/models/configuration.models';
 import { ConfirmationService } from '../../../shared/services/confirmation.service';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
+
+const TAILLE_PAGE = 20;
 
 /**
  * FE-ADM-03/EF-ADM-06 : chaque redéfinition crée une nouvelle version, jamais
@@ -15,7 +19,7 @@ import { ConfirmationService } from '../../../shared/services/confirmation.servi
 @Component({
   selector: 'app-configurations',
   standalone: true,
-  imports: [CommonModule, PageShellComponent, FormsModule],
+  imports: [CommonModule, PageShellComponent, FormsModule, PaginationComponent],
   templateUrl: './configurations.component.html',
 })
 export class ConfigurationsComponent implements OnInit {
@@ -28,6 +32,14 @@ export class ConfigurationsComponent implements OnInit {
   readonly loading = signal(false);
   readonly consulte = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly historiqueOuvert = signal(false);
+  readonly definitionOuverte = signal(false);
+
+  readonly pageCatalogue = signal(1);
+  readonly pageHistorique = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly catalogueAffiche = computed(() => paginer(this.catalogue(), this.pageCatalogue(), this.taillePage));
+  readonly historiqueAffiche = computed(() => paginer(this.historique(), this.pageHistorique(), this.taillePage));
 
   constructor(
     private readonly configurationsService: ConfigurationsService,
@@ -40,6 +52,7 @@ export class ConfigurationsComponent implements OnInit {
 
   private chargerCatalogue(): void {
     this.catalogueLoading.set(true);
+    this.pageCatalogue.set(1);
     this.configurationsService.catalogue().subscribe({
       next: (catalogue) => {
         this.catalogue.set(catalogue);
@@ -52,9 +65,34 @@ export class ConfigurationsComponent implements OnInit {
     });
   }
 
-  selectionner(cle: string): void {
+  ouvrirHistorique(cle: string): void {
     this.cle.set(cle);
+    this.historiqueOuvert.set(true);
     this.consulter();
+  }
+
+  fermerHistorique(): void {
+    this.historiqueOuvert.set(false);
+  }
+
+  ouvrirDefinition(cle: string, valeurCourante?: string): void {
+    this.cle.set(cle);
+    if (valeurCourante !== undefined) {
+      this.nouvelleValeur.set(valeurCourante);
+    }
+    this.definitionOuverte.set(true);
+  }
+
+  fermerDefinition(): void {
+    this.definitionOuverte.set(false);
+  }
+
+  valeurHistoriqueCourante(): string {
+    return this.historique()[0]?.valeur ?? '';
+  }
+
+  selectionner(cle: string): void {
+    this.ouvrirHistorique(cle);
   }
 
   consulter(): void {
@@ -63,6 +101,7 @@ export class ConfigurationsComponent implements OnInit {
     }
     this.loading.set(true);
     this.errorMessage.set(null);
+    this.pageHistorique.set(1);
     this.configurationsService.historique(this.cle()).subscribe({
       next: (historique) => {
         this.historique.set(historique);
@@ -77,24 +116,29 @@ export class ConfigurationsComponent implements OnInit {
   }
 
   definir(): void {
-    const confirme = this.confirmationService.confirmer(
-      `Définir une nouvelle version de « ${this.cle()} » avec la valeur « ${this.nouvelleValeur()} » ? Cette action crée une nouvelle version, jamais réversible en place.`
-    );
-    if (!confirme) {
-      return;
-    }
-    this.loading.set(true);
-    this.errorMessage.set(null);
-    this.configurationsService.definir(this.cle(), this.nouvelleValeur()).subscribe({
-      next: () => {
-        this.nouvelleValeur.set('');
-        this.consulter();
-        this.chargerCatalogue();
-      },
-      error: () => {
-        this.errorMessage.set('Impossible de définir cette configuration.');
-        this.loading.set(false);
-      },
-    });
+    void this.confirmationService
+      .confirmer(
+        `Définir une nouvelle version de « ${this.cle()} » avec la valeur « ${this.nouvelleValeur()} » ? Cette action crée une nouvelle version, jamais réversible en place.`,
+        { title: 'Nouvelle version', confirmLabel: 'Enregistrer', danger: true }
+      )
+      .then((confirme) => {
+        if (!confirme) {
+          return;
+        }
+        this.loading.set(true);
+        this.errorMessage.set(null);
+        this.configurationsService.definir(this.cle(), this.nouvelleValeur()).subscribe({
+          next: () => {
+            this.nouvelleValeur.set('');
+            this.definitionOuverte.set(false);
+            this.consulter();
+            this.chargerCatalogue();
+          },
+          error: () => {
+            this.errorMessage.set('Impossible de définir cette configuration.');
+            this.loading.set(false);
+          },
+        });
+      });
   }
 }

@@ -1,12 +1,11 @@
 package com.fretcorridor.gateway.domain.kyc;
 
 import java.time.Instant;
+import java.util.Set;
 
 /**
- * Vue minimale d'un dossier KYC telle qu'exposée au dashboard Admin (Sprint 2).
- * Le modèle complet (pièces, extraction automatique, niveaux 0-1-2) appartient à
- * service-ida (Mobile, cf. CDC UC-IDA-01) — ce dashboard n'en consomme qu'un
- * sous-ensemble de décision.
+ * Vue d'un dossier KYC pour le dashboard Admin. Les pièces et URLs
+ * présignées vivent dans {@link KycDetail} (GET détail).
  */
 public record KycDossier(
         String id,
@@ -14,9 +13,15 @@ public record KycDossier(
         String acteurTelephone,
         String typeActeur,
         Instant soumisLe,
-        KycStatut statut
+        KycStatut statut,
+        String niveauKyc,
+        Set<String> roles
 ) {
     public KycDossier avecStatut(KycStatut nouveauStatut) {
-        return new KycDossier(id, acteurNom, acteurTelephone, typeActeur, soumisLe, nouveauStatut);
+        return new KycDossier(id, acteurNom, acteurTelephone, typeActeur, soumisLe, nouveauStatut, niveauKyc, roles);
+    }
+
+    public KycDossier avecNiveau(String nouveauNiveau, KycStatut nouveauStatut) {
+        return new KycDossier(id, acteurNom, acteurTelephone, typeActeur, soumisLe, nouveauStatut, nouveauNiveau, roles);
     }
 }

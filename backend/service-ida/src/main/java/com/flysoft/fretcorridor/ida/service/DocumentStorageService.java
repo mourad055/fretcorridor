@@ -1,5 +1,7 @@
 package com.flysoft.fretcorridor.ida.service;
 
+import io.minio.GetObjectArgs;
+import io.minio.GetObjectResponse;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -26,6 +28,8 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 public class DocumentStorageService {
+
+    public record ContenuObjet(byte[] donnees, String contentType, String nomFichier) {}
 
     private final MinioClient minioClient;
 
@@ -56,7 +60,7 @@ public class DocumentStorageService {
         }
     }
 
-    /** URL présignée pour consultation temporaire (jamais stockée telle quelle). */
+    /** URL présignée pour consultation temporaire (mobile — jamais stockée telle quelle). */
     public String urlAcces(String objectKey) {
         if (objectKey == null || objectKey.isBlank()) {
             return null;
@@ -73,6 +77,47 @@ public class DocumentStorageService {
             log.warn("Impossible de générer une URL présignée pour {} : {}", objectKey, e.getMessage());
             return null;
         }
+    }
+
+    /** Lecture serveur pour le backoffice web (proxy authentifié, pas d'URL présignée). */
+    public ContenuObjet lireContenu(String objectKey) {
+        if (objectKey == null || objectKey.isBlank()) {
+            throw new RuntimeException("KYC_PIECE_ILLISIBLE");
+        }
+        try (GetObjectResponse response = minioClient.getObject(
+                GetObjectArgs.builder().bucket(bucket).object(objectKey).build())) {
+            byte[] donnees = response.readAllBytes();
+            String contentType = response.headers().get("Content-Type");
+            if (contentType == null || contentType.isBlank()) {
+                contentType = devinerContentType(objectKey);
+            }
+            return new ContenuObjet(donnees, contentType, nomFichierDe(objectKey));
+        } catch (Exception e) {
+            log.warn("Impossible de lire l'objet MinIO {} : {}", objectKey, e.getMessage());
+            throw new RuntimeException("KYC_PIECE_ILLISIBLE");
+        }
+    }
+
+    private static String devinerContentType(String objectKey) {
+        String lower = objectKey.toLowerCase();
+        if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+            return "image/jpeg";
+        }
+        if (lower.endsWith(".png")) {
+            return "image/png";
+        }
+        if (lower.endsWith(".webp")) {
+            return "image/webp";
+        }
+        if (lower.endsWith(".pdf")) {
+            return "application/pdf";
+        }
+        return "application/octet-stream";
+    }
+
+    private static String nomFichierDe(String objectKey) {
+        int slash = objectKey.lastIndexOf('/');
+        return slash >= 0 ? objectKey.substring(slash + 1) : objectKey;
     }
 
     private static String extensionDe(String filename) {

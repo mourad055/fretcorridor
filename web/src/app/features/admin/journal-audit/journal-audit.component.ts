@@ -32,6 +32,7 @@ const TOUS_LES_TENANTS = '';
   standalone: true,
   imports: [CommonModule, PageShellComponent, FormsModule, PaginationComponent],
   templateUrl: './journal-audit.component.html',
+  styleUrl: './journal-audit.component.css',
 })
 export class JournalAuditComponent implements OnInit {
   readonly entrees = signal<EntreeJournalAudit[]>([]);

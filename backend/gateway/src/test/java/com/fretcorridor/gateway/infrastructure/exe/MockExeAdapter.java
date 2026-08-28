@@ -5,16 +5,15 @@ import com.fretcorridor.gateway.domain.exe.EtapeMission;
 import com.fretcorridor.gateway.domain.exe.EtapeType;
 import com.fretcorridor.gateway.domain.exe.ExePort;
 import com.fretcorridor.gateway.domain.exe.Mission;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
 
-/**
- * TODO(mobile): remplacer par l'appel réel à service-exe une fois ce service
- * livré (Sprint 7 Mobile, @estie-glo, issue #16).
- */
+/** Fixture @SpringBootTest — remplace RealExeAdapter pendant les tests unitaires d'intégration gateway. */
 @Component
+@Primary
 public class MockExeAdapter implements ExePort {
 
     private final List<Mission> missions = List.of(
@@ -41,12 +40,18 @@ public class MockExeAdapter implements ExePort {
     );
 
     @Override
-    public Flux<Mission> listerMissionsParTenant(String tenantId) {
+    public Flux<Mission> listerMissionsParTenant(String tenantId, String delegationToken) {
+        if (delegationToken == null) {
+            return Flux.empty();
+        }
         return Flux.fromIterable(missions).filter(m -> m.tenantId().equals(tenantId));
     }
 
     @Override
-    public Flux<Mission> listerMissionsParTransporteur(String transporteurId) {
+    public Flux<Mission> listerMissionsParTransporteur(String tenantId, String transporteurId, String delegationToken) {
+        if (delegationToken == null) {
+            return Flux.empty();
+        }
         return Flux.fromIterable(missions).filter(m -> m.transporteurId().equals(transporteurId));
     }
 }

@@ -25,13 +25,33 @@ describe('ShellComponent', () => {
     });
   }
 
-  it("affiche le libellé du rôle et l'identifiant du tenant", () => {
+  it("affiche le nom métier du tenant (pas l'id technique)", () => {
     configure();
     const fixture = TestBed.createComponent(ShellComponent);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Bureau de fret');
-    expect(fixture.nativeElement.textContent).toContain('tenant-bgft-douala');
+    expect(fixture.nativeElement.textContent).toContain('BGFT Douala');
+    expect(fixture.nativeElement.textContent).not.toContain('tenant-bgft-douala');
+    expect(fixture.nativeElement.textContent).not.toContain('MARKETPLACE_CM');
+  });
+
+  it("n'affiche jamais MARKETPLACE_CM brut pour un compte mal seedé", () => {
+    session = { token: 't', role: 'BUREAU', tenantId: 'MARKETPLACE_CM', actorId: 'actor-1' };
+    logoutSpy = jest.fn();
+    TestBed.configureTestingModule({
+      imports: [ShellComponent],
+      providers: [
+        provideRouter([]),
+        provideTranslateServiceForTests(),
+        { provide: AuthService, useValue: { session: () => session, logout: logoutSpy } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ShellComponent);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Marketplace Cameroun');
+    expect(fixture.nativeElement.textContent).not.toContain('MARKETPLACE_CM');
   });
 
   it('déconnecte et redirige vers /login au clic', () => {

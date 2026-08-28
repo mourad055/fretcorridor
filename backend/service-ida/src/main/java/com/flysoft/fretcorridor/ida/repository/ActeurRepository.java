@@ -12,4 +12,6 @@ public interface ActeurRepository extends JpaRepository<Acteur, UUID> {
     Optional<Acteur> findByTelephone(String telephone);
     boolean existsByTelephone(String telephone);
     List<Acteur> findByTenantId(String tenantId);
+
+    List<Acteur> findByTenantIdAndNiveauKyc(String tenantId, Acteur.NiveauKyc niveauKyc);
 }

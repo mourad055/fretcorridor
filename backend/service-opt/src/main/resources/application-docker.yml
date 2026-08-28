@@ -15,11 +15,14 @@ spring:
     service-geo:
       base-url: http://service-geo:8084
       connect-timeout-ms: 200
-      read-timeout-ms: 300
+      # 300 ms était trop serré au redémarrage groupé : GEO encore en
+      # train de servir sa première requête → matching sauté (ENF-DIS-04
+      # dégrade, mais alors aucune proposition n'est émise ce tour).
+      read-timeout-ms: 2000
     service-mat:
       base-url: http://service-mat:8086
       connect-timeout-ms: 200
-      read-timeout-ms: 300
+      read-timeout-ms: 1000
     service-cap:
       base-url: http://service-cap:8096
       connect-timeout-ms: 200

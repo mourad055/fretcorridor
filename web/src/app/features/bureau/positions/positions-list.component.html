@@ -14,14 +14,14 @@
     <table class="fc-table" *ngIf="!loading() && positions().length > 0">
       <thead>
         <tr>
-          <th>Véhicule</th>
+          <th>Mission</th>
           <th>Latitude</th>
           <th>Longitude</th>
           <th>Dernière position</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let position of positions()">
+        <tr *ngFor="let position of positionsAffiches()">
           <td>{{ position.vehiculeLabel }}</td>
           <td>{{ position.latitude }}</td>
           <td>{{ position.longitude }}</td>
@@ -29,5 +29,6 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="page()" [total]="positions().length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
   </section>
 </app-page-shell>

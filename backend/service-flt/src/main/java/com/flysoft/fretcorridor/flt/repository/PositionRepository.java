@@ -8,5 +8,5 @@ import java.util.UUID;
 
 @Repository
 public interface PositionRepository extends JpaRepository<Position, UUID> {
-    Optional<Position> findFirstByMissionIdAndTenantIdOrderByHorodatageDesc(UUID missionId, String tenantId);
+    Optional<Position> findFirstByMissionIdOrderByHorodatageDesc(UUID missionId);
 }

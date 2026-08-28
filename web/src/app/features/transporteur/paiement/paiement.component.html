@@ -1,22 +1,24 @@
-<app-page-shell extraClass="fc-page--large">
+<main class="fc-page fc-page--large">
   <section class="paiement fc-panel">
     <h2 class="fc-panel__title">Solde &amp; paiement</h2>
-
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-      <div class="fc-skeleton__line"></div>
-      <div class="fc-skeleton__line"></div>
-    </div>
 
-    <ng-container *ngIf="!loading() && solde() as s">
+    <ng-container *ngIf="solde$ | async as s; else chargement">
       <p class="solde-montant">Solde reçu à ce jour : <strong>{{ s.solde }}</strong></p>
-      <app-totaux-ecritures [totaux]="totaux()" />
+      <app-totaux-ecritures variante="transporteur" [totaux]="s.totaux" />
       <div class="fc-actions">
-        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()" [disabled]="s.historique.length === 0">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter(s)" [disabled]="s.historique.length === 0">
           Exporter en CSV
         </button>
       </div>
       <app-ecritures-table [ecritures]="s.historique" />
     </ng-container>
+
+    <ng-template #chargement>
+      <div class="fc-skeleton" aria-busy="true">
+        <div class="fc-skeleton__line"></div>
+        <div class="fc-skeleton__line"></div>
+      </div>
+    </ng-template>
   </section>
-</app-page-shell>
+</main>

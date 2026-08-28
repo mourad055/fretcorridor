@@ -1,83 +1,209 @@
-<app-page-shell extraClass="fc-page--large">
-  <section class="comptes fc-panel">
-    <h2 class="fc-panel__title">Gestion des comptes</h2>
-    <p class="fc-page__subtitle" *ngIf="!loading() && comptes() as c">{{ c.length }} compte(s) pour ce tenant</p>
+<app-page-shell>
+  <header class="fc-page__header">
+    <div>
+      <h1 class="fc-page__title">Gestion des comptes</h1>
+      <p class="fc-page__subtitle" *ngIf="!loading() && comptes() as c">
+        {{ c.length }} compte(s) pour le tenant sélectionné — source identité mobile (service-ida)
+      </p>
+    </div>
+  </header>
 
-    <div class="fc-filters">
+  <section class="fc-panel comptes-toolbar">
+    <div class="fc-filters comptes-filters">
       <div class="fc-filters__field">
         <label class="fc-filters__label" for="comptes-tenant">Tenant</label>
         <select
           id="comptes-tenant"
-          class="fc-filters__select"
+          class="fc-input"
           [ngModel]="tenantSelectionne()"
-          (ngModelChange)="tenantSelectionne.set($event)"
+          (ngModelChange)="tenantSelectionne.set($event); consulter()"
         >
           <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
         </select>
       </div>
-      <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()" [disabled]="loading()">Consulter</button>
+      <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()" [disabled]="loading()">
+        Actualiser
+      </button>
     </div>
+  </section>
 
-    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+  <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+
+  <section class="fc-panel comptes-panel">
     <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
       <div class="fc-skeleton__line"></div>
       <div class="fc-skeleton__line"></div>
     </div>
-    <div class="fc-empty" *ngIf="!loading() && comptes() && comptes()!.length === 0">Aucun compte pour ce tenant.</div>
+    <div class="fc-empty" *ngIf="!loading() && comptes() && comptes()!.length === 0">
+      Aucun compte pour ce tenant. Essayez <strong>tenant-bgft-douala</strong> ou <strong>MARKETPLACE_CM</strong>.
+    </div>
 
-    <table class="fc-table" *ngIf="!loading() && comptes() && comptes()!.length > 0">
-      <thead>
-        <tr>
-          <th>Acteur</th>
-          <th>Téléphone</th>
-          <th>Rôles</th>
-          <th>Niveau KYC</th>
-          <th>Statut</th>
-          <th><span class="fc-sr-only">Actions</span></th>
-        </tr>
-      </thead>
-      <tbody>
-        <ng-container *ngFor="let compte of comptesAffiches()">
-          <tr *ngIf="compteEnEdition() !== compte.id">
-            <td>{{ libelleActeur(compte) }}</td>
+    <div class="comptes-table-wrap" *ngIf="!loading() && comptes() && comptes()!.length > 0">
+      <table class="fc-table comptes-table">
+        <thead>
+          <tr>
+            <th>Acteur</th>
+            <th>Téléphone</th>
+            <th>Rôles</th>
+            <th>Niveau KYC</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let compte of comptesAffiches()">
+            <td class="comptes-table__acteur">{{ libelleActeur(compte) }}</td>
             <td>{{ compte.telephone }}</td>
             <td>{{ compte.roles.join(', ') }}</td>
             <td>{{ compte.niveauKyc }}</td>
-            <td>{{ compte.actif ? 'Actif' : 'Inactif' }}</td>
             <td>
-              <div class="fc-actions">
-                <button type="button" class="fc-btn fc-btn--ghost" (click)="basculerStatut(compte)">
-                  {{ compte.actif ? 'Désactiver' : 'Réactiver' }}
+              <span class="comptes-statut" [class.comptes-statut--inactif]="!compte.actif">
+                {{ compte.actif ? 'Actif' : 'Inactif' }}
+              </span>
+            </td>
+            <td>
+              <div class="fc-actions comptes-actions">
+                <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="voirCompte(compte)">
+                  Voir
                 </button>
-                <button type="button" class="fc-btn fc-btn--ghost" (click)="commencerEditionRoles(compte)">
-                  Changer les rôles
+                <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="ouvrirEditionRoles(compte)">
+                  Rôles
+                </button>
+                <button
+                  type="button"
+                  class="fc-btn fc-btn--ghost fc-btn--sm"
+                  [class.comptes-actions__danger]="compte.actif"
+                  (click)="demanderDesactivation(compte)"
+                >
+                  {{ compte.actif ? 'Désactiver' : 'Réactiver' }}
                 </button>
               </div>
             </td>
           </tr>
-          <tr *ngIf="compteEnEdition() === compte.id" class="comptes__ligne-edition">
-            <td colspan="4">
-              <fieldset>
-                <legend>Rôles de {{ libelleActeur(compte) }}</legend>
-                <label *ngFor="let role of rolesDisponibles" [attr.for]="'role-' + compte.id + '-' + role">
-                  <input
-                    type="checkbox"
-                    [id]="'role-' + compte.id + '-' + role"
-                    [checked]="rolesEdition().has(role)"
-                    (change)="basculerRoleEdition(role, $any($event.target).checked)"
-                  />
-                  {{ role }}
-                </label>
-              </fieldset>
-            </td>
-            <td colspan="2">
-              <button type="button" class="fc-btn fc-btn--primary" (click)="enregistrerRoles()">Enregistrer</button>
-              <button type="button" class="fc-btn fc-btn--ghost" (click)="annulerEditionRoles()">Annuler</button>
-            </td>
-          </tr>
-        </ng-container>
-      </tbody>
-    </table>
-    <app-pagination [page]="page()" [total]="comptes()?.length ?? 0" [taillePage]="taillePage" (pageChange)="page.set($event)" />
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination
+      *ngIf="!loading() && comptes() && comptes()!.length > taillePage"
+      [page]="page()"
+      [total]="comptes()?.length ?? 0"
+      [taillePage]="taillePage"
+      (pageChange)="page.set($event)"
+    />
   </section>
+
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="compteConsulte() as compte"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="compte-detail-title"
+    (click)="fermerConsultation()"
+  >
+    <div class="fc-modal" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="compte-detail-title" class="fc-modal__title">{{ libelleActeur(compte) }}</h2>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="fermerConsultation()">Fermer</button>
+      </header>
+
+      <div class="fc-modal__body">
+        <dl class="comptes-detail">
+          <div><dt>Téléphone</dt><dd>{{ compte.telephone }}</dd></div>
+          <div><dt>Tenant</dt><dd>{{ compte.tenantId }}</dd></div>
+          <div><dt>Rôles</dt><dd>{{ compte.roles.join(', ') }}</dd></div>
+          <div><dt>Niveau KYC</dt><dd>{{ compte.niveauKyc }}</dd></div>
+          <div><dt>Statut</dt><dd>{{ compte.actif ? 'Actif' : 'Inactif' }}</dd></div>
+          <div><dt>Canal métier (CDC)</dt><dd>{{ canalMobile(compte) }}</dd></div>
+        </dl>
+        <p class="comptes-detail__note" *ngIf="compte.roles.includes('CHARGEUR')">
+          Les opérations chargeur (demandes, propositions) restent sur l'<strong>app Client mobile</strong>.
+          Le portail web Admin gère l'identité, les rôles et la conformité.
+        </p>
+      </div>
+
+      <footer class="fc-modal__footer">
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="ouvrirEditionRoles(compte); fermerConsultation()">
+          Modifier les rôles
+        </button>
+        <a
+          *ngIf="eligibleKyc(compte)"
+          class="fc-btn fc-btn--primary fc-btn--sm"
+          routerLink="/admin"
+          [queryParams]="queryKyc()"
+          (click)="fermerConsultation()"
+        >
+          Ouvrir la file KYC
+        </a>
+      </footer>
+    </div>
+  </div>
+
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="compteRolesEdition() as compte"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="compte-roles-title"
+    (click)="annulerEditionRoles()"
+  >
+    <div class="fc-modal fc-modal--sm" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="compte-roles-title" class="fc-modal__title">Rôles — {{ libelleActeur(compte) }}</h2>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="annulerEditionRoles()">Fermer</button>
+      </header>
+
+      <div class="fc-modal__body">
+        <fieldset class="comptes-roles">
+          <legend class="fc-sr-only">Sélection des rôles</legend>
+          <label class="comptes-roles__item" *ngFor="let role of rolesDisponibles">
+            <input
+              type="checkbox"
+              [checked]="rolesEdition().has(role)"
+              (change)="basculerRoleEdition(role, $any($event.target).checked)"
+            />
+            <span>{{ role }}</span>
+          </label>
+        </fieldset>
+      </div>
+
+      <footer class="fc-modal__footer">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="annulerEditionRoles()">Annuler</button>
+        <button type="button" class="fc-btn fc-btn--primary" [disabled]="rolesEdition().size === 0" (click)="enregistrerRoles()">
+          Enregistrer
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="confirmationStatut() as compte"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="compte-statut-title"
+    (click)="annulerDesactivation()"
+  >
+    <div class="fc-modal fc-modal--sm" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="compte-statut-title" class="fc-modal__title">{{ compte.actif ? 'Désactiver le compte' : 'Réactiver le compte' }}</h2>
+      </header>
+      <div class="fc-modal__body">
+        <p class="comptes-confirm" *ngIf="compte.actif">
+          Désactiver <strong>{{ libelleActeur(compte) }}</strong> ({{ compte.telephone }}) ?
+          L'acteur ne pourra plus se connecter tant que le compte n'est pas réactivé.
+        </p>
+        <p class="comptes-confirm" *ngIf="!compte.actif">
+          Réactiver <strong>{{ libelleActeur(compte) }}</strong> ({{ compte.telephone }}) ?
+          L'acteur pourra à nouveau se connecter avec ses identifiants habituels.
+        </p>
+      </div>
+      <footer class="fc-modal__footer">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="annulerDesactivation()">Annuler</button>
+        <button type="button" class="fc-btn" [class.fc-confirm-danger]="compte.actif" [class.fc-btn--primary]="!compte.actif" (click)="confirmerDesactivation()">
+          {{ compte.actif ? 'Désactiver' : 'Réactiver' }}
+        </button>
+      </footer>
+    </div>
+  </div>
 </app-page-shell>

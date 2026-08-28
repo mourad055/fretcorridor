@@ -1,4 +1,4 @@
-<app-page-shell extraClass="fc-page--large">
+<main class="fc-page fc-page--large">
   <section class="rapport-financier-admin fc-panel">
     <h2 class="fc-panel__title">Rapport financier (consultation transverse)</h2>
 
@@ -15,26 +15,29 @@
           <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
         </select>
       </div>
-      <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()" [disabled]="loading()">Consulter</button>
+      <button type="button" class="fc-btn fc-btn--primary" (click)="consulter()">Consulter</button>
     </div>
 
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
-    <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
-      <div class="fc-skeleton__line"></div>
-      <div class="fc-skeleton__line"></div>
-    </div>
 
-    <ng-container *ngIf="!loading() && ecritures() as e">
-      <app-totaux-ecritures [totaux]="totaux()" />
+    <ng-container *ngIf="vue$ | async as vue; else chargement">
+      <app-totaux-ecritures [totaux]="vue.totaux" />
       <div class="fc-actions">
-        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()" [disabled]="e.length === 0">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter(vue.ecritures)" [disabled]="vue.ecritures.length === 0">
           Exporter en CSV
         </button>
       </div>
-      <app-ecritures-table [ecritures]="e" />
+      <app-ecritures-table [ecritures]="vue.ecritures" />
 
       <h3 class="fc-panel__title">Paiements en espèces</h3>
-      <app-especes-table [paiements]="paiementsEspeces()" />
+      <app-especes-table [paiements]="vue.especes" />
     </ng-container>
+
+    <ng-template #chargement>
+      <div class="fc-skeleton" aria-busy="true">
+        <div class="fc-skeleton__line"></div>
+        <div class="fc-skeleton__line"></div>
+      </div>
+    </ng-template>
   </section>
-</app-page-shell>
+</main>

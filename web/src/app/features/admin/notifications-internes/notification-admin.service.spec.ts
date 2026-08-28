@@ -39,10 +39,13 @@ describe('NotificationAdminService', () => {
 
     expect(result).toEqual([
       {
-        titre: 'Dossier en retard — Bureau Douala',
-        detail: 'LITIGE (HAUTE) — délai dépassé le 2020-01-02T00:00:00Z',
         tenantId: 'tenant-bgft-douala',
+        tenantNom: 'Bureau Douala',
         dossierId: 'd1',
+        type: 'LITIGE',
+        priorite: 'HAUTE',
+        statut: 'OUVERT',
+        delaiTraitement: '2020-01-02T00:00:00Z',
       },
     ]);
   });
@@ -57,6 +60,16 @@ describe('NotificationAdminService', () => {
     httpMock
       .expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`)
       .flush({ title: 'Erreur' }, { status: 500, statusText: 'Server Error' });
+
+    expect(result).toEqual([]);
+  });
+
+  it('termine sans blocage quand aucun tenant n est configure', () => {
+    let result: unknown;
+    service.dossiersEnRetard().subscribe((r) => (result = r));
+
+    httpMock.expectOne(`${environment.apiBaseUrl}/admin/tenants`).flush([]);
+    httpMock.expectNone(`${environment.apiBaseUrl}/admin/dossiers`);
 
     expect(result).toEqual([]);
   });

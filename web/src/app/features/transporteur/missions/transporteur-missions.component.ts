@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
 import { TransporteurMissionsService } from './transporteur-missions.service';
 import { Mission } from '../../../shared/models/mission.models';
@@ -25,8 +26,12 @@ export class TransporteurMissionsComponent implements OnInit {
         this.missions.set(missions);
         this.loading.set(false);
       },
-      error: () => {
-        this.errorMessage.set('Impossible de charger vos missions.');
+      error: (err: HttpErrorResponse) => {
+        this.errorMessage.set(
+          err.status === 503
+            ? 'Service missions temporairement indisponible. Réessayez dans quelques instants.'
+            : 'Impossible de charger vos missions.'
+        );
         this.loading.set(false);
       },
     });

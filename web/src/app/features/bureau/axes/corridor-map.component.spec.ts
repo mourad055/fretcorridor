@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { CorridorMapComponent } from './corridor-map.component';
 import { Axe } from './axe.models';
 import { polylignesCreees } from '../../../../testing/leaflet.mock';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 /**
  * Leaflet est doublé en test (src/testing/leaflet.mock.ts) : jsdom ne
@@ -19,6 +20,7 @@ describe('CorridorMapComponent', () => {
     polylignesCreees.length = 0;
     await TestBed.configureTestingModule({
       imports: [CorridorMapComponent],
+      providers: [provideTranslateServiceForTests()],
     }).compileComponents();
   });
 

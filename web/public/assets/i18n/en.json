@@ -10,7 +10,7 @@
     "demo": {
       "label": "Demo accounts",
       "bureau": "Freight bureau",
-      "transporteur": "Carrier",
+      "transporteur": "Carrier (mobile / live)",
       "admin": "Administration",
       "bureauTchad": "Freight bureau (Chad)"
     },
@@ -36,7 +36,13 @@
       "admin": "Administration"
     },
     "logout": "Log out",
-    "navAriaLabel": "Main navigation"
+    "navAriaLabel": "Main navigation",
+    "tenant": {
+      "bgftDouala": "BGFT Douala",
+      "bnftNdjamena": "BNFT N'Djamena",
+      "flysoft": "Flysoft",
+      "marketplace": "Cameroon marketplace"
+    }
   },
   "nav": {
     "groupe": {
@@ -86,16 +92,22 @@
       "REJETE": "Rejected"
     },
     "axeVisibilite": {
-      "ACTIVE": "Visible",
+      "ACTIVE": "Visible on the corridor",
       "INACTIVE": "Hidden"
     },
     "axeMatching": {
-      "ACTIVE": "Matching active",
-      "INACTIVE": "Matching inactive"
+      "ACTIVE": "Auto-matching on",
+      "INACTIVE": "Auto-matching off"
     },
     "axePaiement": {
-      "ACTIVE": "Payment active",
-      "INACTIVE": "Payment inactive"
+      "ACTIVE": "Payments open",
+      "INACTIVE": "Payments closed"
+    },
+    "axeLegende": {
+      "priorite": "Dominant map colour: payments > matching > visible",
+      "visibilite": "Visible on the corridor",
+      "matching": "Auto-matching on",
+      "paiement": "Payments open"
     },
     "ecritureStatut": {
       "VALIDE": "Cleared",
@@ -117,6 +129,7 @@
     },
     "typeActeur": {
       "CHAUFFEUR": "Driver",
+      "TRANSPORTEUR": "Carrier",
       "TRANSPORTEUR_PERSONNE_MORALE": "Carrier (legal entity)"
     },
     "typeDossier": {

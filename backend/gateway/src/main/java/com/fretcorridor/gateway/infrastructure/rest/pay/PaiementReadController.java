@@ -71,11 +71,18 @@ public class PaiementReadController {
                 ));
     }
 
+    private Mono<Void> journaliserEnArrierePlan(String tenantId, String acteurId, String action, String ressource, String delegationToken) {
+        return admPort.enregistrerAudit(tenantId, acteurId, action, ressource, delegationToken)
+                .onErrorResume(ex -> Mono.empty());
+    }
+
     /** EF-BUR-06 : consultation de données individuelles (écritures nominatives) journalisée. */
     @GetMapping("/api/v1/bureau/rapport-financier")
     public Mono<java.util.List<EcritureVueResponse>> rapportFinancierBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
-return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + actor.tenantId(), actor.delegationToken())
-                .then(payReadPort.rapportDuTenant(actor.tenantId(), actor.delegationToken()).map(EcritureVueResponse::from).collectList());
+        return payReadPort.rapportDuTenant(actor.tenantId(), actor.delegationToken())
+                .map(EcritureVueResponse::from)
+                .collectList()
+                .doOnSubscribe(s -> journaliserEnArrierePlan(actor.tenantId(), actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + actor.tenantId(), actor.delegationToken()).subscribe());
     }
 
     @GetMapping("/api/v1/admin/rapport-financier/{tenantId}")
@@ -84,15 +91,19 @@ return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION
             @AuthenticationPrincipal AuthenticatedActor actor
     ) {
         // ENF-SEC-02 : consultation transverse d'un tenant par un Admin, journalisée nominativement.
-return admPort.enregistrerAudit(tenantId, actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + tenantId, actor.delegationToken())
-                .then(payReadPort.rapportDuTenant(tenantId, actor.delegationToken()).map(EcritureVueResponse::from).collectList());
+        return payReadPort.rapportDuTenant(tenantId, actor.delegationToken())
+                .map(EcritureVueResponse::from)
+                .collectList()
+                .doOnSubscribe(s -> journaliserEnArrierePlan(tenantId, actor.actorId(), "CONSULTATION_RAPPORT_FINANCIER", "tenant:" + tenantId, actor.delegationToken()).subscribe());
     }
 
     /** EF-PAY-07 (S) : missions payées en espèces (mode dégradé, sans protection) du territoire du Bureau. EF-BUR-06 : consultation journalisée. */
     @GetMapping("/api/v1/bureau/paiements-especes")
     public Mono<java.util.List<DeclarationEspecesVueResponse>> paiementsEspecesBureau(@AuthenticationPrincipal AuthenticatedActor actor) {
-return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + actor.tenantId(), actor.delegationToken())
-                .then(payReadPort.paiementsEspecesDuTenant(actor.tenantId(), actor.delegationToken()).map(DeclarationEspecesVueResponse::from).collectList());
+        return payReadPort.paiementsEspecesDuTenant(actor.tenantId(), actor.delegationToken())
+                .map(DeclarationEspecesVueResponse::from)
+                .collectList()
+                .doOnSubscribe(s -> journaliserEnArrierePlan(actor.tenantId(), actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + actor.tenantId(), actor.delegationToken()).subscribe());
     }
 
     @GetMapping("/api/v1/admin/paiements-especes/{tenantId}")
@@ -101,7 +112,9 @@ return admPort.enregistrerAudit(actor.tenantId(), actor.actorId(), "CONSULTATION
             @AuthenticationPrincipal AuthenticatedActor actor
     ) {
         // ENF-SEC-02 : consultation transverse d'un tenant par un Admin, journalisée nominativement.
-return admPort.enregistrerAudit(tenantId, actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + tenantId, actor.delegationToken())
-                .then(payReadPort.paiementsEspecesDuTenant(tenantId, actor.delegationToken()).map(DeclarationEspecesVueResponse::from).collectList());
+        return payReadPort.paiementsEspecesDuTenant(tenantId, actor.delegationToken())
+                .map(DeclarationEspecesVueResponse::from)
+                .collectList()
+                .doOnSubscribe(s -> journaliserEnArrierePlan(tenantId, actor.actorId(), "CONSULTATION_PAIEMENTS_ESPECES", "tenant:" + tenantId, actor.delegationToken()).subscribe());
     }
 }

@@ -9,15 +9,18 @@ describe('ConfirmationService', () => {
     service = TestBed.inject(ConfirmationService);
   });
 
-  it('relaie la reponse de window.confirm', () => {
-    const spy = jest.spyOn(window, 'confirm').mockReturnValue(true);
+  it('resout la promesse quand l utilisateur confirme', async () => {
+    const promesse = service.confirmer('Continuer ?');
+    expect(service.demande()?.message).toBe('Continuer ?');
 
-    expect(service.confirmer('Continuer ?')).toBe(true);
-    expect(spy).toHaveBeenCalledWith('Continuer ?');
+    service.repondre(true);
+    await expect(promesse).resolves.toBe(true);
+    expect(service.demande()).toBeNull();
+  });
 
-    spy.mockReturnValue(false);
-    expect(service.confirmer('Continuer ?')).toBe(false);
-
-    spy.mockRestore();
+  it('resout false quand l utilisateur annule', async () => {
+    const promesse = service.confirmer('Continuer ?');
+    service.repondre(false);
+    await expect(promesse).resolves.toBe(false);
   });
 });

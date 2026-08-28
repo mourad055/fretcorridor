@@ -10,7 +10,7 @@
     "demo": {
       "label": "Comptes de démonstration",
       "bureau": "Bureau de fret",
-      "transporteur": "Transporteur",
+      "transporteur": "Transporteur (mobile / live)",
       "admin": "Administration",
       "bureauTchad": "Bureau de fret (Tchad)"
     },
@@ -36,7 +36,13 @@
       "admin": "Administration"
     },
     "logout": "Déconnexion",
-    "navAriaLabel": "Navigation principale"
+    "navAriaLabel": "Navigation principale",
+    "tenant": {
+      "bgftDouala": "BGFT Douala",
+      "bnftNdjamena": "BNFT N'Djamena",
+      "flysoft": "Flysoft",
+      "marketplace": "Marketplace Cameroun"
+    }
   },
   "nav": {
     "groupe": {
@@ -86,16 +92,22 @@
       "REJETE": "Rejeté"
     },
     "axeVisibilite": {
-      "ACTIVE": "Visible",
+      "ACTIVE": "Visible sur le corridor",
       "INACTIVE": "Masqué"
     },
     "axeMatching": {
-      "ACTIVE": "Matching actif",
-      "INACTIVE": "Matching inactif"
+      "ACTIVE": "Appariement auto",
+      "INACTIVE": "Appariement arrêté"
     },
     "axePaiement": {
-      "ACTIVE": "Paiement actif",
-      "INACTIVE": "Paiement inactif"
+      "ACTIVE": "Paiements ouverts",
+      "INACTIVE": "Paiements fermés"
+    },
+    "axeLegende": {
+      "priorite": "Couleur dominante sur la carte : paiements > appariement > visible",
+      "visibilite": "Visible sur le corridor",
+      "matching": "Appariement auto",
+      "paiement": "Paiements ouverts"
     },
     "ecritureStatut": {
       "VALIDE": "Validée",
@@ -117,6 +129,7 @@
     },
     "typeActeur": {
       "CHAUFFEUR": "Chauffeur",
+      "TRANSPORTEUR": "Transporteur",
       "TRANSPORTEUR_PERSONNE_MORALE": "Transporteur (personne morale)"
     },
     "typeDossier": {

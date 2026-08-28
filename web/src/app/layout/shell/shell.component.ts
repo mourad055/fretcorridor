@@ -1,11 +1,13 @@
 import { Component, computed, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { BrandLogoComponent } from '../../shared/components/brand-logo/brand-logo.component';
 import { LangueSwitchComponent } from '../../shared/components/langue-switch/langue-switch.component';
 import { ShellNavComponent } from '../shell-nav/shell-nav.component';
 import { ShellSidebarComponent } from '../shell-sidebar/shell-sidebar.component';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { cleLibelleTenant } from '../../shared/utils/libelle-tenant';
 
 /**
  * Enveloppe partagée des 3 rôles (Sprint 11) — en-tête sticky, logo, tenant,
@@ -20,13 +22,14 @@ import { ShellSidebarComponent } from '../shell-sidebar/shell-sidebar.component'
 @Component({
   selector: 'app-shell',
   standalone: true,
-  imports: [RouterOutlet, BrandLogoComponent, LangueSwitchComponent, ShellNavComponent, ShellSidebarComponent, TranslatePipe],
+  imports: [RouterOutlet, BrandLogoComponent, LangueSwitchComponent, ShellNavComponent, ShellSidebarComponent, ConfirmDialogComponent, TranslatePipe],
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.css',
 })
 export class ShellComponent {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   readonly session = this.authService.session;
   readonly roleLabelKey = computed(() => {
@@ -40,6 +43,14 @@ export class ShellComponent {
       default:
         return '';
     }
+  });
+  readonly tenantLabel = computed(() => {
+    const tenantId = this.session()?.tenantId;
+    if (!tenantId) {
+      return '';
+    }
+    const cle = cleLibelleTenant(tenantId);
+    return cle ? this.translate.instant(cle) : tenantId;
   });
 
   logout(): void {

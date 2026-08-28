@@ -2,21 +2,23 @@
   <section class="journal-audit fc-panel">
     <h2 class="fc-panel__title">Journal d'audit</h2>
 
-    <div class="fc-filters">
-      <label for="journal-audit-tenant">Tenant</label>
-      <select
-        id="journal-audit-tenant"
-        name="tenant"
-        [ngModel]="tenantIdSelectionne()"
-        (ngModelChange)="onTenantChange($event)"
-      >
-        <option [value]="tousLesTenants">Tous les tenants</option>
-        <option *ngFor="let tenant of tenants()" [value]="tenant.id">{{ tenant.nom }}</option>
-      </select>
-    </div>
-
-    <div class="fc-actions">
-      <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()">Exporter en CSV</button>
+    <div class="fc-filters journal-audit-filters">
+      <div class="fc-filters__field journal-audit-filters__tenant">
+        <label class="fc-filters__label" for="journal-audit-tenant">Tenant</label>
+        <select
+          id="journal-audit-tenant"
+          name="tenant"
+          class="fc-filters__select"
+          [ngModel]="tenantIdSelectionne()"
+          (ngModelChange)="onTenantChange($event)"
+        >
+          <option [value]="tousLesTenants">Tous les tenants</option>
+          <option *ngFor="let tenant of tenants()" [value]="tenant.id">{{ tenant.nom }}</option>
+        </select>
+      </div>
+      <div class="fc-actions">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="exporter()">Exporter en CSV</button>
+      </div>
     </div>
 
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>

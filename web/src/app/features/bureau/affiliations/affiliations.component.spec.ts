@@ -12,7 +12,7 @@ describe('AffiliationsComponent', () => {
   let confirmation: { confirmer: jest.Mock };
 
   beforeEach(async () => {
-    confirmation = { confirmer: jest.fn().mockReturnValue(true) };
+    confirmation = { confirmer: jest.fn().mockResolvedValue(true) };
     await TestBed.configureTestingModule({
       imports: [AffiliationsComponent],
       providers: [
@@ -28,12 +28,13 @@ describe('AffiliationsComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('invite un transporteur puis affiche une confirmation et vide le champ', () => {
+  it('invite un transporteur puis affiche une confirmation et vide le champ', async () => {
     const fixture = TestBed.createComponent(AffiliationsComponent);
     fixture.detectChanges();
 
     fixture.componentInstance.telephone.set('+237690000001');
     fixture.componentInstance.inviter();
+    await fixture.whenStable();
 
     const req = httpMock.expectOne(`${environment.apiBaseUrl}/bureau/affiliations`);
     req.flush(null, { status: 201, statusText: 'Created' });
@@ -53,23 +54,25 @@ describe('AffiliationsComponent', () => {
     expect(confirmation.confirmer).not.toHaveBeenCalled();
   });
 
-  it("n'appelle pas le serveur si la confirmation est refusee", () => {
-    confirmation.confirmer.mockReturnValue(false);
+  it("n'appelle pas le serveur si la confirmation est refusee", async () => {
+    confirmation.confirmer.mockResolvedValue(false);
     const fixture = TestBed.createComponent(AffiliationsComponent);
     fixture.detectChanges();
 
     fixture.componentInstance.telephone.set('+237690000001');
     fixture.componentInstance.inviter();
+    await fixture.whenStable();
 
     httpMock.expectNone(`${environment.apiBaseUrl}/bureau/affiliations`);
   });
 
-  it("affiche un message specifique quand l'acteur est introuvable (400)", () => {
+  it("affiche un message specifique quand l'acteur est introuvable (400)", async () => {
     const fixture = TestBed.createComponent(AffiliationsComponent);
     fixture.detectChanges();
 
     fixture.componentInstance.telephone.set('+237699999999');
     fixture.componentInstance.inviter();
+    await fixture.whenStable();
 
     httpMock
       .expectOne(`${environment.apiBaseUrl}/bureau/affiliations`)
@@ -79,12 +82,13 @@ describe('AffiliationsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Aucun compte ne correspond à ce numéro');
   });
 
-  it("affiche un message specifique quand le role n'est pas affiliable (400)", () => {
+  it("affiche un message specifique quand le role n'est pas affiliable (400)", async () => {
     const fixture = TestBed.createComponent(AffiliationsComponent);
     fixture.detectChanges();
 
     fixture.componentInstance.telephone.set('+237600000003');
     fixture.componentInstance.inviter();
+    await fixture.whenStable();
 
     httpMock
       .expectOne(`${environment.apiBaseUrl}/bureau/affiliations`)
@@ -94,12 +98,13 @@ describe('AffiliationsComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('ne correspond pas à un chauffeur ou un transporteur');
   });
 
-  it('affiche un message de service indisponible sur un 503', () => {
+  it('affiche un message de service indisponible sur un 503', async () => {
     const fixture = TestBed.createComponent(AffiliationsComponent);
     fixture.detectChanges();
 
     fixture.componentInstance.telephone.set('+237690000001');
     fixture.componentInstance.inviter();
+    await fixture.whenStable();
 
     httpMock
       .expectOne(`${environment.apiBaseUrl}/bureau/affiliations`)

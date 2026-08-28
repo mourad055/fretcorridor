@@ -24,6 +24,6 @@ public class CapaciteController {
 
     @GetMapping("/api/v1/transporteur/capacites")
     public Flux<CapaciteResponse> capacites(@AuthenticationPrincipal AuthenticatedActor actor) {
-        return capacitePort.listerParTransporteur(actor.actorId()).map(CapaciteResponse::from);
+        return capacitePort.listerMesCapacites(actor.actorId(), actor.delegationToken()).map(CapaciteResponse::from);
     }
 }

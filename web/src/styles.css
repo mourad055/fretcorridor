@@ -48,7 +48,18 @@
 
   /* Z-index */
   --fc-z-sticky: 20;
-  --fc-z-toast: 100;
+  --fc-z-modal: 1000;
+  --fc-z-toast: 1100;
+
+  /* Overlay modales — léger : page visible derrière, flou discret */
+  --fc-modal-overlay: color-mix(in srgb, #0a0a0a 38%, transparent);
+  --fc-modal-overlay-tint: color-mix(in srgb, var(--fc-primary) 6%, transparent);
+  --fc-modal-blur: 2px;
+
+  /* Sidebar */
+  --fc-sidebar-bg: #fde8e8;
+  --fc-sidebar-border: #f5b8b8;
+  --fc-sidebar-width: 17rem;
 
   /* Breakpoints (référence — utiliser dans les @media) */
   --fc-bp-xl: 1920px;
@@ -57,24 +68,14 @@
   --fc-bp-sm: 720px;
   --fc-bp-xs: 480px;
 
-  /* Layout page */
-  --fc-page-padding-x: 1.5rem;
-  --fc-page-padding-y: 1.5rem;
-  --fc-touch-min: 3rem;
+  /* Layout page — pleine largeur (postes Bureau/Admin) */
+  --fc-page-padding-x: clamp(1rem, 2vw, 2rem);
+  --fc-page-padding-y: clamp(1rem, 2vw, 1.75rem);
+  --fc-touch-min: 2.75rem;
 
-  /* Largeur de contenu partagée (header + page) pour un alignement centré cohérent.
-     100rem (1600px) plutôt que 72rem hérité de V3 : sur poste de travail large
-     (contexte d'usage Bureau/Admin, cf. PRODUCT.md), 72rem laissait des bandes
-     vides sur tout écran >1152px sans qu'aucune règle de DESIGN.md ne le justifie
-     (audit UX 2026-08-23, docs/AUDIT_ROADMAP_Backoffice_Web_2026-08-23.md §2.2). */
-  --fc-content-width: 100rem;
-
-  /* Variante large (audit UX 2026-08-23, §3.1) : réservée aux écrans
-     tabulaires les plus denses (rapports financiers, journal d'audit,
-     dossiers, comptes) via .fc-page--large — jamais le défaut, un
-     formulaire simple (ex. création de tenant) n'a aucune raison de
-     s'étirer sur 120rem. */
-  --fc-content-width-wide: 120rem;
+  /* Conservé pour compatibilité ; les pages utilisent désormais 100% */
+  --fc-content-width: none;
+  --fc-content-width-wide: none;
 }
 
 @media (max-width: 720px) {
@@ -114,6 +115,12 @@ body {
   overflow-x: hidden;
 }
 
+app-root {
+  display: block;
+  height: 100%;
+  min-height: 100dvh;
+}
+
 h1,
 h2,
 h3 {
@@ -131,9 +138,25 @@ p {
 
 button,
 input,
-select,
+select {
+  font: inherit;
+}
+
+button,
+.fc-btn,
+a.fc-btn,
+.shell-sidebar__link,
+.shell-nav__link {
+  text-decoration: none;
+}
+
 a {
   font: inherit;
+  color: var(--fc-primary);
+}
+
+a:not(.fc-btn):not(.shell-sidebar__link):not(.shell-nav__link):hover {
+  text-decoration: underline;
 }
 
 :focus-visible {
@@ -147,15 +170,14 @@ a {
   flex-direction: column;
   gap: var(--fc-space-5);
   width: 100%;
-  max-width: var(--fc-content-width);
-  margin: 0 auto;
+  flex: 1 1 auto;
+  min-height: 100%;
+  max-width: none;
+  margin: 0;
 }
 
-/* Écrans tabulaires denses uniquement (audit UX 2026-08-23, §3.1) — via
-   PageShellComponent[extraClass]="'fc-page--large'". Double classe pour la
-   spécificité (l'emporte sur .fc-page seul sans !important). */
 .fc-page.fc-page--large {
-  max-width: var(--fc-content-width-wide);
+  max-width: none;
 }
 
 .fc-page__header {
@@ -176,6 +198,21 @@ a {
   font-size: 0.875rem;
   max-width: 42rem;
   line-height: 1.45;
+}
+
+@media (max-width: 859px) {
+  .fc-page__header {
+    align-items: flex-start;
+  }
+
+  .fc-page__header > .fc-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .fc-page__count {
+    align-self: flex-start;
+  }
 }
 
 @media (max-width: 480px) {
@@ -242,6 +279,8 @@ a {
   display: flex;
   flex-direction: column;
   gap: var(--fc-space-4);
+  flex: 1 1 auto;
+  width: 100%;
   min-height: 0;
   padding: var(--fc-space-4);
   border: 1px solid var(--fc-border);
@@ -262,7 +301,7 @@ a {
   min-height: 0;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 859px) {
   .fc-panel {
     padding: var(--fc-space-3);
     gap: var(--fc-space-3);
@@ -421,13 +460,11 @@ a {
   color: var(--fc-text);
 }
 
-@media (max-width: 720px) {
-  .fc-table {
+@media (max-width: 859px) {
+  .fc-table:not(.fc-table--responsive) {
     display: block;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    /* Indice de défilement : un fondu apparaît uniquement s'il reste des
-       colonnes cachées de ce côté (même technique que .shell-nav). */
     background-image:
       linear-gradient(to right, var(--fc-surface) 50%, transparent),
       linear-gradient(to left, var(--fc-surface) 50%, transparent),
@@ -437,6 +474,119 @@ a {
     background-repeat: no-repeat;
     background-size: 24px 100%, 24px 100%, 10px 100%, 10px 100%;
     background-attachment: local, local, scroll, scroll;
+  }
+}
+
+/* Tableaux → cartes empilées sur mobile (data-label injecté par FcResponsiveTableDirective) */
+@media (max-width: 859px) {
+  .fc-table.fc-table--responsive {
+    display: block;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .fc-table.fc-table--responsive caption {
+    padding: 0 0 var(--fc-space-3);
+    border: 0;
+    background: transparent;
+  }
+
+  .fc-table.fc-table--responsive thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .fc-table.fc-table--responsive tbody {
+    display: flex;
+    flex-direction: column;
+    gap: var(--fc-space-3);
+  }
+
+  .fc-table.fc-table--responsive tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--fc-border);
+    border-radius: var(--fc-radius);
+    background: var(--fc-surface);
+    box-shadow: var(--fc-shadow-sm);
+    overflow: hidden;
+  }
+
+  .fc-table.fc-table--responsive tbody tr:hover {
+    background: var(--fc-surface);
+  }
+
+  .fc-table.fc-table--responsive tbody td {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 42%) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--fc-space-2);
+    padding: 0.65rem var(--fc-space-3);
+    border-top: 1px solid var(--fc-border);
+    font-size: 0.875rem;
+  }
+
+  .fc-table.fc-table--responsive tbody tr td:first-child {
+    border-top: 0;
+  }
+
+  .fc-table.fc-table--responsive tbody td::before {
+    content: attr(data-label);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--fc-muted);
+    line-height: 1.3;
+    word-break: break-word;
+  }
+
+  .fc-table.fc-table--responsive tbody td:has(.fc-actions) {
+    grid-template-columns: 1fr;
+    gap: var(--fc-space-2);
+  }
+
+  .fc-table.fc-table--responsive tbody td:has(.fc-actions)::before {
+    margin-bottom: 0.15rem;
+  }
+
+  .fc-table.fc-table--responsive tbody td .fc-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fc-table.fc-table--responsive tbody td .fc-actions .fc-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .fc-table.fc-table--responsive tbody td {
+    min-width: 0;
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 480px) {
+  .fc-table.fc-table--responsive tbody td {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
+
+  .fc-table.fc-table--responsive tbody td::before {
+    margin-bottom: 0.1rem;
   }
 }
 
@@ -562,6 +712,35 @@ textarea.field__input {
   min-height: 2.25rem;
 }
 
+.fc-input,
+.fc-filters__select,
+.fc-filters__input {
+  width: 100%;
+  min-height: var(--fc-touch-min);
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--fc-border-strong);
+  border-radius: var(--fc-radius-sm);
+  background: var(--fc-surface);
+  font: inherit;
+  color: var(--fc-text);
+}
+
+.fc-input:focus,
+.fc-filters__select:focus,
+.fc-filters__input:focus {
+  outline: none;
+  border-color: var(--fc-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc-primary) 18%, transparent);
+}
+
+input[type='search'].fc-filters__input {
+  padding-inline-start: 2.4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='7' cy='7' r='4.5'/%3E%3Cpath d='M10.5 10.5 L14 14'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.75rem 50%;
+  background-size: 1rem;
+}
+
 /* Barre de filtres réutilisable */
 .fc-filters {
   display: flex;
@@ -584,23 +763,40 @@ textarea.field__input {
   color: var(--fc-muted);
 }
 
-.fc-filters__select,
-.fc-filters__input {
-  width: 100%;
-  min-height: var(--fc-touch-min);
-  padding: 0.5rem 0.65rem;
-  border: 1px solid var(--fc-border-strong);
-  border-radius: var(--fc-radius-sm);
-  background: var(--fc-surface);
-  font: inherit;
-  color: var(--fc-text);
-}
+@media (max-width: 859px) {
+  .fc-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-.fc-filters__select:focus,
-.fc-filters__input:focus {
-  outline: none;
-  border-color: var(--fc-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fc-primary) 18%, transparent);
+  .fc-filters__field {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  .fc-filters > label:not(.fc-filters__label) {
+    width: 100%;
+  }
+
+  .fc-filters > select,
+  .fc-filters > input:not([type='checkbox']) {
+    width: 100%;
+  }
+
+  .fc-filters .fc-actions,
+  .fc-filters > .fc-btn {
+    width: 100%;
+  }
+
+  .fc-filters .fc-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fc-filters .fc-actions .fc-btn,
+  .fc-filters > .fc-btn {
+    width: 100%;
+  }
 }
 
 /* Groupe d'actions — empilement mobile */
@@ -608,11 +804,27 @@ textarea.field__input {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: center;
+}
+
+.fc-actions .fc-btn,
+.fc-table .fc-btn,
+a.fc-btn {
+  text-decoration: none;
 }
 
 @media (max-width: 480px) {
   .fc-actions--stack-sm .fc-btn {
     flex: 1 1 100%;
+  }
+
+  .fc-actions:not(.fc-actions--inline-sm) {
+    width: 100%;
+  }
+
+  .fc-panel .fc-actions:not(.fc-actions--inline-sm) .fc-btn {
+    flex: 1 1 calc(50% - 0.25rem);
+    min-width: 0;
   }
 }
 
@@ -622,6 +834,12 @@ textarea.field__input {
   color: var(--fc-muted);
   font-size: 0.875rem;
   line-height: 1.45;
+}
+
+.fc-msg--info {
+  color: var(--fc-text-muted);
+  background: color-mix(in srgb, var(--fc-brand) 6%, white);
+  border: 1px solid color-mix(in srgb, var(--fc-brand) 18%, var(--fc-border));
 }
 
 .fc-msg--error {
@@ -724,5 +942,185 @@ textarea.field__input {
   .fc-skeleton__line {
     animation: none;
     background: var(--fc-bg);
+  }
+}
+
+/* ── Modales centrées (pattern global — CRUD, confirmations, détails) ── */
+.fc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--fc-z-modal);
+  display: grid;
+  place-items: center;
+  padding: var(--fc-space-4);
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--fc-modal-overlay-tint) 55%, var(--fc-modal-overlay)) 0%,
+      var(--fc-modal-overlay) 100%
+    );
+  backdrop-filter: blur(var(--fc-modal-blur)) saturate(108%);
+  -webkit-backdrop-filter: blur(var(--fc-modal-blur)) saturate(108%);
+  animation: fc-modal-backdrop-in var(--fc-duration) var(--fc-ease);
+}
+
+.fc-modal {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(100%, 42rem);
+  max-height: min(92vh, 40rem);
+  border: 1px solid color-mix(in srgb, var(--fc-border) 80%, #ffffff);
+  border-radius: calc(var(--fc-radius) + 2px);
+  background: var(--fc-surface);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #ffffff 40%, transparent),
+    0 24px 48px color-mix(in srgb, #0a0a0a 22%, transparent),
+    0 8px 16px color-mix(in srgb, var(--fc-primary) 12%, transparent);
+  overflow: hidden;
+  animation: fc-modal-panel-in 220ms var(--fc-ease);
+}
+
+.fc-modal--lg {
+  width: min(100%, 56rem);
+  max-height: min(92vh, 48rem);
+}
+
+.fc-modal--sm {
+  width: min(100%, 28rem);
+  max-height: none;
+  grid-template-rows: auto auto auto;
+}
+
+@media (max-width: 859px) {
+  .fc-modal-backdrop {
+    padding: var(--fc-space-2);
+    align-items: center;
+  }
+
+  .fc-modal,
+  .fc-modal--lg,
+  .fc-modal--sm {
+    width: 100%;
+    max-height: min(94dvh, 100%);
+    border-radius: var(--fc-radius);
+  }
+
+  .fc-modal__header,
+  .fc-modal__body,
+  .fc-modal__footer {
+    padding-left: var(--fc-space-3);
+    padding-right: var(--fc-space-3);
+  }
+
+  .fc-modal__footer {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .fc-modal__footer .fc-btn {
+    width: 100%;
+  }
+}
+
+.fc-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--fc-space-3);
+  padding: var(--fc-space-4);
+  border-bottom: 1px solid var(--fc-border);
+}
+
+.fc-modal__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.fc-modal__body {
+  padding: var(--fc-space-4);
+  overflow: auto;
+}
+
+.fc-modal__body--media {
+  padding: 0;
+  background: var(--fc-bg);
+  display: grid;
+  place-items: center;
+  min-height: 16rem;
+}
+
+.fc-modal__footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--fc-space-2);
+  padding: var(--fc-space-3) var(--fc-space-4);
+  border-top: 1px solid var(--fc-border);
+  background: color-mix(in srgb, var(--fc-bg) 40%, var(--fc-surface));
+}
+
+.fc-modal__media {
+  display: block;
+  width: 100%;
+  max-height: calc(92vh - 10rem);
+  object-fit: contain;
+  background: var(--fc-bg);
+}
+
+.fc-modal__media--doc {
+  width: 100%;
+  min-height: 16rem;
+  border: 0;
+}
+
+.fc-modal__loading {
+  padding: var(--fc-space-8);
+  color: var(--fc-muted);
+  text-align: center;
+}
+
+.fc-confirm-message {
+  margin: 0;
+  color: var(--fc-muted);
+  line-height: 1.55;
+}
+
+.fc-confirm-danger {
+  background: var(--fc-danger);
+  border-color: var(--fc-danger);
+  color: #fff;
+}
+
+.fc-confirm-danger:not(:disabled):hover {
+  filter: brightness(0.95);
+}
+
+@keyframes fc-modal-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fc-modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fc-modal-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

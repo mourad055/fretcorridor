@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface SegmentRepartition {
@@ -14,15 +14,6 @@ interface SegmentCalcule {
   pourcentage: number;
 }
 
-/**
- * Premier widget de dataviz du produit (audit UX 2026-08-23,
- * docs/AUDIT_ROADMAP_Backoffice_Web_2026-08-23.md §2.3) : SVG maison plutôt
- * qu'une librairie (ngx-charts envisagé, écarté pour ce premier widget —
- * cohérent avec la sobriété du design system, évite d'alourdir le bundle
- * pour un seul type de graphique). Respecte la « Règle de la Couleur Non
- * Seule » de DESIGN.md : la légende texte (libellé + valeur + %) est
- * toujours affichée à côté du disque, jamais la couleur seule.
- */
 @Component({
   selector: 'app-repartition-donut',
   standalone: true,
@@ -30,27 +21,23 @@ interface SegmentCalcule {
   templateUrl: './repartition-donut.component.html',
   styleUrl: './repartition-donut.component.css',
 })
-export class RepartitionDonutComponent {
+export class RepartitionDonutComponent implements OnChanges {
   @Input({ required: true }) segments: SegmentRepartition[] = [];
 
   readonly rayon = 40;
   readonly circonference = 2 * Math.PI * this.rayon;
+  total = 0;
+  segmentsCalcules: SegmentCalcule[] = [];
+  libelleAccessible = '';
 
-  get total(): number {
-    return this.segments.reduce((somme, s) => somme + s.valeur, 0);
-  }
-
-  libelleAccessible(): string {
-    return 'Répartition : ' + this.segments.map((s) => `${s.label} ${s.valeur}`).join(', ');
-  }
-
-  segmentsCalcules(): SegmentCalcule[] {
-    const total = this.total;
+  ngOnChanges(): void {
+    this.total = this.segments.reduce((somme, s) => somme + s.valeur, 0);
+    this.libelleAccessible = 'Répartition : ' + this.segments.map((s) => `${s.label} ${s.valeur}`).join(', ');
     let cumulatif = 0;
-    return this.segments
+    this.segmentsCalcules = this.segments
       .filter((s) => s.valeur > 0)
       .map((segment) => {
-        const part = total > 0 ? segment.valeur / total : 0;
+        const part = this.total > 0 ? segment.valeur / this.total : 0;
         const longueur = part * this.circonference;
         const dashoffset = -cumulatif;
         cumulatif += longueur;

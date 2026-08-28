@@ -2,18 +2,52 @@
   <header class="fc-page__header">
     <div>
       <h1 class="fc-page__title">Validation KYC</h1>
-      <p class="fc-page__subtitle" *ngIf="!loading()">{{ nombreEnAttente() }} dossier(s) en attente de vérification</p>
+      <p class="fc-page__subtitle" *ngIf="!loading()">
+        {{ nombreEnAttente() }} dossier(s) en attente de vérification
+      </p>
     </div>
+    <a class="fc-btn fc-btn--ghost fc-btn--sm" routerLink="/admin/comptes">Gérer les comptes</a>
   </header>
+
+  <section class="fc-panel">
+    <div class="fc-filters" aria-label="Filtre tenant">
+      <div class="fc-filters__field">
+        <label class="fc-filters__label" for="kyc-tenant">Tenant</label>
+        <select
+          id="kyc-tenant"
+          class="fc-filters__select"
+          [ngModel]="tenantSelectionne()"
+          (ngModelChange)="tenantSelectionne.set($event); changerTenant()"
+        >
+          <option *ngFor="let tenant of tenants" [value]="tenant">{{ tenant }}</option>
+        </select>
+      </div>
+    </div>
+  </section>
 
   <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
 
-  <section class="fc-panel">
+  <section class="fc-panel fc-kpis" aria-label="Indicateurs KYC">
+    <button type="button" class="fc-kpi" [class.fc-kpi--active]="filtre() === 'pending'" (click)="changerFiltre('pending')">
+      <span class="fc-kpi__value">{{ compteurs().pending }}</span>
+      <span class="fc-kpi__label">En attente</span>
+    </button>
+    <button type="button" class="fc-kpi" [class.fc-kpi--active]="filtre() === 'NIVEAU_1'" (click)="changerFiltre('NIVEAU_1')">
+      <span class="fc-kpi__value">{{ compteurs().n1 }}</span>
+      <span class="fc-kpi__label">Profils N1 (mobile)</span>
+    </button>
+    <button type="button" class="fc-kpi" [class.fc-kpi--active]="filtre() === 'NIVEAU_2'" (click)="changerFiltre('NIVEAU_2')">
+      <span class="fc-kpi__value">{{ compteurs().n2 }}</span>
+      <span class="fc-kpi__label">Validés admin (N2)</span>
+    </button>
+  </section>
+
+  <section class="fc-panel kyc-table-panel">
     <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">
       <div class="fc-skeleton__line"></div>
       <div class="fc-skeleton__line"></div>
     </div>
-    <div class="fc-empty" *ngIf="!loading() && dossiers().length === 0">Aucun dossier en attente.</div>
+    <div class="fc-empty" *ngIf="!loading() && dossiers().length === 0">Aucun dossier pour ce filtre.</div>
 
     <table class="fc-table kyc-table" *ngIf="!loading() && dossiers().length > 0">
       <thead>
@@ -21,31 +55,36 @@
           <th>Acteur</th>
           <th>Téléphone</th>
           <th>Type</th>
-          <th>Soumis le</th>
+          <th>Statut</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let dossier of dossiers()">
-          <td>{{ dossier.acteurNom }}</td>
+        <tr *ngFor="let dossier of dossiersAffiches()" [class.fc-row--selected]="detail()?.id === dossier.id">
+          <td class="kyc-table__acteur">{{ dossier.acteurNom }}</td>
           <td>{{ dossier.acteurTelephone }}</td>
           <td>{{ libelleTypeActeur(dossier.typeActeur) | translate }}</td>
-          <td>{{ dossier.soumisLe | date: 'short' }}</td>
+          <td>{{ libelleStatut(dossier) }}</td>
           <td>
-            <div class="fc-actions">
+            <div class="fc-actions kyc-actions">
+              <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="voirDetail(dossier)">
+                Voir détail
+              </button>
               <button
                 type="button"
                 class="fc-btn fc-btn--primary fc-btn--sm"
+                *ngIf="filtre() === 'pending'"
                 [disabled]="dossierEnCours() === dossier.id"
-                (click)="decide(dossier, 'VALIDE')"
+                (click)="demanderDecision(dossier, 'VALIDE')"
               >
                 Valider
               </button>
               <button
                 type="button"
-                class="fc-btn fc-btn--ghost fc-btn--sm"
+                class="fc-btn fc-btn--ghost fc-btn--sm kyc-actions__reject"
+                *ngIf="filtre() === 'pending'"
                 [disabled]="dossierEnCours() === dossier.id"
-                (click)="decide(dossier, 'REJETE')"
+                (click)="demanderDecision(dossier, 'REJETE')"
               >
                 Rejeter
               </button>
@@ -54,5 +93,155 @@
         </tr>
       </tbody>
     </table>
+
+    <app-pagination
+      *ngIf="!loading() && dossiers().length > taillePage"
+      [page]="page()"
+      [total]="dossiers().length"
+      [taillePage]="taillePage"
+      (pageChange)="page.set($event)"
+    />
   </section>
+
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="detailLoading() || detail()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="kyc-detail-title"
+    (click)="fermerDetail()"
+  >
+    <div class="fc-modal" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="kyc-detail-title" class="fc-modal__title">
+          {{ detail() ? nomAfficheDetail(detail()!) : 'Chargement…' }}
+        </h2>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="fermerDetail()">Fermer</button>
+      </header>
+
+      <div class="fc-modal__body">
+        <div class="fc-skeleton" *ngIf="detailLoading()" aria-busy="true">
+          <div class="fc-skeleton__line"></div>
+          <div class="fc-skeleton__line"></div>
+        </div>
+
+        <ng-container *ngIf="detail() as d">
+          <dl class="kyc-detail__meta">
+            <div><dt>Téléphone</dt><dd>{{ d.telephone }}</dd></div>
+            <div><dt>Niveau KYC</dt><dd>{{ d.niveauKyc }}</dd></div>
+            <div><dt>Rôles</dt><dd>{{ d.roles.join(', ') }}</dd></div>
+          </dl>
+
+          <h3 class="kyc-detail__docs-title">Pièces justificatives</h3>
+          <ul class="kyc-detail__docs" *ngIf="d.pieces.length > 0; else aucunDoc">
+            <li class="kyc-piece" *ngFor="let piece of d.pieces">
+              <button type="button" class="kyc-piece__open" (click)="ouvrirPiece(piece)">
+                <span class="kyc-piece__type">{{ piece.typeDocument }}</span>
+                <span class="kyc-piece__meta" *ngIf="piece.dateDepot">{{ piece.dateDepot | date: 'short' }}</span>
+                <span class="kyc-piece__hint">Cliquer pour afficher la pièce</span>
+              </button>
+            </li>
+          </ul>
+          <ng-template #aucunDoc>
+            <p class="fc-empty">Aucune pièce déposée.</p>
+          </ng-template>
+        </ng-container>
+      </div>
+
+      <footer class="fc-modal__footer" *ngIf="detail()">
+        <a class="fc-btn fc-btn--ghost fc-btn--sm" routerLink="/admin/comptes">Gérer le compte</a>
+      </footer>
+    </div>
+  </div>
+
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="pieceChargement() || pieceOuverte()"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="kyc-viewer-title"
+    (click)="fermerPiece()"
+  >
+    <div class="fc-modal fc-modal--lg" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="kyc-viewer-title" class="fc-modal__title">
+          {{ pieceOuverte()?.piece?.typeDocument || 'Document KYC' }}
+        </h2>
+        <button type="button" class="fc-btn fc-btn--ghost fc-btn--sm" (click)="fermerPiece()">Fermer</button>
+      </header>
+
+      <div class="fc-modal__body fc-modal__body--media">
+        <div class="fc-modal__loading" *ngIf="pieceChargement()">Chargement du document…</div>
+
+        <ng-container *ngIf="pieceOuverte() as ouverte">
+          <img
+            *ngIf="pieceEstImage(ouverte.typeMime)"
+            class="fc-modal__media"
+            [src]="ouverte.urlImage"
+            [alt]="'Document ' + ouverte.piece.typeDocument"
+          />
+          <iframe
+            *ngIf="pieceEstPdf(ouverte.typeMime)"
+            class="fc-modal__media fc-modal__media--doc"
+            [src]="ouverte.urlDocument"
+            [title]="'Document ' + ouverte.piece.typeDocument"
+          ></iframe>
+        </ng-container>
+      </div>
+
+      <footer class="fc-modal__footer">
+        <button
+          type="button"
+          class="fc-btn fc-btn--ghost fc-btn--sm"
+          [disabled]="!pieceOuverte()"
+          (click)="telechargerPiece()"
+        >
+          Télécharger
+        </button>
+        <button
+          type="button"
+          class="fc-btn fc-btn--ghost fc-btn--sm"
+          [disabled]="!pieceOuverte()"
+          (click)="ouvrirPieceDansNouvelOnglet()"
+        >
+          Ouvrir dans un nouvel onglet
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <div
+    class="fc-modal-backdrop"
+    *ngIf="confirmation() as c"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="kyc-confirm-title"
+    (click)="annulerDecision()"
+  >
+    <div class="fc-modal fc-modal--sm" (click)="$event.stopPropagation()">
+      <header class="fc-modal__header">
+        <h2 id="kyc-confirm-title" class="fc-modal__title">
+          {{ libelleDecision(c.decision) }} le dossier KYC
+        </h2>
+      </header>
+      <div class="fc-modal__body">
+        <p class="kyc-confirm__body">
+          Confirmer {{ c.decision === 'VALIDE' ? 'la validation admin (passage au niveau N2)' : 'le rejet' }} du dossier de
+          <strong>{{ c.dossier.acteurNom }}</strong> ({{ c.dossier.acteurTelephone }}) ?
+        </p>
+      </div>
+      <footer class="fc-modal__footer">
+        <button type="button" class="fc-btn fc-btn--ghost" (click)="annulerDecision()">Annuler</button>
+        <button
+          type="button"
+          class="fc-btn"
+          [class.fc-btn--primary]="c.decision === 'VALIDE'"
+          [class.kyc-confirm__reject]="c.decision === 'REJETE'"
+          (click)="confirmerDecision()"
+        >
+          {{ libelleDecision(c.decision) }}
+        </button>
+      </footer>
+    </div>
+  </div>
 </app-page-shell>

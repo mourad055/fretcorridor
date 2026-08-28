@@ -1,4 +1,5 @@
 import { Component, Input } from '@angular/core';
+import { FcResponsiveTableDirective } from '../../directives/fc-responsive-table.directive';
 
 /**
  * Racine `.fc-page` centralisée (audit UX 2026-08-23,
@@ -16,7 +17,22 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-page-shell',
   standalone: true,
+  hostDirectives: [FcResponsiveTableDirective],
   template: `<main [class]="'fc-page' + (extraClass ? ' ' + extraClass : '')"><ng-content></ng-content></main>`,
+  styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 100%;
+    }
+    :host > main {
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 100%;
+    }
+  `,
 })
 export class PageShellComponent {
   @Input() extraClass?: string;

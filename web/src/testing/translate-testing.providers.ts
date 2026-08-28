@@ -44,6 +44,12 @@ const TRADUCTIONS_TEST_FR = {
     },
     logout: 'Déconnexion',
     navAriaLabel: 'Navigation principale',
+    tenant: {
+      bgftDouala: 'BGFT Douala',
+      bnftNdjamena: "BNFT N'Djamena",
+      flysoft: 'Flysoft',
+      marketplace: 'Marketplace Cameroun',
+    },
   },
   nav: {
     groupe: {
@@ -83,14 +89,20 @@ const TRADUCTIONS_TEST_FR = {
   enum: {
     dossierStatut: { OUVERT: 'Ouvert', EN_COURS: 'En cours', ESCALADE: 'Escaladé', CLOS: 'Clos' },
     kycStatut: { EN_ATTENTE: 'En attente', VALIDE: 'Validé', REJETE: 'Rejeté' },
-    axeVisibilite: { ACTIVE: 'Visible', INACTIVE: 'Masqué' },
-    axeMatching: { ACTIVE: 'Matching actif', INACTIVE: 'Matching inactif' },
-    axePaiement: { ACTIVE: 'Paiement actif', INACTIVE: 'Paiement inactif' },
+    axeVisibilite: { ACTIVE: 'Visible sur le corridor', INACTIVE: 'Masqué' },
+    axeMatching: { ACTIVE: 'Appariement auto', INACTIVE: 'Appariement arrêté' },
+    axePaiement: { ACTIVE: 'Paiements ouverts', INACTIVE: 'Paiements fermés' },
+    axeLegende: {
+      priorite: 'Couleur dominante sur la carte : paiements > appariement > visible',
+      visibilite: 'Visible sur le corridor',
+      matching: 'Appariement auto',
+      paiement: 'Paiements ouverts',
+    },
     ecritureStatut: { VALIDE: 'Validée', SUSPENDU: 'Suspendue' },
     missionStatut: { CONFIRMEE: 'Confirmée', EN_COURS: 'En cours', CLOTUREE: 'Clôturée' },
     modeCollecte: { PORTE_A_PORTE: 'Porte à porte', POINT_DEPOT: 'Point de dépôt' },
     capaciteEtat: { PUBLIEE: 'Publiée', APPARIEE: 'Appariée', EXPIREE: 'Expirée' },
-    typeActeur: { CHAUFFEUR: 'Chauffeur', TRANSPORTEUR_PERSONNE_MORALE: 'Transporteur (personne morale)' },
+    typeActeur: { CHAUFFEUR: 'Chauffeur', TRANSPORTEUR: 'Transporteur', TRANSPORTEUR_PERSONNE_MORALE: 'Transporteur (personne morale)' },
     typeDossier: { MODERATION: 'Modération', INCIDENT: 'Incident', LITIGE: 'Litige' },
     prioriteDossier: { BASSE: 'Basse', NORMALE: 'Normale', HAUTE: 'Haute' },
     etapeEtat: { A_VENIR: 'À venir', EN_COURS: 'En cours', TERMINEE: 'Terminée' },

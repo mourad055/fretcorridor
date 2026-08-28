@@ -6,6 +6,8 @@ import { axe } from 'jest-axe';
 import { DossiersComponent } from './dossiers.component';
 import { environment } from '../../../../environments/environment';
 import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
+import { provideConfirmationServiceForTests } from '../../../../testing/confirmation-testing.providers';
+import { ConfirmationService } from '../../../shared/services/confirmation.service';
 
 const DOSSIER = {
   id: 'dossier-1',
@@ -27,23 +29,25 @@ const DOSSIER = {
 
 describe('DossiersComponent', () => {
   let httpMock: HttpTestingController;
+  let confirmation: { confirmer: jest.Mock };
 
   beforeEach(async () => {
+    confirmation = { confirmer: jest.fn().mockResolvedValue(true) };
     await TestBed.configureTestingModule({
       imports: [DossiersComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideTranslateServiceForTests()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideTranslateServiceForTests(),
+        { provide: ConfirmationService, useValue: confirmation },
+      ],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
   });
 
-  beforeEach(() => {
-    jest.spyOn(window, 'confirm').mockReturnValue(true);
-  });
-
   afterEach(() => {
     httpMock.verify();
-    jest.restoreAllMocks();
   });
 
   it('affiche la file de travail après consultation', () => {
@@ -60,7 +64,7 @@ describe('DossiersComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('1 dossier(s) en attente, dont 1 en retard');
   });
 
-  it('ouvre le dossier consolidé et permet de trancher', () => {
+  it('ouvre le dossier consolidé et permet de trancher', async () => {
     const fixture = TestBed.createComponent(DossiersComponent);
     fixture.detectChanges();
 
@@ -79,6 +83,7 @@ describe('DossiersComponent', () => {
     fixture.componentInstance.decisionTexte.set('RESOLU');
     fixture.componentInstance.motifTexte.set('Preuve conforme');
     fixture.componentInstance.trancher();
+    await fixture.whenStable();
 
     const req = httpMock.expectOne(`${environment.apiBaseUrl}/admin/dossiers/dossier-1/decision`);
     expect(req.request.body).toEqual({ decision: 'RESOLU', motif: 'Preuve conforme' });
@@ -87,8 +92,8 @@ describe('DossiersComponent', () => {
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
   });
 
-  it('ne tranche rien si la confirmation est annulee', () => {
-    (window.confirm as jest.Mock).mockReturnValue(false);
+  it('ne tranche rien si la confirmation est annulee', async () => {
+    confirmation.confirmer.mockResolvedValue(false);
     const fixture = TestBed.createComponent(DossiersComponent);
     fixture.detectChanges();
 
@@ -101,6 +106,7 @@ describe('DossiersComponent', () => {
     fixture.componentInstance.decisionTexte.set('RESOLU');
     fixture.componentInstance.motifTexte.set('Preuve conforme');
     fixture.componentInstance.trancher();
+    await fixture.whenStable();
 
     httpMock.expectNone(`${environment.apiBaseUrl}/admin/dossiers/dossier-1/decision`);
   });
@@ -124,7 +130,7 @@ describe('DossiersComponent', () => {
     httpMock.expectOne((r) => r.url === `${environment.apiBaseUrl}/admin/dossiers`).flush([]);
   });
 
-  it('désactive le bouton Trancher pendant la décision', () => {
+  it('désactive le bouton Trancher pendant la décision', async () => {
     const fixture = TestBed.createComponent(DossiersComponent);
     fixture.detectChanges();
 
@@ -138,6 +144,7 @@ describe('DossiersComponent', () => {
     fixture.componentInstance.motifTexte.set('Preuve conforme');
     fixture.componentInstance.trancher();
     fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(fixture.componentInstance.trancheEnCours()).toBe(true);
 
@@ -157,7 +164,7 @@ describe('DossiersComponent', () => {
       .flush({ dossier: DOSSIER, mission: null, ecritures: [] });
     fixture.detectChanges();
 
-    const trancherBtn = fixture.debugElement.query(By.css('.field__fieldset .fc-btn--primary'));
+    const trancherBtn = fixture.debugElement.query(By.css('.fc-modal__footer .fc-btn--primary'));
     expect(trancherBtn.nativeElement.disabled).toBe(true);
 
     fixture.componentInstance.decisionTexte.set('   ');

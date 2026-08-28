@@ -6,3 +6,7 @@ spring:
   client:
     service-flt:
       base-url: http://service-flt:8083
+    service-geo:
+      base-url: http://service-geo:8084
+    service-not:
+      base-url: http://service-not:8094

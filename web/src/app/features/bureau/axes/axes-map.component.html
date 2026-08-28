@@ -29,14 +29,14 @@
           <th>Origine</th>
           <th>Destination</th>
           <th>Distance</th>
-          <th>Visibilité</th>
-          <th>Matching</th>
-          <th>Paiement</th>
+          <th>{{ 'enum.axeLegende.visibilite' | translate }}</th>
+          <th>{{ 'enum.axeLegende.matching' | translate }}</th>
+          <th>{{ 'enum.axeLegende.paiement' | translate }}</th>
         </tr>
       </thead>
       <tbody>
         <tr
-          *ngFor="let axe of axes()"
+          *ngFor="let axe of axesAffiches()"
           class="axes-table__row"
           [class.axes-table__row--selected]="axeSelectionneId() === axe.id"
           [attr.aria-selected]="axeSelectionneId() === axe.id"
@@ -53,5 +53,6 @@
         </tr>
       </tbody>
     </table>
+    <app-pagination [page]="page()" [total]="axes().length" [taillePage]="taillePage" (pageChange)="page.set($event)" />
   </section>
 </app-page-shell>

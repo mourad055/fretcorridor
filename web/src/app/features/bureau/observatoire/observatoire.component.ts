@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PageShellComponent } from '../../../shared/components/page-shell/page-shell.component';
@@ -6,10 +6,14 @@ import { AxeService } from '../axes/axe.service';
 import { Axe } from '../axes/axe.models';
 import { ObservatoireService } from './observatoire.service';
 import { AlerteSeuil, Comparateur, EtatAlerte, Indicateur, ObservatoireAxe } from './observatoire.models';
+import { PaginationComponent } from '../../../shared/components/pagination/pagination.component';
+import { paginer } from '../../../shared/utils/pagination';
 import {
   libelleComparateur,
   libelleIndicateurObservatoire,
 } from '../../../shared/components/status-badge/status-badge.component';
+
+const TAILLE_PAGE = 20;
 
 const INDICATEURS: Indicateur[] = ['NOMBRE_MISSIONS', 'PRIX_MEDIANE', 'TAUX_DESEQUILIBRE_DIRECTIONNEL'];
 const COMPARATEURS: Comparateur[] = ['SUPERIEUR', 'INFERIEUR'];
@@ -25,8 +29,9 @@ const COMPARATEURS: Comparateur[] = ['SUPERIEUR', 'INFERIEUR'];
 @Component({
   selector: 'app-observatoire',
   standalone: true,
-  imports: [CommonModule, FormsModule, PageShellComponent],
+  imports: [CommonModule, FormsModule, PageShellComponent, PaginationComponent],
   templateUrl: './observatoire.component.html',
+  styleUrl: './observatoire.component.css',
 })
 export class ObservatoireComponent implements OnInit {
   readonly axes = signal<Axe[]>([]);
@@ -35,7 +40,9 @@ export class ObservatoireComponent implements OnInit {
   readonly alertes = signal<EtatAlerte[]>([]);
   readonly loadingObservatoire = signal(false);
   readonly loadingAlertes = signal(true);
-  readonly errorMessage = signal<string | null>(null);
+  readonly observatoireError = signal<string | null>(null);
+  readonly alertesError = signal<string | null>(null);
+  private chargementObservatoireSeq = 0;
 
   readonly indicateurs = INDICATEURS;
   readonly comparateurs = COMPARATEURS;
@@ -49,6 +56,14 @@ export class ObservatoireComponent implements OnInit {
   readonly nouvelleAlerteIndicateur = signal<Indicateur>('NOMBRE_MISSIONS');
   readonly nouvelleAlerteComparateur = signal<Comparateur>('SUPERIEUR');
   readonly nouvelleAlerteSeuil = signal<number | null>(null);
+
+  readonly estimationOuverte = signal(false);
+  readonly nouvelleAlerteOuverte = signal(false);
+  readonly alerteASupprimer = signal<AlerteSeuil | null>(null);
+
+  readonly pageAlertes = signal(1);
+  readonly taillePage = TAILLE_PAGE;
+  readonly alertesAffichees = computed(() => paginer(this.alertes(), this.pageAlertes(), this.taillePage));
 
   constructor(
     private readonly axeService: AxeService,
@@ -66,7 +81,7 @@ export class ObservatoireComponent implements OnInit {
           this.chargerObservatoire(premierAxe);
         }
       },
-      error: () => this.errorMessage.set('Impossible de charger la liste des axes.'),
+      error: () => this.observatoireError.set('Impossible de charger la liste des axes.'),
     });
     this.chargerAlertes();
   }
@@ -77,14 +92,24 @@ export class ObservatoireComponent implements OnInit {
   }
 
   private chargerObservatoire(axeId: string): void {
+    const seq = ++this.chargementObservatoireSeq;
     this.loadingObservatoire.set(true);
+    this.observatoireError.set(null);
+    this.observatoire.set(null);
     this.observatoireService.observatoirePourAxe(axeId).subscribe({
       next: (vue) => {
+        if (seq !== this.chargementObservatoireSeq) {
+          return;
+        }
         this.observatoire.set(vue);
         this.loadingObservatoire.set(false);
       },
       error: () => {
-        this.errorMessage.set("Impossible de charger l'observatoire de cet axe.");
+        if (seq !== this.chargementObservatoireSeq) {
+          return;
+        }
+        this.observatoireError.set("Impossible de charger l'observatoire de cet axe.");
+        this.observatoire.set(null);
         this.loadingObservatoire.set(false);
       },
     });
@@ -92,13 +117,14 @@ export class ObservatoireComponent implements OnInit {
 
   private chargerAlertes(): void {
     this.loadingAlertes.set(true);
+    this.pageAlertes.set(1);
     this.observatoireService.etatAlertes().subscribe({
       next: (etats) => {
         this.alertes.set(etats);
         this.loadingAlertes.set(false);
       },
       error: () => {
-        this.errorMessage.set('Impossible de charger les alertes de seuil.');
+        this.alertesError.set('Impossible de charger les alertes de seuil.');
         this.loadingAlertes.set(false);
       },
     });
@@ -115,10 +141,19 @@ export class ObservatoireComponent implements OnInit {
       next: () => {
         this.sourceEstimation.set('');
         this.volumeMensuelEstime.set(null);
+        this.estimationOuverte.set(false);
         this.chargerObservatoire(axeId);
       },
-      error: () => this.errorMessage.set("Impossible d'enregistrer l'estimation de marché."),
+      error: () => this.observatoireError.set("Impossible d'enregistrer l'estimation de marché."),
     });
+  }
+
+  ouvrirEstimation(): void {
+    this.estimationOuverte.set(true);
+  }
+
+  fermerEstimation(): void {
+    this.estimationOuverte.set(false);
   }
 
   configurerAlerte(): void {
@@ -132,16 +167,38 @@ export class ObservatoireComponent implements OnInit {
       .subscribe({
         next: () => {
           this.nouvelleAlerteSeuil.set(null);
+          this.nouvelleAlerteOuverte.set(false);
           this.chargerAlertes();
         },
-        error: () => this.errorMessage.set("Impossible de configurer l'alerte."),
+        error: () => this.alertesError.set("Impossible de configurer l'alerte."),
       });
   }
 
-  supprimerAlerte(alerte: AlerteSeuil): void {
+  ouvrirNouvelleAlerte(): void {
+    this.nouvelleAlerteOuverte.set(true);
+  }
+
+  fermerNouvelleAlerte(): void {
+    this.nouvelleAlerteOuverte.set(false);
+  }
+
+  demanderSuppressionAlerte(alerte: AlerteSeuil): void {
+    this.alerteASupprimer.set(alerte);
+  }
+
+  annulerSuppressionAlerte(): void {
+    this.alerteASupprimer.set(null);
+  }
+
+  confirmerSuppressionAlerte(): void {
+    const alerte = this.alerteASupprimer();
+    if (!alerte) {
+      return;
+    }
+    this.alerteASupprimer.set(null);
     this.observatoireService.supprimerAlerte(alerte.id).subscribe({
       next: () => this.chargerAlertes(),
-      error: () => this.errorMessage.set("Impossible de supprimer l'alerte."),
+      error: () => this.alertesError.set("Impossible de supprimer l'alerte."),
     });
   }
 
