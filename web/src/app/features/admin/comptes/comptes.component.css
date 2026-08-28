@@ -52,8 +52,24 @@
 }
 
 .comptes-actions {
+  display: inline-flex;
   flex-wrap: nowrap;
-  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (min-width: 860px) {
+  .comptes-table th:last-child,
+  .comptes-table td:last-child {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+    vertical-align: middle;
+  }
+
+  .comptes-actions {
+    justify-content: flex-end;
+  }
 }
 
 .comptes-actions .fc-btn {
