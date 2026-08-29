@@ -7,7 +7,9 @@ import com.fretcorridor.gateway.infrastructure.rest.flt.dto.VehiculeResponse;
 import com.fretcorridor.gateway.infrastructure.security.AuthenticatedActor;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -38,5 +40,35 @@ public class VehiculeController {
     @GetMapping("/mes")
     public Flux<VehiculeResponse> mesVehicules(@AuthenticationPrincipal AuthenticatedActor actor) {
         return vehiculePort.mesVehicules(actor.delegationToken()).map(VehiculeResponse::from);
+    }
+
+    // CRUD véhicule (retour utilisatrice 21/08).
+    @PutMapping("/{id}")
+    public Mono<ResponseEntity<VehiculeResponse>> modifier(@PathVariable String id,
+                                                              @Valid @RequestBody DeclarerVehiculeRequest request,
+                                                              @AuthenticationPrincipal AuthenticatedActor actor) {
+        var declaration = new DeclarationVehicule(request.typeVehicule(), request.immatriculation(),
+                request.profilHauteurMetres(), request.profilLargeurMetres(), request.profilLongueurMetres(),
+                request.profilPoidsMaxTonnes(), request.profilChargeMaxParEssieuTonnes(), request.profilNombreEssieux(),
+                request.profilMatieresDangereuses());
+        return vehiculePort.modifier(actor.delegationToken(), id, declaration)
+                .map(v -> ResponseEntity.ok(VehiculeResponse.from(v)));
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<Void>> supprimer(@PathVariable String id, @AuthenticationPrincipal AuthenticatedActor actor) {
+        return vehiculePort.supprimer(actor.delegationToken(), id)
+                .thenReturn(ResponseEntity.noContent().<Void>build());
+    }
+
+    // Photos de carte grise recto/verso (retour utilisatrice 24/08).
+    @PostMapping(value = "/{id}/photos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<VehiculeResponse>> deposerPhotos(
+            @PathVariable String id,
+            @RequestPart(value = "recto", required = false) FilePart recto,
+            @RequestPart(value = "verso", required = false) FilePart verso,
+            @AuthenticationPrincipal AuthenticatedActor actor) {
+        return vehiculePort.deposerPhotos(actor.delegationToken(), id, recto, verso)
+                .map(v -> ResponseEntity.ok(VehiculeResponse.from(v)));
     }
 }

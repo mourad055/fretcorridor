@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 class VehiculeServiceTest {
 
     @Mock private VehiculeRepository vehiculeRepository;
+    @Mock private VehiculePhotoStorageService vehiculePhotoStorageService;
     private VehiculeService service;
     private UUID proprietaireId;
     private static final String TENANT = "tenant-bgft-douala";
@@ -29,7 +30,7 @@ class VehiculeServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new VehiculeService(vehiculeRepository);
+        service = new VehiculeService(vehiculeRepository, vehiculePhotoStorageService);
         proprietaireId = UUID.randomUUID();
         when(vehiculeRepository.save(any(Vehicule.class))).thenAnswer(inv -> {
             Vehicule v = inv.getArgument(0);
