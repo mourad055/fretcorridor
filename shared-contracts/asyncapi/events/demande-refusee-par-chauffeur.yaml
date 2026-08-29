@@ -1,0 +1,64 @@
+asyncapi: 3.0.0
+info:
+  title: DemandeRefuseeParChauffeur
+  version: 1.0.0
+  description: |
+    Événement publié par service-mkt (Mobile, Personne 1) côté application
+    chauffeur lorsqu'un chauffeur refuse explicitement une proposition diffusée
+    par service-opt (modèle diffusion-course). Distinct de l'expiration
+    automatique (une autre demande confirmée ailleurs).
+    Consommé par service-opt (Moteur) : expire l'Affectation refusée, ajoute le
+    transporteur à la liste d'exclusion de la demande, et remet la demande en
+    file pour qu'un prochain cycle la diffuse à un AUTRE chauffeur compatible.
+
+channels:
+  demande-refusee-par-chauffeur:
+    address: demande-refusee-par-chauffeur
+    messages:
+      DemandeRefuseeParChauffeur:
+        $ref: '#/components/messages/DemandeRefuseeParChauffeur'
+
+operations:
+  onRefus:
+    action: receive
+    channel:
+      $ref: '#/channels/demande-refusee-par-chauffeur'
+    messages:
+      - $ref: '#/components/messages/DemandeRefuseeParChauffeur'
+
+components:
+  messages:
+    DemandeRefuseeParChauffeur:
+      summary: Un chauffeur refuse une proposition diffusee (exclusion + remise en file).
+      payload:
+        type: object
+        required:
+          - eventId
+          - affectationId
+          - demandeId
+          - capaciteId
+          - transporteurId
+        properties:
+          eventId:
+            type: string
+            format: uuid
+            description: Identifiant unique de l'événement (idempotence).
+          affectationId:
+            type: string
+            format: uuid
+            description: L'Affectation PROPOSEE refusée par le chauffeur (expirée).
+          demandeId:
+            type: string
+            format: uuid
+            description: Demande concernée (remise en file pour re-matching).
+          capaciteId:
+            type: string
+            format: uuid
+            description: Capacité du chauffeur refusant.
+          transporteurId:
+            type: string
+            format: uuid
+            description: >
+              Transporteur refusant (OBLIGATOIRE) : ajouté à la liste
+              d'exclusion de la demande (DemandeEnAttente.transporteursExclus)
+              pour ne jamais re-diffuser cette demande à ce chauffeur.

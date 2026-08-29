@@ -28,6 +28,11 @@ spring:
       base-url: http://localhost:8096
       connect-timeout-ms: 200
       read-timeout-ms: 300
+    service-trk:
+      base-url: http://localhost:8087
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
+      position-max-age-secondes: 300
     valhalla:
       base-url: http://localhost:8002
       connect-timeout-ms: 500
@@ -77,6 +82,22 @@ fretcorridor:
       # le score a 1.0 (hypotheses d'equipe, calibrables en exploitation).
       valeur-retour-rayon-km: 50
       valeur-retour-saturation: 5
+    # Point 5 (matrice compatibilite marchandises) : REGLE DE FILTRAGE DURE
+    # PRE-L1 (avant le calcul de cout MAT). Config jamais codee en dur -
+    # coherent avec l'anti-patron evite partout (rayonAppariementKm,
+    # detourMaxDistanceKm, pondCout*...).
+    #   anti-groupage-matieres-dangereuses: extension du pattern EF-MKT-10
+    #     existant - deux demandes portant chacune au moins un lot avec
+    #     classeDanger != null ne partagent jamais la meme capacite.
+    #   paires-incompatibles: matrice par typeCatalogue (chaine libre, casse-
+    #     insensible, symetrique). Format "typeA,typeB", une entree par paire.
+    #     Exemple deja pret (miroirs vs graviers/bois, cite dans le plan de
+    #     reorientation) - desactivable en retirant les lignes.
+    compatibilite-marchandises:
+      anti-groupage-matieres-dangereuses: true
+      paires-incompatibles:
+        - "miroirs,graviers"
+        - "miroirs,bois"
 
 logging:
   level:

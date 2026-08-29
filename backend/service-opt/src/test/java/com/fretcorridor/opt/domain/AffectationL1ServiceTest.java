@@ -43,6 +43,7 @@ class AffectationL1ServiceTest {
     @Mock private OptEventPublisher eventPublisher;
     @Mock private ServiceGeoClient serviceGeoClient;
     @Mock private ServiceCapClient serviceCapClient;
+    @Mock private CompatibiliteMarchandisesService compatibiliteMarchandisesService;
 
     private AffectationL1Service service;
 
@@ -50,11 +51,16 @@ class AffectationL1ServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         service = new AffectationL1Service(serviceMatClient, valhallaClient, tarificationL4Service,
-                affectationRepository, eventPublisher, serviceGeoClient, serviceCapClient);
+                affectationRepository, eventPublisher, compatibiliteMarchandisesService);
+        // Le filtrage marchandises n'est pas l'objet de ce test : jamais
+        // d'exclusion ici (retourne true par defaut en production en
+        // l'absence de config + de donnees lot, cf CompatibiliteMarchandisesService).
+        when(compatibiliteMarchandisesService.compatibleAvecDemandesDeLaCapacite(any(), any()))
+                .thenReturn(true);
     }
 
     @Test
-    void up_to_three_ranked_propositions_are_published_for_a_single_request() {
+    void la_demande_est_diffusee_a_tous_les_chauffeurs_compatibles() {
         UUID demandeId = UUID.randomUUID();
         UUID axeId = UUID.randomUUID();
         UUID capaciteMoinsChere = UUID.randomUUID();
@@ -96,26 +102,27 @@ class AffectationL1ServiceTest {
         List<PropositionEmiseEvent> propositions = captor.getAllValues();
         assertThat(propositions).hasSize(3);
 
-        PropositionEmiseEvent rang1 = propositions.stream().filter(p -> p.rang() == 1).findFirst().orElseThrow();
-        assertThat(rang1.capaciteId()).isEqualTo(capaciteMoinsChere);
-        assertThat(rang1.missionId()).isNotNull();
-        assertThat(rang1.motifClassement()).isEqualTo("Affectation optimale L1 (Kuhn-Munkres)");
+        // Diffusion-course (plan de reorientation) : la demande est diffusee
+        // a TOUS les chauffeurs compatibles (premier arrive gagne), plus de
+        // classement Kuhn-Munkres des 3 meilleures. Chaque proposition porte
+        // donc un missionId (une Affectation est creee par candidat) et le
+        // meme motif explicite.
+        for (PropositionEmiseEvent proposition : propositions) {
+            assertThat(proposition.missionId()).isNotNull();
+            assertThat(proposition.motifClassement())
+                    .isEqualTo("Diffuse a tout chauffeur compatible - premier arrive gagne");
+        }
 
-        // Le classement 2e/3e reste base sur le cout composite (matrice
-        // service-mat, ligne 74-78 ci-dessus : intermediaire=20000 <
-        // plusChere=30000), mais le PRIX affiche vient desormais d'un vrai
-        // calcul tarifaire (meme axe/type de vehicule/poids pour les 3
-        // candidats de ce test -> meme prix tarife pour les 2 alternatives,
-        // contrairement a l'ancien score de cout qui, lui, differait).
-        PropositionEmiseEvent rang2 = propositions.stream().filter(p -> p.rang() == 2).findFirst().orElseThrow();
-        assertThat(rang2.capaciteId()).isEqualTo(capaciteIntermediaire);
-        assertThat(rang2.missionId()).isNull();
-        assertThat(rang2.prixTransport()).isEqualByComparingTo("10000");
+        // Les 3 capacites candidates sont bien couvertes (une proposition
+        // chacune), quelle que soit leur position d'entree.
+        assertThat(propositions).extracting(PropositionEmiseEvent::capaciteId)
+                .containsExactlyInAnyOrder(capaciteMoinsChere, capaciteIntermediaire, capacitePlusChere);
 
-        PropositionEmiseEvent rang3 = propositions.stream().filter(p -> p.rang() == 3).findFirst().orElseThrow();
-        assertThat(rang3.capaciteId()).isEqualTo(capacitePlusChere);
-        assertThat(rang3.missionId()).isNull();
-        assertThat(rang3.prixTransport()).isEqualByComparingTo("10000");
+        // Le montant diffuse est le vrai prix tarife (meme axe/type/poids pour
+        // les 3 candidats de ce test -> meme prix).
+        for (PropositionEmiseEvent proposition : propositions) {
+            assertThat(proposition.prixTransport()).isEqualByComparingTo("10000");
+        }
     }
 
     @Test

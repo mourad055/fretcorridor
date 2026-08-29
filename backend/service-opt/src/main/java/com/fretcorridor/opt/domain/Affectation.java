@@ -7,6 +7,18 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
+ * Diffusion-course (plan de reorientation post-demo, remplace le modele CDC
+ * "3 propositions classees") : une Affectation vit PROPOSEE tant qu'aucun
+ * chauffeur n'a accepte, puis transite une seule fois vers CONFIRMEE (le
+ * premier arrive) ou EXPIREE (perdant de la course sur la meme demande, ou
+ * refus explicite). Jamais de retour arriere entre ces etats - une
+ * Affectation CONFIRMEE ou EXPIREE est terminale.
+ */
+enum StatutAffectation {
+    PROPOSEE, CONFIRMEE, EXPIREE
+}
+
+/**
  * Affectation persistee apres L1 (EF-MAT-01/02/03) - source de verite interne
  * au perimetre Moteur pour origine/destination/itineraire/tarification d'une
  * mission. Son id devient le "mission_id" : c'est ce que TRK consommera en
@@ -129,6 +141,42 @@ public class Affectation {
     @Column(name = "livraison_executee_le")
     private Instant livraisonExecuteeLe;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statut", nullable = false, length = 20)
+    private StatutAffectation statut;
+
+    // Diffusion-course + audit de suivi Mobile : connus au moment L1 (candidat
+    // retenu / demande d'origine), persistes ici pour rester disponibles au
+    // moment de la confirmation differee (AffectationConfirmationService),
+    // qui n'a pas acces au contexte L1 d'origine. Tous nullables : une
+    // Affectation creee avant ce correctif n'a pas ces donnees retroactivement.
+    @Column(name = "vehicule_id")
+    private UUID vehiculeId;
+
+    @Column(name = "type_emballage_nom", length = 150)
+    private String typeEmballageNom;
+
+    @Column(name = "quantite")
+    private Integer quantite;
+
+    @Column(name = "destinataire_nom", length = 150)
+    private String destinataireNom;
+
+    @Column(name = "destinataire_telephone", length = 30)
+    private String destinataireTelephone;
+
+    @Column(name = "mode_collecte", length = 30)
+    private String modeCollecte;
+
+    @Column(name = "type_disponibilite", length = 30)
+    private String typeDisponibilite;
+
+    @Column(name = "poids_total_kg")
+    private Double poidsTotalKg;
+
+    @Column(name = "grande_valeur")
+    private Boolean grandeValeur;
+
     protected Affectation() {
         // Requis par JPA.
     }
@@ -148,7 +196,11 @@ public class Affectation {
                         BigDecimal coutServices, BigDecimal facteurTensionApplique,
                         BigDecimal prixTransportAvantPlancher, Boolean plancherApplique,
                         BigDecimal prixTransport, BigDecimal commissionPlateforme,
-                        BigDecimal montantVerseTransporteur, boolean tarificationModeDegrade) {
+                        BigDecimal montantVerseTransporteur, boolean tarificationModeDegrade,
+                        UUID vehiculeId, String typeEmballageNom, Integer quantite,
+                        String destinataireNom, String destinataireTelephone,
+                        String modeCollecte, String typeDisponibilite,
+                        Double poidsTotalKg, Boolean grandeValeur) {
         this.demandeId = demandeId;
         this.capaciteId = capaciteId;
         this.cycleMatchingId = cycleMatchingId;
@@ -176,6 +228,20 @@ public class Affectation {
         this.commissionPlateforme = commissionPlateforme;
         this.montantVerseTransporteur = montantVerseTransporteur;
         this.tarificationModeDegrade = tarificationModeDegrade;
+        this.vehiculeId = vehiculeId;
+        this.typeEmballageNom = typeEmballageNom;
+        this.quantite = quantite;
+        this.destinataireNom = destinataireNom;
+        this.destinataireTelephone = destinataireTelephone;
+        this.modeCollecte = modeCollecte;
+        this.typeDisponibilite = typeDisponibilite;
+        this.poidsTotalKg = poidsTotalKg;
+        this.grandeValeur = grandeValeur;
+        // Diffusion-course : toute Affectation nait PROPOSEE, jamais
+        // directement CONFIRMEE - meme la "meilleure" selon Kuhn-Munkres
+        // n'est qu'une candidate diffusee parmi d'autres tant qu'aucun
+        // chauffeur n'a explicitement accepte (DemandeAccepteeEvent).
+        this.statut = StatutAffectation.PROPOSEE;
     }
 
     @PrePersist
@@ -231,5 +297,31 @@ public class Affectation {
         }
         this.livraisonExecuteeLe = Instant.now();
         return true;
+    }
+
+    public StatutAffectation getStatut() { return statut; }
+
+    public UUID getVehiculeId() { return vehiculeId; }
+    public String getTypeEmballageNom() { return typeEmballageNom; }
+    public Integer getQuantite() { return quantite; }
+    public String getDestinataireNom() { return destinataireNom; }
+    public String getDestinataireTelephone() { return destinataireTelephone; }
+    public String getModeCollecte() { return modeCollecte; }
+    public String getTypeDisponibilite() { return typeDisponibilite; }
+    public Double getPoidsTotalKg() { return poidsTotalKg; }
+    public Boolean getGrandeValeur() { return grandeValeur; }
+
+    /**
+     * Transition terminale : ne fait rien si deja CONFIRMEE ou EXPIREE (evite
+     * qu'un evenement redelivre - ENF-SEC-03 - ne repasse une Affectation
+     * terminale a un etat different). L'atomicite reelle face a la
+     * concurrence (deux chauffeurs qui acceptent au meme instant) vient de
+     * AffectationRepository.confirmerSiProposee - cette methode ne fait que
+     * refleter en memoire un etat deja garanti coherent par la base.
+     */
+    void marquerExpireeSiProposee() {
+        if (statut == StatutAffectation.PROPOSEE) {
+            this.statut = StatutAffectation.EXPIREE;
+        }
     }
 }

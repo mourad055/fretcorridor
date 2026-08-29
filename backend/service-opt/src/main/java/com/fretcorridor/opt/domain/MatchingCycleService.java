@@ -3,7 +3,10 @@ package com.fretcorridor.opt.domain;
 import com.fretcorridor.dto.PointGeoDto;
 import com.fretcorridor.opt.client.AxeActifDto;
 import com.fretcorridor.opt.client.CandidatCoutDto;
+import com.fretcorridor.opt.client.PositionActuelleDto;
 import com.fretcorridor.opt.client.ServiceGeoClient;
+import com.fretcorridor.opt.client.ServiceTrkClient;
+import com.fretcorridor.opt.config.ServiceTrkClientProperties;
 import com.fretcorridor.util.HaversineUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,11 +40,19 @@ public class MatchingCycleService {
     private static final Logger log = LoggerFactory.getLogger(MatchingCycleService.class);
 
     private final ServiceGeoClient serviceGeoClient;
+    private final ServiceTrkClient serviceTrkClient;
     private final CapaciteEnAttenteRepository capaciteEnAttenteRepository;
     private final DemandeEnAttenteRepository demandeEnAttenteRepository;
     private final AffectationL1Service affectationL1Service;
     private final CalculateurCoutSeptTermes calculateurCoutSeptTermes;
     private final InstrumentationPerfService instrumentationPerfService;
+
+    // Plan de reorientation post-demo, partie Chauffeur point 1 : "prendre en
+    // compte la position gps du chauffeur" (temps reel, pas seulement la
+    // position declaree a CapaciteDeclareeEvent). Seuil de fraicheur -
+    // HYPOTHESE D'EQUIPE (cf ServiceTrkClientProperties javadoc), pas une
+    // valeur imposee par le plan lui-meme.
+    private final long positionMaxAgeSecondes;
 
     // RG-105 (fenetre adaptative) : fenetre courante par axe, ajustee apres
     // chaque cycle traite selon le volume observe (taille du lot). Cle absente
@@ -69,6 +80,8 @@ public class MatchingCycleService {
     private final int l0KRing;
 
     public MatchingCycleService(ServiceGeoClient serviceGeoClient,
+                                 ServiceTrkClient serviceTrkClient,
+                                 ServiceTrkClientProperties serviceTrkClientProperties,
                                  CapaciteEnAttenteRepository capaciteEnAttenteRepository,
                                  DemandeEnAttenteRepository demandeEnAttenteRepository,
                                  AffectationL1Service affectationL1Service,
@@ -85,6 +98,8 @@ public class MatchingCycleService {
                                  @org.springframework.beans.factory.annotation.Value(
                                          "${fretcorridor.opt.matching.l0-k-ring:1}") int l0KRing) {
         this.serviceGeoClient = serviceGeoClient;
+        this.serviceTrkClient = serviceTrkClient;
+        this.positionMaxAgeSecondes = serviceTrkClientProperties.getPositionMaxAgeSecondes();
         this.capaciteEnAttenteRepository = capaciteEnAttenteRepository;
         this.demandeEnAttenteRepository = demandeEnAttenteRepository;
         this.affectationL1Service = affectationL1Service;
@@ -179,14 +194,39 @@ public class MatchingCycleService {
         // plus haut par le filtrage RG-105, donc pas "effectively final".
         List<CapaciteEnAttente> capacitesDuCycle = capacites;
 
+        // Plan de reorientation post-demo, partie Chauffeur point 1 : position
+        // GPS temps reel du chauffeur dans le matching. Resolue UNE FOIS par
+        // cycle (pas par paire demande/candidat) pour rester dans le budget
+        // de latence - un vehicule interroge plusieurs fois recevrait sinon
+        // N appels HTTP identiques a service-trk. Cle absente ou position
+        // trop vieille (positionMaxAgeSecondes) = repli sur la position
+        // declaree, jamais un candidat exclu pour une position temps reel
+        // manquante ou perimee (ENF-DIS-04).
+        Map<java.util.UUID, PointGeoDto> positionsTempsReelParVehicule =
+                resoudrePositionsTempsReel(capacitesDuCycle);
+
         List<DemandeAvecCandidats> lot = demandes.stream()
                 .map(d -> {
                     List<CapaciteEnAttente> capacitesFiltrees =
-                            filtrerCandidatsL0(d, capacitesDuCycle, rayonMatchingKm, cacheCellulesH3, l0H3Utilise);
+                            filtrerCandidatsL0(d, capacitesDuCycle, rayonMatchingKm, cacheCellulesH3, l0H3Utilise,
+                                    positionsTempsReelParVehicule);
+                    // Diffusion-course (partie Chauffeur point 2) : exclusion
+                    // des chauffeurs ayant refuse CETTE demande. On ecarte ici
+                    // les capacites dont le transporteur est dans la liste
+                    // d'exclusion (DemandeEnAttente.transporteursExclus,
+                    // alimentee par DemandeRefuseeParChauffeurListener) - on ne
+                    // re-diffuse jamais sur la meme demande a un chauffeur qui
+                    // vient de refuser.
+                    Set<java.util.UUID> exclus = d.getTransporteursExclus();
+                    if (exclus != null && !exclus.isEmpty()) {
+                        capacitesFiltrees = capacitesFiltrees.stream()
+                                .filter(c -> !exclus.contains(c.getTransporteurId()))
+                                .toList();
+                    }
                     long fretAuRetour = fretAuRetourParDemande.getOrDefault(d.getDemandeId(), 0L);
                     List<CandidatCoutDto> candidatsAvecCriteres = capacitesFiltrees.stream()
                             .map(c -> construireCandidatAvecCriteresCDC(
-                                    d, c, instantCalcul, fretAuRetour, risqueAxeScore))
+                                    d, c, instantCalcul, fretAuRetour, risqueAxeScore, positionsTempsReelParVehicule))
                             .toList();
                     // Infos destinataire (audit de suivi Mobile, fusion dev/backend-stevetelecom) :
                     // propagees comme les autres champs marchandise, aucun impact sur le pipeline
@@ -259,13 +299,22 @@ public class MatchingCycleService {
         // disparaissaient silencieusement du systeme, en violation de
         // EF-MAT-01 (traitement par cycles a fenetre, jamais de perte) et
         // EF-MAT-11/12 (traçabilite/reconstitution de chaque decision).
+        // Diffusion-course (plan de reorientation) : une demande est "traitee"
+        // des que la diffusion a eu lieu (des PropositionEmise sont parties),
+        // meme si aucun chauffeur n'a encore accepte - sinon elle reviendrait
+        // dans CE cycle a chaque tour tant que personne n'a accepte.
+        //
+        // Une capacite, en revanche, N'EST JAMAIS marquee traitee ici : elle
+        // doit rester visible/proposable a d'autres demandes du meme cycle ou
+        // des cycles suivants tant qu'aucune Affectation la concernant n'est
+        // reellement CONFIRMEE (AffectationConfirmationService, sur
+        // acceptation reelle d'un chauffeur) - marquer la capacite ici la
+        // rendrait invisible aux autres demandes pendant qu'elle n'a encore
+        // rien accepte, contraire a l'esprit "diffusion a tous les chauffeurs
+        // compatibles" du plan de reorientation.
         Set<java.util.UUID> demandesAffectees = resultat.affectations().stream()
                 .filter(a -> a.capaciteId() != null)
                 .map(AffectationResultat::demandeId)
-                .collect(Collectors.toSet());
-        Set<java.util.UUID> capacitesAffectees = resultat.affectations().stream()
-                .filter(a -> a.capaciteId() != null)
-                .map(AffectationResultat::capaciteId)
                 .collect(Collectors.toSet());
 
         List<DemandeEnAttente> demandesTraitees = demandes.stream()
@@ -273,12 +322,6 @@ public class MatchingCycleService {
                 .toList();
         demandesTraitees.forEach(DemandeEnAttente::marquerTraitee);
         demandeEnAttenteRepository.saveAll(demandesTraitees);
-
-        List<CapaciteEnAttente> capacitesTraitees = capacites.stream()
-                .filter(c -> capacitesAffectees.contains(c.getCapaciteId()))
-                .toList();
-        capacitesTraitees.forEach(CapaciteEnAttente::marquerTraitee);
-        capaciteEnAttenteRepository.saveAll(capacitesTraitees);
 
         int demandesNonAffecteesCeCycle = demandes.size() - demandesTraitees.size();
         if (demandesNonAffecteesCeCycle > 0) {
@@ -314,6 +357,67 @@ public class MatchingCycleService {
 
         // EF-PERF (CDC S8.10) : duree totale du cycle de cet axe (L0+L1+persistance).
         instrumentationPerfService.recordCycleAxeMs((System.nanoTime() - debutCycleNano) / 1_000_000.0);
+    }
+
+    /**
+     * Interroge service-trk pour chaque vehicule distinct du lot de
+     * capacites de ce cycle, une seule fois par vehicule (pas par paire).
+     * Cle absente dans la map retournee = pas de position temps reel connue
+     * ou trop vieille -> l'appelant doit retomber sur la position declaree
+     * (cf resoudrePositionEffective).
+     */
+    private Map<java.util.UUID, PointGeoDto> resoudrePositionsTempsReel(List<CapaciteEnAttente> capacites) {
+        java.time.Instant maintenant = java.time.Instant.now();
+
+        // UN appel HTTP groupe plutot que N appels sequentiels (plan de
+        // reorientation, position GPS temps reel dans le matching - budget
+        // L0 ~50ms incompatible avec un aller-retour reseau par vehicule
+        // distinct du lot). Vehicules dedupliques avant l'appel : plusieurs
+        // capacites peuvent partager le meme vehiculeId dans un cycle.
+        List<java.util.UUID> vehiculeIdsDistincts = capacites.stream()
+                .map(CapaciteEnAttente::getVehiculeId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<java.util.UUID, PositionActuelleDto> positionsBrutes =
+                serviceTrkClient.dernieresPositions(vehiculeIdsDistincts);
+
+        Map<java.util.UUID, PointGeoDto> resultat = new java.util.HashMap<>();
+        for (Map.Entry<java.util.UUID, PositionActuelleDto> entree : positionsBrutes.entrySet()) {
+            java.util.UUID vehiculeId = entree.getKey();
+            PositionActuelleDto position = entree.getValue();
+            if (position == null) {
+                continue; // vehicule absent/sans position connue cote TRK - deja logue cote ServiceTrkClient
+            }
+            long ageSecondes = java.time.Duration.between(position.horodatageCapture(), maintenant).getSeconds();
+            if (ageSecondes > positionMaxAgeSecondes) {
+                log.debug("Position temps reel du vehicule {} trop ancienne ({} s > seuil {} s) - "
+                        + "repli sur la position declaree.", vehiculeId, ageSecondes, positionMaxAgeSecondes);
+                continue;
+            }
+            resultat.put(vehiculeId, new PointGeoDto(position.latitude(), position.longitude()));
+        }
+        return resultat;
+    }
+
+    /**
+     * Position effective d'une capacite pour ce cycle : temps reel si connue
+     * et fraiche (positionsTempsReel), sinon repli sur la position declaree
+     * (CapaciteEnAttente.getPosition()) - jamais un candidat traite comme
+     * "position inconnue" simplement parce que TRK n'a pas encore recu de
+     * PositionBrute pour lui (cas normal en debut de mission).
+     */
+    private PointGeoDto resoudrePositionEffective(CapaciteEnAttente capacite,
+                                                   Map<java.util.UUID, PointGeoDto> positionsTempsReel) {
+        java.util.UUID vehiculeId = capacite.getVehiculeId();
+        if (vehiculeId != null) {
+            PointGeoDto positionTempsReel = positionsTempsReel.get(vehiculeId);
+            if (positionTempsReel != null) {
+                return positionTempsReel;
+            }
+        }
+        return capacite.getPosition();
     }
 
     /**
@@ -444,12 +548,14 @@ public class MatchingCycleService {
                                                                CapaciteEnAttente capacite,
                                                                java.time.Instant instantCalcul,
                                                                long fretAuRetour,
-                                                               Double risqueAxeScore) {
+                                                               Double risqueAxeScore,
+                                                               Map<java.util.UUID, PointGeoDto> positionsTempsReel) {
         return new CandidatCoutDto(capacite.getCapaciteId(), capacite.getTransporteurId(),
                 capacite.getVehiculeId(),
                 calculateurCoutSeptTermes.calculer(demande, capacite, instantCalcul,
                         fretAuRetour, risqueAxeScore),
-                capacite.getPosition(), capacite.getProfilCamion(), capacite.getTypeVehicule());
+                resoudrePositionEffective(capacite, positionsTempsReel),
+                capacite.getProfilCamion(), capacite.getTypeVehicule());
     }
 
     /**
@@ -469,7 +575,8 @@ public class MatchingCycleService {
                                                         List<CapaciteEnAttente> capacites,
                                                         Double rayonHaversineRepliKm,
                                                         Map<PointGeoDto, String> cacheCellulesH3,
-                                                        boolean[] h3Utilise) {
+                                                        boolean[] h3Utilise,
+                                                        Map<java.util.UUID, PointGeoDto> positionsTempsReel) {
         if (capacites.isEmpty()) {
             return capacites;
         }
@@ -486,7 +593,7 @@ public class MatchingCycleService {
                 h3Utilise[0] = true;
                 geospatiales = capacites.stream()
                         .filter(c -> {
-                            PointGeoDto position = c.getPosition();
+                            PointGeoDto position = resoudrePositionEffective(c, positionsTempsReel);
                             if (position == null) {
                                 return true; // position inconnue : ne pas exclure silencieusement
                             }
@@ -509,7 +616,7 @@ public class MatchingCycleService {
         double rayonKm = rayonHaversineRepliKm;
         geospatiales = capacites.stream()
                 .filter(c -> {
-                    PointGeoDto position = c.getPosition();
+                    PointGeoDto position = resoudrePositionEffective(c, positionsTempsReel);
                     if (position == null) {
                         return true;
                     }

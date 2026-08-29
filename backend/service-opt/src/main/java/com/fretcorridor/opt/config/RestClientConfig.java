@@ -28,6 +28,7 @@ import java.time.Duration;
         ServiceGeoClientProperties.class,
         ServiceMatClientProperties.class,
         ServiceCapClientProperties.class,
+        ServiceTrkClientProperties.class,
         ValhallaClientProperties.class
 })
 public class RestClientConfig {
@@ -49,6 +50,13 @@ public class RestClientConfig {
     @Bean
     @Qualifier("serviceCapRestClient")
     public RestClient serviceCapRestClient(ServiceCapClientProperties properties) {
+        return construireRestClient(properties.getBaseUrl(),
+                properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
+    }
+
+    @Bean
+    @Qualifier("serviceTrkRestClient")
+    public RestClient serviceTrkRestClient(ServiceTrkClientProperties properties) {
         return construireRestClient(properties.getBaseUrl(),
                 properties.getConnectTimeoutMs(), properties.getReadTimeoutMs());
     }
