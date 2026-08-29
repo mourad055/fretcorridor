@@ -111,7 +111,8 @@ l'architecture ou au périmètre d'une fonctionnalité.
 > **Audit CDC complet en 3 volets parallèles** (background agents,
 > re-vérification indépendante du code, aucune confiance aveugle dans les
 > audits précédents) : backend/moteur, mobile (2 apps), web. Résultat
-> détaillé : `AUDIT_CDC_v4_complet_2026-08-26.md` (racine du dépôt).
+> détaillé : contenu repris et à jour dans `plan-fretcorridor-reorientation.md`
+> (racine du dépôt) -- l'audit du 26/08 lui-même a été retiré, superseded.
 > Verdict global : les 5 points ouverts par l'audit du 23/08 tous résolus,
 > S17 (observatoire marché) passé d'absent à fait côté web depuis le
 > 23/08, S18/S19/S16 mobile confirmés démockés. Manques inchangés : S13
@@ -498,9 +499,10 @@ l'architecture ou au périmètre d'une fonctionnalité.
 > **combiner les deux plutôt que choisir** — c'est ce qu'elle voulait à
 > chaque fois.
 >
-> **Process** : deux documents produits explicitement à sa demande
-> (`plan-mockups-2026-08-22.md` avant les travaux, `recap-session-2026-08-22.md`
-> après, tableau demandé/fait) — elle a dit ne plus vouloir se répéter,
+> **Process** : deux documents produits explicitement à sa demande (un plan
+> avant les travaux, `recap-session-2026-08-22.md` après, tableau demandé/fait
+> -- le plan du 22/08 a depuis été retiré, superseded) — elle a dit ne plus
+> vouloir se répéter,
 > donc systématiser ce couple plan→récap dès qu'une liste de demandes
 > s'accumule plutôt que d'attendre qu'elle le redemande.
 >
