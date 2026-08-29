@@ -4,10 +4,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MOBILE_ROOT="$(dirname "$SCRIPT_DIR")"
 
-IP=$(ip addr show wlp1s0 2>/dev/null | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+# BUG CORRIGE (28/08) : interface codee en dur (wlp1s0) -- meme classe de
+# probleme que run.sh (voir son commentaire), detection portable ici aussi.
+IP=$(ip -o -4 addr show | awk '$2 !~ /^(lo|docker|virbr|br-|veth|tun|tap)/ {print $4}' | cut -d/ -f1 | head -1)
 
 if [ -z "$IP" ]; then
-  echo "⚠️  IP WiFi introuvable sur wlp1s0 — utilisation de localhost (web/desktop uniquement)."
+  echo "⚠️  Aucune IP réseau détectée — utilisation de localhost (web/desktop uniquement)."
   HOST="localhost"
 else
   HOST="$IP"
