@@ -6,12 +6,21 @@ import '../providers/capacite_provider.dart';
 import '../providers/vehicule_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/top_notification.dart';
-import 'mes_capacites_screen.dart';
 import 'vehicules_screen.dart';
 
 // S4 (EF-CAP-03/07) : déclaration de capacité (véhicule, trajet, créneau).
 // Le véhicule vient du registre réel de la flotte (S10) — voir
 // vehicule_provider.dart. Plus d'identifiant généré localement (TODO fermé).
+//
+// BUG CORRIGE (retour utilisatrice 24/08) : etait un ecran plein
+// (Navigator.push + Scaffold/AppBar), sans jamais se fermer apres une
+// creation reussie (formulaire juste vide pour permettre d'en declarer une
+// autre a la suite) -- l'utilisatrice attend un popup qui se ferme
+// systematiquement, meme principe que _FormulaireVehicule
+// (vehicules_screen.dart). Ouvert desormais via showModalBottomSheet
+// (voir home_screen.dart et mes_capacites_screen.dart), Scaffold/AppBar
+// retires au profit d'un simple Padding, le raccourci "Mes capacites" de
+// l'ancienne AppBar est retire (deja accessible depuis l'ecran d'accueil).
 class CapaciteScreen extends ConsumerStatefulWidget {
   // CRUD capacité (audit de suivi Mobile) : pas de vrai endpoint de
   // modification côté backend (changer le poids déjà partiellement
@@ -129,8 +138,7 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
       couleur: AppColors.succes,
       icone: Icons.check_circle,
     );
-    _poidsCtrl.clear();
-    setState(() { _axeId = null; _vehiculeId = null; _dateDepart = null; });
+    Navigator.pop(context);
   }
 
   @override
@@ -140,27 +148,19 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
     final vehiculeState = ref.watch(vehiculeProvider);
     final t = AppLocalizations.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.fond,
-      appBar: AppBar(
-        title: Text(widget.capaciteAModifier == null ? t.declarerCapacite : t.modifierLaCapacite),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.list_alt),
-            tooltip: t.mesCapacites,
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MesCapacitesScreen())),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (state.erreur != null) _bandeauErreur(state.erreur!),
+    return Padding(
+      padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(context).viewInsets.bottom + 24),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(widget.capaciteAModifier == null ? t.declarerCapacite : t.modifierLaCapacite,
+                  style: Theme.of(context).textTheme.headlineMedium),
+              const SizedBox(height: 20),
+              if (state.erreur != null) _bandeauErreur(state.erreur!),
                 const SizedBox(height: 8),
 
                 _label(t.axeLabel),
@@ -261,7 +261,6 @@ class _CapaciteScreenState extends ConsumerState<CapaciteScreen> {
             ),
           ),
         ),
-      ),
     );
   }
 
