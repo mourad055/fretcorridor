@@ -67,6 +67,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notifications => 'Notifications';
 
   @override
+  String get notifTitrePropositionRecue => 'Nouvelle proposition';
+
+  @override
+  String get notifTitreStatutMission => 'Mise à jour de mission';
+
+  @override
+  String get notifTitreInfoGenerale => 'Information';
+
+  @override
+  String get notifTitrePropositionRetour => 'Proposition de retour';
+
+  @override
+  String get notifTitreAlerteEcart => 'Alerte';
+
+  @override
   String langueMenuItem(String langue) {
     return 'Langue ($langue)';
   }
