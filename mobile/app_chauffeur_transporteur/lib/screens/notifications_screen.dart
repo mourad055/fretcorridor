@@ -11,6 +11,35 @@ const _iconesType = {
   'KYC': Icons.badge_outlined,
 };
 
+// BUG CORRIGE (retour utilisatrice 24/08) : titre/corps viennent du serveur
+// en français en dur (NotificationService.creer, service-not), jamais
+// traduits meme en changeant la langue de l'app. Correctif cote client
+// uniquement, portee volontairement limitee : le TITRE est retraduit ici a
+// partir de `type` (5 valeurs d'enum connues, deja transmises), le CORPS
+// reste en francais -- meme principe deja documente pour le texte
+// dynamique du serveur ailleurs dans l'app (motifClassement, etc.) : le
+// traduire sans toucher a ce qui est reellement persiste cote serveur
+// creerait un decalage. Une vraie traduction complete demanderait de
+// remanier NotificationService pour envoyer des parametres structures
+// plutot que des phrases toutes faites -- hors portee d'un correctif la
+// veille d'une presentation.
+String _titreLocalise(AppLocalizations t, AppNotification n) {
+  switch (n.type) {
+    case 'PROPOSITION_RECUE':
+      return t.notifTitrePropositionRecue;
+    case 'STATUT_MISSION':
+      return t.notifTitreStatutMission;
+    case 'INFO_GENERALE':
+      return t.notifTitreInfoGenerale;
+    case 'PROPOSITION_RETOUR':
+      return t.notifTitrePropositionRetour;
+    case 'ALERTE_ECART':
+      return t.notifTitreAlerteEcart;
+    default:
+      return n.titre;
+  }
+}
+
 // S9 : centre de notifications (réception "tirée" — pas de push FCM réel,
 // aucun projet Firebase disponible pour ce dépôt, cf. README).
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -61,7 +90,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                             const SizedBox(height: 8),
                           ],
                           for (final n in state.notifications) ...[
-                            _carteNotification(n),
+                            _carteNotification(t, n),
                             const SizedBox(height: 8),
                           ],
                         ],
@@ -136,7 +165,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     ]);
   }
 
-  Widget _carteNotification(AppNotification n) {
+  Widget _carteNotification(AppLocalizations t, AppNotification n) {
     return InkWell(
       onTap: n.lue ? null : () => ref.read(notificationProvider.notifier).marquerLue(n.id),
       child: Container(
@@ -153,7 +182,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(n.titre, style: TextStyle(fontWeight: n.lue ? FontWeight.normal : FontWeight.bold, fontSize: 14)),
+                Text(_titreLocalise(t, n), style: TextStyle(fontWeight: n.lue ? FontWeight.normal : FontWeight.bold, fontSize: 14)),
                 const SizedBox(height: 4),
                 Text(n.corps, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
               ],

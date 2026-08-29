@@ -212,6 +212,36 @@ abstract class AppLocalizations {
   /// **'Notifications'**
   String get notifications;
 
+  /// No description provided for @notifTitrePropositionRecue.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle proposition'**
+  String get notifTitrePropositionRecue;
+
+  /// No description provided for @notifTitreStatutMission.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mise à jour de mission'**
+  String get notifTitreStatutMission;
+
+  /// No description provided for @notifTitreInfoGenerale.
+  ///
+  /// In fr, this message translates to:
+  /// **'Information'**
+  String get notifTitreInfoGenerale;
+
+  /// No description provided for @notifTitrePropositionRetour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Proposition de retour'**
+  String get notifTitrePropositionRetour;
+
+  /// No description provided for @notifTitreAlerteEcart.
+  ///
+  /// In fr, this message translates to:
+  /// **'Alerte'**
+  String get notifTitreAlerteEcart;
+
   /// No description provided for @langueMenuItem.
   ///
   /// In fr, this message translates to:

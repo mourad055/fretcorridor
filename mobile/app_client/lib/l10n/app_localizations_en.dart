@@ -67,6 +67,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notifications => 'Notifications';
 
   @override
+  String get notifTitrePropositionRecue => 'New offer';
+
+  @override
+  String get notifTitreStatutMission => 'Mission update';
+
+  @override
+  String get notifTitreInfoGenerale => 'Information';
+
+  @override
+  String get notifTitrePropositionRetour => 'Return trip offer';
+
+  @override
+  String get notifTitreAlerteEcart => 'Alert';
+
+  @override
   String langueMenuItem(String langue) {
     return 'Language ($langue)';
   }
