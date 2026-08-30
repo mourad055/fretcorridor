@@ -122,7 +122,7 @@ class SimulationInsertionServiceTest {
 
     private Affectation creerAffectation(UUID capaciteId, double oLat, double oLon, double dLat, double dLon) {
         Affectation affectation = new Affectation(
-                UUID.randomUUID(), capaciteId, null, UUID.randomUUID(),
+                UUID.randomUUID(), capaciteId, null, null, UUID.randomUUID(),
                 BigDecimal.valueOf(200),
                 oLat, oLon, dLat, dLon,
                 null, null, null, null,

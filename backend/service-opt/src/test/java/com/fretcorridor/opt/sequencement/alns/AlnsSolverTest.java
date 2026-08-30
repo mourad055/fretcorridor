@@ -42,7 +42,7 @@ class AlnsSolverTest {
     private Affectation creerAffectation(double poidsKg, double origineLat, double origineLon,
                                           double destLat, double destLon) {
         Affectation affectation = new Affectation(
-                UUID.randomUUID(), UUID.randomUUID(), null, null,
+                UUID.randomUUID(), UUID.randomUUID(), null, null, null,
                 BigDecimal.valueOf(poidsKg),
                 origineLat, origineLon, destLat, destLon,
                 null, null, null, null,

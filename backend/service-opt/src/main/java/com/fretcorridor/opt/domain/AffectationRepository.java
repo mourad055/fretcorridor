@@ -38,6 +38,14 @@ public interface AffectationRepository extends JpaRepository<Affectation, UUID> 
     // capacite transporte deja.
     java.util.List<Affectation> findByCapaciteIdAndStatut(UUID capaciteId, StatutAffectation statut);
 
+    // Diffusion-course (trouvaille Mobile) : propositions en attente d'un
+    // transporteur - "mes propositions a traiter" cote app chauffeur.
+    // S'appuie sur la denormalisation transporteur_id (V27) et l'index
+    // (transporteur_id, statut). PROPOSEE uniquement : une proposition
+    // CONFIRMEE (mission en cours) ou EXPIREE ne doit plus apparaitre dans
+    // la liste "a traiter".
+    java.util.List<Affectation> findByTransporteurIdAndStatut(UUID transporteurId, StatutAffectation statut);
+
     // findById(UUID) suffit pour l'instant : c'est exactement l'appel que TRK
     // fera avec le mission_id recu (a terme) via AffectationConfirmee cote
     // Mobile, ou directement connu du contexte appelant en Phase 1.

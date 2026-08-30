@@ -265,7 +265,7 @@ public class SimulationInsertionService {
      */
     private Affectation construireAffectationFactice(SimulationInsertionRequest requete) {
         Affectation affectation = new Affectation(
-                UUID.randomUUID(), requete.capaciteId(), null, requete.axeId(),
+                UUID.randomUUID(), requete.capaciteId(), null, null, requete.axeId(),
                 requete.poidsKg() != null ? requete.poidsKg() : BigDecimal.ZERO,
                 requete.origineLatitude(), requete.origineLongitude(),
                 requete.destinationLatitude(), requete.destinationLongitude(),

@@ -1,0 +1,93 @@
+asyncapi: 3.0.0
+info:
+  title: PropositionDiffuseeChauffeur
+  version: 1.0.0
+  description: |
+    Événement publié par service-opt (Moteur) à la création d'une Affectation
+    PROPOSEE réellement diffusée à un transporteur (modèle diffusion-course,
+    premier acceptant gagne). Comble la trouvaille Mobile : rien n'informait
+    le chauffeur qu'une proposition lui était adressée (le précédent
+    PropositionEmiseEvent est 100% côté client/chargeur, consommé par
+    service-mkt). Complète le GET /api/opt/affectations/proposees?transporteurId=
+    (lecture à la demande) par une notification proactive.
+    Consommé par service-cap / service-not (Mobile) pour pousser une
+    notification au chauffeur.
+    Non publié pour une affectation en mode tarif dégradé (aucun prix fiable :
+    rien à diffuser au chauffeur, cf ENF-DIS-04) ni pour une capacité sans
+    transporteur identifié.
+
+channels:
+  proposition-diffusee-chauffeur:
+    address: proposition-diffusee-chauffeur
+    messages:
+      PropositionDiffuseeChauffeur:
+        $ref: '#/components/messages/PropositionDiffuseeChauffeur'
+
+operations:
+  onPropositionDiffusee:
+    action: receive
+    channel:
+      $ref: '#/channels/proposition-diffusee-chauffeur'
+    messages:
+      - $ref: '#/components/messages/PropositionDiffuseeChauffeur'
+
+components:
+  messages:
+    PropositionDiffuseeChauffeur:
+      summary: Une proposition vient d'être adressée à un transporteur précis.
+      payload:
+        type: object
+        required:
+          - eventId
+          - affectationId
+          - demandeId
+          - capaciteId
+          - transporteurId
+        properties:
+          eventId:
+            type: string
+            format: uuid
+            description: Identifiant unique de l'événement (idempotence).
+          affectationId:
+            type: string
+            format: uuid
+            description: L'Affectation PROPOSEE diffusée à ce transporteur (cle de resolution de la course).
+          demandeId:
+            type: string
+            format: uuid
+            description: Demande concernée.
+          capaciteId:
+            type: string
+            format: uuid
+            description: Capacité candidate ayant généré cette proposition.
+          transporteurId:
+            type: string
+            format: uuid
+            description: Transporteur destinataire de la proposition.
+          axeId:
+            type: string
+            format: uuid
+            nullable: true
+            description: Axe sur lequel circulerait la mission si acceptée.
+          vehiculeId:
+            type: string
+            format: uuid
+            nullable: true
+            description: Véhicule de la capacité candidate.
+          prixTransport:
+            type: number
+            description: Prix transport à afficher au chauffeur pour décider.
+          distanceEstimeeMetres:
+            type: number
+            format: double
+            nullable: true
+            description: Distance estimée (null si itinéraire non calculé).
+          dureeEstimeeSecondes:
+            type: integer
+            format: int64
+            nullable: true
+            description: Durée estimée (null si itinéraire non calculé).
+          horodatageDiffusion:
+            type: string
+            format: date-time
+            description: Instant de diffusion de la proposition.

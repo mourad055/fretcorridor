@@ -9,6 +9,7 @@ import com.fretcorridor.opt.client.ServiceGeoClient;
 import com.fretcorridor.opt.client.ServiceMatClient;
 import com.fretcorridor.opt.client.ValhallaClient;
 import com.fretcorridor.opt.messaging.OptEventPublisher;
+import com.fretcorridor.opt.messaging.PropositionDiffuseeChauffeurEvent;
 import com.fretcorridor.opt.messaging.PropositionEmiseEvent;
 import com.fretcorridor.opt.tarification.TarificationL4Service;
 import com.fretcorridor.opt.tarification.TarificationResultat;
@@ -156,6 +157,58 @@ class AffectationL1ServiceTest {
         // Un seul candidat disponible -> une seule proposition (rang 1),
         // jamais 3 forcees artificiellement (RG-039 : "au plus trois").
         verify(eventPublisher, times(1)).publierPropositionEmise(any());
+    }
+
+    @Test
+    void proposition_diffusee_chauffeur_porte_le_transporteur_et_affectation_denormalisee() {
+        UUID demandeId = UUID.randomUUID();
+        UUID axeId = UUID.randomUUID();
+        UUID capacite = UUID.randomUUID();
+        UUID transporteur = UUID.randomUUID();
+
+        // Candidat avec transporteurId renseigne (le cas reel cote Moteur,
+        // contrairement aux autres tests qui mettent null).
+        List<CandidatCoutDto> candidats = List.of(
+                new CandidatCoutDto(capacite, transporteur, null, null, null, null, "FOURGON"));
+
+        DemandeAvecCandidats demande = new DemandeAvecCandidats(demandeId,
+                new PointGeoDto(4.05, 9.7), new PointGeoDto(3.87, 11.52), axeId,
+                BigDecimal.valueOf(1000), candidats,
+                null, null, null, null, null, null, null, null);
+
+        when(serviceMatClient.calculerCoutsLot(any())).thenReturn(new CoutLotResponseDto(demandeId, 1, false,
+                List.of(new CoutResponseDto(capacite, UUID.randomUUID(), BigDecimal.valueOf(10000)))));
+
+        ArgumentCaptor<Affectation> affectationCaptor = ArgumentCaptor.forClass(Affectation.class);
+        when(affectationRepository.save(affectationCaptor.capture())).thenAnswer(inv -> {
+            Affectation a = inv.getArgument(0);
+            assignerId(a, UUID.randomUUID());
+            return a;
+        });
+
+        when(tarificationL4Service.calculer(eq(axeId), eq("FOURGON"), any(), any(), any()))
+                .thenReturn(new TarificationResultat(null, null, "FORFAITAIRE", BigDecimal.ZERO, BigDecimal.ZERO,
+                        BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.valueOf(10000), false,
+                        BigDecimal.valueOf(10000), BigDecimal.valueOf(1000), BigDecimal.valueOf(9000), false));
+
+        service.calculerAffectationOptimale(List.of(demande));
+
+        // L'Affectation persistee denormalise le transporteur (V27) : c'est ce
+        // qui permet au GET /proposees de filtrer par transporteur.
+        assertThat(affectationCaptor.getValue().getTransporteurId()).isEqualTo(transporteur);
+
+        // Et l'evenement chauffeur est bien publie avec le transporteur cible.
+        ArgumentCaptor<PropositionDiffuseeChauffeurEvent> evenementCaptor =
+                ArgumentCaptor.forClass(PropositionDiffuseeChauffeurEvent.class);
+        verify(eventPublisher, times(1)).publierPropositionDiffuseeChauffeur(evenementCaptor.capture());
+
+        PropositionDiffuseeChauffeurEvent evenement = evenementCaptor.getValue();
+        assertThat(evenement.transporteurId()).isEqualTo(transporteur);
+        assertThat(evenement.capaciteId()).isEqualTo(capacite);
+        assertThat(evenement.demandeId()).isEqualTo(demandeId);
+        assertThat(evenement.affectationId()).isNotNull();
+        assertThat(evenement.affectationId()).isEqualTo(affectationCaptor.getValue().getId());
+        assertThat(evenement.prixTransport()).isEqualByComparingTo("10000");
     }
 
     // Affectation est volontairement sans setter (immuable, cf sa javadoc) --

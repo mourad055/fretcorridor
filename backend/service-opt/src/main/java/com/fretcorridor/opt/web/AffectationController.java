@@ -2,6 +2,7 @@ package com.fretcorridor.opt.web;
 
 import com.fretcorridor.opt.domain.Affectation;
 import com.fretcorridor.opt.domain.AffectationRepository;
+import com.fretcorridor.opt.domain.StatutAffectation;
 import com.fretcorridor.opt.web.dto.AffectationResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -9,9 +10,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -57,5 +60,31 @@ public class AffectationController {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Affectation introuvable : " + missionId));
         return AffectationResponse.from(affectation);
+    }
+
+    /**
+     * Diffusion-course (trouvaille Mobile) : "mes propositions en attente"
+     * d'un transporteur. Consomme par service-cap (backend Mobile, en
+     * back-to-back avec la cle interne, meme patron que TRK ci-dessus) pour
+     * alimenter l'ecran propositions du chauffeur, et les expirees sans
+     * re-diffuser.
+     *
+     * Retourne uniquement les Affectation a l'etat PROPOSEE du transporteur :
+     * une mission CONFIRMEE (en cours) ou EXPIREE n'est plus "a traiter".
+     * Le filtre statistiquement le plus selectif (transporteur + statut) est
+     * couvert par l'index idx_affectation_transporteur_statut (V27).
+     */
+    @GetMapping("/proposees")
+    public List<AffectationResponse> listerProposees(
+            @RequestParam UUID transporteurId,
+            @RequestHeader(value = "X-Internal-Service-Key", required = false) String cleInterne) {
+        if (!cleInterneAttendue.equals(cleInterne)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Cle interne invalide ou absente");
+        }
+        return affectationRepository
+                .findByTransporteurIdAndStatut(transporteurId, StatutAffectation.PROPOSEE)
+                .stream()
+                .map(AffectationResponse::from)
+                .toList();
     }
 }

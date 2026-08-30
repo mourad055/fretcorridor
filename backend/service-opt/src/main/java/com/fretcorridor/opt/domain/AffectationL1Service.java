@@ -9,6 +9,7 @@ import com.fretcorridor.opt.client.ItineraireResponseDto;
 import com.fretcorridor.opt.client.ServiceMatClient;
 import com.fretcorridor.opt.client.ValhallaClient;
 import com.fretcorridor.opt.messaging.OptEventPublisher;
+import com.fretcorridor.opt.messaging.PropositionDiffuseeChauffeurEvent;
 import com.fretcorridor.opt.messaging.PropositionEmiseEvent;
 import com.fretcorridor.opt.tarification.TarificationL4Service;
 import com.fretcorridor.opt.tarification.TarificationResultat;
@@ -153,7 +154,8 @@ public class AffectationL1Service {
                         distanceMetres, BigDecimal.ZERO);
 
                 Affectation affectation = new Affectation(
-                        demandeId, candidat.capaciteId(), resultatsCout.get(j).cycleMatchingId(), demande.axeId(),
+                        demandeId, candidat.capaciteId(), candidat.transporteurId(),
+                        resultatsCout.get(j).cycleMatchingId(), demande.axeId(),
                         demande.poidsTaxableKg(),
                         demande.origineDemande().latitude(), demande.origineDemande().longitude(),
                         demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
@@ -208,6 +210,27 @@ public class AffectationL1Service {
                         destinationNom,
                         Instant.now());
                 eventPublisher.publierPropositionEmise(proposition);
+
+                // Diffusion-course (trouvaille Mobile) : notifier le chauffeur
+                // qu'une proposition vient de lui etre adressee - rien ne
+                // l'informait jusqu'ici (PropositionEmise est 100% cote
+                // client/chargeur). Publie pour LA affectation diffuse a CE
+                // transporteur, au meme moment que PropositionEmise (donc
+                // uniquement quand un prix fiable existe : est deja apres le
+                // `continue` du mode tarif degrade).
+                eventPublisher.publierPropositionDiffuseeChauffeur(
+                        new PropositionDiffuseeChauffeurEvent(
+                                UUID.randomUUID(),
+                                affectationId,
+                                demandeId,
+                                candidat.capaciteId(),
+                                candidat.transporteurId(),
+                                demande.axeId(),
+                                candidat.vehiculeId(),
+                                tarification.prixTransport(),
+                                itineraire != null ? itineraire.distanceMetres() : null,
+                                itineraire != null ? (long) itineraire.dureeSecondes() : null,
+                                Instant.now()));
             }
 
             if (!auMoinsUneDiffusion) {

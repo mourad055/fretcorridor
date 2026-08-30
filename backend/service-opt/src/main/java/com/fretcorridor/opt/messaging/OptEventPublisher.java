@@ -15,6 +15,7 @@ public class OptEventPublisher {
     private static final String TOPIC_TOURNEE_CONSTITUEE = "tournee-constituee";
     private static final String TOPIC_PLAN_CHARGEMENT_CONFIRME = "plan-chargement-confirme";
     private static final String TOPIC_REPARTITION_CONVENTIONNELLE = "repartition-conventionnelle-appliquee";
+    private static final String TOPIC_PROPOSITION_DIFFUSEE_CHAUFFEUR = "proposition-diffusee-chauffeur";
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public OptEventPublisher(KafkaTemplate<String, Object> kafkaTemplate) {
@@ -51,8 +52,34 @@ public class OptEventPublisher {
         }
     }
 
+    public void publierPropositionDiffuseeChauffeur(PropositionDiffuseeChauffeurEvent event) {
+        try {
+            // Cle de partition = transporteurId : un chauffeur recoit toutes
+            // ses propositions dans l'ordre, et la perte d'une cle n'eparpille
+            // pas ses propositions sur plusieurs partitions non triees.
+            String cle = event.transporteurId() != null ? event.transporteurId().toString() : event.affectationId().toString();
+            kafkaTemplate.send(TOPIC_PROPOSITION_DIFFUSEE_CHAUFFEUR, cle, event)
+                    .whenComplete((result, ex) -> {
+                        if (ex == null) {
+                            log.debug("PropositionDiffuseeChauffeur publiee - transporteur={}, affectation={}, offset={}",
+                                    event.transporteurId(), event.affectationId(),
+                                    result.getRecordMetadata().offset());
+                        } else {
+                            log.error("Echec publication PropositionDiffuseeChauffeur (callback async) - "
+                                    + "transporteur={}, affectation={}",
+                                    event.transporteurId(), event.affectationId(), ex);
+                        }
+                    });
+        } catch (Exception exceptionBlocante) {
+            log.error("Echec publication PropositionDiffuseeChauffeur (send() bloquant) - transporteur={}, "
+                    + "affectation={} - cycle L1 non interrompu (ENF-DIS-04)",
+                    event.transporteurId(), event.affectationId(), exceptionBlocante);
+        }
+    }
+
     public void publierAffectationConfirmee(AffectationConfirmeeEvent event) {
         // Meme piege/meme remede que publierPropositionEmise ci-dessus.
+
         try {
             String cle = event.missionId().toString();
             kafkaTemplate.send(TOPIC_AFFECTATION_CONFIRMEE, cle, event)

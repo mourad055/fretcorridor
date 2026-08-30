@@ -14,9 +14,6 @@ import java.util.UUID;
  * refus explicite). Jamais de retour arriere entre ces etats - une
  * Affectation CONFIRMEE ou EXPIREE est terminale.
  */
-enum StatutAffectation {
-    PROPOSEE, CONFIRMEE, EXPIREE
-}
 
 /**
  * Affectation persistee apres L1 (EF-MAT-01/02/03) - source de verite interne
@@ -46,6 +43,15 @@ public class Affectation {
 
     @Column(name = "capacite_id", nullable = false)
     private UUID capaciteId;
+
+    // Diffusion-course (trouvaille Mobile) : transporteur auquel cette
+    // proposition est diffusee. Denormalise depuis CandidatCoutDto a la
+    // creation (source de verite) pour permettre un filtre fiable
+    // "mes propositions en attente" - sinon le lien indirect via
+    // CapaciteEnAttente.transporteurId est nullable et incomplet. Nullable =
+    // capacite sans transporteur identifie, aucune proposition exposee.
+    @Column(name = "transporteur_id")
+    private UUID transporteurId;
 
     // EF-GEO-01 ("rattacher toute mission a un axe") - nullable car une
     // demande sans axe connu au moment de sa publication reste possible
@@ -184,7 +190,7 @@ public class Affectation {
     // Constructeur complet : c'est AffectationL1Service qui l'utilise, au
     // moment ou une affectation valide (capaciteId != null) sort du solveur
     // Kuhn-Munkres - jamais construit ailleurs.
-    public Affectation(UUID demandeId, UUID capaciteId, UUID cycleMatchingId, UUID axeId,
+    public Affectation(UUID demandeId, UUID capaciteId, UUID transporteurId, UUID cycleMatchingId, UUID axeId,
                         BigDecimal poidsTaxableKg,
                         double origineLatitude, double origineLongitude,
                         double destinationLatitude, double destinationLongitude,
@@ -203,6 +209,7 @@ public class Affectation {
                         Double poidsTotalKg, Boolean grandeValeur) {
         this.demandeId = demandeId;
         this.capaciteId = capaciteId;
+        this.transporteurId = transporteurId;
         this.cycleMatchingId = cycleMatchingId;
         this.axeId = axeId;
         this.poidsTaxableKg = poidsTaxableKg;
@@ -252,6 +259,7 @@ public class Affectation {
     public UUID getId() { return id; }
     public UUID getDemandeId() { return demandeId; }
     public UUID getCapaciteId() { return capaciteId; }
+    public UUID getTransporteurId() { return transporteurId; }
     public UUID getCycleMatchingId() { return cycleMatchingId; }
     public UUID getAxeId() { return axeId; }
     public BigDecimal getPoidsTaxableKg() { return poidsTaxableKg; }
