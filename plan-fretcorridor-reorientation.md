@@ -231,6 +231,26 @@ Captures faites à ce jour et ce qu'elles confirment :
   vous · la notification a disparu, trace conservée"* — correspond exactement au
   comportement attendu par ADR 0019 (les affectations concurrentes expirent, restent
   en historique). Bon gabarit direct pour l'item "historique complet chauffeur" (§4).
+- **App Transporteur, écran Trajets** : trajet en cours (jauge de capacité avec
+  légende "Chargé au départ"/"Accepté en route"), CTA "Déclarer un espace" (item
+  Chauffeur "nouvel espace/capacité déclaré"), texte explicatif confirmant le
+  matching continu par GPS/points d'arrêt/marchandise.
+- **App Transporteur, écran Profil** : contient un bloc **"Marchandises acceptées —
+  filtre du matching"** avec des chips activables (Denrées/Cartons/Mobilier/Fûts &
+  bidons/Vrac minéral/Dangereuse) — c'est l'écran de configuration manquant pour
+  `CompatibiliteMarchandisesService` (item 1.9) : le chauffeur pilote lui-même les
+  exclusions, pas juste une règle serveur invisible. Aussi : stats (missions
+  réalisées, % conformité, litiges), état des documents véhicule (carte grise,
+  assurance, visite technique).
+- **App Client, écran Accueil** : bloc "Refaire un envoi" — cartes horizontales de
+  trajets déjà faits, bouton "Refaire · dates seules" — c'est très proche de l'item
+  "trajets préenregistrés" (§5), sauf que c'est basé sur l'historique réel plutôt que
+  sur un nom donné à l'avance ; à clarifier si les deux mécanismes coexistent ou si
+  un seul suffit. Aussi : suivi en direct avec barre de progression + ETA sur la
+  carte d'accueil, système de palier gamifié ("Statut Argent, 12/15 avant Or").
+- **App Client, onboarding** : parcours en paliers explicite (Découvrir → Publier →
+  Payer & réserver, débloqués progressivement) — cohérent avec "Explorer d'abord —
+  sans compte" de l'écran de bienvenue.
 
 ---
 
