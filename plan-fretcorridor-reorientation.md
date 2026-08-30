@@ -259,6 +259,75 @@ Captures faites à ce jour et ce qu'elles confirment :
   Payer & réserver, débloqués progressivement) — cohérent avec "Explorer d'abord —
   sans compte" de l'écran de bienvenue.
 
+### Inventaire complet du 30/08 — parcours "publier → comparer → payer → suivre" (App Client)
+
+Parcouru intégralement (9 écrans du flux publication + 4 écrans comparer/payer/
+confirmer/suivre), via rendu Chrome headless du fichier maquette.
+
+**Flux "publier" (assistant en 9 étapes, très détaillé)** :
+1. Trajet — départ/arrivée avec position GPS actuelle + **adresses enregistrées**
+   ("Boutique — Akwa", "Entrepôt — Bonabéri") et destinations fréquentes avec
+   distance affichée. Confirme que les "trajets préenregistrés" (§5) sont déjà once
+   dans ce flux, pas un écran séparé — probablement à intégrer ici plutôt qu'en
+   fonctionnalité indépendante.
+2. Marchandise — grille d'emballages avec poids pré-connu par type (`CatalogueEmballage`).
+3. (Quantité, sautée dans le parcours testé — carton avait un défaut).
+4. Particularités — 4 interrupteurs : Fragile, Périssable, **Dangereuse** ("Transporteurs
+   agréés seuls" — confirme le lien direct avec `CompatibiliteMarchandisesService`,
+   item 1.9), **Grande valeur** (`grandeValeur`, déjà un champ existant).
+5. Départ — Dès que possible / Date précise / Plage horaire (badge "MEILLEUR PRIX"
+   sur la plage) + créneau Matin/Après-midi/Soir (`typeDisponibilite`).
+6. Collecte & remise — **deux choix séparés** (porte-à-porte vs point partenaire,
+   à la collecte ET à la remise) — plus riche que le `modeCollecte` unique actuel
+   côté `Demande`/`Affectation`, à vérifier si le modèle de données doit s'étendre.
+7. Estimation — fourchette de prix + détail "CALCUL VISIBLE" (poids taxable,
+   distance, taux observé sur l'axe, groupage probable -15%) — correspond
+   directement aux champs de `TarificationL4Service`, jamais montré à l'utilisateur
+   aujourd'hui dans l'app réelle.
+8. Destinataire — case "C'est moi qui réceptionne" + nom/téléphone (`destinataireNom`/
+   `destinataireTelephone`, déjà les bons champs).
+9. Récapitulatif — résumé par ligne avec "Modifier" par champ, mention légale
+   grille d'ajustement dimensionnelle, CTA "Publier la demande".
+
+**⚠️ Conflit majeur trouvé — écran "comparer" contredit ADR 0019 côté client.**
+Après publication, la maquette affiche un écran **"3 propositions"** (RECOMMANDÉ ·
+LE PLUS FIABLE / LE MOINS CHER / LE PLUS RAPIDE · EXCLUSIF), chaque carte avec
+Accepter/Détails/**Négocier** (contre-offre) — c'est exactement le modèle CDC
+"3 propositions classées, le chargeur choisit" que l'ADR 0019 a explicitement
+écarté côté client : *"il n'y a plus de choix parmi 3 côté Moteur [...] l'issue de
+la demande est portée par les événements d'acceptation/refus [des chauffeurs]"*.
+La maquette n'a manifestement pas été mise à jour après la décision diffusion-course
+— **à trancher en équipe avant de coder l'écran "comparer" côté Client** : soit on
+suit la maquette (et il faut revenir sur ADR 0019 côté client), soit on suit l'ADR
+(et l'écran "comparer" doit être repensé — le client ne verrait alors qu'un statut
+"recherche en cours" jusqu'à ce qu'un chauffeur accepte, pas un choix entre 3).
+
+**Suite du parcours** (probablement peu impactée par ce conflit, à confirmer une
+fois le point ci-dessus tranché) :
+- Recherche en cours — écran d'attente avec statut moteur visible ("cycle en cours
+  sur 2 axes, 3 capacités compatibles"), bouton passif "OK — prévenez-moi".
+- Paiement sécurisé — bottom sheet, explication séquestre, MTN Mobile Money /
+  Orange Money, montant + CTA.
+- Mission confirmée — récap transporteur/enlèvement/fonds en séquestre/payé,
+  compteur de palier fidélité, CTA "Suivre la mission".
+- Suivi — carte avec position live + route, bandeau "prochaine étape", et une
+  **chronologie complète** (Publiée → Propositions reçues → Confirmée/séquestre →
+  Enlèvement → En transit → Livraison) — bon gabarit direct pour `suivi_screen.dart`.
+
+### App Transporteur — compléments du 30/08
+
+- Écran Trajets : jauge de capacité en cours (légende "Chargé au départ"/"Accepté
+  en route"), CTA "Déclarer un espace".
+- Écran Profil : bloc **"Marchandises acceptées — filtre du matching"**, chips
+  activables (Denrées/Cartons/Mobilier/Fûts & bidons/Vrac minéral/Dangereuse) —
+  écran de configuration manquant pour piloter `CompatibiliteMarchandisesService`
+  côté chauffeur, pas juste une règle serveur invisible. Aussi stats (missions,
+  % conformité, litiges) et état des documents véhicule.
+- Le geste "balayer = refuser" n'est **pas câblé** dans l'export HTML statique
+  (testé : un balayage ne fait que sélectionner du texte) — reste une intention de
+  design affichée en toutes lettres, pas une interaction fonctionnelle à copier
+  telle quelle depuis la maquette.
+
 ---
 
 ## 8. Suivi des Pull Requests ouvertes
@@ -271,7 +340,8 @@ Captures faites à ce jour et ce qu'elles confirment :
 | #137 | Validation téléphone | Mobile | Ouverte |
 | #138 | Formulaire capacité en popup | Mobile | Ouverte |
 | #139 | Détection IP réseau portable | Mobile | Ouverte |
-| #140 | UC-MAT-02 (modèle CDC strict) | Mobile | **À fermer** — superseded par §1 |
+| #140 | UC-MAT-02 (modèle CDC strict) | Mobile | Fermée — superseded par §1 |
+| #141 | UC-MAT-02/diffusion-course (remplace #140) | Mobile | Ouverte |
 
 ---
 
