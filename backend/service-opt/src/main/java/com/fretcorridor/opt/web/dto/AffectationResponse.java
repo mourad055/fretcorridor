@@ -23,11 +23,14 @@ public record AffectationResponse(
         double origineLongitude,
         double destinationLatitude,
         double destinationLongitude,
+        String origineNom,
+        String destinationNom,
         Double distanceMetres,
         Double dureeSecondes,
         Double intervalleConfianceSecondes,
         BigDecimal prixTransport,
         boolean tarificationModeDegrade,
+        Instant expireA,
         Instant dateCreation
 ) {
     public static AffectationResponse from(Affectation affectation) {
@@ -41,11 +44,14 @@ public record AffectationResponse(
                 affectation.getOrigineLongitude(),
                 affectation.getDestinationLatitude(),
                 affectation.getDestinationLongitude(),
+                affectation.getOrigineNom(),
+                affectation.getDestinationNom(),
                 affectation.getDistanceMetres(),
                 affectation.getDureeSecondes(),
                 affectation.getIntervalleConfianceSecondes(),
                 affectation.getPrixTransport(),
                 affectation.isTarificationModeDegrade(),
+                affectation.getExpireA(),
                 affectation.getDateCreation()
         );
     }

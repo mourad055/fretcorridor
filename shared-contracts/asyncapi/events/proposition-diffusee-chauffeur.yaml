@@ -87,6 +87,22 @@ components:
             format: int64
             nullable: true
             description: Durée estimée (null si itinéraire non calculé).
+          origineNom:
+            type: string
+            nullable: true
+            description: Libellé du lieu d'origine pour l'affichage.
+          destinationNom:
+            type: string
+            nullable: true
+            description: Libellé du lieu de destination pour l'affichage.
+          expireA:
+            type: string
+            format: date-time
+            nullable: true
+            description: >
+              Horodatage d'expiration de la proposition (compte à rebours
+              "expire 5 min" cote app). Au-delà, une tâche du Moteur
+              (ExpirationPropositionService) passe l'Affectation EXPIREE.
           horodatageDiffusion:
             type: string
             format: date-time

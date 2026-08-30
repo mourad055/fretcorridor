@@ -132,7 +132,8 @@ class SimulationInsertionServiceTest {
                 null, null,
                 null, null, null,
                 false,
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null,
+                null, null, null
         );
         reflectionSet(affectation, "id", UUID.randomUUID());
         return affectation;

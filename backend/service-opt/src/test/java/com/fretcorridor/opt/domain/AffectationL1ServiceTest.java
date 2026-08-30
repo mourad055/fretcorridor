@@ -52,7 +52,7 @@ class AffectationL1ServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         service = new AffectationL1Service(serviceMatClient, valhallaClient, tarificationL4Service,
-                affectationRepository, eventPublisher, compatibiliteMarchandisesService);
+                affectationRepository, eventPublisher, compatibiliteMarchandisesService, 900000L);
         // Le filtrage marchandises n'est pas l'objet de ce test : jamais
         // d'exclusion ici (retourne true par defaut en production en
         // l'absence de config + de donnees lot, cf CompatibiliteMarchandisesService).

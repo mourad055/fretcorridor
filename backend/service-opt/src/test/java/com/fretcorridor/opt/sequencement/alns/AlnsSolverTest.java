@@ -52,7 +52,8 @@ class AlnsSolverTest {
                 null, null,
                 null, null, null,
                 false,
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null,
+                null, null, null
         );
         try {
             Field idField = Affectation.class.getDeclaredField("id");

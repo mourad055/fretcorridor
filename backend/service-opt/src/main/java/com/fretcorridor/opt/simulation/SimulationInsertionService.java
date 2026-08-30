@@ -276,7 +276,8 @@ public class SimulationInsertionService {
                 null, null,
                 null, null, null,
                 requete.matieresDangereuses(),
-                null, null, null, null, null, null, null, null, null
+                null, null, null, null, null, null, null, null, null,
+                null, null, null
         );
         try {
             Field idField = Affectation.class.getDeclaredField("id");

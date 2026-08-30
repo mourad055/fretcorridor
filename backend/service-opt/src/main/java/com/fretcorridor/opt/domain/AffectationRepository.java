@@ -2,6 +2,7 @@ package com.fretcorridor.opt.domain;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.Instant;
 import java.util.UUID;
 
 public interface AffectationRepository extends JpaRepository<Affectation, UUID> {
@@ -45,6 +46,11 @@ public interface AffectationRepository extends JpaRepository<Affectation, UUID> 
     // CONFIRMEE (mission en cours) ou EXPIREE ne doit plus apparaitre dans
     // la liste "a traiter".
     java.util.List<Affectation> findByTransporteurIdAndStatut(UUID transporteurId, StatutAffectation statut);
+
+    // Diffusion-course (timeout compte a rebours Mobile) : affectations PROPOSEE
+    // dont le delai expireA est depasse. Consomme par ExpirationPropositionService
+    // pour les passer EXPIREE (re-diffusion possible aux cycles suivants).
+    java.util.List<Affectation> findByStatutAndExpireALessThan(StatutAffectation statut, Instant expireA);
 
     // findById(UUID) suffit pour l'instant : c'est exactement l'appel que TRK
     // fera avec le mission_id recu (a terme) via AffectationConfirmee cote

@@ -27,5 +27,8 @@ public record PropositionDiffuseeChauffeurEvent(
         BigDecimal prixTransport,
         Double distanceEstimeeMetres,
         Long dureeEstimeeSecondes,
+        String origineNom,
+        String destinationNom,
+        Instant expireA,
         Instant horodatageDiffusion
 ) {}

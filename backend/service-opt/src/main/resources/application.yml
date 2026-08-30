@@ -82,6 +82,10 @@ fretcorridor:
       # le score a 1.0 (hypotheses d'equipe, calibrables en exploitation).
       valeur-retour-rayon-km: 50
       valeur-retour-saturation: 5
+    # Diffusion-course (compte a rebours Mobile) : delai de validite d'une
+    # Affectation PROPOSEE avant expiration par timeout (ExpirationPropositionService).
+    # 900000 ms = 15 min (valeur historique de l'ancienne impl. Mobile).
+    proposition-expiration-ms: 900000
     # Point 5 (matrice compatibilite marchandises) : REGLE DE FILTRAGE DURE
     # PRE-L1 (avant le calcul de cout MAT). Config jamais codee en dur -
     # coherent avec l'anti-patron evite partout (rayonAppariementKm,

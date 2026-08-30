@@ -67,18 +67,22 @@ public class AffectationL1Service {
     private final AffectationRepository affectationRepository;
     private final OptEventPublisher eventPublisher;
     private final CompatibiliteMarchandisesService compatibiliteMarchandisesService;
+    private final long propositionExpirationMs;
 
     public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
                                  TarificationL4Service tarificationL4Service,
                                  AffectationRepository affectationRepository,
                                  OptEventPublisher eventPublisher,
-                                 CompatibiliteMarchandisesService compatibiliteMarchandisesService) {
+                                 CompatibiliteMarchandisesService compatibiliteMarchandisesService,
+                                 @org.springframework.beans.factory.annotation.Value(
+                                         "${fretcorridor.opt.proposition-expiration-ms:900000}") long propositionExpirationMs) {
         this.serviceMatClient = serviceMatClient;
         this.valhallaClient = valhallaClient;
         this.tarificationL4Service = tarificationL4Service;
         this.affectationRepository = affectationRepository;
         this.eventPublisher = eventPublisher;
         this.compatibiliteMarchandisesService = compatibiliteMarchandisesService;
+        this.propositionExpirationMs = propositionExpirationMs;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
@@ -173,7 +177,9 @@ public class AffectationL1Service {
                         candidat.vehiculeId(), demande.typeEmballageNom(), demande.quantite(),
                         demande.destinataireNom(), demande.destinataireTelephone(),
                         demande.modeCollecte(), demande.typeDisponibilite(),
-                        demande.poidsTotalKg(), demande.grandeValeur());
+                        demande.poidsTotalKg(), demande.grandeValeur(),
+                        origineNom, destinationNom,
+                        Instant.now().plusMillis(propositionExpirationMs));
 
                 UUID affectationId = affectationRepository.save(affectation).getId();
                 auMoinsUneDiffusion = true;
@@ -230,6 +236,9 @@ public class AffectationL1Service {
                                 tarification.prixTransport(),
                                 itineraire != null ? itineraire.distanceMetres() : null,
                                 itineraire != null ? (long) itineraire.dureeSecondes() : null,
+                                affectation.getOrigineNom(),
+                                affectation.getDestinationNom(),
+                                affectation.getExpireA(),
                                 Instant.now()));
             }
 

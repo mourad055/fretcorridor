@@ -140,6 +140,14 @@ public class Affectation {
     @Column(name = "date_creation", nullable = false, updatable = false)
     private Instant dateCreation;
 
+    // Diffusion-course (compte a rebours Mobile) : horodatage au-dela duquel
+    // cette proposition PROPOSEE expire par timeout (et non plus seulement
+    // "course perdue" / "refus"). Passe par ExpirationPropositionService.
+    // Nullable = Affectation creee avant ce mecanisme (V28), expiree par
+    // defaut a la prochaine passe de la tache.
+    @Column(name = "expire_a")
+    private Instant expireA;
+
     // EF-MAT-08/09, ENF-SEC-03 (idempotence) - null tant que la livraison
     // n'a pas ete executee. Utilise uniquement pour les affectations FTL
     // simples (jamais sequencees en Tournee) : le cas consolide a deja son
@@ -167,6 +175,15 @@ public class Affectation {
 
     @Column(name = "destinataire_nom", length = 150)
     private String destinataireNom;
+
+    // Diffusion-course (affichage Mobile) : libelles d'origine/destination,
+    // connus au moment L1 (comme PropositionEmiseEvent) pour l'ecran
+    // propositions du chauffeur.
+    @Column(name = "origine_nom", length = 200)
+    private String origineNom;
+
+    @Column(name = "destination_nom", length = 200)
+    private String destinationNom;
 
     @Column(name = "destinataire_telephone", length = 30)
     private String destinataireTelephone;
@@ -206,7 +223,8 @@ public class Affectation {
                         UUID vehiculeId, String typeEmballageNom, Integer quantite,
                         String destinataireNom, String destinataireTelephone,
                         String modeCollecte, String typeDisponibilite,
-                        Double poidsTotalKg, Boolean grandeValeur) {
+                        Double poidsTotalKg, Boolean grandeValeur,
+                        String origineNom, String destinationNom, Instant expireA) {
         this.demandeId = demandeId;
         this.capaciteId = capaciteId;
         this.transporteurId = transporteurId;
@@ -244,6 +262,9 @@ public class Affectation {
         this.typeDisponibilite = typeDisponibilite;
         this.poidsTotalKg = poidsTotalKg;
         this.grandeValeur = grandeValeur;
+        this.origineNom = origineNom;
+        this.destinationNom = destinationNom;
+        this.expireA = expireA;
         // Diffusion-course : toute Affectation nait PROPOSEE, jamais
         // directement CONFIRMEE - meme la "meilleure" selon Kuhn-Munkres
         // n'est qu'une candidate diffusee parmi d'autres tant qu'aucun
@@ -286,6 +307,7 @@ public class Affectation {
     public BigDecimal getMontantVerseTransporteur() { return montantVerseTransporteur; }
     public boolean isTarificationModeDegrade() { return tarificationModeDegrade; }
     public Instant getDateCreation() { return dateCreation; }
+    public Instant getExpireA() { return expireA; }
 
     public Instant getLivraisonExecuteeLe() { return livraisonExecuteeLe; }
 
@@ -313,6 +335,8 @@ public class Affectation {
     public String getTypeEmballageNom() { return typeEmballageNom; }
     public Integer getQuantite() { return quantite; }
     public String getDestinataireNom() { return destinataireNom; }
+    public String getOrigineNom() { return origineNom; }
+    public String getDestinationNom() { return destinationNom; }
     public String getDestinataireTelephone() { return destinataireTelephone; }
     public String getModeCollecte() { return modeCollecte; }
     public String getTypeDisponibilite() { return typeDisponibilite; }
