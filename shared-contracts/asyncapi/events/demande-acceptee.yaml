@@ -3,9 +3,12 @@ info:
   title: DemandeAcceptee
   version: 1.0.0
   description: |
-    Événement publié par service-mkt (Mobile, Personne 1) côté application
+    Événement publié par service-cap (Mobile, Personne 1) côté application
     chauffeur lorsqu'un chauffeur accepte une des propositions diffusées par
-    service-opt (modèle diffusion-course).
+    service-opt (modèle diffusion-course) - service-cap est le microservice
+    porteur des capacités et des actions du chauffeur (déjà émetteur de
+    capacite-declaree via son CapEventPublisher) ; "service-mkt" dans une
+    version antérieure était un choix de nommage par défaut, corrigé ici.
     Consommé par service-opt (Moteur) qui résout la course de façon atomique
     (premier acceptant gagne) dans AffectationConfirmationService.
 
