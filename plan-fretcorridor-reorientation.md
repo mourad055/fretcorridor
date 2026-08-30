@@ -39,7 +39,12 @@ l'inverse : diffusion à tous les chauffeurs compatibles, premier acceptant gagn
   atomique (compare-and-swap en base) — premier arrivé gagne, aucune double-affectation
   possible même si deux acceptations arrivent hors ordre Kafka.
 - Deux contrats Kafka **Mobile → OPT** formalisés dans `shared-contracts/asyncapi/events/`
-  (AsyncAPI 3.0.0), **publiés par service-mkt** (Mobile) :
+  (AsyncAPI 3.0.0), **publiés par service-cap** (Mobile) — corrigé le 30/08 (commit
+  `32a168f`, Moteur) : la première version des contrats disait "service-mkt" par
+  choix de nommage par défaut côté Moteur, écart relevé côté Mobile. service-mkt est
+  100% côté client/chargeur (`DemandeController`, catalogue, aucun canal chauffeur) ;
+  service-cap est le porteur des capacités et actions du chauffeur (EF-CAP-01/02/03/07/08),
+  déjà émetteur de `capacite-declaree` via son `CapEventPublisher` — réutilisé ici :
   - `demande-acceptee.yaml` — chauffeur accepte. Champs : `eventId`, `affectationId`
     (clé de résolution de la course), `demandeId`, `capaciteId`, `transporteurId`
     (nullable, tolérance identique à `CapaciteDeclareeEvent`).
@@ -51,7 +56,7 @@ l'inverse : diffusion à tous les chauffeurs compatibles, premier acceptant gagn
   filtre les candidats exclus à chaque cycle.
 
 **Conséquence directe pour Personne 1 (Mobile)** : les événements Kafka sont émis
-côté **service-mkt**, pas via un appel REST gateway → service-opt. La PR #140
+côté **service-cap**, pas via un appel REST gateway → service-opt. La PR #140
 (UC-MAT-02, construite avant cette décision) implémentait le modèle CDC strict avec
 un relais REST gateway — **obsolète, à fermer**, voir §3 pour le détail.
 
@@ -75,10 +80,11 @@ un relais REST gateway — **obsolète, à fermer**, voir §3 pour le détail.
 - Validation téléphone cohérente (#137).
 - Formulaire capacité en popup (#138).
 - Détection IP réseau portable, scripts `run.sh`/`run_dev.sh` (#139).
-- **UC-MAT-02, modèle CDC strict (#140) — À FERMER**, superseded par §1. L'écran
+- **UC-MAT-02, modèle CDC strict (#140) — FERMÉE** (superseded par §1). L'écran
   "Mes propositions" (UI, countdown, motifs de refus) reste réutilisable, mais son
-  câblage data doit être refait pour appeler service-mkt (Kafka) au lieu de la
-  gateway (REST) — travail restant, pas encore commencé.
+  câblage data doit être refait pour publier vers **service-cap** (Kafka,
+  `CapEventPublisher`) au lieu d'appeler la gateway (REST) — travail restant, pas
+  encore commencé (§9).
 
 **Côté Web** : des changements CSS/composants sont déjà présents sur `dev`
 (`web/src/styles.css`, plusieurs composants `admin`/`bureau`/`transporteur`,
@@ -132,7 +138,7 @@ graphique, avant tout code.
 | Incompatibilité marchandises | **Moteur** | `CompatibiliteMarchandisesService` | ✅ Livré |
 | Optimisation d'itinéraire + détours | **Moteur** | ALNS déjà exposé en synchrone | ✅ Livré |
 | Interfaces façon Yango + charte graphique | **Mobile** | Toucher en priorité les écrans à fort trafic : `home_screen.dart`, `login_screen.dart`, `propositions_mission_screen.dart` (déjà réécrit pour UC-MAT-02, PR #140 — sera refait de toute façon pour §1, autant faire charte + rewiring ensemble). Maquette d'abord (§3). | ⏳ À faire |
-| Écran swipe des demandes | **Mobile** | `propositions_mission_screen.dart` actuel liste les propositions avec boutons Accepter/Refuser en colonne — sous diffusion-course, un chauffeur peut recevoir plusieurs propositions simultanées pour des demandes différentes (diffusion à tous les compatibles), donc une pile swipeable (type `Dismissible`/`CardSwiper`) est plus adaptée qu'une liste boutonnée. Le provider (`proposition_mission_provider.dart`) devra de toute façon être réécrit pour consommer service-mkt au lieu de la gateway REST (§1) — même chantier. | ⏳ À faire |
+| Écran swipe des demandes | **Mobile** | `propositions_mission_screen.dart` actuel liste les propositions avec boutons Accepter/Refuser en colonne — sous diffusion-course, un chauffeur peut recevoir plusieurs propositions simultanées pour des demandes différentes (diffusion à tous les compatibles), donc une pile swipeable (type `Dismissible`/`CardSwiper`) est plus adaptée qu'une liste boutonnée. Le provider (`proposition_mission_provider.dart`) devra de toute façon être réécrit pour publier vers service-cap au lieu d'appeler la gateway REST (§1) — même chantier. | ⏳ À faire |
 | Historique complet chauffeur | **Mobile** | Aucun écran d'historique consolidé n'existe aujourd'hui (`missions_screen.dart` ne montre que les missions actives/en cours). Lecture de données déjà exposées par service-opt (affectations passées) et service-exe (étapes exécutées) — nouvel écran, pas de nouvelle donnée à calculer côté backend. | ⏳ À faire, aucune dépendance |
 
 ---
@@ -277,7 +283,7 @@ versions une fois le flux Mobile implémenté.
 **Mobile** (Personne 1) :
 1. Fermer la PR #140 (§2, §8).
 2. Maquettes (§3) des écrans prioritaires — avant tout code.
-3. Rebrancher "Mes propositions" sur service-mkt/Kafka **et** appliquer la nouvelle
+3. Rebrancher "Mes propositions" sur service-cap/Kafka **et** appliquer la nouvelle
    charte en une seule passe (§3, note de séquencement).
 4. Sans dépendance Moteur, en parallèle : historique chauffeur, historique client,
    trajets préenregistrés, écran swipe, écrans de consultation (itinéraire, prix,
