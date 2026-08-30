@@ -1,0 +1,21 @@
+*--- 1. PARTIE CHAUFFEUR ---*
+
+- Gestion des axes avec les positions gps. Pour faire le matching on devra prendre en compte la position gps de la marchandise au point de départ, point de destination et la position gps du chauffeur.
+- Lorsqu'une demande est refusée chez un chauffeur, refaire le matching et le calcul automatiquement pour l'attribuer à un autre chauffeur.
+- Une demande du client doit être envoyée à tout les chauffeurs compatibles lors du matching si l'un accepte, la notification disparaît chez les autres. Mais doit être garder en historique.
+- Lorsqu'un chauffeur déclare un autre espace, il faut que le matching soit refait en fonction de cet espace pour pourvoir lui envoyer des demandes des clients qui existaient déjà mais n'étaient pas pris en compte et les nouvelles demandes des clients également.
+- Les interfaces de l'application du chauffeur doivent être dans la logique de celle de yango.
+- La chauffeur doit avoir l'historique de ses missions, livraisons, demandes refusées , de toutes les actions faites sur l'application.
+- Le matching se fait en fonction du point de récupération du colis, position de livraison du colis et de la position gps du chauffeur. Prendre en considération également les points d'arrêt.
+- Lorsqu'un chauffeur reçoit plusieurs demandes il pourra cliquer sur la demande et voir son nouvel itinéraire avec le nombre de kilomètres ajouté et le nombre ajouté pour arrivée au point d'arrêt de départ ou juste pour récupérer le colis du nouvel itinéraire si la demande est acceptée.
+- Le chauffeur pourra sur l'interface d'accueil swipper des demandes un peu comme lorsque tu as reçu une notification et puis tu l'as swippe.
+- L'application chauffeur doit permettre l'optimisation des itinéraires et pouvoir gérer les détours.
+- L'application chauffeur devra donner un itinéraire optimal au chauffeur et leur donner le nombre de temps et de kilomètres pour cet itinéraire, pareil pour les détours.
+- L'application chauffeur en faisant le matching tiendra compte du type de marchandises pour le chauffeur par exemple si le chauffeur a des miroirs, il ne peut pas lui proposer une demande qui contient des graviers, ou du bois car le bois peut briser les miroirs.
+
+*--- 2. PARTIE CLIENT ---*
+
+- Le client doit pouvoir refuser ou accepter une proposition du prix qui sera calculé en fonction du kilogrammes volumétrique de son colis ou marchandise et de la distance pour effectuer la livraison du dit colis.
+- Les interfaces de l'application cliente doivent être dans la logique de celle de yango.
+- Le client doit pouvoir préenregistrer le trajet (position de départ, position d'arrivée ou destination) des futurs colis c'est à dire il donne un nom au trajet et le jour où il veut faire une demande il utilise le nom de ce trajet directement et l'App saura les positions départ et arrivée du dit colis dans la partie de son profil ça doit être une icône cliquable dans sa page de profil, il doit avoir une page d'historique de ses demandes et différentes actions dans l'application.
+- Un client fait une demande et donne les informations du colis on lui fera une proposition de prix qu'il pourra refuser ou accepter. Il pourra suivre son colis via une carte de suivi où il y aura la position gps du chauffeur et la position gps de son colis lorsque son colis est récupéré on met récupéré et la position du chauffeur devient la position du colis.
