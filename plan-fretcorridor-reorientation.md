@@ -31,7 +31,7 @@ l'inverse : diffusion à tous les chauffeurs compatibles, premier acceptant gagn
 
 **Décision actée le 29/08** : modèle **diffusion-course** retenu, documenté dans
 `docs/adr/0019-diffusion-course-vs-3-propositions.md`. Déjà implémenté côté Moteur
-(commit `a2d3a92` sur `dev`, 66 tests OPT + 22 tests TRK) :
+(commits `a2d3a92`, `e3d153d`, `d836381` sur `dev`, 79 tests OPT + 22 tests TRK) :
 
 - `AffectationL1Service` diffuse une proposition à **tous** les chauffeurs compatibles
   (plus de "3 propositions au client").
@@ -59,7 +59,11 @@ l'inverse : diffusion à tous les chauffeurs compatibles, premier acceptant gagn
 **Conséquence directe pour Personne 1 (Mobile)** : les événements Kafka sont émis
 côté **service-cap**, pas via un appel REST gateway → service-opt. La PR #140
 (UC-MAT-02, construite avant cette décision) implémentait le modèle CDC strict avec
-un relais REST gateway — **obsolète, à fermer**, voir §3 pour le détail.
+un relais REST gateway — **obsolète, à fermer**, voir §3 pour le détail. À ne pas
+confondre avec le GET interne `service-opt → /api/opt/affectations/proposees`
+(back-to-back protégé X-Internal-Service-Key, consommé par **service-cap**), qui
+lui est légitime et livré (§2) : c'est l'écran "Mes propositions" qui s'appuie dessus
+(lecture) en plus de publier les événements d'acceptation/refus vers service-cap.
 
 ---
 
@@ -74,6 +78,20 @@ un relais REST gateway — **obsolète, à fermer**, voir §3 pour le détail.
 - Endpoint simulation d'insertion (`POST /api/opt/simulation-insertion`, JWT requis).
 - Matrice d'incompatibilité marchandises (`CompatibiliteMarchandisesService`).
 - TRK "colis récupéré = position chauffeur" (`ColisRecuperation`, `GET /api/trk/suivi/{missionId}`).
+- **Lecture des propositions du chauffeur (complément 30/08, commits `e3d153d` +
+  `d836381`)** : toute la partie "le chauffeur sait qu'une proposition lui est
+  diffusée" manquait côté Moteur (rien côté Mobile à l'époque, constat relevé 30/08) :
+  - `GET /api/opt/affectations/proposees?transporteurId=` (clé X-Internal-Service-Key,
+    back-to-back par service-cap) → propositions PROPOSEE d'un transporteur, enrichies
+    de `origineNom`/`destinationNom`/`statut`/`expireA` (migration V27 `transporteur_id`).
+  - Événement **`proposition-diffusee-chauffeur`** (topic Kafka, publié par service-opt,
+    partition par `transporteurId`) — notif en 2ᵉ temps, en bonus du GET.
+  - **Timeout 15 min** (config `fretcorridor.opt.proposition-expiration-ms`, défaut
+    900000) : `ExpirationPropositionService` (tâche planifiée) passe EXPIREE une
+    proposition PROPOSEE dont `expireA` est dépassé, puis remet la demande en file si
+    elle n'a plus aucune proposition active ni confirmée (migration V28 : `origine_nom`,
+    `destination_nom`, `expire_a`). Contrat AsyncAPI `proposition-diffusee-chauffeur.yaml`
+    à jour.
 
 **Déjà livré côté Mobile** (branches dédiées, PR ouvertes sur `dev`, voir §8) :
 - CRUD véhicule + upload photo carte grise (#135).
@@ -277,20 +295,26 @@ Captures faites à ce jour et ce qu'elles confirment :
 
 ## 9. Ordre de démarrage recommandé (par périmètre)
 
-**Moteur** (Personne 3) : terminé pour l'essentiel (§2) — reste à valider les
-contrats Kafka avec Personne 1 (déjà fait dans ce document, §1) et à figer les
-versions une fois le flux Mobile implémenté.
+**Moteur** (Personne 3) : terminé pour l'essentiel (§2), y compris la lecture des
+propositions chauffeur (GET `/proposees` + `proposition-diffusee-chauffeur` +
+timeout 15 min, commits `e3d153d`/`d836381`). Le flux "Mes propositions" côté
+Mobile peut donc appeler **service-opt** (GET, back-to-back) et/ou consommer
+**service-cap** (Kafka) — les deux chemins sont disponibles. Reste à valider/figer
+les versions des contrats Kafka une fois le câblage Mobile réellement intégré
+(demande explicite de Personne 3).
 
 **Mobile** (Personne 1) :
 1. Fermer la PR #140 (§2, §8).
 2. Maquettes (§3) des écrans prioritaires — avant tout code.
-3. Rebrancher "Mes propositions" sur service-cap/Kafka **et** appliquer la nouvelle
-   charte en une seule passe (§3, note de séquencement).
+3. Rebrancher "Mes propositions" sur service-cap/Kafka (et le GET service-opt)
+   **et** appliquer la nouvelle charte en une seule passe (§3, note de séquencement).
+   Le compte à rebours de la maquette ("expire 5 min") correspond à l'`expireA`
+   renvoyé par le GET / proposé par l'événement (défaut 15 min côté Moteur).
 4. Sans dépendance Moteur, en parallèle : historique chauffeur, historique client,
    trajets préenregistrés, écran swipe, écrans de consultation (itinéraire, prix,
    suivi carte).
-5. Confirmer à Personne 3 (Moteur) l'implémentation des contrats Kafka pour figer
-   les versions (demande explicite de Personne 3).
+5. Confirmer à Personne 3 (Moteur) l'intégration effective des contrats Kafka pour
+   figer les versions (demande explicite de Personne 3).
 
 **Web** (Personne 2) : à définir avec la personne concernée (§6) — la charte
 graphique la concerne directement, le reste de ce document ne couvre pas son
