@@ -212,8 +212,25 @@ nuances par composant, à ressortir au moment de maquetter chaque écran)
   ci-dessus prime pour couleur/typo/composant.
 
 **Pas encore fait** : inventaire écran par écran des maquettes vs l'existant (Mobile
-ET Web) — premier échantillon capturé le 29/08 (écran d'accueil + onboarding App
-Client), pas exhaustif. À compléter avant de maquetter (§3) chaque écran.
+ET Web) — échantillon capturé le 29-30/08 (rendu Chrome headless des fichiers HTML
+du zip), pas exhaustif. À compléter avant de maquetter (§3) chaque écran.
+
+Captures faites à ce jour et ce qu'elles confirment :
+- **App Client** : accueil + onboarding ("Vous envoyez pour...?", 3 profils :
+  Moi-même/Mon commerce/Mon entreprise) + saisie numéro avec clavier virtuel simulé.
+- **App Transporteur, écran carte** : LE screen de référence pour le rebranchement
+  diffusion-course (§9) — affiche simultanément plusieurs propositions ("DEMANDES
+  COMPATIBLES · 3") en cartes empilées avec % de match ("MATCH 94%"), compte à
+  rebours par carte ("expire 5 min"), delta km/temps par rapport à la mission en
+  cours (+3 KM +12 MIN — exactement l'aperçu d'itinéraire de la §4), lien
+  "Itinéraire →", et l'indication explicite **"balayer = refuser"** (confirme le
+  pattern swipe demandé, item 4). Bandeau "MISSION EN COURS" toujours visible en
+  haut pendant qu'on swipe les nouvelles propositions.
+- **App Transporteur, écran Historique** : onglets Tout/Missions/Refus & manquées.
+  Entrée type observée : *"Attribuée à un autre — Un transporteur a accepté avant
+  vous · la notification a disparu, trace conservée"* — correspond exactement au
+  comportement attendu par ADR 0019 (les affectations concurrentes expirent, restent
+  en historique). Bon gabarit direct pour l'item "historique complet chauffeur" (§4).
 
 ---
 
