@@ -39,10 +39,11 @@ l'inverse : diffusion à tous les chauffeurs compatibles, premier acceptant gagn
   atomique (compare-and-swap en base) — premier arrivé gagne, aucune double-affectation
   possible même si deux acceptations arrivent hors ordre Kafka.
 - Deux contrats Kafka **Mobile → OPT** formalisés dans `shared-contracts/asyncapi/events/`
-  (AsyncAPI 3.0.0), **publiés par service-cap** (Mobile) — corrigé le 30/08 (commit
-  `32a168f`, Moteur) : la première version des contrats disait "service-mkt" par
-  choix de nommage par défaut côté Moteur, écart relevé côté Mobile. service-mkt est
-  100% côté client/chargeur (`DemandeController`, catalogue, aucun canal chauffeur) ;
+  (AsyncAPI 3.0.0), **publiés par service-cap** (Mobile) — corrigé le 30/08 (commits
+  `32a168f` côté contrats, `0b4e726` côté ce plan, Moteur) : la première version
+  disait "service-mkt" par choix de nommage par défaut côté Moteur, écart relevé
+  côté Mobile et confirmé par les deux. service-mkt est 100% côté client/chargeur
+  (`DemandeController`, catalogue, aucun canal chauffeur, conforme EF-MKT-*) ;
   service-cap est le porteur des capacités et actions du chauffeur (EF-CAP-01/02/03/07/08),
   déjà émetteur de `capacite-declaree` via son `CapEventPublisher` — réutilisé ici :
   - `demande-acceptee.yaml` — chauffeur accepte. Champs : `eventId`, `affectationId`
