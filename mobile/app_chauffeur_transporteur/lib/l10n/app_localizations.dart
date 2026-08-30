@@ -206,6 +206,36 @@ abstract class AppLocalizations {
   /// **'Notifications'**
   String get notifications;
 
+  /// No description provided for @notifTitrePropositionRecue.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle proposition'**
+  String get notifTitrePropositionRecue;
+
+  /// No description provided for @notifTitreStatutMission.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mise à jour de mission'**
+  String get notifTitreStatutMission;
+
+  /// No description provided for @notifTitreInfoGenerale.
+  ///
+  /// In fr, this message translates to:
+  /// **'Information'**
+  String get notifTitreInfoGenerale;
+
+  /// No description provided for @notifTitrePropositionRetour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Proposition de retour'**
+  String get notifTitrePropositionRetour;
+
+  /// No description provided for @notifTitreAlerteEcart.
+  ///
+  /// In fr, this message translates to:
+  /// **'Alerte'**
+  String get notifTitreAlerteEcart;
+
   /// No description provided for @langueMenuItem.
   ///
   /// In fr, this message translates to:
@@ -1765,6 +1795,144 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Déclarée le {date}'**
   String declareeLe(String date);
+
+  /// No description provided for @mesPropositionsMission.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes propositions'**
+  String get mesPropositionsMission;
+
+  /// No description provided for @mesPropositionsMissionDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Missions à accepter ou refuser'**
+  String get mesPropositionsMissionDescription;
+
+  /// No description provided for @remunerationLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rémunération'**
+  String get remunerationLabel;
+
+  /// No description provided for @expireDans.
+  ///
+  /// In fr, this message translates to:
+  /// **'Expire dans {secondes} s'**
+  String expireDans(String secondes);
+
+  /// No description provided for @propositionExpiree.
+  ///
+  /// In fr, this message translates to:
+  /// **'Expirée'**
+  String get propositionExpiree;
+
+  /// No description provided for @aucunePropositionMission.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune proposition en attente pour le moment.'**
+  String get aucunePropositionMission;
+
+  /// No description provided for @poidsLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poids'**
+  String get poidsLabel;
+
+  /// No description provided for @distanceLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Distance'**
+  String get distanceLabel;
+
+  /// No description provided for @dureeLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Durée'**
+  String get dureeLabel;
+
+  /// No description provided for @modeCollecteLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mode de collecte'**
+  String get modeCollecteLabel;
+
+  /// No description provided for @disponibiliteLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Disponibilité'**
+  String get disponibiliteLabel;
+
+  /// No description provided for @marchandiseLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Marchandise'**
+  String get marchandiseLabel;
+
+  /// No description provided for @destinataireLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Destinataire'**
+  String get destinataireLabel;
+
+  /// No description provided for @motifRefusTitre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pourquoi refusez-vous cette mission ?'**
+  String get motifRefusTitre;
+
+  /// No description provided for @motifTropLoin.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trop loin de ma position'**
+  String get motifTropLoin;
+
+  /// No description provided for @motifIndisponible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Indisponible sur ce créneau'**
+  String get motifIndisponible;
+
+  /// No description provided for @motifRemunerationInsuffisante.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rémunération insuffisante'**
+  String get motifRemunerationInsuffisante;
+
+  /// No description provided for @motifVehiculeInadapte.
+  ///
+  /// In fr, this message translates to:
+  /// **'Véhicule non adapté'**
+  String get motifVehiculeInadapte;
+
+  /// No description provided for @motifAutre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre raison'**
+  String get motifAutre;
+
+  /// No description provided for @confirmerRefus.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmer le refus'**
+  String get confirmerRefus;
+
+  /// No description provided for @missionAcceptee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mission acceptée !'**
+  String get missionAcceptee;
+
+  /// No description provided for @missionRefusee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mission refusée.'**
+  String get missionRefusee;
+
+  /// No description provided for @propositionIndisponible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette proposition n\'est plus disponible (déjà répondue ou expirée).'**
+  String get propositionIndisponible;
 }
 
 class _AppLocalizationsDelegate

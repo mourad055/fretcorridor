@@ -311,6 +311,7 @@
   "aucunePropositionMission": "No pending proposal right now.",
   "poidsLabel": "Weight",
   "distanceLabel": "Distance",
+  "dureeLabel": "Duration",
   "modeCollecteLabel": "Pickup mode",
   "disponibiliteLabel": "Availability",
   "marchandiseLabel": "Goods",

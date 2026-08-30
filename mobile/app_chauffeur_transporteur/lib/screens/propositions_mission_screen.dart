@@ -5,11 +5,14 @@ import '../l10n/app_localizations.dart';
 import '../providers/proposition_mission_provider.dart';
 import '../theme/app_theme.dart';
 
-// UC-MAT-02 (CDC page 43) : rémunération affichée en premier (RG-049), puis
-// origine/destination/date/nature/quantité/distance/mode ; compte à rebours
-// avant expiration ; en cas de refus, liste courte de motifs sans champ
-// libre obligatoire (RG-050/RG-051, aucune pénalité de fiabilité pour un
-// refus isolé).
+// UC-MAT-02/diffusion-course (30/08, ADR 0019) : rémunération affichée en
+// premier (RG-049), origine/destination/distance/durée, compte à rebours
+// avant expiration (15 min par défaut, cf service-opt) ; en cas de refus,
+// liste courte de motifs sans champ libre obligatoire (RG-050/RG-051, aucune
+// pénalité de fiabilité pour un refus isolé). Sous ce modèle, la même
+// demande peut être diffusée à plusieurs chauffeurs en parallèle -- premier
+// acceptant gagne, une proposition perdue disparaît toute seule au prochain
+// rafraîchissement (statut != PROPOSEE).
 class PropositionsMissionScreen extends ConsumerStatefulWidget {
   const PropositionsMissionScreen({super.key});
 
@@ -137,13 +140,12 @@ class _PropositionsMissionScreenState extends ConsumerState<PropositionsMissionS
           ),
           _ligne(Icons.location_on, p.destinationNom ?? '—'),
           const SizedBox(height: 10),
+          // Marchandise/poids/destinataire pas encore exposes par le GET
+          // OPT (AffectationResponse) -- distance/duree seulement pour
+          // l'instant, cf plan-fretcorridor-reorientation.md.
           Wrap(spacing: 16, runSpacing: 6, children: [
-            if (p.typeEmballageNom != null) _detail(t.marchandiseLabel, '${p.typeEmballageNom}${p.quantite != null ? ' × ${p.quantite}' : ''}'),
-            if (p.poidsTotalKg != null) _detail(t.poidsLabel, '${p.poidsTotalKg!.toStringAsFixed(0)} kg'),
             if (p.distanceMetres != null) _detail(t.distanceLabel, '${(p.distanceMetres! / 1000).toStringAsFixed(0)} km'),
-            if (p.modeCollecte != null) _detail(t.modeCollecteLabel, p.modeCollecte!),
-            if (p.typeDisponibilite != null) _detail(t.disponibiliteLabel, p.typeDisponibilite!),
-            if (p.destinataireNom != null) _detail(t.destinataireLabel, p.destinataireNom!),
+            if (p.dureeSecondes != null) _detail(t.dureeLabel, '${(p.dureeSecondes! / 60).round()} min'),
           ]),
           const SizedBox(height: 16),
           Row(children: [
@@ -196,11 +198,15 @@ class _PropositionsMissionScreenState extends ConsumerState<PropositionsMissionS
   }
 
   Future<void> _accepter(AppLocalizations t, PropositionMission p) async {
-    final erreur = await ref.read(propositionMissionProvider.notifier).accepter(p.id);
+    final erreur = await ref.read(propositionMissionProvider.notifier).accepter(p);
     if (!mounted) return;
     _afficherResultat(erreur == null ? t.missionAcceptee : t.propositionIndisponible, succes: erreur == null);
   }
 
+  // Le motif choisi n'est pas encore transmis au backend (RG-050 demande la
+  // question a l'utilisateur, mais le contrat demande-refusee-par-chauffeur.yaml
+  // ne porte aucun champ motif a ce jour) -- on garde la question cote UX,
+  // simplement sans persistance serveur pour l'instant.
   Future<void> _ouvrirMotifsRefus(AppLocalizations t, PropositionMission p) async {
     final motif = await showModalBottomSheet<String>(
       context: context,
@@ -209,7 +215,7 @@ class _PropositionsMissionScreenState extends ConsumerState<PropositionsMissionS
       builder: (context) => _FeuilleMotifsRefus(t: t),
     );
     if (motif == null || !mounted) return;
-    final erreur = await ref.read(propositionMissionProvider.notifier).refuser(p.id, motif);
+    final erreur = await ref.read(propositionMissionProvider.notifier).refuser(p);
     if (!mounted) return;
     _afficherResultat(erreur == null ? t.missionRefusee : t.propositionIndisponible, succes: erreur == null);
   }

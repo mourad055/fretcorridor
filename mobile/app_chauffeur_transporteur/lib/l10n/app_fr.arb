@@ -311,6 +311,7 @@
   "aucunePropositionMission": "Aucune proposition en attente pour le moment.",
   "poidsLabel": "Poids",
   "distanceLabel": "Distance",
+  "dureeLabel": "Durée",
   "modeCollecteLabel": "Mode de collecte",
   "disponibiliteLabel": "Disponibilité",
   "marchandiseLabel": "Marchandise",
