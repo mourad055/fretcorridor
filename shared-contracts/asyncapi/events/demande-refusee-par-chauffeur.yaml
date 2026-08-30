@@ -3,10 +3,13 @@ info:
   title: DemandeRefuseeParChauffeur
   version: 1.0.0
   description: |
-    Événement publié par service-mkt (Mobile, Personne 1) côté application
+    Événement publié par service-cap (Mobile, Personne 1) côté application
     chauffeur lorsqu'un chauffeur refuse explicitement une proposition diffusée
-    par service-opt (modèle diffusion-course). Distinct de l'expiration
-    automatique (une autre demande confirmée ailleurs).
+    par service-opt (modèle diffusion-course) - service-cap est le microservice
+    porteur des capacités et des actions du chauffeur (déjà émetteur de
+    capacite-declaree via son CapEventPublisher) ; "service-mkt" dans une
+    version antérieure était un choix de nommage par défaut, corrigé ici.
+    Distinct de l'expiration automatique (une autre demande confirmée ailleurs).
     Consommé par service-opt (Moteur) : expire l'Affectation refusée, ajoute le
     transporteur à la liste d'exclusion de la demande, et remet la demande en
     file pour qu'un prochain cycle la diffuse à un AUTRE chauffeur compatible.
