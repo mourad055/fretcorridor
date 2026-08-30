@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Component } from '@angular/core';
 import { FcResponsiveTableDirective } from './fc-responsive-table.directive';
+import { PageShellComponent } from '../components/page-shell/page-shell.component';
 
 @Component({
   standalone: true,
@@ -37,5 +38,38 @@ describe('FcResponsiveTableDirective', () => {
     const cells = table.querySelectorAll('tbody td');
     expect(cells[0].getAttribute('data-label')).toBe('Origine');
     expect(cells[1].getAttribute('data-label')).toBe('Destination');
+  });
+
+  it('fonctionne via app-page-shell (contenu projeté)', () => {
+    @Component({
+      standalone: true,
+      imports: [PageShellComponent],
+      template: `
+        <app-page-shell>
+          <table class="fc-table">
+            <thead>
+              <tr>
+                <th>Acteur</th>
+                <th>Téléphone</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Alice</td>
+                <td>+237600000001</td>
+              </tr>
+            </tbody>
+          </table>
+        </app-page-shell>
+      `,
+    })
+    class PageShellHostComponent {}
+
+    const fixture = TestBed.createComponent(PageShellHostComponent);
+    fixture.detectChanges();
+
+    const table = fixture.nativeElement.querySelector('table.fc-table') as HTMLTableElement;
+    expect(table.classList.contains('fc-table--responsive')).toBe(true);
+    expect(table.querySelector('tbody td')?.getAttribute('data-label')).toBe('Acteur');
   });
 });

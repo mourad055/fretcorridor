@@ -13,7 +13,9 @@ import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /** Demande en attente d'un cycle de matching (EF-MAT-01, "par cycles a fenetre"). */
@@ -84,6 +86,15 @@ public class DemandeEnAttente {
     @Column(name = "grande_valeur")
     private Boolean grandeValeur;
 
+    // Diffusion-course (plan de reorientation, partie Chauffeur point 2) :
+    // transporteurs ayant refuse explicitement cette demande. Cumulee a chaque
+    // DemandeRefuseeParChauffeur et lue par MatchingCycleService pour ecarter
+    // leurs capacites du prochain cycle sur CETTE demande (jamais re-diffuser
+    // a un chauffeur qui vient de refuser). JSONB (V26), mutable.
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "transporteurs_exclus", columnDefinition = "jsonb")
+    private Set<UUID> transporteursExclus;
+
     @Column(nullable = false)
     private boolean traitee = false;
 
@@ -137,6 +148,41 @@ public class DemandeEnAttente {
     public Map<String, Double> getValeursCriteres() { return valeursCriteres; }
     public boolean isTraitee() { return traitee; }
     public void marquerTraitee() { this.traitee = true; }
+
+    // Diffusion-course (plan de reorientation) : apres un refus explicite
+    // d'un chauffeur (DemandeRefuseeParChauffeur), la demande est remise en
+    // file (traitee=false) pour qu'un prochain cycle la diffuse a un autre
+    // chauffeur compatible. Associee a la remise a zero de la contrainte de
+    // fenetre RG-105 (date_reception remise a l'instant du refus) pour que la
+    // demande soit immédiatement eligible au prochain cycle et ne soit pas
+    // retenue par une ancienne horodatation.
+    public void marquerNonTraitee() { this.traitee = false; }
+
+    // Diffusion-course : remise en file complete apres un refus de chauffeur.
+    // Repasse traitee=false ET remet date_reception a maintenant pour que la
+    // demande redevienne immediatement eligible au prochain cycle, sans etre
+    // bloquee par l'ancienne horodatation (RG-105 fenetre depend de dateReception).
+    public void remettreEnFile() {
+        this.traitee = false;
+        this.dateReception = Instant.now();
+    }
+
+    // Diffusion-course : enregistre le transporteur qui a refuse cette
+    // demande (cumulatif, sans doublon). Appele lors d'un
+    // DemandeRefuseeParChauffeur, juste avant la remise en file, pour que le
+    // prochain cycle ecarte ses capacites.
+    public void exclureTransporteur(UUID transporteurId) {
+        if (transporteurId == null) {
+            return;
+        }
+        if (this.transporteursExclus == null) {
+            this.transporteursExclus = new LinkedHashSet<>();
+        }
+        this.transporteursExclus.add(transporteurId);
+    }
+
+    public Set<UUID> getTransporteursExclus() { return transporteursExclus; }
+
     public BigDecimal getPoidsTaxableKg() { return poidsTaxableKg; }
     public Instant getFenetreDebut() { return fenetreDebut; }
     public Instant getFenetreFin() { return fenetreFin; }

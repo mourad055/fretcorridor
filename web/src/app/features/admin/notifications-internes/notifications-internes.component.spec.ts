@@ -5,6 +5,7 @@ import { provideRouter } from '@angular/router';
 import { axe } from 'jest-axe';
 import { NotificationsInternesComponent } from './notifications-internes.component';
 import { environment } from '../../../../environments/environment';
+import { provideTranslateServiceForTests } from '../../../../testing/translate-testing.providers';
 
 describe('NotificationsInternesComponent', () => {
   let httpMock: HttpTestingController;
@@ -12,7 +13,7 @@ describe('NotificationsInternesComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [NotificationsInternesComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([]), provideTranslateServiceForTests()],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
@@ -49,6 +50,8 @@ describe('NotificationsInternesComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Dossier en retard — Bureau Douala');
+    expect(fixture.nativeElement.querySelector('.notifications-internes__item')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('time')).toBeTruthy();
   });
 
   it("n'a aucune violation d'accessibilité automatiquement détectable", async () => {

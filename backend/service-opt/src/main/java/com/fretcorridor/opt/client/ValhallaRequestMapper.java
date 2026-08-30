@@ -63,13 +63,16 @@ class ValhallaRequestMapper {
      * ValhallaClientProperties (decision d'equipe, pas une valeur du CDC -
      * cf. commentaire sur ce champ dans ValhallaClientProperties).
      *
-     * LIMITATION MVP ASSUMEE : la geometrie encodee (geometrieEncodee)
-     * n'est fiable que pour un trajet a un seul leg (2 points, cas du V0 -
-     * pas de multi-arret avant le sequencement L2 en Phase 2). Concatener
-     * naivement les shapes de plusieurs legs produirait une polyline
-     * invalide (chaque encodage Valhalla est delta-compresse depuis son
-     * propre point de depart) - on retourne null plutot qu'une geometrie
-     * fausse, avec un avertissement explicite.
+     * GEOMETRIE MULTI-LEGS (plan de reorientation, partie Chauffeur point 3
+     * "multi-legs Valhalla + points d'arret") : une reponse avec plusieurs
+     * legs (trajet avec points d'arret intermediaires : position chauffeur ->
+     * point d'enlevement -> point de livraison, ou tournee multi-etapes)
+     * porte un shape PAR leg, chacun auto-suffisant (encode depuis le point
+     * de depart de son leg). On ne concatene plus naivement (polyline
+     * invalide, delta-compression par leg) : on decode chaque leg, on
+     * fusionne les points en evit le point de jonction duplique, puis on
+     * re-encode un seul shape continu. Distance/duree viennent de
+     * trip.summary (deja agrege par Valhalla sur tout le trajet).
      */
     ItineraireResponseDto mapVersDto(ValhallaRouteResponse reponse, double margeRatio) {
         ValhallaRouteResponse.ValhallaTrip trip = reponse.trip();
@@ -82,15 +85,42 @@ class ValhallaRequestMapper {
         double dureeSecondes = trip.summary().time();
         double intervalleConfianceSecondes = dureeSecondes * margeRatio;
 
-        String geometrieEncodee;
-        if (trip.legs().size() == 1) {
-            geometrieEncodee = trip.legs().get(0).shape();
-        } else {
-            log.warn("Trajet a {} legs - geometrie multi-leg non agregee en MVP (Phase 2 avec le "
-                    + "sequencement L2), geometrieEncodee renvoyee a null pour ce calcul", trip.legs().size());
-            geometrieEncodee = null;
-        }
+        String geometrieEncodee = agregerGeometrieMultiLegs(trip.legs());
 
         return new ItineraireResponseDto(distanceMetres, dureeSecondes, intervalleConfianceSecondes, geometrieEncodee);
+    }
+
+    /**
+     * Agrege les shapes des legs en un seul shape continue. Retourne null
+     * (comportement degrade historique) uniquement si aucun leg ne porte de
+     * shape exploitable - jamais une geometrie fausse.
+     */
+    private String agregerGeometrieMultiLegs(List<ValhallaRouteResponse.ValhallaLeg> legs) {
+        java.util.List<double[]> tousPoints = new java.util.ArrayList<>();
+        double[] precedent = null;
+        for (ValhallaRouteResponse.ValhallaLeg leg : legs) {
+            if (leg.shape() == null || leg.shape().isEmpty()) {
+                continue;
+            }
+            double[][] pointsLeg = PolylineUtil.decoder(leg.shape());
+            for (double[] point : pointsLeg) {
+                if (precedent != null
+                        && point[0] == precedent[0] && point[1] == precedent[1]) {
+                    // Point de jonction duplique entre deux legs consecutifs -
+                    // on ne l'ajoute qu'une fois pour garder une polyline valide.
+                    continue;
+                }
+                tousPoints.add(point);
+                precedent = point;
+            }
+        }
+        if (tousPoints.isEmpty()) {
+            log.warn("Aucun shape de leg exploitable - geometrieEncodee renvoyee a null");
+            return null;
+        }
+        if (tousPoints.size() == 1) {
+            return PolylineUtil.encoder(tousPoints.toArray(new double[0][]));
+        }
+        return PolylineUtil.encoder(tousPoints.toArray(new double[0][]));
     }
 }

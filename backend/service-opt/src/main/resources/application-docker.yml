@@ -27,6 +27,11 @@ spring:
       base-url: http://service-cap:8096
       connect-timeout-ms: 200
       read-timeout-ms: 300
+    service-trk:
+      base-url: http://service-trk:8087
+      connect-timeout-ms: 200
+      read-timeout-ms: 300
+      position-max-age-secondes: 300
     valhalla:
       base-url: http://valhalla:8002
       # Contrairement a service-mat (meme porteur, latence ~ms), Valhalla est

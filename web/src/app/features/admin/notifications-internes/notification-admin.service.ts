@@ -22,33 +22,41 @@ export class NotificationAdminService {
 
   dossiersEnRetard(): Observable<NotificationAdmin[]> {
     return this.tenantsService.lister().pipe(
-      switchMap((tenants) =>
-        forkJoin(
+      switchMap((tenants) => {
+        if (tenants.length === 0) {
+          // forkJoin([]) n'émet jamais (RxJS EMPTY) — la page resterait en chargement infini.
+          return of([] as NotificationAdmin[]);
+        }
+        return forkJoin(
           tenants.map((tenant) =>
             this.dossiersService.fileDeTravail(tenant.id).pipe(
               map((dossiers) => ({ tenant, dossiers })),
               catchError(() => of({ tenant, dossiers: [] }))
             )
           )
-        )
-      ),
-      map((parTenant) => {
-        const maintenant = Date.now();
-        const alertes: NotificationAdmin[] = [];
-        for (const { tenant, dossiers } of parTenant) {
-          for (const dossier of dossiers) {
-            const enRetard = dossier.statut !== 'CLOS' && new Date(dossier.delaiTraitement).getTime() < maintenant;
-            if (enRetard) {
-              alertes.push({
-                titre: `Dossier en retard — ${tenant.nom}`,
-                detail: `${dossier.type} (${dossier.priorite}) — délai dépassé le ${dossier.delaiTraitement}`,
-                tenantId: tenant.id,
-                dossierId: dossier.id,
-              });
+        ).pipe(
+          map((parTenant) => {
+            const maintenant = Date.now();
+            const alertes: NotificationAdmin[] = [];
+            for (const { tenant, dossiers } of parTenant) {
+              for (const dossier of dossiers) {
+                const enRetard = dossier.statut !== 'CLOS' && new Date(dossier.delaiTraitement).getTime() < maintenant;
+                if (enRetard) {
+                  alertes.push({
+                    tenantId: tenant.id,
+                    tenantNom: tenant.nom,
+                    dossierId: dossier.id,
+                    type: dossier.type,
+                    priorite: dossier.priorite,
+                    statut: dossier.statut,
+                    delaiTraitement: dossier.delaiTraitement,
+                  });
+                }
+              }
             }
-          }
-        }
-        return alertes;
+            return alertes;
+          })
+        );
       })
     );
   }

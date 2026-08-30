@@ -1,21 +1,15 @@
 package com.fretcorridor.opt.domain;
 
-import com.fretcorridor.opt.algorithm.KuhnMunkresSolver;
 import com.fretcorridor.opt.client.CandidatCoutDto;
 import com.fretcorridor.opt.client.CoutLotRequestDto;
 import com.fretcorridor.opt.client.CoutLotResponseDto;
 import com.fretcorridor.opt.client.CoutResponseDto;
 import com.fretcorridor.opt.client.ItineraireRequestDto;
 import com.fretcorridor.opt.client.ItineraireResponseDto;
-import com.fretcorridor.opt.client.AxeDetailDto;
-import com.fretcorridor.opt.client.ServiceCapClient;
-import com.fretcorridor.opt.client.ServiceGeoClient;
 import com.fretcorridor.opt.client.ServiceMatClient;
 import com.fretcorridor.opt.client.ValhallaClient;
-import com.fretcorridor.opt.messaging.AffectationConfirmeeEvent;
 import com.fretcorridor.opt.messaging.OptEventPublisher;
 import com.fretcorridor.opt.messaging.PropositionEmiseEvent;
-import com.fretcorridor.opt.messaging.RepartitionConventionnelleAppliqueeEvent;
 import com.fretcorridor.opt.tarification.TarificationL4Service;
 import com.fretcorridor.opt.tarification.TarificationResultat;
 import org.slf4j.Logger;
@@ -25,25 +19,41 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 /**
- * Orchestration du L1 (Sprint 5, EF-MAT-01/02/03) : appariement optimal par
- * lots via Kuhn-Munkres, JAMAIS glouton (anti-patron explicite du CDC).
+ * Orchestration du L1 (Sprint 5, revu diffusion-course - plan de
+ * reorientation post-demo).
  *
- * Construit la matrice de cout demande x capacite en appelant service-mat une
- * fois par demande (coherent avec le contrat CoutLotRequest cote MAT : cout
- * d'un lot de candidats face a UNE demande), puis resout l'affectation
- * optimale sur l'ensemble du lot d'un coup.
+ * CHANGEMENT DE MODELE (remplace le Kuhn-Munkres "1 gagnant par demande" du
+ * CDC EF-MKT-06/07) : pour chaque demande, une Affectation PROPOSEE est
+ * creee ET une PropositionEmise est publiee pour CHAQUE candidat dont le
+ * cout compose n'est pas une sentinelle (donc compatible - le filtrage
+ * physique/geospatial est deja fait en amont, cf MatchingCycleService.
+ * filtrerCandidatsL0/filtrerCapacitePhysique). Aucun candidat n'est choisi
+ * ici : la selection reelle se fait cote chauffeur (premier a accepter,
+ * cf AffectationConfirmationService/DemandeAccepteeListener), jamais a
+ * cette etape.
  *
- * Toutes les demandes du lot DOIVENT partager exactement le meme ensemble de
- * candidats - coherent avec le fait qu'elles proviennent du meme filtrage L0
- * (meme zone H3) : sinon une colonne "capacite" ne designerait pas la meme
- * capacite sur toutes les lignes et la matrice n'aurait pas de sens.
+ * CE QUI N'EST PLUS FAIT ICI (deplace vers AffectationConfirmationService,
+ * qui ne s'execute qu'a l'acceptation reelle d'un chauffeur - jamais avant) :
+ *   - reservation de capacite (ServiceCapClient.reserver)
+ *   - publication AffectationConfirmeeEvent (-> service-exe)
+ *   - RepartitionConventionnelleAppliquee (-> service-pay)
+ * Publier ces trois choses ici, comme avant, reviendrait a confirmer une
+ * mission avant qu'aucun chauffeur n'ait rien accepte - contraire au modele
+ * diffusion-course ET au modele CDC (RG-050 : "a l'acceptation, la capacite
+ * est reservee atomiquement").
+ *
+ * LIMITATION CONNUE, documentee plutot que corrigee ce soir : rien
+ * n'empeche aujourd'hui qu'une meme capacite recoive des propositions
+ * PROPOSEE concurrentes issues de DEUX demandes differentes (le filtre
+ * physique verifie le reliquat declare, pas les reservations "en cours de
+ * course" d'autres demandes). Si un chauffeur accepte les deux, la seconde
+ * confirmation reelle echouera au moment de ServiceCapClient.reserver
+ * (refus service-cap, capacite insuffisante) plutot qu'a la diffusion - a
+ * traiter si observe en pratique, pas invente ici.
  */
 @Service
 public class AffectationL1Service {
@@ -55,362 +65,175 @@ public class AffectationL1Service {
     private final TarificationL4Service tarificationL4Service;
     private final AffectationRepository affectationRepository;
     private final OptEventPublisher eventPublisher;
-    private final ServiceGeoClient serviceGeoClient;
-    private final ServiceCapClient serviceCapClient;
+    private final CompatibiliteMarchandisesService compatibiliteMarchandisesService;
 
     public AffectationL1Service(ServiceMatClient serviceMatClient, ValhallaClient valhallaClient,
                                  TarificationL4Service tarificationL4Service,
                                  AffectationRepository affectationRepository,
                                  OptEventPublisher eventPublisher,
-                                 ServiceGeoClient serviceGeoClient,
-                                 ServiceCapClient serviceCapClient) {
+                                 CompatibiliteMarchandisesService compatibiliteMarchandisesService) {
         this.serviceMatClient = serviceMatClient;
         this.valhallaClient = valhallaClient;
         this.tarificationL4Service = tarificationL4Service;
         this.affectationRepository = affectationRepository;
         this.eventPublisher = eventPublisher;
-        this.serviceGeoClient = serviceGeoClient;
-        this.serviceCapClient = serviceCapClient;
+        this.compatibiliteMarchandisesService = compatibiliteMarchandisesService;
     }
 
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes) {
         return calculerAffectationOptimale(demandes, null, null);
     }
 
-    // BUG CORRIGE (audit de suivi Mobile) : origineNom/destinationNom
-    // partaient toujours en dur a null dans AffectationConfirmeeEvent plus
-    // bas -- Mission.origineNom/destinationNom (service-exe) restaient donc
-    // systematiquement vides, et l'app Chauffeur (qui affiche pourtant deja
-    // ces deux champs sur la liste des missions et le detail) ne montrait
-    // jamais l'axe. Surcharge plutot que modifier la signature existante :
-    // AffectationL1Controller (endpoint de verification manuelle, Sprint 5)
-    // et les tests existants n'ont pas de nom d'axe a fournir.
     public AffectationLotResultat calculerAffectationOptimale(List<DemandeAvecCandidats> demandes,
                                                                 String origineNom, String destinationNom) {
         if (demandes == null || demandes.isEmpty()) {
             return new AffectationLotResultat(false, List.of());
         }
 
-        List<UUID> capacitesReference = demandes.get(0).candidats().stream()
-                .map(CandidatCoutDto::capaciteId)
-                .toList();
-        Set<UUID> capacitesReferenceSet = new LinkedHashSet<>(capacitesReference);
+        List<AffectationResultat> resultatsFinaux = new ArrayList<>();
 
         for (DemandeAvecCandidats demande : demandes) {
-            Set<UUID> capacitesDemande = new LinkedHashSet<>();
-            demande.candidats().forEach(c -> capacitesDemande.add(c.capaciteId()));
-            if (!capacitesDemande.equals(capacitesReferenceSet)) {
-                throw new IllegalArgumentException(
-                        "Toutes les demandes du lot L1 doivent partager exactement le meme "
-                                + "ensemble de capacites candidates (issu du meme filtrage L0). "
-                                + "Ecart detecte sur la demande " + demande.demandeId());
+            UUID demandeId = demande.demandeId();
+
+            if (demande.origineDemande() == null || demande.destinationDemande() == null) {
+                log.warn("Demande {} sans coordonnees origine/destination - aucune diffusion ce cycle.",
+                        demandeId);
+                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null, null));
+                continue;
             }
-        }
 
-        int nbDemandes = demandes.size();
-        int nbCapacites = capacitesReference.size();
-        double[][] matriceCouts = new double[nbDemandes][nbCapacites];
-        UUID[][] cycleMatchingIds = new UUID[nbDemandes][nbCapacites];
-
-        for (int i = 0; i < nbDemandes; i++) {
-            DemandeAvecCandidats demande = demandes.get(i);
+            // Point 5 (matrice compatibilite marchandises) : REGLE DE FILTRAGE
+            // DURE APPLIQUEE AVANT LE CALCUL DE COUT MAT. Une capacite qui
+            // transporte deja une demande au profil marchandise incompatible
+            // (anti-groupage matieres dangereuses ou paire de la matrice) est
+            // exclue du lot L1 - jamais une penalite de cout, une vraie
+            // exclusion. Candidate sans detail lot (permissif) ou sans aucune
+            // demande confirmee sur la capacite : non exclue.
+            List<CandidatCoutDto> candidatsCompatibles = new ArrayList<>(demande.candidats());
+            candidatsCompatibles.removeIf(candidat ->
+                    !compatibiliteMarchandisesService.compatibleAvecDemandesDeLaCapacite(
+                            demandeId, candidat.capaciteId()));
+            if (candidatsCompatibles.size() != demande.candidats().size()) {
+                log.info("Filtre dur compatibilite marchandises : {} candidat(s) exclu(s) pour la demande {} "
+                                + "(sur {} candidats L0)",
+                        demande.candidats().size() - candidatsCompatibles.size(),
+                        demandeId, demande.candidats().size());
+            }
+            if (candidatsCompatibles.isEmpty()) {
+                log.debug("Demande {} : aucun candidat compatible marchandises ce cycle.", demandeId);
+                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null, null));
+                continue;
+            }
 
             CoutLotResponseDto reponse = serviceMatClient.calculerCoutsLot(
-                    new CoutLotRequestDto(demande.demandeId(), demande.axeId(), demande.candidats()));
+                    new CoutLotRequestDto(demandeId, demande.axeId(), candidatsCompatibles));
 
             if (reponse == null) {
                 log.warn("service-mat injoignable pour la demande {} - lot L1 en mode degrade, "
-                        + "aucune affectation produite.", demande.demandeId());
+                        + "aucune diffusion produite.", demandeId);
                 return new AffectationLotResultat(true, List.of());
             }
 
-            List<CoutResponseDto> resultats = reponse.resultats();
-            for (int j = 0; j < nbCapacites; j++) {
-                matriceCouts[i][j] = resultats.get(j).coutTotal().doubleValue();
-                cycleMatchingIds[i][j] = resultats.get(j).cycleMatchingId();
-            }
-        }
+            List<CoutResponseDto> resultatsCout = reponse.resultats();
+            boolean auMoinsUneDiffusion = false;
 
-        int[] affectationParDemande = KuhnMunkresSolver.resoudre(matriceCouts);
+            for (int j = 0; j < candidatsCompatibles.size(); j++) {
+                double cout = resultatsCout.get(j).coutTotal().doubleValue();
+                if (cout >= com.fretcorridor.opt.algorithm.KuhnMunkresSolver.COUT_SENTINELLE) {
+                    // Sentinelle = incompatible (deja hors rayon/detour/essieu selon
+                    // le critere qui l'a produite cote service-mat) - jamais diffuse.
+                    continue;
+                }
 
-        List<AffectationResultat> resultatsFinaux = new ArrayList<>(nbDemandes);
-        for (int i = 0; i < nbDemandes; i++) {
-            int indiceCapacite = affectationParDemande[i];
-            DemandeAvecCandidats demande = demandes.get(i);
-            UUID demandeId = demande.demandeId();
+                CandidatCoutDto candidat = candidatsCompatibles.get(j);
+                ItineraireResponseDto itineraire = calculerItineraireSiPossible(demande, candidat);
+                Double distanceMetres = itineraire != null ? itineraire.distanceMetres() : null;
+                TarificationResultat tarification = tarificationL4Service.calculer(
+                        demande.axeId(), candidat.typeVehicule(), demande.poidsTaxableKg(),
+                        distanceMetres, BigDecimal.ZERO);
 
-            if (indiceCapacite == -1) {
-                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null, null));
-                continue;
-            }
+                Affectation affectation = new Affectation(
+                        demandeId, candidat.capaciteId(), resultatsCout.get(j).cycleMatchingId(), demande.axeId(),
+                        demande.poidsTaxableKg(),
+                        demande.origineDemande().latitude(), demande.origineDemande().longitude(),
+                        demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
+                        itineraire != null ? itineraire.distanceMetres() : null,
+                        itineraire != null ? itineraire.dureeSecondes() : null,
+                        itineraire != null ? itineraire.intervalleConfianceSecondes() : null,
+                        itineraire != null ? itineraire.geometrieEncodee() : null,
+                        BigDecimal.valueOf(cout),
+                        tarification.baremeId(), tarification.baremeVersion(), tarification.regime(),
+                        tarification.coutBase(), tarification.coutVariablePoidsTaxable(),
+                        tarification.coutServices(), tarification.facteurTensionApplique(),
+                        tarification.prixTransportAvantPlancher(), tarification.plancherApplique(),
+                        tarification.prixTransport(), tarification.commissionPlateforme(),
+                        tarification.montantVerseTransporteur(), tarification.modeDegrade(),
+                        candidat.vehiculeId(), demande.typeEmballageNom(), demande.quantite(),
+                        demande.destinataireNom(), demande.destinataireTelephone(),
+                        demande.modeCollecte(), demande.typeDisponibilite(),
+                        demande.poidsTotalKg(), demande.grandeValeur());
 
-            // Affectation.origineLatitude/destinationLatitude sont des
-            // primitives double non-nullables (colonnes NOT NULL) -- une
-            // demande publiee sans coordonnees (donnee de test incomplete,
-            // geocodage jamais branche a la publication) ne peut pas y etre
-            // persistee sans fabriquer une position inventee. On la laisse
-            // non affectee ce cycle plutot que de planter tout le lot
-            // (BUG CORRIGE : plantait ici auparavant, bloquant aussi les
-            // autres demandes valides du meme axe).
-            if (demande.origineDemande() == null || demande.destinationDemande() == null) {
-                log.warn("Demande {} sans coordonnees origine/destination - non affectee ce cycle "
-                        + "(mode degrade, cf. javadoc).", demande.demandeId());
-                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null, null));
-                continue;
-            }
+                UUID affectationId = affectationRepository.save(affectation).getId();
+                auMoinsUneDiffusion = true;
 
-            UUID capaciteId = capacitesReference.get(indiceCapacite);
-            CandidatCoutDto candidatRetenu = demande.candidats().get(indiceCapacite);
+                resultatsFinaux.add(new AffectationResultat(
+                        demandeId, candidat.capaciteId(), affectationId,
+                        BigDecimal.valueOf(cout), resultatsCout.get(j).cycleMatchingId(),
+                        itineraire, tarification));
 
-            ItineraireResponseDto itineraire = calculerItineraireSiPossible(demande, candidatRetenu);
+                if (tarification.modeDegrade()) {
+                    // Pas de prix fiable pour ce candidat precis (cf ENF-DIS-04) -
+                    // l'Affectation existe (tracabilite), mais rien a diffuser au
+                    // chauffeur tant qu'aucun prix n'est disponible.
+                    continue;
+                }
 
-            Double distanceMetres = itineraire != null ? itineraire.distanceMetres() : null;
-            TarificationResultat tarification = tarificationL4Service.calculer(
-                    demande.axeId(), candidatRetenu.typeVehicule(), demande.poidsTaxableKg(),
-                    distanceMetres, BigDecimal.ZERO);
-
-            Affectation affectation = new Affectation(
-                    demandeId, capaciteId, cycleMatchingIds[i][indiceCapacite], demande.axeId(),
-                    demande.poidsTaxableKg(),
-                    demande.origineDemande().latitude(), demande.origineDemande().longitude(),
-                    demande.destinationDemande().latitude(), demande.destinationDemande().longitude(),
-                    itineraire != null ? itineraire.distanceMetres() : null,
-                    itineraire != null ? itineraire.dureeSecondes() : null,
-                    itineraire != null ? itineraire.intervalleConfianceSecondes() : null,
-                    itineraire != null ? itineraire.geometrieEncodee() : null,
-                    BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
-                    tarification.baremeId(), tarification.baremeVersion(), tarification.regime(),
-                    tarification.coutBase(), tarification.coutVariablePoidsTaxable(),
-                    tarification.coutServices(), tarification.facteurTensionApplique(),
-                    tarification.prixTransportAvantPlancher(), tarification.plancherApplique(),
-                    tarification.prixTransport(), tarification.commissionPlateforme(),
-                    tarification.montantVerseTransporteur(), tarification.modeDegrade());
-            UUID missionId = affectationRepository.save(affectation).getId();
-
-            resultatsFinaux.add(new AffectationResultat(
-                    demandeId,
-                    capaciteId,
-                    missionId,
-                    BigDecimal.valueOf(matriceCouts[i][indiceCapacite]),
-                    cycleMatchingIds[i][indiceCapacite],
-                    itineraire,
-                    tarification));
-
-            // --- Publication Kafka : PropositionEmise (→ service-mkt) ---
-            if (missionId != null && tarification != null) {
                 PropositionEmiseEvent proposition = new PropositionEmiseEvent(
                         UUID.randomUUID(),
-                        cycleMatchingIds[i][indiceCapacite],
+                        resultatsCout.get(j).cycleMatchingId(),
                         demandeId,
-                        capaciteId,
-                        missionId,
+                        candidat.capaciteId(),
+                        affectationId,
                         demande.axeId(),
-                        1, // rang 1 pour l'affectation optimale
-                        "Affectation optimale L1 (Kuhn-Munkres)",
+                        j + 1, // informationnel uniquement - diffusion-course n'ordonne plus,
+                               // conserve pour compat avec le contrat existant (pas de
+                               // "classement" fonctionnel dessus)
+                        "Diffuse a tout chauffeur compatible - premier arrive gagne",
                         tarification.prixTransport(),
                         tarification.commissionPlateforme(),
                         "XAF",
                         itineraire != null ? itineraire.distanceMetres() : 0,
                         itineraire != null ? (long) itineraire.dureeSecondes() : null,
-                        demande.origineDemande() != null ? "Origine" : null,
-                        demande.destinationDemande() != null ? "Destination" : null,
-                        Instant.now()
-                );
-                eventPublisher.publierPropositionEmise(proposition);
-
-                // RG-039/EF-MKT-07 (CDC : "au plus trois propositions par
-                // demande, ordonnées, motif de classement intelligible") :
-                // rang 1 ci-dessus reste l'affectation Kuhn-Munkres committee
-                // (comportement inchangé) ; rang 2/3 sont des alternatives
-                // purement informationnelles, classees par cout sur la meme
-                // ligne de la matrice -- aucune Affectation/AffectationConfirmee
-                // pour elles, prix estime (pas ferme au sens RG-041 tant que
-                // non accepte explicitement, cf AccepterPropositionService).
-                publierAlternatives(demandeId, demande, matriceCouts[i], capacitesReference,
-                        cycleMatchingIds[i], indiceCapacite);
-
-                // --- Publication Kafka : AffectationConfirmee (→ service-exe) ---
-                AffectationConfirmeeEvent confirmation = new AffectationConfirmeeEvent(
-                        UUID.randomUUID(),
-                        missionId,
-                        demandeId,
-                        capaciteId,
-                        candidatRetenu.vehiculeId(),
-                        candidatRetenu.transporteurId(),
-                        null,
-                        demande.axeId(),
-                        demande.origineDemande() != null ? demande.origineDemande().latitude() : 0,
-                        demande.origineDemande() != null ? demande.origineDemande().longitude() : 0,
                         origineNom,
-                        demande.destinationDemande() != null ? demande.destinationDemande().latitude() : 0,
-                        demande.destinationDemande() != null ? demande.destinationDemande().longitude() : 0,
                         destinationNom,
-                        itineraire != null ? itineraire.distanceMetres() : null,
-                        itineraire != null ? (long) itineraire.dureeSecondes() : null,
-                        itineraire != null ? (long) itineraire.intervalleConfianceSecondes() : null,
-                        itineraire != null ? itineraire.geometrieEncodee() : null,
-                        tarification.prixTransport(),
-                        tarification.commissionPlateforme(),
-                        tarification.montantVerseTransporteur(),
-                        "XAF",
-                        "DEPOT",
-                        "RETRAIT",
-                        Instant.now(),
-                        demande.typeEmballageNom(),
-                        demande.quantite(),
-                        demande.poidsTaxableKg(),
-                        demande.destinataireNom(),
-                        demande.destinataireTelephone(),
-                        demande.modeCollecte(),
-                        // ^ demandeModeCollecte du record (DOMICILE/POINT_RELAIS) —
-                        // distinct de "modeCollecte"/"modeRemise" plus haut
-                        // (DEPOT/RETRAIT, placeholders itineraire).
-                        demande.typeDisponibilite(),
-                        demande.poidsTotalKg(),
-                        demande.grandeValeur()
-                );
-                eventPublisher.publierAffectationConfirmee(confirmation);
+                        Instant.now());
+                eventPublisher.publierPropositionEmise(proposition);
+            }
 
-                // BUG CORRIGE (audit de suivi, 23 aout) : reservation reelle de la
-                // capacite cote service-cap, jusqu'ici totalement absente pour le
-                // rang 1 (affectation directe) - voir javadoc ServiceCapClient.
-                // Meme garde que le flux d'acceptation rang 2/3 (service-mkt,
-                // EF-MKT-08) : rien a reserver sans capaciteId/poidsTaxableKg.
-                if (demande.poidsTaxableKg() != null) {
-                    serviceCapClient.reserver(capaciteId, demande.poidsTaxableKg(), missionId.toString());
-                }
-
-                // --- Publication Kafka conditionnelle : RepartitionConventionnelleAppliquee
-                // (-> service-pay, EF-GEO-05/RG-052, Phase 4). Uniquement si l'axe porte une
-                // convention configuree (Axe.parametres.conventionRepartition) - RG-052 :
-                // "en trafic intra-camerounais, aucune cle ne s'applique", donc l'absence de
-                // convention N'EST PAS un mode degrade, c'est le comportement attendu par
-                // defaut pour la grande majorite des axes. Limitation connue (README Phase 4
-                // S3.3, Hub sans champ pays) : ne distingue pas encore "axe transfrontalier
-                // sans convention renseignee" de "axe intra-camerounais normal" - les deux
-                // cas aboutissent au meme silence ici, assume jusqu'a l'ajout de Hub.pays.
-                if (demande.axeId() != null) {
-                    AxeDetailDto axeDetail = serviceGeoClient.axeParId(demande.axeId());
-                    if (axeDetail != null && axeDetail.parametres() != null
-                            && axeDetail.parametres().get("conventionRepartition") instanceof java.util.Map<?, ?> conventionMap) {
-
-                        Object conventionCodeObj = conventionMap.get("conventionCode");
-                        Object partsObj = conventionMap.get("partsPourcent");
-
-                        if (conventionCodeObj != null && partsObj instanceof java.util.Map<?, ?> partsMap) {
-                            java.util.Map<String, Double> parts = new java.util.HashMap<>();
-                            for (var entree : partsMap.entrySet()) {
-                                if (entree.getValue() instanceof Number n) {
-                                    parts.put(entree.getKey().toString(), n.doubleValue());
-                                }
-                            }
-
-                            RepartitionConventionnelleAppliqueeEvent repartition = new RepartitionConventionnelleAppliqueeEvent(
-                                    UUID.randomUUID(),
-                                    missionId,
-                                    demande.axeId(),
-                                    conventionCodeObj.toString(),
-                                    parts,
-                                    Instant.now(),
-                                    false);
-                            eventPublisher.publierRepartitionConventionnelleAppliquee(repartition);
-                        }
-                    }
-                }
+            if (!auMoinsUneDiffusion) {
+                log.debug("Aucun candidat compatible pour la demande {} ce cycle - reste en attente.",
+                        demandeId);
+                resultatsFinaux.add(new AffectationResultat(demandeId, null, null, null, null, null, null));
             }
         }
 
         return new AffectationLotResultat(false, resultatsFinaux);
     }
 
-    /**
-     * RG-039/EF-MKT-07 : jusqu'à 2 alternatives supplémentaires (rang 2/3),
-     * classées par coût composite croissant parmi les candidats non retenus
-     * de cette demande (le coût composite sert uniquement à les CLASSER,
-     * jamais à les CHIFFRER). Purement informationnelles -- aucune
-     * Affectation créée, prix estimé (pas ferme, RG-041) recalculé via
-     * TarificationL4Service sans itinéraire Valhalla (distanceMetres=null)
-     * pour limiter le surcoût réseau sur des candidats qui peuvent ne jamais
-     * être acceptés -- un régime FORFAITAIRE_VEHICULE produit quand même un
-     * vrai prix sans distance ; seul un régime POIDS_TAXABLE repasse alors en
-     * mode dégradé, auquel cas l'alternative est omise plutôt que de publier
-     * un prix inventé (ENF-DIS-04).
-     *
-     * BUG CORRIGE (26/08) : publiait auparavant BigDecimal.valueOf(cout) --
-     * le score composite [0,1] pondéré (service-mat) lui-même, jamais un prix
-     * en XAF -- d'où des propositions "2e/3e meilleur prix" affichées à ~2.2
-     * XAF côté app Client à côté d'un rang 1 à plusieurs dizaines de milliers
-     * de XAF.
-     *
-     * missionId volontairement null -- distingue une vraie affectation
-     * committée (rang 1) d'une simple alternative (cf Proposition.missionId,
-     * service-mkt, colonne nullable).
-     */
-    private void publierAlternatives(UUID demandeId, DemandeAvecCandidats demande, double[] coutsLigne,
-                                      List<UUID> capacitesReference, UUID[] cycleMatchingIdsLigne, int indiceRetenu) {
-        record CandidatAlternatif(int indice, double cout) {
-        }
-        List<CandidatAlternatif> autres = new ArrayList<>();
-        for (int j = 0; j < coutsLigne.length; j++) {
-            // FIX (audit CDC 20/08) : exclut les cases sentinelles - une
-            // capacite hors du rayon RG-046 de CETTE demande ne doit jamais
-            // etre presentee comme "2e/3e meilleur prix", meme si son cout
-            // brut trie plus bas que d'autres sentinelles.
-            if (j != indiceRetenu && coutsLigne[j] < KuhnMunkresSolver.COUT_SENTINELLE) {
-                autres.add(new CandidatAlternatif(j, coutsLigne[j]));
-            }
-        }
-        autres.sort(Comparator.comparingDouble(CandidatAlternatif::cout));
-
-        int rang = 2;
-        for (CandidatAlternatif candidat : autres.stream().limit(2).toList()) {
-            CandidatCoutDto candidatDto = demande.candidats().get(candidat.indice());
-            TarificationResultat tarification = tarificationL4Service.calculer(
-                    demande.axeId(), candidatDto.typeVehicule(), demande.poidsTaxableKg(), null, BigDecimal.ZERO);
-            if (tarification.modeDegrade()) {
-                // Pas de barème forfaitaire applicable sans distance -- on
-                // n'invente jamais de prix (ENF-DIS-04), cette alternative
-                // est simplement omise plutôt que d'afficher un prix bidon.
-                rang++;
-                continue;
-            }
-
-            PropositionEmiseEvent alternative = new PropositionEmiseEvent(
-                    UUID.randomUUID(),
-                    cycleMatchingIdsLigne[candidat.indice()],
-                    demandeId,
-                    capacitesReference.get(candidat.indice()),
-                    null,
-                    demande.axeId(),
-                    rang,
-                    rang == 2 ? "2e meilleur prix" : "3e meilleur prix",
-                    tarification.prixTransport(),
-                    tarification.commissionPlateforme(),
-                    "XAF",
-                    0,
-                    null,
-                    demande.origineDemande() != null ? "Origine" : null,
-                    demande.destinationDemande() != null ? "Destination" : null,
-                    Instant.now());
-            eventPublisher.publierPropositionEmise(alternative);
-            rang++;
-        }
-    }
-
     private ItineraireResponseDto calculerItineraireSiPossible(DemandeAvecCandidats demande,
-                                                                 CandidatCoutDto candidatRetenu) {
-        if (candidatRetenu.positionCapacite() == null
+                                                                 CandidatCoutDto candidat) {
+        if (candidat.positionCapacite() == null
                 || demande.origineDemande() == null
                 || demande.destinationDemande() == null) {
             log.warn("Coordonnees incompletes pour la demande {} / capacite {} - "
                             + "itineraire Valhalla non calcule (mode degrade sur ce candidat uniquement).",
-                    demande.demandeId(), candidatRetenu.capaciteId());
+                    demande.demandeId(), candidat.capaciteId());
             return null;
         }
 
         ItineraireRequestDto requete = new ItineraireRequestDto(
-                List.of(candidatRetenu.positionCapacite(), demande.origineDemande(), demande.destinationDemande()),
-                candidatRetenu.profilCamion());
+                List.of(candidat.positionCapacite(), demande.origineDemande(), demande.destinationDemande()),
+                candidat.profilCamion());
 
         return valhallaClient.calculerItineraire(requete);
     }

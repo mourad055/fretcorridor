@@ -92,8 +92,12 @@ describe('RapportFinancierComponent', () => {
     httpMock.expectOne(`${environment.apiBaseUrl}/bureau/paiements-especes`).flush([]);
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.ecrituresAffichees()).toHaveLength(1);
-    expect(fixture.componentInstance.totaux().totalCredit).toBe(500);
+    const liste = fixture.componentInstance.ecrituresAffichees([
+      { id: 'e1', missionId: 'mission-1', typeCompte: 'COMPTE_SEQUESTRE_PRESTATAIRE', nature: 'ENCAISSEMENT', sens: 'CREDIT', montant: 500, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: 'VIREMENT', litigeActif: false },
+      { id: 'e2', missionId: 'mission-2', typeCompte: 'COMPTE_SEQUESTRE_PRESTATAIRE', nature: 'ENCAISSEMENT', sens: 'CREDIT', montant: 300, creeLe: '2026-01-01T00:00:00Z', statut: 'VALIDE', modePaiement: 'VIREMENT', litigeActif: false },
+    ] as never);
+    expect(liste).toHaveLength(1);
+    expect(fixture.componentInstance.totauxDe(liste as never).totalCredit).toBe(500);
     expect(fixture.nativeElement.textContent).toContain('Filtré sur la mission mission-1');
   });
 

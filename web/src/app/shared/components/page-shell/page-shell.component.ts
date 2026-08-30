@@ -17,8 +17,22 @@ import { FcResponsiveTableDirective } from '../../directives/fc-responsive-table
 @Component({
   selector: 'app-page-shell',
   standalone: true,
-  imports: [FcResponsiveTableDirective],
+  hostDirectives: [FcResponsiveTableDirective],
   template: `<main [class]="'fc-page' + (extraClass ? ' ' + extraClass : '')"><ng-content></ng-content></main>`,
+  styles: `
+    :host {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 100%;
+    }
+    :host > main {
+      flex: 1 1 auto;
+      width: 100%;
+      min-height: 100%;
+    }
+  `,
 })
 export class PageShellComponent {
   @Input() extraClass?: string;

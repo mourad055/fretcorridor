@@ -2,7 +2,7 @@
   <section class="observatoire fc-panel">
     <h2 class="fc-panel__title">Observatoire de marché</h2>
 
-    <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="observatoireError() as message">{{ message }}</p>
 
     <div class="fc-filters observatoire-filters">
       <div class="fc-filters__field observatoire-filters__axe">
@@ -70,6 +70,8 @@
       <h2 class="fc-panel__title">Alertes de seuil</h2>
       <button type="button" class="fc-btn fc-btn--primary fc-btn--sm" (click)="ouvrirNouvelleAlerte()">Configurer une alerte</button>
     </div>
+
+    <p class="fc-msg fc-msg--error" role="alert" *ngIf="alertesError() as message">{{ message }}</p>
 
     <div class="fc-skeleton" *ngIf="loadingAlertes()" aria-busy="true">
       <div class="fc-skeleton__line"></div>

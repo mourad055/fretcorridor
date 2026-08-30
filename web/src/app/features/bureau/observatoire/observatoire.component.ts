@@ -40,7 +40,9 @@ export class ObservatoireComponent implements OnInit {
   readonly alertes = signal<EtatAlerte[]>([]);
   readonly loadingObservatoire = signal(false);
   readonly loadingAlertes = signal(true);
-  readonly errorMessage = signal<string | null>(null);
+  readonly observatoireError = signal<string | null>(null);
+  readonly alertesError = signal<string | null>(null);
+  private chargementObservatoireSeq = 0;
 
   readonly indicateurs = INDICATEURS;
   readonly comparateurs = COMPARATEURS;
@@ -79,7 +81,7 @@ export class ObservatoireComponent implements OnInit {
           this.chargerObservatoire(premierAxe);
         }
       },
-      error: () => this.errorMessage.set('Impossible de charger la liste des axes.'),
+      error: () => this.observatoireError.set('Impossible de charger la liste des axes.'),
     });
     this.chargerAlertes();
   }
@@ -90,14 +92,24 @@ export class ObservatoireComponent implements OnInit {
   }
 
   private chargerObservatoire(axeId: string): void {
+    const seq = ++this.chargementObservatoireSeq;
     this.loadingObservatoire.set(true);
+    this.observatoireError.set(null);
+    this.observatoire.set(null);
     this.observatoireService.observatoirePourAxe(axeId).subscribe({
       next: (vue) => {
+        if (seq !== this.chargementObservatoireSeq) {
+          return;
+        }
         this.observatoire.set(vue);
         this.loadingObservatoire.set(false);
       },
       error: () => {
-        this.errorMessage.set("Impossible de charger l'observatoire de cet axe.");
+        if (seq !== this.chargementObservatoireSeq) {
+          return;
+        }
+        this.observatoireError.set("Impossible de charger l'observatoire de cet axe.");
+        this.observatoire.set(null);
         this.loadingObservatoire.set(false);
       },
     });
@@ -112,7 +124,7 @@ export class ObservatoireComponent implements OnInit {
         this.loadingAlertes.set(false);
       },
       error: () => {
-        this.errorMessage.set('Impossible de charger les alertes de seuil.');
+        this.alertesError.set('Impossible de charger les alertes de seuil.');
         this.loadingAlertes.set(false);
       },
     });
@@ -132,7 +144,7 @@ export class ObservatoireComponent implements OnInit {
         this.estimationOuverte.set(false);
         this.chargerObservatoire(axeId);
       },
-      error: () => this.errorMessage.set("Impossible d'enregistrer l'estimation de marché."),
+      error: () => this.observatoireError.set("Impossible d'enregistrer l'estimation de marché."),
     });
   }
 
@@ -158,7 +170,7 @@ export class ObservatoireComponent implements OnInit {
           this.nouvelleAlerteOuverte.set(false);
           this.chargerAlertes();
         },
-        error: () => this.errorMessage.set("Impossible de configurer l'alerte."),
+        error: () => this.alertesError.set("Impossible de configurer l'alerte."),
       });
   }
 
@@ -186,7 +198,7 @@ export class ObservatoireComponent implements OnInit {
     this.alerteASupprimer.set(null);
     this.observatoireService.supprimerAlerte(alerte.id).subscribe({
       next: () => this.chargerAlertes(),
-      error: () => this.errorMessage.set("Impossible de supprimer l'alerte."),
+      error: () => this.alertesError.set("Impossible de supprimer l'alerte."),
     });
   }
 

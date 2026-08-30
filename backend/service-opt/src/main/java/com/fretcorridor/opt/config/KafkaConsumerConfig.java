@@ -5,6 +5,8 @@ import com.fretcorridor.opt.messaging.DemandeAnnuleeEvent;
 import com.fretcorridor.opt.messaging.DemandePublieeEvent;
 import com.fretcorridor.opt.messaging.EtapeExecuteeEvent;
 import com.fretcorridor.opt.messaging.DemandePublieeLotsEvent;
+import com.fretcorridor.opt.messaging.DemandeAccepteeEvent;
+import com.fretcorridor.opt.messaging.DemandeRefuseeParChauffeurEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -139,6 +141,42 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, DemandePublieeLotsEvent> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(demandePublieeLotsConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, DemandeAccepteeEvent> demandeAccepteeConsumerFactory() {
+        JsonDeserializer<DemandeAccepteeEvent> deserializer =
+                new JsonDeserializer<>(DemandeAccepteeEvent.class, false);
+        deserializer.setUseTypeHeaders(false);
+        deserializer.addTrustedPackages("com.fretcorridor.*");
+        return new DefaultKafkaConsumerFactory<>(proprietesBase(), new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, DemandeAccepteeEvent>
+            demandeAccepteeKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, DemandeAccepteeEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(demandeAccepteeConsumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, DemandeRefuseeParChauffeurEvent> demandeRefuseeParChauffeurConsumerFactory() {
+        JsonDeserializer<DemandeRefuseeParChauffeurEvent> deserializer =
+                new JsonDeserializer<>(DemandeRefuseeParChauffeurEvent.class, false);
+        deserializer.setUseTypeHeaders(false);
+        deserializer.addTrustedPackages("com.fretcorridor.*");
+        return new DefaultKafkaConsumerFactory<>(proprietesBase(), new StringDeserializer(), deserializer);
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, DemandeRefuseeParChauffeurEvent>
+            demandeRefuseeParChauffeurKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, DemandeRefuseeParChauffeurEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(demandeRefuseeParChauffeurConsumerFactory());
         return factory;
     }
 }

@@ -24,3 +24,9 @@ node_modules/
 docs/CONTEXTE_SESSION_UI.md
 mobile/app_client/pubspec.lock
 custom_files/
+
+# pubspec.lock — fichiers generes par Flutter/Dart, source de conflits
+# de merge repetes entre les branches Mobile. Chacun regenere le sien
+# via 'flutter pub get', pas besoin de le versionner.
+mobile/app_chauffeur_transporteur/pubspec.lock
+mobile/app_client/pubspec.lock

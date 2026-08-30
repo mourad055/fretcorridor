@@ -1,8 +1,8 @@
 <div class="repartition-donut" *ngIf="total > 0">
-  <svg class="repartition-donut__svg" viewBox="0 0 100 100" role="img" [attr.aria-label]="libelleAccessible()">
+  <svg class="repartition-donut__svg" viewBox="0 0 100 100" role="img" [attr.aria-label]="libelleAccessible">
     <circle class="repartition-donut__fond" cx="50" cy="50" [attr.r]="rayon" />
     <circle
-      *ngFor="let s of segmentsCalcules()"
+      *ngFor="let s of segmentsCalcules"
       class="repartition-donut__segment"
       cx="50"
       cy="50"
@@ -14,7 +14,7 @@
   </svg>
 
   <ul class="repartition-donut__legende">
-    <li *ngFor="let s of segmentsCalcules()">
+    <li *ngFor="let s of segmentsCalcules">
       <span class="repartition-donut__pastille" [style.background]="s.segment.couleur"></span>
       {{ s.segment.label }} — {{ s.segment.valeur }} ({{ s.pourcentage }} %)
     </li>

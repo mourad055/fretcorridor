@@ -1,0 +1,62 @@
+asyncapi: 3.0.0
+info:
+  title: DemandeAcceptee
+  version: 1.0.0
+  description: |
+    Événement publié par service-mkt (Mobile, Personne 1) côté application
+    chauffeur lorsqu'un chauffeur accepte une des propositions diffusées par
+    service-opt (modèle diffusion-course).
+    Consommé par service-opt (Moteur) qui résout la course de façon atomique
+    (premier acceptant gagne) dans AffectationConfirmationService.
+
+channels:
+  demande-acceptee:
+    address: demande-acceptee
+    messages:
+      DemandeAcceptee:
+        $ref: '#/components/messages/DemandeAcceptee'
+
+operations:
+  onAcceptation:
+    action: receive
+    channel:
+      $ref: '#/channels/demande-acceptee'
+    messages:
+      - $ref: '#/components/messages/DemandeAcceptee'
+
+components:
+  messages:
+    DemandeAcceptee:
+      summary: Un chauffeur accepte une proposition diffusee (premier arrive gagne).
+      payload:
+        type: object
+        required:
+          - eventId
+          - affectationId
+          - demandeId
+          - capaciteId
+        properties:
+          eventId:
+            type: string
+            format: uuid
+            description: Identifiant unique de l'événement (idempotence).
+          affectationId:
+            type: string
+            format: uuid
+            description: L'Affectation PROPOSEE que le chauffeur accepte (cle de resolution de la course).
+          demandeId:
+            type: string
+            format: uuid
+            description: Demande concernée.
+          capaciteId:
+            type: string
+            format: uuid
+            description: Capacité du chauffeur acceptant.
+          transporteurId:
+            type: string
+            format: uuid
+            nullable: true
+            description: >
+              Transporteur acceptant. Peut être absent côté Mobile tant que le
+              flux complet n'est pas branché (tolerance identique à
+              CapaciteDeclareeEvent.transporteurId).

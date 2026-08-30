@@ -1,6 +1,9 @@
 export interface NotificationAdmin {
-  titre: string;
-  detail: string;
   tenantId: string;
+  tenantNom: string;
   dossierId: string;
+  type: string;
+  priorite: string;
+  statut: string;
+  delaiTraitement: string;
 }

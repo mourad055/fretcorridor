@@ -12,14 +12,17 @@
     <p class="fc-msg fc-msg--error" role="alert" *ngIf="errorMessage() as message">{{ message }}</p>
 
     <div class="fc-filters">
-      <label for="tenants-recherche">Rechercher</label>
-      <input
-        id="tenants-recherche"
-        type="search"
-        [ngModel]="recherche()"
-        (ngModelChange)="onRechercheChange($event)"
-        placeholder="Identifiant, nom ou pays"
-      />
+      <div class="fc-filters__field">
+        <label class="fc-filters__label" for="tenants-recherche">Rechercher</label>
+        <input
+          id="tenants-recherche"
+          class="fc-filters__input"
+          type="search"
+          [ngModel]="recherche()"
+          (ngModelChange)="onRechercheChange($event)"
+          placeholder="Identifiant, nom ou pays"
+        />
+      </div>
     </div>
 
     <div class="fc-skeleton" *ngIf="loading()" aria-busy="true">

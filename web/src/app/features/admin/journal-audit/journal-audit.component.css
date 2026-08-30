@@ -1,0 +1,14 @@
+.journal-audit-filters {
+  width: 100%;
+}
+
+.journal-audit-filters__tenant {
+  flex: 1 1 16rem;
+  max-width: 24rem;
+}
+
+@media (max-width: 859px) {
+  .journal-audit-filters__tenant {
+    max-width: none;
+  }
+}
