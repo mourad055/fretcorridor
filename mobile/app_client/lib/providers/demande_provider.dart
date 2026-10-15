@@ -86,6 +86,13 @@ class DemandeNotifier extends StateNotifier<DemandeState> {
     required String modeCollecte,
     required String destinataireNom,
     required String destinataireTelephone,
+    // Tarification par chauffeur (spec-tarification-par-chauffeur.md) :
+    // STANDARD | FRAGILE | ULTRA_FRAGILE -- sert au calcul de l'intervalle
+    // de prix une fois le contrat correspondant branche cote backend
+    // (TarificationL4Service, cote Moteur). Transmis des maintenant : un
+    // champ JSON inconnu est sans effet pour un backend qui ne le lit pas
+    // encore, pas besoin de revenir sur ce provider quand il sera pret.
+    required String categorieMarchandise,
   }) async {
     state = state.copyWith(publicationEnCours: true, erreur: null, succes: null);
     try {
@@ -103,6 +110,7 @@ class DemandeNotifier extends StateNotifier<DemandeState> {
         'modeCollecte': modeCollecte,
         'destinataireNom': destinataireNom,
         'destinataireTelephone': destinataireTelephone,
+        'categorieMarchandise': categorieMarchandise,
       });
       state = state.copyWith(publicationEnCours: false, succes: 'Demande publiée ✅');
       await chargerMesDemandes();
@@ -115,37 +123,6 @@ class DemandeNotifier extends StateNotifier<DemandeState> {
       }
       state = state.copyWith(publicationEnCours: false, erreur: erreur);
       return false;
-    }
-  }
-
-  // S5 — peut renvoyer une liste vide tant que le moteur de matching
-  // (service-mat/service-opt, côté Moteur) n'est pas branché.
-  Future<List<Map<String, dynamic>>> getPropositions(String demandeId) async {
-    try {
-      final response = await _dio.get('/demandes/$demandeId/propositions');
-      return List<Map<String, dynamic>>.from(response.data);
-    } on DioException {
-      return [];
-    }
-  }
-
-  // RG-039/EF-MKT-08 : accepter une proposition — manquait entièrement côté
-  // app_client jusqu'ici (l'écran affichait les propositions mais aucun
-  // bouton n'appelait cet endpoint, pourtant déjà exposé côté backend).
-  // Renvoie un message d'erreur explicite (ex. réservation indisponible,
-  // 503) plutôt qu'un simple booléen, pour l'afficher tel quel à l'écran.
-  Future<String?> accepterProposition(String demandeId, String propositionId) async {
-    try {
-      await _dio.post('/demandes/$demandeId/propositions/$propositionId/accepter');
-      return null;
-    } on DioException catch (e) {
-      final status = e.response?.statusCode;
-      if (status == 409) return 'Cette proposition a déjà été traitée.';
-      if (status == 503) {
-        return (e.response?.data is String ? e.response?.data as String : null)
-            ?? 'Réservation momentanément indisponible — réessayez.';
-      }
-      return 'Erreur de connexion. Vérifiez votre réseau.';
     }
   }
 

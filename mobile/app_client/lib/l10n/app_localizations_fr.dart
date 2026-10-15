@@ -431,6 +431,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get voirLesPropositions => 'Voir les propositions';
 
   @override
+  String get voirEstimation => 'Voir l\'estimation';
+
+  @override
   String get suivi => 'Suivi';
 
   @override
@@ -476,6 +479,145 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get prixEnCoursCalcul => 'Prix en cours de calcul';
+
+  @override
+  String get estimationTitre => 'Estimation';
+
+  @override
+  String get fourchetteDePrix => 'FOURCHETTE DE PRIX';
+
+  @override
+  String get entre => 'Entre';
+
+  @override
+  String chauffeursCompatibles(int n) {
+    return '$n chauffeurs compatibles en ce moment';
+  }
+
+  @override
+  String get poidsTaxableLabel => 'Poids taxable';
+
+  @override
+  String get tarifsDesChauffeurs => 'Tarifs des chauffeurs';
+
+  @override
+  String get prixDunChauffeur => 'Prix d\'un chauffeur';
+
+  @override
+  String get poidsFoisTarif => 'poids × son tarif';
+
+  @override
+  String get negocierLaFourchette => 'Négocier la fourchette';
+
+  @override
+  String get negocierFacultatif => 'Facultatif · uniquement avant la recherche';
+
+  @override
+  String get votrePrixMaximum => 'Votre prix maximum';
+
+  @override
+  String get negoAvertissement =>
+      'En dessous de tous les tarifs actuels : aucun chauffeur ne recevra la demande.';
+
+  @override
+  String negoInfo(String plafond) {
+    return 'Seuls les chauffeurs dont le prix est ≤ $plafond F recevront la demande.';
+  }
+
+  @override
+  String validationFondsBloques(String min, String max) {
+    return 'En validant, vous acceptez tout prix entre $min et $max FCFA. $max F seront bloqués (pas prélevés) le temps de la recherche.';
+  }
+
+  @override
+  String get validerEtRechercherChauffeur =>
+      'Valider et rechercher un chauffeur';
+
+  @override
+  String get etape1sur2 => 'ÉTAPE 1 / 2';
+
+  @override
+  String get etape2sur2 => 'ÉTAPE 2 / 2';
+
+  @override
+  String get fondsBloquesEnAttente =>
+      'Fonds bloqués, en attente d\'un chauffeur';
+
+  @override
+  String get paiementConfirmeChauffeurEnRoute =>
+      'Paiement confirmé, chauffeur en route';
+
+  @override
+  String get montantBloque => 'Montant bloqué';
+
+  @override
+  String get preleveActuellement => 'Prélevé pour l\'instant';
+
+  @override
+  String get compteLabel => 'Compte';
+
+  @override
+  String get fourchetteAcceptee => 'Fourchette acceptée';
+
+  @override
+  String get etapePaiement1 =>
+      'Un chauffeur accepte : seul son prix est prélevé.';
+
+  @override
+  String get etapePaiement2 =>
+      'Le reste du montant bloqué vous est rendu aussitôt.';
+
+  @override
+  String get etapePaiement3 =>
+      'Personne en 15 min : tout est débloqué, rien n\'est prélevé.';
+
+  @override
+  String get lancerLaRecherche => 'Lancer la recherche';
+
+  @override
+  String get montantPreleve => 'Prélevé · prix du chauffeur';
+
+  @override
+  String get montantDebloque => 'Débloqué sur votre compte';
+
+  @override
+  String get sequestreNote =>
+      'Le paiement reste en séquestre : il n\'est versé au chauffeur qu\'après la preuve de livraison.';
+
+  @override
+  String get suivreLeChauffeur => 'Suivre le chauffeur';
+
+  @override
+  String get diffusionTitre => 'Diffusion en cours';
+
+  @override
+  String get expireDansLabel => 'EXPIRE DANS';
+
+  @override
+  String get sur1500 => 'sur 15:00';
+
+  @override
+  String get rechercheChauffeurEnCours => 'Recherche de chauffeur en cours…';
+
+  @override
+  String get diffusionDescription =>
+      'Votre demande est transmise en même temps à tous les chauffeurs compatibles. Le premier qui accepte prend la mission.';
+
+  @override
+  String get demoChauffeurAccepte => 'Démo : un chauffeur accepte';
+
+  @override
+  String get offreExpireeTitre => 'Offre expirée, voulez-vous republier ?';
+
+  @override
+  String get offreExpireeDescription =>
+      'Aucun chauffeur n\'a accepté en 15 minutes. Vos fonds ont été débloqués, rien n\'a été prélevé.';
+
+  @override
+  String get republier => 'Republier';
+
+  @override
+  String get revoirMonPrix => 'Revoir mon prix';
 
   @override
   String get statutAcceptee => 'Acceptée';
@@ -528,6 +670,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get positionGpsIndisponible => 'Position GPS pas encore disponible.';
+
+  @override
+  String get votreChauffeur => 'Votre chauffeur';
+
+  @override
+  String get nomChauffeurIndisponible => 'Nom du chauffeur non disponible';
+
+  @override
+  String get appeler => 'Appeler';
+
+  @override
+  String get numeroNonDisponible => 'Numéro non disponible pour l\'instant.';
 
   @override
   String get etapesTitre => 'Étapes';
@@ -642,10 +796,50 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aDomicile => 'À domicile';
 
   @override
+  String get categorieMarchandiseLabel => 'CATÉGORIE DE MARCHANDISE';
+
+  @override
+  String get categorieMarchandiseStandard => 'Standard';
+
+  @override
+  String get categorieMarchandiseStandardDescription =>
+      'Supporte la manutention normale et l\'empilement.';
+
+  @override
+  String get categorieMarchandiseFragile => 'Fragile';
+
+  @override
+  String get categorieMarchandiseFragileDescription =>
+      'Peut casser : calage et sangles, rien de lourd posé dessus.';
+
+  @override
+  String get categorieMarchandiseUltraFragile => 'Ultra fragile';
+
+  @override
+  String get categorieMarchandiseUltraFragileDescription =>
+      'Très sensible aux chocs : jamais empilé, chargé en dernier.';
+
+  @override
   String get sectionDestinataire => 'Destinataire';
 
   @override
   String get hintDestinataireNom => 'Ex : Paul Nkomo';
+
+  @override
+  String get cniDestinataireLabel => 'CNI du destinataire (facultatif)';
+
+  @override
+  String get cniDestinataireDescription =>
+      'Sera vérifiée à la livraison pour confirmer l\'identité de la personne qui réceptionne.';
+
+  @override
+  String get prendreUnePhoto => 'Prendre une photo';
+
+  @override
+  String get cniAjoutee => 'CNI ajoutée';
+
+  @override
+  String get changerCni => 'Changer';
 
   @override
   String get telephoneRenseigner => 'Renseignez le téléphone du destinataire';

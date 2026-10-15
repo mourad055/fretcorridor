@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/demande_provider.dart';
@@ -8,6 +10,7 @@ import '../models/catalogue_emballage_model.dart';
 import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/top_notification.dart';
+import 'estimation_screen.dart';
 
 class PublierDemandeScreen extends ConsumerStatefulWidget {
   // CRUD demande (audit de suivi Mobile) : pas de vrai endpoint de
@@ -35,6 +38,9 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   bool _fragile = false, _perissable = false, _dangereuse = false, _grandeValeur = false;
   String _typeDisponibilite = 'DES_QUE_POSSIBLE';
   String _modeCollecte = 'DOMICILE';
+  String _categorieMarchandise = 'STANDARD';
+  final _picker = ImagePicker();
+  File? _cniDestinataire;
 
   @override
   void initState() {
@@ -98,6 +104,16 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
     setState(() => _quantiteCtrl.text = '$nouvelle');
   }
 
+  // Facultatif : aucun endpoint ne consomme encore cette photo (il faudrait
+  // un upload multipart rattache a la demande, pas encore specifie cote
+  // backend) -- capturee localement pour l'instant, en attendant ce
+  // contrat. Ne bloque jamais la publication.
+  Future<void> _prendrePhotoCni() async {
+    final image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 1600);
+    if (image == null) return;
+    setState(() => _cniDestinataire = File(image.path));
+  }
+
   // Donne un repère concret (type de véhicule) au client plutôt qu'un
   // chiffre brut en kg qu'il ne sait pas interpréter (ex : "2500 kg" seul).
   String _vehiculeSuggere(AppLocalizations t, double poidsKg) {
@@ -121,14 +137,6 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       return;
     }
 
-    if (widget.demandeAModifier == null) {
-      afficherNotification(
-        context,
-        message: t.prixEstimationMessage,
-        duree: const Duration(seconds: 4),
-      );
-    }
-
     final succes = await ref.read(demandeProvider.notifier).publier(
       villeDepart: _villeDepartCtrl.text.trim(),
       villeArrivee: _villeArriveeCtrl.text.trim(),
@@ -142,6 +150,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       modeCollecte: _modeCollecte,
       destinataireNom: _destinataireNomCtrl.text.trim(),
       destinataireTelephone: _destinataireTelephone,
+      categorieMarchandise: _categorieMarchandise,
     );
 
     if (!succes || !mounted) return;
@@ -165,7 +174,23 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       }
     }
 
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+
+    // Nouvelle demande (pas une modification) : on enchaîne directement sur
+    // l'estimation plutôt que de revenir silencieusement à la liste — c'est
+    // le point d'entrée naturel du parcours diffusion-course désormais.
+    // mesDemandes.first est fiable ici : publier() vient d'appeler
+    // chargerMesDemandes(), et le backend trie par dateCreation DESC
+    // (DemandeRepository.findByClientActeurIdAndTenantIdOrderByDateCreationDesc).
+    final mesDemandes = ref.read(demandeProvider).mesDemandes;
+    if (ancienne == null && mesDemandes.isNotEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => EstimationScreen(demande: mesDemandes.first)),
+      );
+    } else {
+      Navigator.pop(context);
+    }
   }
 
   InputDecoration _decoration(String hint, [IconData? icon]) {
@@ -208,6 +233,34 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
             child: Text(t.unites, style: const TextStyle(color: AppColors.texteMuet, fontSize: 13)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _carteCategorie(String valeur, String titre, String description) {
+    final selectionne = _categorieMarchandise == valeur;
+    return GestureDetector(
+      onTap: () => setState(() => _categorieMarchandise = valeur),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: selectionne ? AppColors.accent : AppColors.bordure, width: selectionne ? 2 : 1),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(selectionne ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: selectionne ? AppColors.accent : AppColors.texteMuet, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(titre, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 2),
+              Text(description, style: const TextStyle(fontSize: 12, color: AppColors.texteMuet)),
+            ]),
+          ),
+        ]),
       ),
     );
   }
@@ -406,6 +459,16 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                 ),
               ],
 
+              // ── Catégorie (tarification par chauffeur) ──────
+              _label(t.categorieMarchandiseLabel),
+              Column(children: [
+                _carteCategorie('STANDARD', t.categorieMarchandiseStandard, t.categorieMarchandiseStandardDescription),
+                const SizedBox(height: 8),
+                _carteCategorie('FRAGILE', t.categorieMarchandiseFragile, t.categorieMarchandiseFragileDescription),
+                const SizedBox(height: 8),
+                _carteCategorie('ULTRA_FRAGILE', t.categorieMarchandiseUltraFragile, t.categorieMarchandiseUltraFragileDescription),
+              ]),
+
               // ── Nature particulière ────────────────────────
               _label(t.naturesParticulieres),
               Wrap(spacing: 8, runSpacing: 8, children: [
@@ -456,6 +519,34 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
                 dropdownTextStyle: const TextStyle(color: AppColors.texte),
                 onChanged: (phone) => _destinataireTelephone = phone.completeNumber,
               ),
+              _label(t.cniDestinataireLabel),
+              Text(t.cniDestinataireDescription, style: const TextStyle(fontSize: 12, color: AppColors.texteMuet)),
+              const SizedBox(height: 8),
+              if (_cniDestinataire == null)
+                OutlinedButton.icon(
+                  onPressed: _prendrePhotoCni,
+                  icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                  label: Text(t.prendreUnePhoto),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceClaire,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.file(_cniDestinataire!, width: 56, height: 36, fit: BoxFit.cover),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(t.cniAjoutee, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                    ),
+                    TextButton(onPressed: _prendrePhotoCni, child: Text(t.changerCni)),
+                  ]),
+                ),
               ]),
 
               if (demandeState.erreur != null) ...[

@@ -872,6 +872,12 @@ abstract class AppLocalizations {
   /// **'Voir les propositions'**
   String get voirLesPropositions;
 
+  /// No description provided for @voirEstimation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir l\'estimation'**
+  String get voirEstimation;
+
   /// No description provided for @suivi.
   ///
   /// In fr, this message translates to:
@@ -955,6 +961,252 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Prix en cours de calcul'**
   String get prixEnCoursCalcul;
+
+  /// No description provided for @estimationTitre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Estimation'**
+  String get estimationTitre;
+
+  /// No description provided for @fourchetteDePrix.
+  ///
+  /// In fr, this message translates to:
+  /// **'FOURCHETTE DE PRIX'**
+  String get fourchetteDePrix;
+
+  /// No description provided for @entre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Entre'**
+  String get entre;
+
+  /// No description provided for @chauffeursCompatibles.
+  ///
+  /// In fr, this message translates to:
+  /// **'{n} chauffeurs compatibles en ce moment'**
+  String chauffeursCompatibles(int n);
+
+  /// No description provided for @poidsTaxableLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poids taxable'**
+  String get poidsTaxableLabel;
+
+  /// No description provided for @tarifsDesChauffeurs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tarifs des chauffeurs'**
+  String get tarifsDesChauffeurs;
+
+  /// No description provided for @prixDunChauffeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prix d\'un chauffeur'**
+  String get prixDunChauffeur;
+
+  /// No description provided for @poidsFoisTarif.
+  ///
+  /// In fr, this message translates to:
+  /// **'poids × son tarif'**
+  String get poidsFoisTarif;
+
+  /// No description provided for @negocierLaFourchette.
+  ///
+  /// In fr, this message translates to:
+  /// **'Négocier la fourchette'**
+  String get negocierLaFourchette;
+
+  /// No description provided for @negocierFacultatif.
+  ///
+  /// In fr, this message translates to:
+  /// **'Facultatif · uniquement avant la recherche'**
+  String get negocierFacultatif;
+
+  /// No description provided for @votrePrixMaximum.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre prix maximum'**
+  String get votrePrixMaximum;
+
+  /// No description provided for @negoAvertissement.
+  ///
+  /// In fr, this message translates to:
+  /// **'En dessous de tous les tarifs actuels : aucun chauffeur ne recevra la demande.'**
+  String get negoAvertissement;
+
+  /// No description provided for @negoInfo.
+  ///
+  /// In fr, this message translates to:
+  /// **'Seuls les chauffeurs dont le prix est ≤ {plafond} F recevront la demande.'**
+  String negoInfo(String plafond);
+
+  /// No description provided for @validationFondsBloques.
+  ///
+  /// In fr, this message translates to:
+  /// **'En validant, vous acceptez tout prix entre {min} et {max} FCFA. {max} F seront bloqués (pas prélevés) le temps de la recherche.'**
+  String validationFondsBloques(String min, String max);
+
+  /// No description provided for @validerEtRechercherChauffeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider et rechercher un chauffeur'**
+  String get validerEtRechercherChauffeur;
+
+  /// No description provided for @etape1sur2.
+  ///
+  /// In fr, this message translates to:
+  /// **'ÉTAPE 1 / 2'**
+  String get etape1sur2;
+
+  /// No description provided for @etape2sur2.
+  ///
+  /// In fr, this message translates to:
+  /// **'ÉTAPE 2 / 2'**
+  String get etape2sur2;
+
+  /// No description provided for @fondsBloquesEnAttente.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fonds bloqués, en attente d\'un chauffeur'**
+  String get fondsBloquesEnAttente;
+
+  /// No description provided for @paiementConfirmeChauffeurEnRoute.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paiement confirmé, chauffeur en route'**
+  String get paiementConfirmeChauffeurEnRoute;
+
+  /// No description provided for @montantBloque.
+  ///
+  /// In fr, this message translates to:
+  /// **'Montant bloqué'**
+  String get montantBloque;
+
+  /// No description provided for @preleveActuellement.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prélevé pour l\'instant'**
+  String get preleveActuellement;
+
+  /// No description provided for @compteLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Compte'**
+  String get compteLabel;
+
+  /// No description provided for @fourchetteAcceptee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fourchette acceptée'**
+  String get fourchetteAcceptee;
+
+  /// No description provided for @etapePaiement1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un chauffeur accepte : seul son prix est prélevé.'**
+  String get etapePaiement1;
+
+  /// No description provided for @etapePaiement2.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le reste du montant bloqué vous est rendu aussitôt.'**
+  String get etapePaiement2;
+
+  /// No description provided for @etapePaiement3.
+  ///
+  /// In fr, this message translates to:
+  /// **'Personne en 15 min : tout est débloqué, rien n\'est prélevé.'**
+  String get etapePaiement3;
+
+  /// No description provided for @lancerLaRecherche.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lancer la recherche'**
+  String get lancerLaRecherche;
+
+  /// No description provided for @montantPreleve.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prélevé · prix du chauffeur'**
+  String get montantPreleve;
+
+  /// No description provided for @montantDebloque.
+  ///
+  /// In fr, this message translates to:
+  /// **'Débloqué sur votre compte'**
+  String get montantDebloque;
+
+  /// No description provided for @sequestreNote.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le paiement reste en séquestre : il n\'est versé au chauffeur qu\'après la preuve de livraison.'**
+  String get sequestreNote;
+
+  /// No description provided for @suivreLeChauffeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suivre le chauffeur'**
+  String get suivreLeChauffeur;
+
+  /// No description provided for @diffusionTitre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Diffusion en cours'**
+  String get diffusionTitre;
+
+  /// No description provided for @expireDansLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'EXPIRE DANS'**
+  String get expireDansLabel;
+
+  /// No description provided for @sur1500.
+  ///
+  /// In fr, this message translates to:
+  /// **'sur 15:00'**
+  String get sur1500;
+
+  /// No description provided for @rechercheChauffeurEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recherche de chauffeur en cours…'**
+  String get rechercheChauffeurEnCours;
+
+  /// No description provided for @diffusionDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre demande est transmise en même temps à tous les chauffeurs compatibles. Le premier qui accepte prend la mission.'**
+  String get diffusionDescription;
+
+  /// No description provided for @demoChauffeurAccepte.
+  ///
+  /// In fr, this message translates to:
+  /// **'Démo : un chauffeur accepte'**
+  String get demoChauffeurAccepte;
+
+  /// No description provided for @offreExpireeTitre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Offre expirée, voulez-vous republier ?'**
+  String get offreExpireeTitre;
+
+  /// No description provided for @offreExpireeDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun chauffeur n\'a accepté en 15 minutes. Vos fonds ont été débloqués, rien n\'a été prélevé.'**
+  String get offreExpireeDescription;
+
+  /// No description provided for @republier.
+  ///
+  /// In fr, this message translates to:
+  /// **'Republier'**
+  String get republier;
+
+  /// No description provided for @revoirMonPrix.
+  ///
+  /// In fr, this message translates to:
+  /// **'Revoir mon prix'**
+  String get revoirMonPrix;
 
   /// No description provided for @statutAcceptee.
   ///
@@ -1051,6 +1303,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Position GPS pas encore disponible.'**
   String get positionGpsIndisponible;
+
+  /// No description provided for @votreChauffeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre chauffeur'**
+  String get votreChauffeur;
+
+  /// No description provided for @nomChauffeurIndisponible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom du chauffeur non disponible'**
+  String get nomChauffeurIndisponible;
+
+  /// No description provided for @appeler.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appeler'**
+  String get appeler;
+
+  /// No description provided for @numeroNonDisponible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro non disponible pour l\'instant.'**
+  String get numeroNonDisponible;
 
   /// No description provided for @etapesTitre.
   ///
@@ -1268,6 +1544,48 @@ abstract class AppLocalizations {
   /// **'À domicile'**
   String get aDomicile;
 
+  /// No description provided for @categorieMarchandiseLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'CATÉGORIE DE MARCHANDISE'**
+  String get categorieMarchandiseLabel;
+
+  /// No description provided for @categorieMarchandiseStandard.
+  ///
+  /// In fr, this message translates to:
+  /// **'Standard'**
+  String get categorieMarchandiseStandard;
+
+  /// No description provided for @categorieMarchandiseStandardDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supporte la manutention normale et l\'empilement.'**
+  String get categorieMarchandiseStandardDescription;
+
+  /// No description provided for @categorieMarchandiseFragile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fragile'**
+  String get categorieMarchandiseFragile;
+
+  /// No description provided for @categorieMarchandiseFragileDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Peut casser : calage et sangles, rien de lourd posé dessus.'**
+  String get categorieMarchandiseFragileDescription;
+
+  /// No description provided for @categorieMarchandiseUltraFragile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ultra fragile'**
+  String get categorieMarchandiseUltraFragile;
+
+  /// No description provided for @categorieMarchandiseUltraFragileDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Très sensible aux chocs : jamais empilé, chargé en dernier.'**
+  String get categorieMarchandiseUltraFragileDescription;
+
   /// No description provided for @sectionDestinataire.
   ///
   /// In fr, this message translates to:
@@ -1279,6 +1597,36 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Ex : Paul Nkomo'**
   String get hintDestinataireNom;
+
+  /// No description provided for @cniDestinataireLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'CNI du destinataire (facultatif)'**
+  String get cniDestinataireLabel;
+
+  /// No description provided for @cniDestinataireDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sera vérifiée à la livraison pour confirmer l\'identité de la personne qui réceptionne.'**
+  String get cniDestinataireDescription;
+
+  /// No description provided for @prendreUnePhoto.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prendre une photo'**
+  String get prendreUnePhoto;
+
+  /// No description provided for @cniAjoutee.
+  ///
+  /// In fr, this message translates to:
+  /// **'CNI ajoutée'**
+  String get cniAjoutee;
+
+  /// No description provided for @changerCni.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer'**
+  String get changerCni;
 
   /// No description provided for @telephoneRenseigner.
   ///

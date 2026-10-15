@@ -6,7 +6,7 @@ import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/top_notification.dart';
 import 'publier_demande_screen.dart';
-import 'propositions_screen.dart';
+import 'estimation_screen.dart';
 import 'suivi_screen.dart';
 
 class MesDemandesScreen extends ConsumerWidget {
@@ -110,7 +110,7 @@ class _DemandeCard extends ConsumerWidget {
     return InkWell(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => PropositionsScreen(demande: demande)),
+        MaterialPageRoute(builder: (_) => EstimationScreen(demande: demande)),
       ),
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -187,7 +187,7 @@ class _DemandeCard extends ConsumerWidget {
               ),
               const Spacer(),
               Flexible(
-                child: Text(t.voirLesPropositions, style: const TextStyle(fontSize: 11, color: AppColors.texteMuet), overflow: TextOverflow.ellipsis),
+                child: Text(t.voirEstimation, style: const TextStyle(fontSize: 11, color: AppColors.texteMuet), overflow: TextOverflow.ellipsis),
               ),
               const Icon(Icons.chevron_right, size: 16, color: AppColors.texteMuet),
             ]),
