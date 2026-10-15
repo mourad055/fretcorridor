@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/vehicule_provider.dart';
 import '../theme/app_theme.dart';
@@ -24,8 +25,98 @@ class _VehiculesScreenState extends ConsumerState<VehiculesScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.fond,
-      builder: (_) => const _FormulaireAjoutVehicule(),
+      builder: (_) => const _FormulaireVehicule(),
     );
+  }
+
+  // CRUD véhicule (retour utilisatrice 21/08) : voir le détail, modifier ou
+  // supprimer un véhicule déjà déclaré, pas seulement déclarer/lister.
+  Future<void> _ouvrirDetail(VehiculeFlotte v) async {
+    final t = AppLocalizations.of(context);
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.fond,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(v.typeVehicule, style: Theme.of(context).textTheme.headlineMedium),
+            const SizedBox(height: 12),
+            if (v.immatriculation != null) _ligneDetail(Icons.badge_outlined, v.immatriculation!),
+            if (v.profilPoidsMaxTonnes != null)
+              _ligneDetail(Icons.scale_outlined, t.poidsMaxLabel(v.profilPoidsMaxTonnes!.toStringAsFixed(1))),
+            if (v.profilNombreEssieux != null)
+              _ligneDetail(Icons.settings_input_component_outlined, t.essieuxLabel('${v.profilNombreEssieux}')),
+            if (v.profilMatieresDangereuses)
+              _ligneDetail(Icons.warning_amber, t.matieresDangereuses),
+            const SizedBox(height: 20),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: AppColors.fond,
+                      builder: (_) => _FormulaireVehicule(existant: v),
+                    );
+                  },
+                  icon: const Icon(Icons.edit_outlined, color: AppColors.accent),
+                  label: Text(t.modifier, style: const TextStyle(color: AppColors.accent)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(sheetContext);
+                    await _confirmerSuppression(v);
+                  },
+                  style: OutlinedButton.styleFrom(side: const BorderSide(color: AppColors.erreur)),
+                  icon: const Icon(Icons.delete_outline, color: AppColors.erreur),
+                  label: Text(t.supprimer, style: const TextStyle(color: AppColors.erreur)),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _ligneDetail(IconData icone, String texte) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(children: [
+        Icon(icone, size: 16, color: AppColors.texteMuet),
+        const SizedBox(width: 8),
+        Text(texte, style: const TextStyle(fontSize: 13)),
+      ]),
+    );
+  }
+
+  Future<void> _confirmerSuppression(VehiculeFlotte v) async {
+    final t = AppLocalizations.of(context);
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(t.supprimerCeVehicule),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.annuler)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(t.supprimer, style: const TextStyle(color: AppColors.erreur)),
+          ),
+        ],
+      ),
+    );
+    if (confirme == true) {
+      await ref.read(vehiculeProvider.notifier).supprimer(v.id);
+    }
   }
 
   @override
@@ -79,47 +170,67 @@ class _VehiculesScreenState extends ConsumerState<VehiculesScreen> {
   }
 
   Widget _carteVehicule(VehiculeFlotte v) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.bordure),
-      ),
-      child: Row(children: [
-        const Icon(Icons.local_shipping_outlined, color: AppColors.accent),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(v.typeVehicule, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              if (v.immatriculation != null)
-                Text(v.immatriculation!, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
-            ],
-          ),
+    return InkWell(
+      onTap: () => _ouvrirDetail(v),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.bordure),
         ),
-        if (v.profilMatieresDangereuses)
-          const Icon(Icons.warning_amber, color: AppColors.accent, size: 18),
-      ]),
+        child: Row(children: [
+          const Icon(Icons.local_shipping_outlined, color: AppColors.accent),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(v.typeVehicule, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                if (v.immatriculation != null)
+                  Text(v.immatriculation!, style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
+              ],
+            ),
+          ),
+          if (v.profilMatieresDangereuses)
+            const Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Icon(Icons.warning_amber, color: AppColors.accent, size: 18),
+            ),
+          const Icon(Icons.chevron_right, color: AppColors.texteMuet),
+        ]),
+      ),
     );
   }
 }
 
-class _FormulaireAjoutVehicule extends ConsumerStatefulWidget {
-  const _FormulaireAjoutVehicule();
+// CRUD véhicule (retour utilisatrice 21/08) : même formulaire pour créer et
+// modifier -- `existant` non-null bascule en mode édition (titre, appel
+// modifier() plutôt que declarer(), champs pré-remplis). Reste un popup qui
+// se ferme après soumission (showModalBottomSheet + Navigator.pop), déjà le
+// cas pour la création.
+class _FormulaireVehicule extends ConsumerStatefulWidget {
+  final VehiculeFlotte? existant;
+  const _FormulaireVehicule({this.existant});
 
   @override
-  ConsumerState<_FormulaireAjoutVehicule> createState() => _FormulaireAjoutVehiculeState();
+  ConsumerState<_FormulaireVehicule> createState() => _FormulaireVehiculeState();
 }
 
-class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicule> {
+class _FormulaireVehiculeState extends ConsumerState<_FormulaireVehicule> {
   final _formKey = GlobalKey<FormState>();
-  final _typeCtrl = TextEditingController();
-  final _immatCtrl = TextEditingController();
-  final _poidsMaxCtrl = TextEditingController();
-  final _essieuxCtrl = TextEditingController();
-  bool _matieresDangereuses = false;
+  late final _typeCtrl = TextEditingController(text: widget.existant?.typeVehicule);
+  late final _immatCtrl = TextEditingController(text: widget.existant?.immatriculation);
+  late final _poidsMaxCtrl =
+      TextEditingController(text: widget.existant?.profilPoidsMaxTonnes?.toString());
+  late final _essieuxCtrl =
+      TextEditingController(text: widget.existant?.profilNombreEssieux?.toString());
+  late bool _matieresDangereuses = widget.existant?.profilMatieresDangereuses ?? false;
+  XFile? _photoRecto;
+  XFile? _photoVerso;
+
+  bool get _modeEdition => widget.existant != null;
 
   @override
   void dispose() {
@@ -130,16 +241,51 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
     super.dispose();
   }
 
+  // Photos de carte grise recto/verso (retour utilisatrice 24/08) : capture
+  // via l'appareil photo, même pattern que les autres captures de document
+  // de l'app (KYC). Optionnel -- ne bloque jamais l'enregistrement du
+  // véhicule si l'utilisateur n'a pas les photos sous la main tout de suite.
+  Future<void> _prendrePhoto(bool cotePhotoRecto) async {
+    final photo = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 85);
+    if (photo == null) return;
+    setState(() {
+      if (cotePhotoRecto) {
+        _photoRecto = photo;
+      } else {
+        _photoVerso = photo;
+      }
+    });
+  }
+
   Future<void> _valider() async {
     if (!_formKey.currentState!.validate()) return;
-    final succes = await ref.read(vehiculeProvider.notifier).declarer(
-          typeVehicule: _typeCtrl.text.trim(),
-          immatriculation: _immatCtrl.text.trim().isEmpty ? null : _immatCtrl.text.trim(),
-          profilPoidsMaxTonnes: double.tryParse(_poidsMaxCtrl.text),
-          profilNombreEssieux: int.tryParse(_essieuxCtrl.text),
-          profilMatieresDangereuses: _matieresDangereuses,
-        );
-    if (succes && mounted) Navigator.pop(context);
+    final notifier = ref.read(vehiculeProvider.notifier);
+    final succes = _modeEdition
+        ? await notifier.modifier(
+            id: widget.existant!.id,
+            typeVehicule: _typeCtrl.text.trim(),
+            immatriculation: _immatCtrl.text.trim().isEmpty ? null : _immatCtrl.text.trim(),
+            profilPoidsMaxTonnes: double.tryParse(_poidsMaxCtrl.text),
+            profilNombreEssieux: int.tryParse(_essieuxCtrl.text),
+            profilMatieresDangereuses: _matieresDangereuses,
+          )
+        : await notifier.declarer(
+            typeVehicule: _typeCtrl.text.trim(),
+            immatriculation: _immatCtrl.text.trim().isEmpty ? null : _immatCtrl.text.trim(),
+            profilPoidsMaxTonnes: double.tryParse(_poidsMaxCtrl.text),
+            profilNombreEssieux: int.tryParse(_essieuxCtrl.text),
+            profilMatieresDangereuses: _matieresDangereuses,
+          );
+    if (!succes || !mounted) return;
+
+    if (_photoRecto != null || _photoVerso != null) {
+      // Mode création : l'id du véhicule vient d'être attribué côté
+      // serveur -- declarer() le place en tête de liste (chargerMesVehicules
+      // trie par date de création descendante).
+      final id = _modeEdition ? widget.existant!.id : ref.read(vehiculeProvider).vehicules.first.id;
+      await notifier.deposerPhotos(id, cheminRecto: _photoRecto?.path, cheminVerso: _photoVerso?.path);
+    }
+    if (mounted) Navigator.pop(context);
   }
 
   @override
@@ -155,7 +301,8 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(t.nouveauVehicule, style: Theme.of(context).textTheme.headlineMedium),
+            Text(_modeEdition ? t.modifierLeVehicule : t.nouveauVehicule,
+                style: Theme.of(context).textTheme.headlineMedium),
             const SizedBox(height: 20),
             TextFormField(
               controller: _typeCtrl,
@@ -183,6 +330,26 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
               onChanged: (v) => setState(() => _matieresDangereuses = v),
               activeThumbColor: AppColors.accent,
             ),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(
+                child: _boutonPhoto(
+                  label: t.carteGriseRecto,
+                  photo: _photoRecto,
+                  dejaDeposee: widget.existant?.photoCarteGriseRectoDeposee ?? false,
+                  onTap: () => _prendrePhoto(true),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _boutonPhoto(
+                  label: t.carteGriseVerso,
+                  photo: _photoVerso,
+                  dejaDeposee: widget.existant?.photoCarteGriseVersoDeposee ?? false,
+                  onTap: () => _prendrePhoto(false),
+                ),
+              ),
+            ]),
             if (state.erreur != null) ...[
               const SizedBox(height: 8),
               Text(state.erreur!, style: const TextStyle(color: AppColors.erreur, fontSize: 13)),
@@ -202,6 +369,27 @@ class _FormulaireAjoutVehiculeState extends ConsumerState<_FormulaireAjoutVehicu
           ],
         ),
       ),
+    );
+  }
+
+  Widget _boutonPhoto({
+    required String label,
+    required XFile? photo,
+    required bool dejaDeposee,
+    required VoidCallback onTap,
+  }) {
+    final deposee = photo != null || dejaDeposee;
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      style: OutlinedButton.styleFrom(
+        side: BorderSide(color: deposee ? AppColors.accent : AppColors.bordure),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+      icon: Icon(deposee ? Icons.check_circle : Icons.camera_alt_outlined,
+          color: deposee ? AppColors.accent : AppColors.texteMuet, size: 18),
+      label: Text(label,
+          style: TextStyle(color: deposee ? AppColors.accent : AppColors.texteMuet, fontSize: 12),
+          textAlign: TextAlign.center),
     );
   }
 }

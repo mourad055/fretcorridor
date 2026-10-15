@@ -45,7 +45,7 @@ class VehiculeControllerTest {
     void an_authenticated_actor_can_declare_a_vehicle() {
         String token = tokenFor("+237600000002");
         when(vehiculePort.declarer(eq("mock-ida-delegation-token"), any()))
-                .thenReturn(Mono.just(new Vehicule("v1", "Camion 10T", "LT 1234 AB", null, null, null, null, null, null, false, "2026-08-12T10:00:00")));
+                .thenReturn(Mono.just(new Vehicule("v1", "Camion 10T", "LT 1234 AB", null, null, null, null, null, null, false, "2026-08-12T10:00:00", false, false)));
 
         webTestClient.post().uri("/api/v1/vehicules")
                 .header("Authorization", "Bearer " + token)
@@ -68,7 +68,7 @@ class VehiculeControllerTest {
     void lists_my_vehicles() {
         String token = tokenFor("+237600000002");
         when(vehiculePort.mesVehicules("mock-ida-delegation-token"))
-                .thenReturn(Flux.just(new Vehicule("v1", "Camion 10T", null, null, null, null, null, null, null, false, "2026-08-12T10:00:00")));
+                .thenReturn(Flux.just(new Vehicule("v1", "Camion 10T", null, null, null, null, null, null, null, false, "2026-08-12T10:00:00", false, false)));
 
         webTestClient.get().uri("/api/v1/vehicules/mes")
                 .header("Authorization", "Bearer " + token)

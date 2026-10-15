@@ -42,6 +42,8 @@ public class VehiculeDto {
         private Integer profilNombreEssieux;
         private boolean profilMatieresDangereuses;
         private LocalDateTime dateCreation;
+        private boolean photoCarteGriseRectoDeposee;
+        private boolean photoCarteGriseVersoDeposee;
 
         public static VehiculeResponse fromEntity(Vehicule v) {
             return VehiculeResponse.builder()
@@ -57,6 +59,8 @@ public class VehiculeDto {
                     .profilNombreEssieux(v.getProfilNombreEssieux())
                     .profilMatieresDangereuses(v.isProfilMatieresDangereuses())
                     .dateCreation(v.getDateCreation())
+                    .photoCarteGriseRectoDeposee(v.getPhotoCarteGriseRectoKey() != null)
+                    .photoCarteGriseVersoDeposee(v.getPhotoCarteGriseVersoKey() != null)
                     .build();
         }
     }

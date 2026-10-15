@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import java.util.UUID;
 
@@ -91,5 +92,44 @@ public class VehiculeController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentification requise");
         }
         return ResponseEntity.ok(VehiculeDto.VehiculeResponse.fromEntity(vehicule));
+    }
+
+    // CRUD véhicule (retour utilisatrice 21/08).
+    @PutMapping("/{id}")
+    public ResponseEntity<?> modifier(
+            @PathVariable UUID id,
+            @Valid @RequestBody VehiculeDto.DeclarerRequest request,
+            @RequestHeader("Authorization") String authHeader) {
+        UUID acteurId = jwtService.extraireActeurId(authHeader.substring(7));
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        try {
+            return ResponseEntity.ok(vehiculeService.modifier(id, acteurId, tenantId, request));
+        } catch (ImmatriculationDejaUtiliseeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> supprimer(
+            @PathVariable UUID id,
+            @RequestHeader("Authorization") String authHeader) {
+        UUID acteurId = jwtService.extraireActeurId(authHeader.substring(7));
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        vehiculeService.supprimer(id, acteurId, tenantId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Photos de carte grise recto/verso (retour utilisatrice 24/08) -- les
+    // deux fichiers sont optionnels independamment (envoyer seulement le
+    // recto, ou seulement le verso, ou les deux a la fois).
+    @PostMapping(value = "/{id}/photos", consumes = "multipart/form-data")
+    public ResponseEntity<?> deposerPhotos(
+            @PathVariable UUID id,
+            @RequestParam(value = "recto", required = false) MultipartFile recto,
+            @RequestParam(value = "verso", required = false) MultipartFile verso,
+            @RequestHeader("Authorization") String authHeader) {
+        UUID acteurId = jwtService.extraireActeurId(authHeader.substring(7));
+        String tenantId = jwtService.extraireTenantId(authHeader.substring(7));
+        return ResponseEntity.ok(vehiculeService.deposerPhotos(id, acteurId, tenantId, recto, verso));
     }
 }
