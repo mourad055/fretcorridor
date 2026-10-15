@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/top_notification.dart';
@@ -115,12 +116,15 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
     }
   }
 
-  InputDecoration _decoration(String hint, IconData icon) {
+  // sansIcone : les champs IntlPhoneField affichent deja leur propre
+  // indicatif pays en tete de champ -- un prefixIcon supplementaire
+  // entrerait en collision visuelle avec celui-ci.
+  InputDecoration _decoration(String hint, IconData icon, {bool sansIcone = false}) {
     return InputDecoration(
       hintText: hint,
       filled: true,
       fillColor: AppColors.surface,
-      prefixIcon: Icon(icon, color: AppColors.texteMuet, size: 20),
+      prefixIcon: sansIcone ? null : Icon(icon, color: AppColors.texteMuet, size: 20),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.bordure)),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: AppColors.accent)),
@@ -343,8 +347,11 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
   // nouveau — évite qu'un tiers ayant accès à l'appareil déverrouillé ne
   // s'approprie silencieusement le compte.
   Future<void> _modifierTelephone(AppLocalizations t, String? telephoneActuel) async {
-    final ancienCtrl = TextEditingController();
-    final nouveauCtrl = TextEditingController();
+    // BUG CORRIGE (retour utilisatrice 24/08) : memes TextFormField bruts
+    // que cote app Chauffeur, meme correctif -- IntlPhoneField pour la
+    // validation par pays native (cf. kyc_screen.dart, app_chauffeur_transporteur).
+    String ancienComplet = '';
+    String nouveauComplet = '';
     final formKey = GlobalKey<FormState>();
 
     final confirme = await showDialog<bool>(
@@ -360,18 +367,16 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
               Text(t.numeroActuel(telephoneActuel ?? '—'),
                   style: const TextStyle(color: AppColors.texteMuet, fontSize: 12)),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: ancienCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: _decoration(t.confirmezNumeroActuel, Icons.phone_outlined),
-                validator: (v) => (v == null || v.trim().isEmpty) ? t.champObligatoire : null,
+              IntlPhoneField(
+                initialCountryCode: 'CM',
+                decoration: _decoration(t.confirmezNumeroActuel, Icons.phone_outlined, sansIcone: true),
+                onChanged: (phone) => ancienComplet = phone.completeNumber,
               ),
               const SizedBox(height: 12),
-              TextFormField(
-                controller: nouveauCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: _decoration(t.nouveauNumero, Icons.phone_iphone_outlined),
-                validator: (v) => (v == null || v.trim().isEmpty) ? t.champObligatoire : null,
+              IntlPhoneField(
+                initialCountryCode: 'CM',
+                decoration: _decoration(t.nouveauNumero, Icons.phone_iphone_outlined, sansIcone: true),
+                onChanged: (phone) => nouveauComplet = phone.completeNumber,
               ),
             ],
           ),
@@ -380,6 +385,7 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
           TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.annuler)),
           ElevatedButton(
             onPressed: () {
+              if (ancienComplet.isEmpty || nouveauComplet.isEmpty) return;
               if (formKey.currentState!.validate()) Navigator.pop(dialogContext, true);
             },
             child: Text(t.valider),
@@ -390,7 +396,7 @@ class _CompleterProfilScreenState extends ConsumerState<CompleterProfilScreen> {
 
     if (confirme != true || !mounted) return;
 
-    final succes = await ref.read(authProvider.notifier).modifierTelephone(ancienCtrl.text.trim(), nouveauCtrl.text.trim());
+    final succes = await ref.read(authProvider.notifier).modifierTelephone(ancienComplet, nouveauComplet);
     if (!mounted) return;
     final erreur = ref.read(authProvider).erreur;
     afficherNotification(
