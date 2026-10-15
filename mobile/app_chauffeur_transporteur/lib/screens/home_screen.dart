@@ -13,6 +13,7 @@ import 'missions_screen.dart';
 import 'notifications_screen.dart';
 import 'paiement_screen.dart';
 import 'promo_carousel.dart';
+import 'propositions_mission_screen.dart';
 import 'vehicules_screen.dart';
 import '../providers/notification_provider.dart';
 import '../widgets/top_notification.dart';
@@ -169,6 +170,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
 
                 if (estTransporteur) ...[
+                  _CarteAction(
+                    icone: Icons.notifications_active_outlined,
+                    titre: t.mesPropositionsMission,
+                    description: t.mesPropositionsMissionDescription,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PropositionsMissionScreen())),
+                  ),
+                  const SizedBox(height: 12),
                   _CarteAction(
                     icone: Icons.assignment_outlined,
                     titre: t.mesMissions,

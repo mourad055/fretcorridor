@@ -4,6 +4,7 @@ import '../l10n/app_localizations.dart';
 import '../providers/notification_provider.dart';
 import '../providers/proposition_retour_provider.dart';
 import '../theme/app_theme.dart';
+import 'propositions_mission_screen.dart';
 
 const _iconesType = {
   'MISSION': Icons.local_shipping_outlined,
@@ -167,7 +168,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   Widget _carteNotification(AppLocalizations t, AppNotification n) {
     return InkWell(
-      onTap: n.lue ? null : () => ref.read(notificationProvider.notifier).marquerLue(n.id),
+      onTap: () {
+        if (!n.lue) ref.read(notificationProvider.notifier).marquerLue(n.id);
+        if (n.type == 'PROPOSITION_RECUE') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PropositionsMissionScreen()));
+        }
+      },
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(

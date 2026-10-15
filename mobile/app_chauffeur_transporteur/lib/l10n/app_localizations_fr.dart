@@ -65,6 +65,21 @@ class AppLocalizationsFr extends AppLocalizations {
   String get notifications => 'Notifications';
 
   @override
+  String get notifTitrePropositionRecue => 'Nouvelle proposition';
+
+  @override
+  String get notifTitreStatutMission => 'Mise à jour de mission';
+
+  @override
+  String get notifTitreInfoGenerale => 'Information';
+
+  @override
+  String get notifTitrePropositionRetour => 'Proposition de retour';
+
+  @override
+  String get notifTitreAlerteEcart => 'Alerte';
+
+  @override
   String langueMenuItem(String langue) {
     return 'Langue ($langue)';
   }
@@ -924,4 +939,78 @@ class AppLocalizationsFr extends AppLocalizations {
   String declareeLe(String date) {
     return 'Déclarée le $date';
   }
+
+  @override
+  String get mesPropositionsMission => 'Mes propositions';
+
+  @override
+  String get mesPropositionsMissionDescription =>
+      'Missions à accepter ou refuser';
+
+  @override
+  String get remunerationLabel => 'Rémunération';
+
+  @override
+  String expireDans(String secondes) {
+    return 'Expire dans $secondes s';
+  }
+
+  @override
+  String get propositionExpiree => 'Expirée';
+
+  @override
+  String get aucunePropositionMission =>
+      'Aucune proposition en attente pour le moment.';
+
+  @override
+  String get poidsLabel => 'Poids';
+
+  @override
+  String get distanceLabel => 'Distance';
+
+  @override
+  String get dureeLabel => 'Durée';
+
+  @override
+  String get modeCollecteLabel => 'Mode de collecte';
+
+  @override
+  String get disponibiliteLabel => 'Disponibilité';
+
+  @override
+  String get marchandiseLabel => 'Marchandise';
+
+  @override
+  String get destinataireLabel => 'Destinataire';
+
+  @override
+  String get motifRefusTitre => 'Pourquoi refusez-vous cette mission ?';
+
+  @override
+  String get motifTropLoin => 'Trop loin de ma position';
+
+  @override
+  String get motifIndisponible => 'Indisponible sur ce créneau';
+
+  @override
+  String get motifRemunerationInsuffisante => 'Rémunération insuffisante';
+
+  @override
+  String get motifVehiculeInadapte => 'Véhicule non adapté';
+
+  @override
+  String get motifAutre => 'Autre raison';
+
+  @override
+  String get confirmerRefus => 'Confirmer le refus';
+
+  @override
+  String get missionAcceptee => 'Mission acceptée !';
+
+  @override
+  String get missionRefusee => 'Mission refusée.';
+
+  @override
+  String get propositionIndisponible =>
+      'Cette proposition n\'est plus disponible (déjà répondue ou expirée).';
 }

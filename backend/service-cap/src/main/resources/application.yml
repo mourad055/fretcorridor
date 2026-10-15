@@ -40,6 +40,22 @@ spring:
       # transporteur, jamais bloquant.
       connect-timeout-ms: 500
       read-timeout-ms: 1000
+    service-opt:
+      base-url: http://localhost:8085
+      # UC-MAT-02/diffusion-course (30/08) : GET /api/opt/affectations/proposees
+      # (mes propositions en attente du chauffeur). ENTORSE DELIBEREE ET
+      # BILATERALE au principe cross-porteur asynchrone (opt-api.yaml : "aucun
+      # consommateur cross-porteur n'appelle cette API directement") -- a la
+      # difference de l'ancien relais gateway->service-opt (ADR 0013, entorse
+      # unilaterale, jamais validee cote Moteur), cet endpoint a ete concu et
+      # construit PAR le porteur Moteur specifiquement pour cet usage (meme
+      # patron que ServiceTrkClient/AffectationController, cle interne
+      # partagee), et le choix "lecture synchrone plutot qu'evenement" a ete
+      # co-decide avec lui (simplicite du polling 15s cote app, notification
+      # Kafka proposition-diffusee-chauffeur ajoutee en complement, pas en
+      # remplacement). A documenter dans un ADR si ce patron se generalise.
+      connect-timeout-ms: 500
+      read-timeout-ms: 1000
   kafka:
     bootstrap-servers: localhost:9092
     producer:
