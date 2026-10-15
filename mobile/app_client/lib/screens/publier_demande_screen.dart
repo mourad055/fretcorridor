@@ -10,6 +10,7 @@ import '../models/catalogue_emballage_model.dart';
 import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/top_notification.dart';
+import 'estimation_screen.dart';
 
 class PublierDemandeScreen extends ConsumerStatefulWidget {
   // CRUD demande (audit de suivi Mobile) : pas de vrai endpoint de
@@ -136,14 +137,6 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       return;
     }
 
-    if (widget.demandeAModifier == null) {
-      afficherNotification(
-        context,
-        message: t.prixEstimationMessage,
-        duree: const Duration(seconds: 4),
-      );
-    }
-
     final succes = await ref.read(demandeProvider.notifier).publier(
       villeDepart: _villeDepartCtrl.text.trim(),
       villeArrivee: _villeArriveeCtrl.text.trim(),
@@ -181,7 +174,23 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
       }
     }
 
-    if (mounted) Navigator.pop(context);
+    if (!mounted) return;
+
+    // Nouvelle demande (pas une modification) : on enchaîne directement sur
+    // l'estimation plutôt que de revenir silencieusement à la liste — c'est
+    // le point d'entrée naturel du parcours diffusion-course désormais.
+    // mesDemandes.first est fiable ici : publier() vient d'appeler
+    // chargerMesDemandes(), et le backend trie par dateCreation DESC
+    // (DemandeRepository.findByClientActeurIdAndTenantIdOrderByDateCreationDesc).
+    final mesDemandes = ref.read(demandeProvider).mesDemandes;
+    if (ancienne == null && mesDemandes.isNotEmpty) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => EstimationScreen(demande: mesDemandes.first)),
+      );
+    } else {
+      Navigator.pop(context);
+    }
   }
 
   InputDecoration _decoration(String hint, [IconData? icon]) {
