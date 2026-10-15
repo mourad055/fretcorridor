@@ -67,6 +67,75 @@ lui est légitime et livré (§2) : c'est l'écran "Mes propositions" qui s'appu
 
 ---
 
+## 1bis. Tarification par chauffeur — TRANCHÉ le 15/10, remplace l'hypothèse du §5
+
+**Qui : décision produit (Responsable Flysoft, M. Claude Kuaté, WhatsApp 02/09 et
+05/09) + Mobile (maquette + écrans) + Moteur (adaptation du moteur de tarification,
+pas encore commencée).**
+
+Le §5 ci-dessous (ligne "Prix sur poids volumétrique + distance") décrit encore
+l'ancien modèle : un **barème unique partagé**, déjà implémenté côté `service-opt`
+(`TarificationL4Service`/`BaremeTarification`, indexé par `axeId` + `typeVehicule`
+uniquement, cascade à 4 niveaux, régimes `FORFAITAIRE_VEHICULE`/`POIDS_TAXABLE`,
+commission plateforme, prix plancher, facteur de tension marché). **Ce modèle
+contredit frontalement** la directive reçue du Responsable Flysoft : chaque
+chauffeur configure son propre tarif (F/kg) par axe et par catégorie de
+marchandise (Standard/Fragile/Ultra fragile), le client voit un intervalle
+min/max calculé sur les chauffeurs actuellement compatibles.
+
+**Décision actée le 15/10** : on garde l'idée de M. Kuaté (tarif par chauffeur).
+C'est au Moteur d'adapter `TarificationL4Service`/`BaremeTarification` en
+conséquence — **chantier non commencé**, nécessite une discussion de conception
+avec Personne 3 (quel service calcule le prix final, qui stocke le tarif par
+chauffeur, comment `Affectation.prixTransport` est alimenté). Spécification
+complète : `spec-tarification-par-chauffeur.md` (racine du dépôt).
+
+**Découverte du 15/10, qui change aussi la résolution géographique de l'axe** :
+`service-geo` a déjà un référentiel **Hub + Axe + H3** bien plus abouti que prévu
+(indexation hexagonale façon Uber) — `Hub` (GPS précis + index H3), `Axe` (lien à
+sens unique entre deux hubs, 3 états indépendants visibilité/matching/paiement,
+risque sécuritaire, répartition conventionnelle transfrontalière), déjà consommé
+par OPT (`GET /api/geo/axes/actifs-matching`, `ServiceGeoClient`). **Le tarif par
+chauffeur doit donc se rattacher à un `axeId` de ce référentiel existant**, pas à
+une paire de villes inventée par le chauffeur — déjà pris en compte côté Mobile
+(§ ci-dessous), reste à trancher côté Moteur pour le calcul de prix lui-même.
+
+**Déjà livré côté Mobile, en simulation locale, en attendant le contrat backend**
+(PR #142, #143, mergées) :
+- **App Transporteur** : écran "Mes tarifs" (`mes_tarifs_screen.dart` +
+  `tarif_axe_provider.dart`) — réutilise le vrai référentiel d'axes
+  (`axesProvider`, déjà branché sur `GET /axes`), 3 tarifs F/kg par axe réel,
+  actif/pause, retrait. Stockage **local uniquement** (aucun contrat backend pour
+  "le tarif d'un chauffeur sur un axe" aujourd'hui).
+- **App Client** : catégorie de marchandise (Standard/Fragile/Ultra fragile) à la
+  publication, transmise au backend (`categorieMarchandise`, champ sans effet tant
+  qu'il n'est pas consommé) ; écran Estimation (intervalle de prix simulé à partir
+  du poids taxable **réel** de la demande) ; écran de blocage des fonds en 2 états
+  (pré-autorisation puis capture, cohérent avec la demande "paiement bloqué, puis
+  seul le prix du chauffeur qui accepte est prélevé") ; écran de diffusion avec
+  compte à rebours 15 min et republication.
+- **CNI du destinataire** : capture photo facultative à la publication (App
+  Client) et étape de vérification à la livraison (App Transporteur,
+  `mission_detail_screen.dart`) — les deux tolérants à l'absence de donnée, aucun
+  endpoint d'upload/propagation réel à ce jour.
+- Maquette complète (10 écrans + 2 prototypes récapitulatifs) construite et testée
+  sur Claude Design, validée avant le code Flutter — cf. §3 pour la discipline
+  maquette-avant-code, respectée ici.
+
+**Reste à faire, dans l'ordre** :
+1. Conception technique avec Personne 3 : qui calcule le prix final (OPT va
+   chercher le tarif de chaque chauffeur candidat dans service-cap avant de
+   calculer `Affectation.prixTransport`, ou service-cap calcule et renvoie le prix
+   à OPT) — décision d'architecture partagée, pas unilatérale.
+2. Résolution du mapping axe pour une demande donnée : quelle API/logique associe
+   les coordonnées GPS d'une demande à un `axeId` du référentiel `geo.axe` côté
+   client (symétrique à ce qu'OPT fait déjà en interne via H3).
+3. Une fois le contrat figé : brancher les écrans Mobile déjà construits (ils ne
+   changent pas de forme, seulement leur source de données, même principe que le
+   rebranchement §1/§9 déjà fait pour la diffusion-course).
+
+---
+
 ## 2. État des lieux (30/08)
 
 **Déjà livré côté Moteur** (commit `a2d3a92`, `dev`) — couvre presque tout ce qui
@@ -166,7 +235,7 @@ graphique, avant tout code.
 
 | Besoin exprimé | Qui | Nature du travail | Statut |
 |---|---|---|---|
-| Prix sur poids volumétrique + distance, accepté/refusé | **Moteur** (Tarification L4) + **Mobile** (écran) | Vérifié verrouillé sur poids volumétrique + distance (commit `bbe422f`, test dédié) | ✅ Moteur livré / ⏳ Écran à faire |
+| ~~Prix sur poids volumétrique + distance, accepté/refusé~~ | **Moteur** (Tarification L4) + **Mobile** (écran) | **SUPERSEDED le 15/10, voir §1bis** : remplacé par un intervalle de prix calculé sur les tarifs individuels des chauffeurs compatibles, pas un barème unique. Poids volumétrique inchangé (toujours correct), distance n'intervient plus comme facteur explicite du calcul. | ⚠️ Voir §1bis |
 | Suivi carte : position chauffeur = position colis récupéré | **Moteur** (TRK) | `ColisRecuperation` + `GET /api/trk/suivi/{missionId}` | ✅ Livré |
 | Interfaces façon Yango + charte graphique | **Mobile** | `home_placeholder_screen.dart` — son nom dit tout, jamais designé, priorité évidente. `welcome_screen.dart` (déjà refait avec vidéo hero Pexels) à re-thémer plutôt qu'à refaire. Maquette d'abord (§3). | ⏳ À faire |
 | Trajets préenregistrés nommés | **Mobile** | Aucun écran ni entité existants (`publier_demande_screen.dart` ne connaît que la saisie libre). Nouvelle entité côté service-mkt (aligné avec `Demande`) ou service-ida (aligné avec le profil) — à trancher selon où vit le reste du profil client. Raccourci de saisie uniquement, pré-remplit les mêmes champs qu'une publication classique. | ⏳ À faire, aucune dépendance Moteur |
@@ -283,13 +352,16 @@ Captures faites à ce jour et ce qu'elles confirment :
 
 | PR | Sujet | Qui | Statut |
 |---|---|---|---|
-| #134 | Ce document + assets charte graphique | Mobile | Ouverte |
-| #135 | CRUD véhicule + upload photo | Mobile | Ouverte |
-| #136 | Traduction titres notifications | Mobile | Ouverte |
-| #137 | Validation téléphone | Mobile | Ouverte |
-| #138 | Formulaire capacité en popup | Mobile | Ouverte |
-| #139 | Détection IP réseau portable | Mobile | Ouverte |
-| #140 | UC-MAT-02 (modèle CDC strict) | Mobile | **À fermer** — superseded par §1 |
+| #134 | Ce document + assets charte graphique | Mobile | ✅ Mergée |
+| #135 | CRUD véhicule + upload photo | Mobile | ✅ Mergée |
+| #136 | Traduction titres notifications | Mobile | ✅ Mergée |
+| #137 | Validation téléphone | Mobile | ✅ Mergée |
+| #138 | Formulaire capacité en popup | Mobile | ✅ Mergée |
+| #139 | Détection IP réseau portable | Mobile | ✅ Mergée |
+| #140 | UC-MAT-02 (modèle CDC strict) | Mobile | ❌ Fermée — superseded par §1 (remplacée par #141) |
+| #141 | UC-MAT-02/diffusion-course — accepter/refuser une proposition | Mobile | ✅ Mergée |
+| #142 | App Transporteur — Mes tarifs par axe + vérification identité livraison | Mobile | ✅ Mergée |
+| #143 | App Client — catégorie marchandise + CNI destinataire + parcours Estimation/Diffusion/Paiement | Mobile | ✅ Mergée |
 
 ---
 
@@ -303,18 +375,23 @@ Mobile peut donc appeler **service-opt** (GET, back-to-back) et/ou consommer
 les versions des contrats Kafka une fois le câblage Mobile réellement intégré
 (demande explicite de Personne 3).
 
-**Mobile** (Personne 1) :
-1. Fermer la PR #140 (§2, §8).
-2. Maquettes (§3) des écrans prioritaires — avant tout code.
-3. Rebrancher "Mes propositions" sur service-cap/Kafka (et le GET service-opt)
-   **et** appliquer la nouvelle charte en une seule passe (§3, note de séquencement).
-   Le compte à rebours de la maquette ("expire 5 min") correspond à l'`expireA`
-   renvoyé par le GET / proposé par l'événement (défaut 15 min côté Moteur).
-4. Sans dépendance Moteur, en parallèle : historique chauffeur, historique client,
-   trajets préenregistrés, écran swipe, écrans de consultation (itinéraire, prix,
-   suivi carte).
-5. Confirmer à Personne 3 (Moteur) l'intégration effective des contrats Kafka pour
-   figer les versions (demande explicite de Personne 3).
+**Mobile** (Personne 1) — mis à jour le 15/10 :
+1. ~~Fermer la PR #140~~ ✅ fait (remplacée par #141, mergée).
+2. ~~Maquettes (§3) des écrans prioritaires~~ ✅ fait — 10 écrans + 2 prototypes
+   récapitulatifs sur Claude Design, testés (Chrome headless, aucun bug), avant
+   tout code Flutter.
+3. ~~Rebrancher "Mes propositions" sur service-cap/Kafka~~ ✅ fait (#141).
+4. ~~Tarification par chauffeur + CNI destinataire + parcours
+   Estimation/Diffusion/Paiement~~ ✅ fait en simulation locale (#142, #143) — voir
+   §1bis pour ce qui reste côté Moteur.
+5. **Reste à faire, sans dépendance Moteur** : historique chauffeur, historique
+   client, trajets préenregistrés. L'écran "swipe des demandes" du §4 est
+   abandonné au profit du modèle liste-de-cartes déjà construit (plus simple,
+   déjà conforme à la diffusion-course) — à confirmer que ça convient toujours,
+   sinon le reprendre en swipe.
+6. **Reste à faire, avec Personne 3** : conception technique du calcul de prix
+   par chauffeur (§1bis, point 1) et du mapping axe géographique (§1bis, point 2)
+   — bloquant avant de brancher les écrans déjà construits sur de vraies données.
 
 **Web** (Personne 2) : à définir avec la personne concernée (§6) — la charte
 graphique la concerne directement, le reste de ce document ne couvre pas son
@@ -325,5 +402,6 @@ commit direct sur `dev`, PR validée avant merge.
 
 ---
 
-*Document à ajuster après la conception des maquettes (§3) et le rebranchement de
-"Mes propositions" sur les contrats Kafka (§1, §9).*
+*Mise à jour du 15/10 : maquettes (§3) et rebranchement "Mes propositions" (§1, §9)
+faits. Nouveau point bloquant à ajuster après discussion avec le Moteur : le calcul
+de prix par chauffeur et le mapping géographique de l'axe (§1bis).*
