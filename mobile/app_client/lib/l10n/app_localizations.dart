@@ -1268,6 +1268,48 @@ abstract class AppLocalizations {
   /// **'À domicile'**
   String get aDomicile;
 
+  /// No description provided for @categorieMarchandiseLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'CATÉGORIE DE MARCHANDISE'**
+  String get categorieMarchandiseLabel;
+
+  /// No description provided for @categorieMarchandiseStandard.
+  ///
+  /// In fr, this message translates to:
+  /// **'Standard'**
+  String get categorieMarchandiseStandard;
+
+  /// No description provided for @categorieMarchandiseStandardDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supporte la manutention normale et l\'empilement.'**
+  String get categorieMarchandiseStandardDescription;
+
+  /// No description provided for @categorieMarchandiseFragile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fragile'**
+  String get categorieMarchandiseFragile;
+
+  /// No description provided for @categorieMarchandiseFragileDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Peut casser : calage et sangles, rien de lourd posé dessus.'**
+  String get categorieMarchandiseFragileDescription;
+
+  /// No description provided for @categorieMarchandiseUltraFragile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ultra fragile'**
+  String get categorieMarchandiseUltraFragile;
+
+  /// No description provided for @categorieMarchandiseUltraFragileDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Très sensible aux chocs : jamais empilé, chargé en dernier.'**
+  String get categorieMarchandiseUltraFragileDescription;
+
   /// No description provided for @sectionDestinataire.
   ///
   /// In fr, this message translates to:
@@ -1279,6 +1321,36 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Ex : Paul Nkomo'**
   String get hintDestinataireNom;
+
+  /// No description provided for @cniDestinataireLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'CNI du destinataire (facultatif)'**
+  String get cniDestinataireLabel;
+
+  /// No description provided for @cniDestinataireDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sera vérifiée à la livraison pour confirmer l\'identité de la personne qui réceptionne.'**
+  String get cniDestinataireDescription;
+
+  /// No description provided for @prendreUnePhoto.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prendre une photo'**
+  String get prendreUnePhoto;
+
+  /// No description provided for @cniAjoutee.
+  ///
+  /// In fr, this message translates to:
+  /// **'CNI ajoutée'**
+  String get cniAjoutee;
+
+  /// No description provided for @changerCni.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer'**
+  String get changerCni;
 
   /// No description provided for @telephoneRenseigner.
   ///

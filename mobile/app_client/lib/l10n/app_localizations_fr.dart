@@ -642,10 +642,50 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aDomicile => 'À domicile';
 
   @override
+  String get categorieMarchandiseLabel => 'CATÉGORIE DE MARCHANDISE';
+
+  @override
+  String get categorieMarchandiseStandard => 'Standard';
+
+  @override
+  String get categorieMarchandiseStandardDescription =>
+      'Supporte la manutention normale et l\'empilement.';
+
+  @override
+  String get categorieMarchandiseFragile => 'Fragile';
+
+  @override
+  String get categorieMarchandiseFragileDescription =>
+      'Peut casser : calage et sangles, rien de lourd posé dessus.';
+
+  @override
+  String get categorieMarchandiseUltraFragile => 'Ultra fragile';
+
+  @override
+  String get categorieMarchandiseUltraFragileDescription =>
+      'Très sensible aux chocs : jamais empilé, chargé en dernier.';
+
+  @override
   String get sectionDestinataire => 'Destinataire';
 
   @override
   String get hintDestinataireNom => 'Ex : Paul Nkomo';
+
+  @override
+  String get cniDestinataireLabel => 'CNI du destinataire (facultatif)';
+
+  @override
+  String get cniDestinataireDescription =>
+      'Sera vérifiée à la livraison pour confirmer l\'identité de la personne qui réceptionne.';
+
+  @override
+  String get prendreUnePhoto => 'Prendre une photo';
+
+  @override
+  String get cniAjoutee => 'CNI ajoutée';
+
+  @override
+  String get changerCni => 'Changer';
 
   @override
   String get telephoneRenseigner => 'Renseignez le téléphone du destinataire';

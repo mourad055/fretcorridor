@@ -86,6 +86,13 @@ class DemandeNotifier extends StateNotifier<DemandeState> {
     required String modeCollecte,
     required String destinataireNom,
     required String destinataireTelephone,
+    // Tarification par chauffeur (spec-tarification-par-chauffeur.md) :
+    // STANDARD | FRAGILE | ULTRA_FRAGILE -- sert au calcul de l'intervalle
+    // de prix une fois le contrat correspondant branche cote backend
+    // (TarificationL4Service, cote Moteur). Transmis des maintenant : un
+    // champ JSON inconnu est sans effet pour un backend qui ne le lit pas
+    // encore, pas besoin de revenir sur ce provider quand il sera pret.
+    required String categorieMarchandise,
   }) async {
     state = state.copyWith(publicationEnCours: true, erreur: null, succes: null);
     try {
@@ -103,6 +110,7 @@ class DemandeNotifier extends StateNotifier<DemandeState> {
         'modeCollecte': modeCollecte,
         'destinataireNom': destinataireNom,
         'destinataireTelephone': destinataireTelephone,
+        'categorieMarchandise': categorieMarchandise,
       });
       state = state.copyWith(publicationEnCours: false, succes: 'Demande publiée ✅');
       await chargerMesDemandes();

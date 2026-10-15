@@ -640,10 +640,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aDomicile => 'At home';
 
   @override
+  String get categorieMarchandiseLabel => 'GOODS CATEGORY';
+
+  @override
+  String get categorieMarchandiseStandard => 'Standard';
+
+  @override
+  String get categorieMarchandiseStandardDescription =>
+      'Handles normal handling and stacking.';
+
+  @override
+  String get categorieMarchandiseFragile => 'Fragile';
+
+  @override
+  String get categorieMarchandiseFragileDescription =>
+      'Can break: needs bracing and straps, nothing heavy on top.';
+
+  @override
+  String get categorieMarchandiseUltraFragile => 'Extra fragile';
+
+  @override
+  String get categorieMarchandiseUltraFragileDescription =>
+      'Very shock-sensitive: never stacked, loaded last.';
+
+  @override
   String get sectionDestinataire => 'Recipient';
 
   @override
   String get hintDestinataireNom => 'E.g.: Paul Nkomo';
+
+  @override
+  String get cniDestinataireLabel => 'Recipient\'s ID (optional)';
+
+  @override
+  String get cniDestinataireDescription =>
+      'Will be checked at delivery to confirm the identity of the person receiving the goods.';
+
+  @override
+  String get prendreUnePhoto => 'Take a photo';
+
+  @override
+  String get cniAjoutee => 'ID added';
+
+  @override
+  String get changerCni => 'Change';
 
   @override
   String get telephoneRenseigner => 'Enter the recipient\'s phone number';
