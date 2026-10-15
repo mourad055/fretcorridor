@@ -282,6 +282,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get axesDescription => 'Available corridors';
 
   @override
+  String get mesTarifs => 'My rates';
+
+  @override
+  String get mesTarifsDescription => 'Rates per corridor and category';
+
+  @override
+  String get mesTarifsIntro =>
+      'Price for a load = taxable weight × your rate for the corridor and category. A corridor is one-way only: set up the return trip separately, with its own rates.';
+
+  @override
+  String get categorieMarchandiseStandard => 'Standard';
+
+  @override
+  String get categorieMarchandiseFragile => 'Fragile';
+
+  @override
+  String get categorieMarchandiseUltraFragile => 'Extra fragile';
+
+  @override
+  String get tarifParKg => 'F/kg';
+
+  @override
+  String get configurerTarifs => 'Set rates';
+
+  @override
+  String get retirerAxe => 'Remove';
+
+  @override
+  String get axeActif => 'Active';
+
+  @override
+  String get axeEnPause => 'Paused';
+
+  @override
+  String get aucunAxeConfigure =>
+      'Set your rates on the corridors where you want to receive requests.';
+
+  @override
   String get monProfil => 'My profile';
 
   @override
@@ -509,6 +547,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Photo(s) of the goods + recipient\'s signature — required (RG-070).';
 
   @override
+  String get identiteDestinataire => 'Recipient identity';
+
+  @override
+  String get cniTransmiseParClient => 'ID transmitted by the shipper';
+
+  @override
+  String get cniNonTransmise => 'No ID was transmitted for this order.';
+
+  @override
+  String get confirmerMemePersonne => 'This is the same person';
+
+  @override
+  String get lectureSeule => 'Read-only';
+
+  @override
+  String get confirmationIdentiteObligatoire =>
+      'Confirm the recipient\'s identity before validating the delivery.';
+
+  @override
   String get categorieRetard => 'Delay';
 
   @override
@@ -632,6 +689,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nouveauVehicule => 'New vehicle';
+
+  @override
+  String get modifierLeVehicule => 'Edit vehicle';
+
+  @override
+  String get supprimerCeVehicule => 'Delete this vehicle?';
+
+  @override
+  String get carteGriseRecto => 'Registration card (front)';
+
+  @override
+  String get carteGriseVerso => 'Registration card (back)';
+
+  @override
+  String poidsMaxLabel(String poids) {
+    return 'Max weight: $poids t';
+  }
+
+  @override
+  String essieuxLabel(String nombre) {
+    return 'Axles: $nombre';
+  }
 
   @override
   String get typeDeVehicule => 'Vehicle type';

@@ -9,6 +9,7 @@ import 'axes_screen.dart';
 import 'capacite_screen.dart';
 import 'kyc_screen.dart';
 import 'menu_drawer.dart';
+import 'mes_tarifs_screen.dart';
 import 'missions_screen.dart';
 import 'notifications_screen.dart';
 import 'paiement_screen.dart';
@@ -218,6 +219,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AxesScreen())),
                 ),
                 const SizedBox(height: 12),
+                if (estTransporteur) ...[
+                  _CarteAction(
+                    icone: Icons.sell_outlined,
+                    titre: t.mesTarifs,
+                    description: t.mesTarifsDescription,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MesTarifsScreen())),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 _CarteAction(
                   icone: Icons.badge_outlined,
                   titre: t.monProfil,

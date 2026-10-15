@@ -15,6 +15,12 @@ class Mission {
   final double? poidsTaxableKg;
   final String? destinataireNom;
   final String? destinataireTelephone;
+  // Photo de la CNI du destinataire, transmise par le client a la
+  // publication (spec-tarification-par-chauffeur.md, section identification
+  // destinataire) -- pas encore propagee par service-cap/service-exe a ce
+  // jour, donc toujours null en pratique pour l'instant : cote UI, traite
+  // comme "non transmise" plutot que de bloquer la livraison.
+  final String? destinataireCniUrl;
   final String? demandeModeCollecte;
   final String? typeDisponibilite;
   final double? poidsTotalKg;
@@ -32,6 +38,7 @@ class Mission {
     this.poidsTaxableKg,
     this.destinataireNom,
     this.destinataireTelephone,
+    this.destinataireCniUrl,
     this.demandeModeCollecte,
     this.typeDisponibilite,
     this.poidsTotalKg,
@@ -50,6 +57,7 @@ class Mission {
         poidsTaxableKg: (json['poidsTaxableKg'] as num?)?.toDouble(),
         destinataireNom: json['destinataireNom'] as String?,
         destinataireTelephone: json['destinataireTelephone'] as String?,
+        destinataireCniUrl: json['destinataireCniUrl'] as String?,
         demandeModeCollecte: json['demandeModeCollecte'] as String?,
         typeDisponibilite: json['typeDisponibilite'] as String?,
         poidsTotalKg: (json['poidsTotalKg'] as num?)?.toDouble(),
@@ -84,6 +92,7 @@ class MissionDetail {
   final double? poidsTaxableKg;
   final String? destinataireNom;
   final String? destinataireTelephone;
+  final String? destinataireCniUrl;
 
   const MissionDetail({
     required this.missionId,
@@ -96,6 +105,7 @@ class MissionDetail {
     this.poidsTaxableKg,
     this.destinataireNom,
     this.destinataireTelephone,
+    this.destinataireCniUrl,
   });
 
   factory MissionDetail.fromJson(Map<String, dynamic> json) => MissionDetail(
@@ -109,6 +119,7 @@ class MissionDetail {
         poidsTaxableKg: (json['poidsTaxableKg'] as num?)?.toDouble(),
         destinataireNom: json['destinataireNom'] as String?,
         destinataireTelephone: json['destinataireTelephone'] as String?,
+        destinataireCniUrl: json['destinataireCniUrl'] as String?,
       );
 }
 

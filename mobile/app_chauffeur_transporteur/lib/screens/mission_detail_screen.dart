@@ -84,7 +84,11 @@ class _MissionDetailScreenState extends ConsumerState<MissionDetailScreen> {
         isScrollControlled: true,
         backgroundColor: AppColors.fond,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
-        builder: (_) => _FormulairePreuve(typeEtape: typeEtape),
+        builder: (_) => _FormulairePreuve(
+          typeEtape: typeEtape,
+          destinataireNom: widget.mission.destinataireNom,
+          destinataireCniUrl: widget.mission.destinataireCniUrl,
+        ),
       );
       if (preuve == null || !mounted) return;
       succes = await ref.read(missionProvider.notifier).ajouterEtapeAvecPreuve(
@@ -480,7 +484,9 @@ class _FormulaireIncidentState extends State<_FormulaireIncident> {
 // uniquement pour l'instant.
 class _FormulairePreuve extends StatefulWidget {
   final String typeEtape;
-  const _FormulairePreuve({required this.typeEtape});
+  final String? destinataireNom;
+  final String? destinataireCniUrl;
+  const _FormulairePreuve({required this.typeEtape, this.destinataireNom, this.destinataireCniUrl});
 
   @override
   State<_FormulairePreuve> createState() => _FormulairePreuveState();
@@ -491,6 +497,13 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
   final _photos = <File>[];
   final _signatureKey = GlobalKey<SignaturePadState>();
   bool _envoiEnCours = false;
+  bool _identiteConfirmee = false;
+
+  // La verification d'identite n'est exigee qu'a la livraison, et seulement
+  // quand une CNI a effectivement ete transmise par le client -- sinon on
+  // ne peut rien verifier, donc on ne bloque pas la livraison pour une
+  // donnee que service-cap ne propage pas encore (voir Mission.destinataireCniUrl).
+  bool get _exigeConfirmationIdentite => widget.typeEtape == 'LIVRAISON' && widget.destinataireCniUrl != null;
 
   Future<void> _ajouterPhoto() async {
     if (_photos.length >= 3) return;
@@ -503,6 +516,10 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
     final padState = _signatureKey.currentState;
     if (_photos.isEmpty || padState == null || padState.estVide) {
       afficherNotification(context, message: AppLocalizations.of(context).photoEtSignatureObligatoires, couleur: AppColors.erreur, icone: Icons.error_outline);
+      return;
+    }
+    if (_exigeConfirmationIdentite && !_identiteConfirmee) {
+      afficherNotification(context, message: AppLocalizations.of(context).confirmationIdentiteObligatoire, couleur: AppColors.erreur, icone: Icons.error_outline);
       return;
     }
     setState(() => _envoiEnCours = true);
@@ -561,6 +578,49 @@ class _FormulairePreuveState extends State<_FormulairePreuve> {
                 ),
             ],
           ),
+          if (widget.typeEtape == 'LIVRAISON') ...[
+            const SizedBox(height: 20),
+            Text(t.identiteDestinataire, style: const TextStyle(fontSize: 11, letterSpacing: 1.1,
+                color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
+            if (widget.destinataireCniUrl != null) ...[
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.bordure),
+                ),
+                child: Row(children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(widget.destinataireCniUrl!, width: 64, height: 42, fit: BoxFit.cover),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(widget.destinataireNom ?? '—', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                        Text(t.cniTransmiseParClient, style: const TextStyle(fontSize: 11, color: AppColors.texteMuet)),
+                        Text(t.lectureSeule, style: const TextStyle(fontSize: 11, color: AppColors.texteMuet)),
+                      ],
+                    ),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                value: _identiteConfirmee,
+                onChanged: (value) => setState(() => _identiteConfirmee = value ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(t.confirmerMemePersonne, style: const TextStyle(fontSize: 13)),
+              ),
+            ] else
+              Text(t.cniNonTransmise, style: const TextStyle(fontSize: 12, color: AppColors.texteMuet)),
+          ],
           const SizedBox(height: 20),
           Text(t.signatureDuDestinataire, style: const TextStyle(fontSize: 11, letterSpacing: 1.1,
               color: AppColors.texteMuet, fontWeight: FontWeight.w600)),
