@@ -4,10 +4,14 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MOBILE_ROOT="$(dirname "$SCRIPT_DIR")"
 
-IP=$(ip addr show wlp3s0 2>/dev/null | grep "inet " | awk '{print $2}' | cut -d/ -f1)
+# BUG CORRIGE (28/08) : interface codee en dur (wlp3s0) -- specifique a une
+# machine, retombait silencieusement sur localhost (injoignable depuis un
+# device physique) sur toute autre machine d'equipe. Detection portable :
+# premiere interface non-virtuelle avec une adresse IPv4.
+IP=$(ip -o -4 addr show | awk '$2 !~ /^(lo|docker|virbr|br-|veth|tun|tap)/ {print $4}' | cut -d/ -f1 | head -1)
 
 if [ -z "$IP" ]; then
-  echo "⚠️  IP WiFi introuvable sur wlp3s0 — utilisation de localhost (web/desktop uniquement)."
+  echo "⚠️  Aucune IP réseau détectée — utilisation de localhost (web/desktop uniquement)."
   HOST="localhost"
 else
   HOST="$IP"
