@@ -667,6 +667,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get positionGpsIndisponible => 'GPS position not available yet.';
 
   @override
+  String get votreChauffeur => 'Your driver';
+
+  @override
+  String get nomChauffeurIndisponible => 'Driver\'s name not available';
+
+  @override
+  String get appeler => 'Call';
+
+  @override
+  String get numeroNonDisponible => 'Phone number not available yet.';
+
+  @override
   String get etapesTitre => 'Stages';
 
   @override

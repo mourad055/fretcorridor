@@ -31,6 +31,13 @@ class ChronologieModel {
   final String? typeEmballageNom;
   final int? quantite;
   final double? poidsTaxableKg;
+  // Identité du chauffeur apparié -- non exposée par /missions/demande/{id}/chronologie
+  // à ce jour (service-exe), donc toujours null en pratique. Tolérant à
+  // l'absence côté UI plutôt que d'attendre ce contrat pour afficher quoi
+  // que ce soit (même principe que Mission.destinataireCniUrl côté
+  // app_chauffeur_transporteur).
+  final String? transporteurNom;
+  final String? transporteurTelephone;
 
   const ChronologieModel({
     required this.missionId,
@@ -42,6 +49,8 @@ class ChronologieModel {
     this.typeEmballageNom,
     this.quantite,
     this.poidsTaxableKg,
+    this.transporteurNom,
+    this.transporteurTelephone,
   });
 
   factory ChronologieModel.fromJson(Map<String, dynamic> json) {
@@ -55,6 +64,8 @@ class ChronologieModel {
       typeEmballageNom: json['typeEmballageNom'] as String?,
       quantite: json['quantite'] as int?,
       poidsTaxableKg: (json['poidsTaxableKg'] as num?)?.toDouble(),
+      transporteurNom: json['transporteurNom'] as String?,
+      transporteurTelephone: json['transporteurTelephone'] as String?,
     );
   }
 }

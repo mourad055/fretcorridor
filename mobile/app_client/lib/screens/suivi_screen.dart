@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../l10n/app_localizations.dart';
+import '../models/chronologie_model.dart';
 import '../models/demande_model.dart';
 import '../providers/suivi_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/top_notification.dart';
 import 'litige_screen.dart';
 import 'paiement_screen.dart';
 
@@ -177,6 +179,10 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
                       const SizedBox(height: 20),
                     ],
 
+                    // ── Chauffeur apparié ──────────────────
+                    _carteChauffeur(context, t, suivi.chronologie!),
+                    const SizedBox(height: 20),
+
                     // ── Chronologie (S7) ───────────────────
                     Text(t.etapesTitre, style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 12),
@@ -260,6 +266,51 @@ class _SuiviScreenState extends ConsumerState<SuiviScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // Photo + bouton Appeler (maquette validée) -- le bouton reste honnête
+  // tant qu'aucun numero reel n'est expose par /chronologie (voir
+  // ChronologieModel.transporteurTelephone) : il informe plutot que de
+  // simuler un appel.
+  Widget _carteChauffeur(BuildContext context, AppLocalizations t, ChronologieModel chronologie) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.bordure),
+      ),
+      child: Row(children: [
+        Container(
+          width: 48, height: 48,
+          decoration: const BoxDecoration(color: AppColors.surfaceClaire, shape: BoxShape.circle),
+          child: const Icon(Icons.person, color: AppColors.accent),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.votreChauffeur, style: const TextStyle(fontSize: 11, color: AppColors.texteMuet)),
+              Text(chronologie.transporteurNom ?? t.nomChauffeurIndisponible,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: () {
+            if (chronologie.transporteurTelephone == null) {
+              afficherNotification(context, message: t.numeroNonDisponible, couleur: AppColors.texteMuet, icone: Icons.info_outline);
+            }
+            // TODO(backend) : une fois transporteurTelephone exposé,
+            // lancer l'appel réel (url_launcher, tel:<numéro>).
+          },
+          icon: const Icon(Icons.phone, color: Colors.white),
+          tooltip: t.appeler,
+          style: IconButton.styleFrom(backgroundColor: AppColors.accent, shape: const CircleBorder()),
+        ),
+      ]),
     );
   }
 

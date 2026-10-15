@@ -1304,6 +1304,30 @@ abstract class AppLocalizations {
   /// **'Position GPS pas encore disponible.'**
   String get positionGpsIndisponible;
 
+  /// No description provided for @votreChauffeur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre chauffeur'**
+  String get votreChauffeur;
+
+  /// No description provided for @nomChauffeurIndisponible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom du chauffeur non disponible'**
+  String get nomChauffeurIndisponible;
+
+  /// No description provided for @appeler.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appeler'**
+  String get appeler;
+
+  /// No description provided for @numeroNonDisponible.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro non disponible pour l\'instant.'**
+  String get numeroNonDisponible;
+
   /// No description provided for @etapesTitre.
   ///
   /// In fr, this message translates to:

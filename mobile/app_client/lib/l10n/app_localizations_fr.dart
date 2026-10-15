@@ -672,6 +672,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get positionGpsIndisponible => 'Position GPS pas encore disponible.';
 
   @override
+  String get votreChauffeur => 'Votre chauffeur';
+
+  @override
+  String get nomChauffeurIndisponible => 'Nom du chauffeur non disponible';
+
+  @override
+  String get appeler => 'Appeler';
+
+  @override
+  String get numeroNonDisponible => 'Numéro non disponible pour l\'instant.';
+
+  @override
   String get etapesTitre => 'Étapes';
 
   @override
