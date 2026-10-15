@@ -431,6 +431,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get voirLesPropositions => 'Voir les propositions';
 
   @override
+  String get voirEstimation => 'Voir l\'estimation';
+
+  @override
   String get suivi => 'Suivi';
 
   @override
@@ -476,6 +479,145 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get prixEnCoursCalcul => 'Prix en cours de calcul';
+
+  @override
+  String get estimationTitre => 'Estimation';
+
+  @override
+  String get fourchetteDePrix => 'FOURCHETTE DE PRIX';
+
+  @override
+  String get entre => 'Entre';
+
+  @override
+  String chauffeursCompatibles(int n) {
+    return '$n chauffeurs compatibles en ce moment';
+  }
+
+  @override
+  String get poidsTaxableLabel => 'Poids taxable';
+
+  @override
+  String get tarifsDesChauffeurs => 'Tarifs des chauffeurs';
+
+  @override
+  String get prixDunChauffeur => 'Prix d\'un chauffeur';
+
+  @override
+  String get poidsFoisTarif => 'poids × son tarif';
+
+  @override
+  String get negocierLaFourchette => 'Négocier la fourchette';
+
+  @override
+  String get negocierFacultatif => 'Facultatif · uniquement avant la recherche';
+
+  @override
+  String get votrePrixMaximum => 'Votre prix maximum';
+
+  @override
+  String get negoAvertissement =>
+      'En dessous de tous les tarifs actuels : aucun chauffeur ne recevra la demande.';
+
+  @override
+  String negoInfo(String plafond) {
+    return 'Seuls les chauffeurs dont le prix est ≤ $plafond F recevront la demande.';
+  }
+
+  @override
+  String validationFondsBloques(String min, String max) {
+    return 'En validant, vous acceptez tout prix entre $min et $max FCFA. $max F seront bloqués (pas prélevés) le temps de la recherche.';
+  }
+
+  @override
+  String get validerEtRechercherChauffeur =>
+      'Valider et rechercher un chauffeur';
+
+  @override
+  String get etape1sur2 => 'ÉTAPE 1 / 2';
+
+  @override
+  String get etape2sur2 => 'ÉTAPE 2 / 2';
+
+  @override
+  String get fondsBloquesEnAttente =>
+      'Fonds bloqués, en attente d\'un chauffeur';
+
+  @override
+  String get paiementConfirmeChauffeurEnRoute =>
+      'Paiement confirmé, chauffeur en route';
+
+  @override
+  String get montantBloque => 'Montant bloqué';
+
+  @override
+  String get preleveActuellement => 'Prélevé pour l\'instant';
+
+  @override
+  String get compteLabel => 'Compte';
+
+  @override
+  String get fourchetteAcceptee => 'Fourchette acceptée';
+
+  @override
+  String get etapePaiement1 =>
+      'Un chauffeur accepte : seul son prix est prélevé.';
+
+  @override
+  String get etapePaiement2 =>
+      'Le reste du montant bloqué vous est rendu aussitôt.';
+
+  @override
+  String get etapePaiement3 =>
+      'Personne en 15 min : tout est débloqué, rien n\'est prélevé.';
+
+  @override
+  String get lancerLaRecherche => 'Lancer la recherche';
+
+  @override
+  String get montantPreleve => 'Prélevé · prix du chauffeur';
+
+  @override
+  String get montantDebloque => 'Débloqué sur votre compte';
+
+  @override
+  String get sequestreNote =>
+      'Le paiement reste en séquestre : il n\'est versé au chauffeur qu\'après la preuve de livraison.';
+
+  @override
+  String get suivreLeChauffeur => 'Suivre le chauffeur';
+
+  @override
+  String get diffusionTitre => 'Diffusion en cours';
+
+  @override
+  String get expireDansLabel => 'EXPIRE DANS';
+
+  @override
+  String get sur1500 => 'sur 15:00';
+
+  @override
+  String get rechercheChauffeurEnCours => 'Recherche de chauffeur en cours…';
+
+  @override
+  String get diffusionDescription =>
+      'Votre demande est transmise en même temps à tous les chauffeurs compatibles. Le premier qui accepte prend la mission.';
+
+  @override
+  String get demoChauffeurAccepte => 'Démo : un chauffeur accepte';
+
+  @override
+  String get offreExpireeTitre => 'Offre expirée, voulez-vous republier ?';
+
+  @override
+  String get offreExpireeDescription =>
+      'Aucun chauffeur n\'a accepté en 15 minutes. Vos fonds ont été débloqués, rien n\'a été prélevé.';
+
+  @override
+  String get republier => 'Republier';
+
+  @override
+  String get revoirMonPrix => 'Revoir mon prix';
 
   @override
   String get statutAcceptee => 'Acceptée';

@@ -429,6 +429,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get voirLesPropositions => 'See offers';
 
   @override
+  String get voirEstimation => 'See the estimate';
+
+  @override
   String get suivi => 'Tracking';
 
   @override
@@ -474,6 +477,142 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get prixEnCoursCalcul => 'Price being calculated';
+
+  @override
+  String get estimationTitre => 'Estimate';
+
+  @override
+  String get fourchetteDePrix => 'PRICE RANGE';
+
+  @override
+  String get entre => 'Between';
+
+  @override
+  String chauffeursCompatibles(int n) {
+    return '$n compatible drivers right now';
+  }
+
+  @override
+  String get poidsTaxableLabel => 'Taxable weight';
+
+  @override
+  String get tarifsDesChauffeurs => 'Drivers\' rates';
+
+  @override
+  String get prixDunChauffeur => 'A driver\'s price';
+
+  @override
+  String get poidsFoisTarif => 'weight × their rate';
+
+  @override
+  String get negocierLaFourchette => 'Negotiate the range';
+
+  @override
+  String get negocierFacultatif => 'Optional · before the search only';
+
+  @override
+  String get votrePrixMaximum => 'Your maximum price';
+
+  @override
+  String get negoAvertissement =>
+      'Below every current rate: no driver will receive the request.';
+
+  @override
+  String negoInfo(String plafond) {
+    return 'Only drivers whose price is ≤ $plafond F will receive the request.';
+  }
+
+  @override
+  String validationFondsBloques(String min, String max) {
+    return 'By validating, you accept any price between $min and $max FCFA. $max F will be held (not charged) while we search.';
+  }
+
+  @override
+  String get validerEtRechercherChauffeur => 'Validate and find a driver';
+
+  @override
+  String get etape1sur2 => 'STEP 1 / 2';
+
+  @override
+  String get etape2sur2 => 'STEP 2 / 2';
+
+  @override
+  String get fondsBloquesEnAttente => 'Funds held, waiting for a driver';
+
+  @override
+  String get paiementConfirmeChauffeurEnRoute =>
+      'Payment confirmed, driver on the way';
+
+  @override
+  String get montantBloque => 'Amount held';
+
+  @override
+  String get preleveActuellement => 'Charged so far';
+
+  @override
+  String get compteLabel => 'Account';
+
+  @override
+  String get fourchetteAcceptee => 'Accepted range';
+
+  @override
+  String get etapePaiement1 => 'A driver accepts: only their price is charged.';
+
+  @override
+  String get etapePaiement2 =>
+      'The rest of the held amount is released to you right away.';
+
+  @override
+  String get etapePaiement3 =>
+      'No one in 15 min: everything is released, nothing is charged.';
+
+  @override
+  String get lancerLaRecherche => 'Start the search';
+
+  @override
+  String get montantPreleve => 'Charged · driver\'s price';
+
+  @override
+  String get montantDebloque => 'Released to your account';
+
+  @override
+  String get sequestreNote =>
+      'The payment stays in escrow: it is only released to the driver after proof of delivery.';
+
+  @override
+  String get suivreLeChauffeur => 'Track the driver';
+
+  @override
+  String get diffusionTitre => 'Searching for a driver';
+
+  @override
+  String get expireDansLabel => 'EXPIRES IN';
+
+  @override
+  String get sur1500 => 'out of 15:00';
+
+  @override
+  String get rechercheChauffeurEnCours => 'Looking for a driver…';
+
+  @override
+  String get diffusionDescription =>
+      'Your request is sent at the same time to every compatible driver. The first to accept takes the mission.';
+
+  @override
+  String get demoChauffeurAccepte => 'Demo: a driver accepts';
+
+  @override
+  String get offreExpireeTitre => 'Offer expired, republish?';
+
+  @override
+  String get offreExpireeDescription =>
+      'No driver accepted within 15 minutes. Your funds were released, nothing was charged.';
+
+  @override
+  String get republier => 'Republish';
+
+  @override
+  String get revoirMonPrix => 'Review my price';
 
   @override
   String get statutAcceptee => 'Accepted';
