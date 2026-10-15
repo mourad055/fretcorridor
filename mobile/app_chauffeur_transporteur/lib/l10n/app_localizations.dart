@@ -596,6 +596,78 @@ abstract class AppLocalizations {
   /// **'Corridors disponibles'**
   String get axesDescription;
 
+  /// No description provided for @mesTarifs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes tarifs'**
+  String get mesTarifs;
+
+  /// No description provided for @mesTarifsDescription.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tarifs par axe et catégorie'**
+  String get mesTarifsDescription;
+
+  /// No description provided for @mesTarifsIntro.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prix d\'une charge = poids taxable × votre tarif pour l\'axe et la catégorie. Un axe = un seul sens : le retour se configure à part, avec ses propres tarifs.'**
+  String get mesTarifsIntro;
+
+  /// No description provided for @categorieMarchandiseStandard.
+  ///
+  /// In fr, this message translates to:
+  /// **'Standard'**
+  String get categorieMarchandiseStandard;
+
+  /// No description provided for @categorieMarchandiseFragile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fragile'**
+  String get categorieMarchandiseFragile;
+
+  /// No description provided for @categorieMarchandiseUltraFragile.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ultra fragile'**
+  String get categorieMarchandiseUltraFragile;
+
+  /// No description provided for @tarifParKg.
+  ///
+  /// In fr, this message translates to:
+  /// **'F/kg'**
+  String get tarifParKg;
+
+  /// No description provided for @configurerTarifs.
+  ///
+  /// In fr, this message translates to:
+  /// **'Configurer les tarifs'**
+  String get configurerTarifs;
+
+  /// No description provided for @retirerAxe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer'**
+  String get retirerAxe;
+
+  /// No description provided for @axeActif.
+  ///
+  /// In fr, this message translates to:
+  /// **'Actif'**
+  String get axeActif;
+
+  /// No description provided for @axeEnPause.
+  ///
+  /// In fr, this message translates to:
+  /// **'En pause'**
+  String get axeEnPause;
+
+  /// No description provided for @aucunAxeConfigure.
+  ///
+  /// In fr, this message translates to:
+  /// **'Configurez vos tarifs sur les axes où vous souhaitez recevoir des demandes.'**
+  String get aucunAxeConfigure;
+
   /// No description provided for @monProfil.
   ///
   /// In fr, this message translates to:
@@ -1016,6 +1088,42 @@ abstract class AppLocalizations {
   /// **'Photo(s) de la marchandise + signature du destinataire — obligatoire (RG-070).'**
   String get noteRg070;
 
+  /// No description provided for @identiteDestinataire.
+  ///
+  /// In fr, this message translates to:
+  /// **'Identité du destinataire'**
+  String get identiteDestinataire;
+
+  /// No description provided for @cniTransmiseParClient.
+  ///
+  /// In fr, this message translates to:
+  /// **'CNI transmise par le client'**
+  String get cniTransmiseParClient;
+
+  /// No description provided for @cniNonTransmise.
+  ///
+  /// In fr, this message translates to:
+  /// **'CNI non transmise pour cette commande.'**
+  String get cniNonTransmise;
+
+  /// No description provided for @confirmerMemePersonne.
+  ///
+  /// In fr, this message translates to:
+  /// **'C\'est bien la même personne'**
+  String get confirmerMemePersonne;
+
+  /// No description provided for @lectureSeule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Lecture seule'**
+  String get lectureSeule;
+
+  /// No description provided for @confirmationIdentiteObligatoire.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confirmez l\'identité du destinataire avant de valider la livraison.'**
+  String get confirmationIdentiteObligatoire;
+
   /// No description provided for @categorieRetard.
   ///
   /// In fr, this message translates to:
@@ -1249,6 +1357,42 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Nouveau véhicule'**
   String get nouveauVehicule;
+
+  /// No description provided for @modifierLeVehicule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le véhicule'**
+  String get modifierLeVehicule;
+
+  /// No description provided for @supprimerCeVehicule.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce véhicule ?'**
+  String get supprimerCeVehicule;
+
+  /// No description provided for @carteGriseRecto.
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte grise (recto)'**
+  String get carteGriseRecto;
+
+  /// No description provided for @carteGriseVerso.
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte grise (verso)'**
+  String get carteGriseVerso;
+
+  /// No description provided for @poidsMaxLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Poids max : {poids} t'**
+  String poidsMaxLabel(String poids);
+
+  /// No description provided for @essieuxLabel.
+  ///
+  /// In fr, this message translates to:
+  /// **'Essieux : {nombre}'**
+  String essieuxLabel(String nombre);
 
   /// No description provided for @typeDeVehicule.
   ///

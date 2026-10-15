@@ -283,6 +283,44 @@ class AppLocalizationsFr extends AppLocalizations {
   String get axesDescription => 'Corridors disponibles';
 
   @override
+  String get mesTarifs => 'Mes tarifs';
+
+  @override
+  String get mesTarifsDescription => 'Tarifs par axe et catégorie';
+
+  @override
+  String get mesTarifsIntro =>
+      'Prix d\'une charge = poids taxable × votre tarif pour l\'axe et la catégorie. Un axe = un seul sens : le retour se configure à part, avec ses propres tarifs.';
+
+  @override
+  String get categorieMarchandiseStandard => 'Standard';
+
+  @override
+  String get categorieMarchandiseFragile => 'Fragile';
+
+  @override
+  String get categorieMarchandiseUltraFragile => 'Ultra fragile';
+
+  @override
+  String get tarifParKg => 'F/kg';
+
+  @override
+  String get configurerTarifs => 'Configurer les tarifs';
+
+  @override
+  String get retirerAxe => 'Retirer';
+
+  @override
+  String get axeActif => 'Actif';
+
+  @override
+  String get axeEnPause => 'En pause';
+
+  @override
+  String get aucunAxeConfigure =>
+      'Configurez vos tarifs sur les axes où vous souhaitez recevoir des demandes.';
+
+  @override
   String get monProfil => 'Mon profil';
 
   @override
@@ -510,6 +548,25 @@ class AppLocalizationsFr extends AppLocalizations {
       'Photo(s) de la marchandise + signature du destinataire — obligatoire (RG-070).';
 
   @override
+  String get identiteDestinataire => 'Identité du destinataire';
+
+  @override
+  String get cniTransmiseParClient => 'CNI transmise par le client';
+
+  @override
+  String get cniNonTransmise => 'CNI non transmise pour cette commande.';
+
+  @override
+  String get confirmerMemePersonne => 'C\'est bien la même personne';
+
+  @override
+  String get lectureSeule => 'Lecture seule';
+
+  @override
+  String get confirmationIdentiteObligatoire =>
+      'Confirmez l\'identité du destinataire avant de valider la livraison.';
+
+  @override
   String get categorieRetard => 'Retard';
 
   @override
@@ -636,6 +693,28 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get nouveauVehicule => 'Nouveau véhicule';
+
+  @override
+  String get modifierLeVehicule => 'Modifier le véhicule';
+
+  @override
+  String get supprimerCeVehicule => 'Supprimer ce véhicule ?';
+
+  @override
+  String get carteGriseRecto => 'Carte grise (recto)';
+
+  @override
+  String get carteGriseVerso => 'Carte grise (verso)';
+
+  @override
+  String poidsMaxLabel(String poids) {
+    return 'Poids max : $poids t';
+  }
+
+  @override
+  String essieuxLabel(String nombre) {
+    return 'Essieux : $nombre';
+  }
 
   @override
   String get typeDeVehicule => 'Type de véhicule';
