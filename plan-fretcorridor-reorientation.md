@@ -122,14 +122,47 @@ une paire de villes inventée par le chauffeur — déjà pris en compte côté 
   sur Claude Design, validée avant le code Flutter — cf. §3 pour la discipline
   maquette-avant-code, respectée ici.
 
+**Mise à jour du 19/10 — conception technique TRANCHÉE avec Personne 3** :
+OPT reste le seul moteur de prix (`TarificationL4Service`, commission/plancher/
+tension inchangés). service-cap devient la source du **taux** : au L1, OPT
+appelle service-cap en back-to-back (`GET /api/cap/tarifs/detail`) pour le
+tarif de chaque candidat, nouveau régime `TARIF_CHAUFFEUR` (coût variable =
+tarif × poids taxable, pas de facteur distance explicite). L'intervalle
+client est exposé côté service-cap (`GET /api/cap/tarifs/intervalle`, ouvert,
+pas de donnée personnelle). **Livré côté Mobile** (PR #145, mergée) : entité
+`TarifChauffeur` + CRUD "Mes tarifs" + les deux endpoints de lecture interne
+ci-dessus. **Livré aussi** : `categorieMarchandise` sur `Demande` et le
+contrat `demande-publiee` (PR #146, mergée) — `app_client` l'envoyait déjà
+depuis la PR #143, désormais pris en compte côté backend. **Reste côté
+Moteur** (annoncé par lui, pas commencé à ce jour) : le client back-to-back
+cap→opt et le régime `TARIF_CHAUFFEUR` dans `TarificationL4Service`.
+
+**Résolution du mapping axe — décision prise le 19/10, endpoint pas encore livré** :
+le Moteur propose `GET /api/geo/axes/resoudre?origineLatitude=&origineLongitude=
+&destinationLatitude=&destinationLongitude=&tenantId=` côté `service-geo`
+(réutilise le zonage H3 déjà en place). **Vérifié sur `dev` le 19/10 : pas
+encore livré.** Gap identifié côté Mobile en l'attendant : `publier_demande_screen.dart`
+(App Client) ne collecte que des noms de villes en texte libre
+(`villeDepart`/`villeArrivee`), aucune coordonnée GPS — `DemandeService.publier()`
+(service-mkt) résout encore l'axe par comparaison de noms de ville
+(`ServiceGeoClient.resoudreAxe`), fragile, pas du tout GPS.
+
+**Décision retenue : géocodage via Nominatim (OpenStreetMap)**, pas de
+sélecteur de position sur carte, pour rester dans le délai. Déjà utilisé
+dans ce code pour le sens inverse (`suivi_provider.dart`, App Client,
+coordonnées → adresse lisible) — réutiliser le même service pour le sens
+aller (ville tapée → coordonnées) est cohérent, gratuit, sans nouvelle
+dépendance ni clé API. Limite assumée : un nom de ville ambigu ou mal
+orthographié peut échouer ou être imprécis — à traiter par un message
+d'erreur clair, jamais un échec silencieux.
+
 **Reste à faire, dans l'ordre** :
-1. Conception technique avec Personne 3 : qui calcule le prix final (OPT va
-   chercher le tarif de chaque chauffeur candidat dans service-cap avant de
-   calculer `Affectation.prixTransport`, ou service-cap calcule et renvoie le prix
-   à OPT) — décision d'architecture partagée, pas unilatérale.
-2. Résolution du mapping axe pour une demande donnée : quelle API/logique associe
-   les coordonnées GPS d'une demande à un `axeId` du référentiel `geo.axe` côté
-   client (symétrique à ce qu'OPT fait déjà en interne via H3).
+1. Personne 3 livre `GET /api/geo/axes/resoudre` (annoncé, pas commencé).
+2. Côté Mobile, une fois l'endpoint livré : géocodage Nominatim dans
+   `publier_demande_screen.dart`/`demande_provider.dart` (App Client) avant
+   publication, nouveaux champs sur `PublierRequest`/`Demande` (service-mkt)
+   pour les coordonnées brutes, puis `DemandeService.publier()` appelle le
+   nouvel endpoint au lieu de `resoudreAxe(villeDepart, villeArrivee)`.
 3. Une fois le contrat figé : brancher les écrans Mobile déjà construits (ils ne
    changent pas de forme, seulement leur source de données, même principe que le
    rebranchement §1/§9 déjà fait pour la diffusion-course).
@@ -362,6 +395,9 @@ Captures faites à ce jour et ce qu'elles confirment :
 | #141 | UC-MAT-02/diffusion-course — accepter/refuser une proposition | Mobile | ✅ Mergée |
 | #142 | App Transporteur — Mes tarifs par axe + vérification identité livraison | Mobile | ✅ Mergée |
 | #143 | App Client — catégorie marchandise + CNI destinataire + parcours Estimation/Diffusion/Paiement | Mobile | ✅ Mergée |
+| #144 | Doc : plan mis à jour (tarification par chauffeur, référentiel geo.axe) | Mobile | ✅ Mergée |
+| #145 | service-cap — entité TarifChauffeur + CRUD + lecture interne | Mobile | ✅ Mergée |
+| #146 | service-mkt — categorieMarchandise sur Demande + demande-publiee | Mobile | ✅ Mergée |
 
 ---
 
