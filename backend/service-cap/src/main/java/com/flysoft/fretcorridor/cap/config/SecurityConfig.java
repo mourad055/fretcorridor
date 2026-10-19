@@ -63,6 +63,14 @@ public class SecurityConfig {
                 .requestMatchers("/error").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/cap/capacites/*").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/cap/capacites/*/decrement").permitAll()
+                // Tarification par chauffeur (plan §1bis) : lecture interne
+                // par OPT (cle X-Internal-Service-Key, verifiee dans le
+                // controller, meme principe que GET /capacites/*) et
+                // intervalle ouvert au gateway/service-mkt (pas de donnee
+                // personnelle exposee) -- le reste (POST/PATCH/DELETE,
+                // "mes tarifs") reste sous JWT via anyRequest().authenticated().
+                .requestMatchers(HttpMethod.GET, "/api/cap/tarifs/detail").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/cap/tarifs/intervalle").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
