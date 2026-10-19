@@ -54,6 +54,14 @@ public class Demande {
     @Builder.Default private Boolean dangereuse = false;
     @Builder.Default private Boolean grandeValeur = false;
 
+    // Tarification par chauffeur (plan-fretcorridor-reorientation.md §1bis) :
+    // categorie de facturation, distincte des commutateurs ci-dessus (qui
+    // decrivent la manutention, pas le tarif). Nullable : les demandes
+    // publiees avant ce champ n'en ont pas, et ddl-auto=update ne retrofit
+    // jamais les lignes existantes.
+    @Enumerated(EnumType.STRING)
+    private CategorieMarchandise categorieMarchandise;
+
     // Quand
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -111,4 +119,5 @@ public class Demande {
     public enum ModeCollecte { DOMICILE, POINT_RELAIS }
     public enum NiveauConfiance { DECLARE_PRECIS, DEDUIT_DU_CATALOGUE, A_CONFIRMER }
     public enum StatutDemande { PUBLIEE, AXE_NON_DESSERVI, ANNULEE }
+    public enum CategorieMarchandise { STANDARD, FRAGILE, ULTRA_FRAGILE }
 }

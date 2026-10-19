@@ -74,6 +74,7 @@ class DemandeServiceTest {
         requete.setVilleArrivee("Yaounde");
         requete.setTypeEmballageId(typeEmballageId);
         requete.setQuantite(10);
+        requete.setCategorieMarchandise("STANDARD");
         requete.setTypeDisponibilite("DES_QUE_POSSIBLE");
         requete.setModeCollecte("DOMICILE");
         requete.setDestinataireNom("Jean Mballa");
@@ -98,6 +99,28 @@ class DemandeServiceTest {
         ArgumentCaptor<DemandePublieeEvent> eventCaptor = ArgumentCaptor.forClass(DemandePublieeEvent.class);
         verify(eventPublisher).publierDemandePubliee(eventCaptor.capture());
         assertThat(eventCaptor.getValue().axeId()).isEqualTo(axeId);
+    }
+
+    // Tarification par chauffeur (plan §1bis) : categorieMarchandise doit
+    // circuler intact de la requete jusqu'a l'evenement Kafka, OPT en a
+    // besoin pour choisir le bon tarif (service-cap.TarifChauffeur).
+    @Test
+    void categorie_marchandise_flows_through_to_the_entity_and_the_event() {
+        UUID axeId = UUID.randomUUID();
+        AxeDto axe = new AxeDto(axeId, "Douala", "Yaounde", 4.05, 9.7, 3.87, 11.52, null);
+        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde")).thenReturn(Optional.of(axe));
+        var requete = requeteValide();
+        requete.setCategorieMarchandise("ULTRA_FRAGILE");
+
+        service.publier(requete, clientActeurId, TENANT, "NIVEAU_1");
+
+        ArgumentCaptor<Demande> captor = ArgumentCaptor.forClass(Demande.class);
+        verify(demandeRepository).save(captor.capture());
+        assertThat(captor.getValue().getCategorieMarchandise()).isEqualTo(Demande.CategorieMarchandise.ULTRA_FRAGILE);
+
+        ArgumentCaptor<DemandePublieeEvent> eventCaptor = ArgumentCaptor.forClass(DemandePublieeEvent.class);
+        verify(eventPublisher).publierDemandePubliee(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().categorieMarchandise()).isEqualTo("ULTRA_FRAGILE");
     }
 
     @Test

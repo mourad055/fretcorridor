@@ -20,6 +20,9 @@ public class DemandeDto {
         private Boolean dangereuse = false;
         private Boolean grandeValeur = false;
 
+        // Tarification par chauffeur (§1bis) : STANDARD / FRAGILE / ULTRA_FRAGILE.
+        @NotBlank private String categorieMarchandise;
+
         @NotBlank private String typeDisponibilite; // DES_QUE_POSSIBLE / DATE_PRECISE / PLAGE
         private LocalDateTime dateDisponibilite;
 
@@ -46,6 +49,7 @@ public class DemandeDto {
         private Boolean perissable;
         private Boolean dangereuse;
         private Boolean grandeValeur;
+        private String categorieMarchandise;
         private String typeDisponibilite;
         private String modeCollecte;
         private String destinataireNom;
@@ -67,6 +71,7 @@ public class DemandeDto {
                     .perissable(d.getPerissable())
                     .dangereuse(d.getDangereuse())
                     .grandeValeur(d.getGrandeValeur())
+                    .categorieMarchandise(d.getCategorieMarchandise() != null ? d.getCategorieMarchandise().name() : null)
                     .typeDisponibilite(d.getTypeDisponibilite().name())
                     .modeCollecte(d.getModeCollecte().name())
                     .destinataireNom(d.getDestinataireNom())
