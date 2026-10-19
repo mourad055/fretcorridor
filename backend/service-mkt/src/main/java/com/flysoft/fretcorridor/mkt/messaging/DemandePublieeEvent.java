@@ -35,7 +35,12 @@ public record DemandePublieeEvent(
         String modeCollecte,
         String typeDisponibilite,
         double poidsTotalKg,
-        boolean grandeValeur
+        boolean grandeValeur,
+        // Tarification par chauffeur (plan §1bis) : STANDARD / FRAGILE /
+        // ULTRA_FRAGILE, nullable (demandes publiees avant ce champ).
+        // Necessaire a OPT pour choisir le tarif du bon regime
+        // TARIF_CHAUFFEUR par categorie (service-cap.TarifChauffeur).
+        String categorieMarchandise
 ) {
     public record PointGeo(double latitude, double longitude) {
     }

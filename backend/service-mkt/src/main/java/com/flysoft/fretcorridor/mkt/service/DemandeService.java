@@ -126,6 +126,7 @@ public class DemandeService {
                 .perissable(request.getPerissable())
                 .dangereuse(request.getDangereuse())
                 .grandeValeur(request.getGrandeValeur())
+                .categorieMarchandise(Demande.CategorieMarchandise.valueOf(request.getCategorieMarchandise()))
                 .typeDisponibilite(Demande.TypeDisponibilite.valueOf(request.getTypeDisponibilite()))
                 .dateDisponibilite(request.getDateDisponibilite())
                 .modeCollecte(Demande.ModeCollecte.valueOf(request.getModeCollecte()))
@@ -167,7 +168,8 @@ public class DemandeService {
                     demande.getModeCollecte().name(),
                     demande.getTypeDisponibilite().name(),
                     demande.getPoidsTotalKg(),
-                    demande.getGrandeValeur() != null && demande.getGrandeValeur()
+                    demande.getGrandeValeur() != null && demande.getGrandeValeur(),
+                    demande.getCategorieMarchandise() != null ? demande.getCategorieMarchandise().name() : null
             ));
         }
 
