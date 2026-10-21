@@ -1376,6 +1376,42 @@ abstract class AppLocalizations {
   /// **'AXE (FACULTATIF)'**
   String get axeFacultatif;
 
+  /// No description provided for @mesTrajetsEnregistres.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes trajets enregistrés'**
+  String get mesTrajetsEnregistres;
+
+  /// No description provided for @enregistrerCeTrajet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer ce trajet'**
+  String get enregistrerCeTrajet;
+
+  /// No description provided for @nommerCeTrajet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nommer ce trajet'**
+  String get nommerCeTrajet;
+
+  /// No description provided for @hintNomTrajet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ex : Livraison hebdo bureau'**
+  String get hintNomTrajet;
+
+  /// No description provided for @trajetEnregistre.
+  ///
+  /// In fr, this message translates to:
+  /// **'Trajet enregistré.'**
+  String get trajetEnregistre;
+
+  /// No description provided for @erreurEnregistrementTrajet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'enregistrer ce trajet.'**
+  String get erreurEnregistrementTrajet;
+
   /// No description provided for @champVilleDepart.
   ///
   /// In fr, this message translates to:

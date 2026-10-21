@@ -6,6 +6,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/demande_provider.dart';
 import '../providers/axes_provider.dart';
+import '../providers/trajet_preenregistre_provider.dart';
 import '../models/catalogue_emballage_model.dart';
 import '../models/demande_model.dart';
 import '../theme/app_theme.dart';
@@ -41,12 +42,17 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   String _categorieMarchandise = 'STANDARD';
   final _picker = ImagePicker();
   File? _cniDestinataire;
+  // Force IntlPhoneField a se reconstruire avec un nouveau initialValue
+  // quand un trajet preenregistre est applique (sinon le champ garde son
+  // texte actuel malgre le changement de _destinataireTelephone).
+  int _telephoneKeyVersion = 0;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       ref.read(axesProvider.notifier).charger();
+      ref.read(trajetPreenregistreProvider.notifier).charger();
       _preRemplirSiModification();
     });
   }
@@ -108,6 +114,93 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   // un upload multipart rattache a la demande, pas encore specifie cote
   // backend) -- capturee localement pour l'instant, en attendant ce
   // contrat. Ne bloque jamais la publication.
+  // Pre-remplit tout le formulaire a partir d'un trajet enregistre (plan §5,
+  // "raccourci de saisie") -- meme champs qu'une publication classique,
+  // typeDisponibilite/dateDisponibilite exclus (se redecident a chaque fois).
+  void _appliquerTrajet(TrajetPreenregistre trajet) {
+    final demandeState = ref.read(demandeProvider);
+    CatalogueEmballageModel? emballage;
+    for (final e in demandeState.catalogue) {
+      if (e.id == trajet.typeEmballageId) { emballage = e; break; }
+    }
+    setState(() {
+      _villeDepartCtrl.text = trajet.villeDepart;
+      _villeArriveeCtrl.text = trajet.villeArrivee;
+      _axeSelectionneId = null;
+      _emballageSelectionne = emballage;
+      _quantiteCtrl.text = '${trajet.quantite}';
+      _fragile = trajet.fragile;
+      _perissable = trajet.perissable;
+      _dangereuse = trajet.dangereuse;
+      _grandeValeur = trajet.grandeValeur;
+      _categorieMarchandise = trajet.categorieMarchandise;
+      _modeCollecte = trajet.modeCollecte;
+      _destinataireNomCtrl.text = trajet.destinataireNom;
+      _destinataireTelephone = trajet.destinataireTelephone;
+      _telephoneKeyVersion++;
+    });
+  }
+
+  Future<void> _enregistrerTrajetActuel() async {
+    final t = AppLocalizations.of(context);
+    if (_emballageSelectionne == null) {
+      afficherNotification(context, message: t.choisirTypeMarchandise, couleur: AppColors.erreur, icone: Icons.error_outline);
+      return;
+    }
+    if (_villeDepartCtrl.text.trim().isEmpty || _villeArriveeCtrl.text.trim().isEmpty) {
+      afficherNotification(context, message: t.obligatoire, couleur: AppColors.erreur, icone: Icons.error_outline);
+      return;
+    }
+    if (_destinataireTelephone.isEmpty || _destinataireNomCtrl.text.trim().isEmpty) {
+      afficherNotification(context, message: t.telephoneRenseigner, couleur: AppColors.erreur, icone: Icons.error_outline);
+      return;
+    }
+
+    final nomCtrl = TextEditingController();
+    final nom = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.nommerCeTrajet),
+        content: TextField(
+          controller: nomCtrl,
+          autofocus: true,
+          decoration: InputDecoration(hintText: t.hintNomTrajet),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.retour)),
+          TextButton(
+            onPressed: () => Navigator.pop(context, nomCtrl.text.trim()),
+            child: Text(t.enregistrer),
+          ),
+        ],
+      ),
+    );
+    if (nom == null || nom.isEmpty || !mounted) return;
+
+    final succes = await ref.read(trajetPreenregistreProvider.notifier).enregistrer(
+          nom: nom,
+          villeDepart: _villeDepartCtrl.text.trim(),
+          villeArrivee: _villeArriveeCtrl.text.trim(),
+          typeEmballageId: _emballageSelectionne!.id,
+          quantite: int.parse(_quantiteCtrl.text),
+          fragile: _fragile,
+          perissable: _perissable,
+          dangereuse: _dangereuse,
+          grandeValeur: _grandeValeur,
+          categorieMarchandise: _categorieMarchandise,
+          modeCollecte: _modeCollecte,
+          destinataireNom: _destinataireNomCtrl.text.trim(),
+          destinataireTelephone: _destinataireTelephone,
+        );
+    if (!mounted) return;
+    afficherNotification(
+      context,
+      message: succes ? t.trajetEnregistre : t.erreurEnregistrementTrajet,
+      couleur: succes ? AppColors.succes : AppColors.erreur,
+      icone: succes ? Icons.check_circle : Icons.error_outline,
+    );
+  }
+
   Future<void> _prendrePhotoCni() async {
     final image = await _picker.pickImage(source: ImageSource.camera, imageQuality: 80, maxWidth: 1600);
     if (image == null) return;
@@ -305,6 +398,7 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
   Widget build(BuildContext context) {
     final demandeState = ref.watch(demandeProvider);
     final axesState = ref.watch(axesProvider);
+    final trajetState = ref.watch(trajetPreenregistreProvider);
     final t = AppLocalizations.of(context);
 
     return Scaffold(
@@ -317,6 +411,22 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (trajetState.trajets.isNotEmpty)
+                _section(icone: Icons.star_outline, titre: t.mesTrajetsEnregistres, enfants: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: trajetState.trajets.map((trajet) {
+                      return InputChip(
+                        label: Text(trajet.nom, style: const TextStyle(fontSize: 13)),
+                        onPressed: () => _appliquerTrajet(trajet),
+                        onDeleted: () => ref.read(trajetPreenregistreProvider.notifier).supprimer(trajet.id),
+                        deleteIconColor: AppColors.texteMuet,
+                        backgroundColor: AppColors.surfaceClaire,
+                      );
+                    }).toList(),
+                  ),
+                ]),
               _section(icone: Icons.map_outlined, titre: t.sectionLieu, enfants: [
               // S15 — sélecteur d'axe (GET /api/geo/axes?tenantId=...),
               // remplit les villes ci-dessous mais reste facultatif — la
@@ -514,7 +624,9 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
               ),
               _label(t.champTelephone),
               IntlPhoneField(
+                key: ValueKey(_telephoneKeyVersion),
                 initialCountryCode: 'CM',
+                initialValue: _destinataireTelephone.isNotEmpty ? _destinataireTelephone : null,
                 decoration: _decoration('', Icons.phone).copyWith(hintText: null),
                 dropdownTextStyle: const TextStyle(color: AppColors.texte),
                 onChanged: (phone) => _destinataireTelephone = phone.completeNumber,
@@ -552,6 +664,23 @@ class _PublierDemandeScreenState extends ConsumerState<PublierDemandeScreen> {
               if (demandeState.erreur != null) ...[
                 const SizedBox(height: 12),
                 Text(demandeState.erreur!, style: const TextStyle(color: AppColors.erreur, fontSize: 12)),
+              ],
+
+              if (widget.demandeAModifier == null) ...[
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton.icon(
+                    onPressed: _enregistrerTrajetActuel,
+                    icon: const Icon(Icons.star_border, size: 18, color: AppColors.accent),
+                    label: Text(t.enregistrerCeTrajet, style: const TextStyle(color: AppColors.accent)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.accent),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                ),
               ],
 
               const SizedBox(height: 24),
