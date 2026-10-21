@@ -703,6 +703,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get axeFacultatif => 'CORRIDOR (OPTIONAL)';
 
   @override
+  String get mesTrajetsEnregistres => 'My saved trips';
+
+  @override
+  String get enregistrerCeTrajet => 'Save this trip';
+
+  @override
+  String get nommerCeTrajet => 'Name this trip';
+
+  @override
+  String get hintNomTrajet => 'E.g.: Weekly office delivery';
+
+  @override
+  String get trajetEnregistre => 'Trip saved.';
+
+  @override
+  String get erreurEnregistrementTrajet => 'Could not save this trip.';
+
+  @override
   String get champVilleDepart => 'DEPARTURE CITY';
 
   @override

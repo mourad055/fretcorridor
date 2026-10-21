@@ -708,6 +708,25 @@ class AppLocalizationsFr extends AppLocalizations {
   String get axeFacultatif => 'AXE (FACULTATIF)';
 
   @override
+  String get mesTrajetsEnregistres => 'Mes trajets enregistrés';
+
+  @override
+  String get enregistrerCeTrajet => 'Enregistrer ce trajet';
+
+  @override
+  String get nommerCeTrajet => 'Nommer ce trajet';
+
+  @override
+  String get hintNomTrajet => 'Ex : Livraison hebdo bureau';
+
+  @override
+  String get trajetEnregistre => 'Trajet enregistré.';
+
+  @override
+  String get erreurEnregistrementTrajet =>
+      'Impossible d\'enregistrer ce trajet.';
+
+  @override
   String get champVilleDepart => 'VILLE DE DÉPART';
 
   @override
