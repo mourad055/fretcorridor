@@ -12,7 +12,8 @@ import org.springframework.web.client.RestClient;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties({ServiceGeoClientProperties.class, ServiceCapClientProperties.class, ServiceNotClientProperties.class})
+@EnableConfigurationProperties({ServiceGeoClientProperties.class, ServiceCapClientProperties.class,
+        ServiceNotClientProperties.class, NominatimClientProperties.class})
 public class RestClientConfig {
 
     @Bean
@@ -57,6 +58,24 @@ public class RestClientConfig {
         return RestClient.builder()
                 .baseUrl(properties.getBaseUrl())
                 .requestFactory(requestFactory)
+                .build();
+    }
+
+    // Geocodage de repli (§1bis, 21/10) : User-Agent obligatoire (politique
+    // d'usage Nominatim), jamais le User-Agent par defaut du client HTTP.
+    @Bean
+    @Qualifier("nominatimRestClient")
+    public RestClient nominatimRestClient(NominatimClientProperties properties) {
+        ClientHttpRequestFactorySettings settings = ClientHttpRequestFactorySettings.DEFAULTS
+                .withConnectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
+                .withReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));
+
+        ClientHttpRequestFactory requestFactory = ClientHttpRequestFactories.get(settings);
+
+        return RestClient.builder()
+                .baseUrl(properties.getBaseUrl())
+                .requestFactory(requestFactory)
+                .defaultHeader("User-Agent", properties.getUserAgent())
                 .build();
     }
 }

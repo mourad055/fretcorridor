@@ -8,8 +8,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import java.text.Normalizer;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Appel synchrone vers service-geo (autre porteur, Moteur, meme principe que
@@ -64,8 +66,19 @@ public class ServiceGeoClient {
         }
     }
 
+    private static final Pattern MARQUES_DIACRITIQUES = Pattern.compile("\\p{InCombiningDiacriticalMarks}+");
+
+    // Normalisation (21/10, suggeree par Personne 3) : "Yaounde" (saisie
+    // courante sans accent, clavier mobile) doit matcher "Yaoundé" (nom du
+    // hub) - auparavant un ecart d'accent faisait echouer le matching exact
+    // et basculait inutilement vers le geocodage de repli.
     private boolean correspond(String villeHub, String villeSaisie) {
         return villeHub != null && villeSaisie != null
-                && villeHub.strip().equalsIgnoreCase(villeSaisie.strip());
+                && normaliser(villeHub).equals(normaliser(villeSaisie));
+    }
+
+    private String normaliser(String ville) {
+        String sansAccents = Normalizer.normalize(ville.strip(), Normalizer.Form.NFD);
+        return MARQUES_DIACRITIQUES.matcher(sansAccents).replaceAll("").toLowerCase();
     }
 }

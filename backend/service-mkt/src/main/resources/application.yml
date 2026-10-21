@@ -41,6 +41,13 @@ spring:
       # Best-effort (ENF-DIS-04) : notification au chargeur, jamais bloquant.
       connect-timeout-ms: 500
       read-timeout-ms: 1500
+    nominatim:
+      base-url: https://nominatim.openstreetmap.org
+      # Repli (§1bis, 21/10), seulement si le matching exact par hub
+      # echoue -- User-Agent exige par la politique d'usage Nominatim.
+      user-agent: "FretCorridor/1.0 (resolution-axe-publication)"
+      connect-timeout-ms: 1000
+      read-timeout-ms: 2000
 
 # ⚠️ Même secret que service-ida — obligatoire pour que service-mkt puisse
 # valider les JWT émis par service-ida (identité centralisée, cf. CLAUDE.md).
