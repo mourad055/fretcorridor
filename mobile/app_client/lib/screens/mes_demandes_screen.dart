@@ -9,13 +9,49 @@ import 'publier_demande_screen.dart';
 import 'estimation_screen.dart';
 import 'suivi_screen.dart';
 
-class MesDemandesScreen extends ConsumerWidget {
+// Statuts clotures vs actifs -- distinction manquante jusqu'ici (audit de
+// suivi, 21/10) : chargerMesDemandes() renvoie deja tout l'historique du
+// client, mais l'ecran le melangeait dans une seule liste plate. Pas de
+// nouvelle donnee a aller chercher, juste un classement cote client.
+const _statutsClotures = {'ANNULEE', 'AXE_NON_DESSERVI'};
+
+class MesDemandesScreen extends ConsumerStatefulWidget {
   const MesDemandesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MesDemandesScreen> createState() => _MesDemandesScreenState();
+}
+
+class _MesDemandesScreenState extends ConsumerState<MesDemandesScreen> with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final demandeState = ref.watch(demandeProvider);
     final t = AppLocalizations.of(context);
+
+    // Ordre chronologique croissant (la plus ancienne en premier) pour les
+    // demandes en cours : le moteur sert toujours la plus ancienne demande
+    // PUBLIEE en attente en premier (FIFO par capacité disponible) — la
+    // position affichée reflète directement cet ordre de service réel.
+    final enCours = demandeState.mesDemandes.where((d) => !_statutsClotures.contains(d.statut)).toList()
+      ..sort((a, b) => a.dateCreation.compareTo(b.dateCreation));
+    // Historique : la plus récente en premier, plus naturel pour consulter
+    // ce qui est déjà clôturé.
+    final terminees = demandeState.mesDemandes.where((d) => _statutsClotures.contains(d.statut)).toList()
+      ..sort((a, b) => b.dateCreation.compareTo(a.dateCreation));
 
     return Scaffold(
       backgroundColor: AppColors.fond,
@@ -27,6 +63,13 @@ class MesDemandesScreen extends ConsumerWidget {
             onPressed: () => ref.read(demandeProvider.notifier).chargerMesDemandes(),
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.accent,
+          unselectedLabelColor: AppColors.texteMuet,
+          indicatorColor: AppColors.accent,
+          tabs: [Tab(text: t.ongletEnCours), Tab(text: t.ongletTerminees)],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.accent,
@@ -37,41 +80,44 @@ class MesDemandesScreen extends ConsumerWidget {
         icon: const Icon(Icons.add, color: Colors.white),
         label: Text(t.nouvelleDemande, style: const TextStyle(color: Colors.white)),
       ),
-      body: demandeState.chargement
+      body: demandeState.chargement && demandeState.mesDemandes.isEmpty
           ? const Center(child: CircularProgressIndicator(color: AppColors.accent))
-          : demandeState.mesDemandes.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Text(t.aucuneDemande,
-                        style: const TextStyle(color: AppColors.texteMuet), textAlign: TextAlign.center),
-                  ),
-                )
-              : RefreshIndicator(
-                  color: AppColors.accent,
-                  onRefresh: () => ref.read(demandeProvider.notifier).chargerMesDemandes(),
-                  child: Builder(builder: (context) {
-                    // Ordre chronologique croissant (la plus ancienne en
-                    // premier) plutôt que chaque nouvelle demande empilée
-                    // au-dessus des précédentes : le moteur sert toujours la
-                    // plus ancienne demande PUBLIEE en attente en premier
-                    // (FIFO par capacité disponible) — la position affichée
-                    // reflète directement cet ordre de service réel plutôt
-                    // que l'ordre de création.
-                    final triees = [...demandeState.mesDemandes]
-                      ..sort((a, b) => a.dateCreation.compareTo(b.dateCreation));
-                    var rang = 0;
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: triees.length,
-                      itemBuilder: (context, i) {
-                        final d = triees[i];
-                        final positionFile = d.statut == 'PUBLIEE' ? ++rang : null;
-                        return _DemandeCard(demande: d, positionFile: positionFile);
-                      },
-                    );
-                  }),
-                ),
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _listeDemandes(enCours, avecPositionFile: true),
+                _listeDemandes(terminees, avecPositionFile: false),
+              ],
+            ),
+    );
+  }
+
+  Widget _listeDemandes(List<DemandeModel> demandes, {required bool avecPositionFile}) {
+    final t = AppLocalizations.of(context);
+    if (demandes.isEmpty) {
+      return ListView(children: [
+        const SizedBox(height: 80),
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(t.aucuneDemande, style: const TextStyle(color: AppColors.texteMuet), textAlign: TextAlign.center),
+          ),
+        ),
+      ]);
+    }
+    var rang = 0;
+    return RefreshIndicator(
+      color: AppColors.accent,
+      onRefresh: () => ref.read(demandeProvider.notifier).chargerMesDemandes(),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: demandes.length,
+        itemBuilder: (context, i) {
+          final d = demandes[i];
+          final positionFile = avecPositionFile && d.statut == 'PUBLIEE' ? ++rang : null;
+          return _DemandeCard(demande: d, positionFile: positionFile);
+        },
+      ),
     );
   }
 }

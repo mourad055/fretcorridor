@@ -121,6 +121,8 @@
   "mesDemandes": "My requests",
   "nouvelleDemande": "New request",
   "aucuneDemande": "No requests posted yet.",
+  "ongletEnCours": "Ongoing",
+  "ongletTerminees": "Completed",
   "annulerCetteDemandeTitre": "Cancel this request?",
   "annulerCetteDemandeContenu": "This action is final.",
   "retour": "Back",

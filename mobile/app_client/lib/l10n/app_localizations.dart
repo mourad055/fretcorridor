@@ -800,6 +800,18 @@ abstract class AppLocalizations {
   /// **'Aucune demande publiée pour le moment.'**
   String get aucuneDemande;
 
+  /// No description provided for @ongletEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'En cours'**
+  String get ongletEnCours;
+
+  /// No description provided for @ongletTerminees.
+  ///
+  /// In fr, this message translates to:
+  /// **'Terminées'**
+  String get ongletTerminees;
+
   /// No description provided for @annulerCetteDemandeTitre.
   ///
   /// In fr, this message translates to:
