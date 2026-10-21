@@ -271,7 +271,7 @@ graphique, avant tout code.
 | ~~Prix sur poids volumétrique + distance, accepté/refusé~~ | **Moteur** (Tarification L4) + **Mobile** (écran) | **SUPERSEDED le 15/10, voir §1bis** : remplacé par un intervalle de prix calculé sur les tarifs individuels des chauffeurs compatibles, pas un barème unique. Poids volumétrique inchangé (toujours correct), distance n'intervient plus comme facteur explicite du calcul. | ⚠️ Voir §1bis |
 | Suivi carte : position chauffeur = position colis récupéré | **Moteur** (TRK) | `ColisRecuperation` + `GET /api/trk/suivi/{missionId}` | ✅ Livré |
 | Interfaces façon Yango + charte graphique | **Mobile** | `home_placeholder_screen.dart` — son nom dit tout, jamais designé, priorité évidente. `welcome_screen.dart` (déjà refait avec vidéo hero Pexels) à re-thémer plutôt qu'à refaire. Maquette d'abord (§3). | ⏳ À faire |
-| Trajets préenregistrés nommés | **Mobile** | Aucun écran ni entité existants (`publier_demande_screen.dart` ne connaît que la saisie libre). Nouvelle entité côté service-mkt (aligné avec `Demande`) ou service-ida (aligné avec le profil) — à trancher selon où vit le reste du profil client. Raccourci de saisie uniquement, pré-remplit les mêmes champs qu'une publication classique. | ⏳ À faire, aucune dépendance Moteur |
+| Trajets préenregistrés nommés | **Mobile** | Tranché le 21/10 : entité `TrajetPreenregistre` côté `service-mkt` (aligné avec `Demande`). PR #150. | ✅ Livré |
 | Historique demandes/actions | **Mobile** | `mes_demandes_screen.dart` existe déjà mais liste les demandes actives (`propositions_screen.dart` gère les propositions reçues) — pas d'écran "historique" consolidé au sens strict. Lecture de données déjà exposées côté service-mkt. | ⏳ À faire, aucune dépendance |
 
 ---
@@ -398,6 +398,10 @@ Captures faites à ce jour et ce qu'elles confirment :
 | #144 | Doc : plan mis à jour (tarification par chauffeur, référentiel geo.axe) | Mobile | ✅ Mergée |
 | #145 | service-cap — entité TarifChauffeur + CRUD + lecture interne | Mobile | ✅ Mergée |
 | #146 | service-mkt — categorieMarchandise sur Demande + demande-publiee | Mobile | ✅ Mergée |
+| #147 | Doc : conception tarification tranchée avec le Moteur, décision géocodage | Mobile | ✅ Mergée |
+| #148 | service-mkt — normalisation accents/casse + géocodage Nominatim de repli | Mobile | ✅ Mergée |
+| #149 | Mobile — onglets En cours/Terminées (Mes missions, Mes demandes) | Mobile | ✅ Mergée |
+| #150 | service-mkt/app_client — trajets préenregistrés nommés | Mobile | Ouverte |
 
 ---
 
@@ -411,7 +415,7 @@ Mobile peut donc appeler **service-opt** (GET, back-to-back) et/ou consommer
 les versions des contrats Kafka une fois le câblage Mobile réellement intégré
 (demande explicite de Personne 3).
 
-**Mobile** (Personne 1) — mis à jour le 15/10 :
+**Mobile** (Personne 1) — mis à jour le 21/10 :
 1. ~~Fermer la PR #140~~ ✅ fait (remplacée par #141, mergée).
 2. ~~Maquettes (§3) des écrans prioritaires~~ ✅ fait — 10 écrans + 2 prototypes
    récapitulatifs sur Claude Design, testés (Chrome headless, aucun bug), avant
@@ -420,14 +424,16 @@ les versions des contrats Kafka une fois le câblage Mobile réellement intégr�
 4. ~~Tarification par chauffeur + CNI destinataire + parcours
    Estimation/Diffusion/Paiement~~ ✅ fait en simulation locale (#142, #143) — voir
    §1bis pour ce qui reste côté Moteur.
-5. **Reste à faire, sans dépendance Moteur** : historique chauffeur, historique
-   client, trajets préenregistrés. L'écran "swipe des demandes" du §4 est
-   abandonné au profit du modèle liste-de-cartes déjà construit (plus simple,
-   déjà conforme à la diffusion-course) — à confirmer que ça convient toujours,
+5. ~~Historique chauffeur, historique client, trajets préenregistrés~~ ✅ fait
+   (#149, #150). L'écran "swipe des demandes" du §4 est abandonné au profit du
+   modèle liste-de-cartes déjà construit (plus simple, déjà conforme à la
+   diffusion-course) — à confirmer que ça convient toujours,
    sinon le reprendre en swipe.
-6. **Reste à faire, avec Personne 3** : conception technique du calcul de prix
-   par chauffeur (§1bis, point 1) et du mapping axe géographique (§1bis, point 2)
-   — bloquant avant de brancher les écrans déjà construits sur de vraies données.
+6. ~~Conception technique du calcul de prix par chauffeur~~ ✅ tranchée et livrée
+   (§1bis, #145/#146). **Reste, avec Personne 3** : mapping axe géographique —
+   décision de géocodage prise (§1bis, Nominatim en repli, #148), mais
+   `GET /api/geo/axes/resoudre` pas encore livré par lui — bloquant avant de
+   brancher les écrans déjà construits sur de vraies données.
 
 **Web** (Personne 2) : à définir avec la personne concernée (§6) — la charte
 graphique la concerne directement, le reste de ce document ne couvre pas son
