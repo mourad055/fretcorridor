@@ -896,6 +896,30 @@ abstract class AppLocalizations {
   /// **'Aucune mission pour le moment.'**
   String get aucuneMissionPourLeMoment;
 
+  /// No description provided for @ongletEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'En cours'**
+  String get ongletEnCours;
+
+  /// No description provided for @ongletTerminees.
+  ///
+  /// In fr, this message translates to:
+  /// **'Terminées'**
+  String get ongletTerminees;
+
+  /// No description provided for @aucuneMissionEnCours.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune mission en cours.'**
+  String get aucuneMissionEnCours;
+
+  /// No description provided for @aucuneMissionTerminee.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune mission terminée pour le moment.'**
+  String get aucuneMissionTerminee;
+
   /// No description provided for @idDeLaMission.
   ///
   /// In fr, this message translates to:

@@ -393,6 +393,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get aucuneDemande => 'Aucune demande publiée pour le moment.';
 
   @override
+  String get ongletEnCours => 'En cours';
+
+  @override
+  String get ongletTerminees => 'Terminées';
+
+  @override
   String get annulerCetteDemandeTitre => 'Annuler cette demande ?';
 
   @override

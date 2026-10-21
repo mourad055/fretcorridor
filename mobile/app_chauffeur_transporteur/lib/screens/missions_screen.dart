@@ -39,6 +39,14 @@ String _idAffiche(String missionId, String? dateCreationIso) {
   return '#MIS-$datePart${missionId.substring(0, 8).toUpperCase()}';
 }
 
+// Statuts clotures (terminal) vs actifs -- distinction manquante jusqu'ici
+// (audit de suivi, 21/10) : GET /missions/mes renvoie deja tout
+// l'historique du chauffeur, mais l'ecran le melangeait dans une seule
+// liste plate sans separer ce qui est encore en cours de ce qui est
+// termine. Pas de nouvelle donnee a aller chercher, juste un classement
+// cote client -- deux onglets sur la liste deja chargee.
+const _statutsClotures = {'LIVREE', 'ANNULEE'};
+
 // S7 : liste des missions du chauffeur/transporteur connecté. Peut rester
 // vide tant que le lien mission↔chauffeur n'est pas peuplé en amont côté
 // service-opt (écart documenté, cf. README) — pas un bug de cet écran.
@@ -49,48 +57,74 @@ class MissionsScreen extends ConsumerStatefulWidget {
   ConsumerState<MissionsScreen> createState() => _MissionsScreenState();
 }
 
-class _MissionsScreenState extends ConsumerState<MissionsScreen> {
+class _MissionsScreenState extends ConsumerState<MissionsScreen> with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     Future.microtask(() => ref.read(missionProvider.notifier).chargerMesMissions());
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(missionProvider);
     final t = AppLocalizations.of(context);
+    final enCours = state.missions.where((m) => !_statutsClotures.contains(m.statut)).toList();
+    final terminees = state.missions.where((m) => _statutsClotures.contains(m.statut)).toList();
 
     return Scaffold(
       backgroundColor: AppColors.fond,
-      appBar: AppBar(title: Text(t.mesMissions)),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(missionProvider.notifier).chargerMesMissions(),
-        child: state.chargement && state.missions.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : state.erreur != null
-                ? _erreur(state.erreur!)
-                : state.missions.isEmpty
-                    ? ListView(children: [
-                        const SizedBox(height: 80),
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 32),
-                            child: Text(
-                              t.aucuneMissionPourLeMoment,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(color: AppColors.texteMuet),
-                            ),
-                          ),
-                        ),
-                      ])
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: state.missions.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, i) => _carteMission(t, state.missions[i]),
-                      ),
+      appBar: AppBar(
+        title: Text(t.mesMissions),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppColors.accent,
+          unselectedLabelColor: AppColors.texteMuet,
+          indicatorColor: AppColors.accent,
+          tabs: [Tab(text: t.ongletEnCours), Tab(text: t.ongletTerminees)],
+        ),
       ),
+      body: state.chargement && state.missions.isEmpty
+          ? const Center(child: CircularProgressIndicator())
+          : state.erreur != null
+              ? _erreur(state.erreur!)
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _listeMissions(t, enCours, t.aucuneMissionEnCours),
+                    _listeMissions(t, terminees, t.aucuneMissionTerminee),
+                  ],
+                ),
+    );
+  }
+
+  Widget _listeMissions(AppLocalizations t, List<Mission> missions, String messageVide) {
+    return RefreshIndicator(
+      onRefresh: () => ref.read(missionProvider.notifier).chargerMesMissions(),
+      child: missions.isEmpty
+          ? ListView(children: [
+              const SizedBox(height: 80),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(messageVide, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.texteMuet)),
+                ),
+              ),
+            ])
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: missions.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, i) => _carteMission(t, missions[i]),
+            ),
     );
   }
 

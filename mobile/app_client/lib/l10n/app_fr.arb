@@ -121,6 +121,8 @@
   "mesDemandes": "Mes demandes",
   "nouvelleDemande": "Nouvelle demande",
   "aucuneDemande": "Aucune demande publiée pour le moment.",
+  "ongletEnCours": "En cours",
+  "ongletTerminees": "Terminées",
   "annulerCetteDemandeTitre": "Annuler cette demande ?",
   "annulerCetteDemandeContenu": "Cette action est définitive.",
   "retour": "Retour",

@@ -391,6 +391,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aucuneDemande => 'No requests posted yet.';
 
   @override
+  String get ongletEnCours => 'Ongoing';
+
+  @override
+  String get ongletTerminees => 'Completed';
+
+  @override
   String get annulerCetteDemandeTitre => 'Cancel this request?';
 
   @override

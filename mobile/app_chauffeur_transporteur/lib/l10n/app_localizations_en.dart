@@ -436,6 +436,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get aucuneMissionPourLeMoment => 'No missions for now.';
 
   @override
+  String get ongletEnCours => 'Ongoing';
+
+  @override
+  String get ongletTerminees => 'Completed';
+
+  @override
+  String get aucuneMissionEnCours => 'No ongoing mission.';
+
+  @override
+  String get aucuneMissionTerminee => 'No completed mission yet.';
+
+  @override
   String get idDeLaMission => 'Mission ID:';
 
   @override
