@@ -2,6 +2,7 @@ package com.fretcorridor.geo.web;
 
 import com.fretcorridor.geo.domain.Axe;
 import com.fretcorridor.geo.domain.AxeRepository;
+import com.fretcorridor.geo.domain.AxeResolutionService;
 import com.fretcorridor.geo.domain.Hub;
 import com.fretcorridor.geo.domain.HubRepository;
 import com.fretcorridor.geo.domain.JournalAuditRisque;
@@ -14,6 +15,7 @@ import com.fretcorridor.geo.web.dto.RisqueSecuritaireRequest;
 import com.fretcorridor.geo.web.dto.AxeResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -46,14 +48,17 @@ public class AxeController {
     private final HubRepository hubRepository;
     private final JournalAuditRisqueRepository journalAuditRisqueRepository;
     private final JournalAuditConventionRepository journalAuditConventionRepository;
+    private final AxeResolutionService axeResolutionService;
 
     public AxeController(AxeRepository axeRepository, HubRepository hubRepository,
                           JournalAuditRisqueRepository journalAuditRisqueRepository,
-                          JournalAuditConventionRepository journalAuditConventionRepository) {
+                          JournalAuditConventionRepository journalAuditConventionRepository,
+                          AxeResolutionService axeResolutionService) {
         this.axeRepository = axeRepository;
         this.hubRepository = hubRepository;
         this.journalAuditRisqueRepository = journalAuditRisqueRepository;
         this.journalAuditConventionRepository = journalAuditConventionRepository;
+        this.axeResolutionService = axeResolutionService;
     }
 
     @PostMapping
@@ -106,6 +111,55 @@ public class AxeController {
                 .map(AxeResponse::from)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "axe introuvable : " + id));
+    }
+
+    /**
+     * Resolution GPS -> axe (EF-GEO-01/02), complement de la resolution par
+     * nom de ville faite cote service-mkt : convertit les coordonnees
+     * d'origine et de destination en axe oriente du referentiel.
+     *
+     * 200 + AxeResponse si un axe actif pour le matching relie les deux hubs
+     * les plus proches ; 204 si aucun axe n'est trouve (point hors zone
+     * couverte, hubs identiques, axe inexistant/inactif ou d'un autre tenant).
+     * Jamais d'erreur pour une simple absence de couverture : l'appelant
+     * applique sa degradation gracieuse (ENF-DIS-04, AXE_NON_DESSERVI).
+     */
+    @GetMapping("/resoudre")
+    public ResponseEntity<AxeResponse> resoudreAxe(
+            @RequestParam double origineLatitude,
+            @RequestParam double origineLongitude,
+            @RequestParam double destinationLatitude,
+            @RequestParam double destinationLongitude,
+            @RequestParam(required = false) String tenantId) {
+
+        verifierCoordonnees(origineLatitude, origineLongitude,
+                destinationLatitude, destinationLongitude);
+
+        return axeResolutionService.resoudre(
+                        origineLatitude, origineLongitude,
+                        destinationLatitude, destinationLongitude,
+                        tenantId)
+                .map(AxeResponse::from)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    /**
+     * Bornes WGS84. Verification explicite plutot qu'une contrainte
+     * Bean Validation sur @RequestParam : service-geo n'a pas de
+     * @ControllerAdvice, et une ConstraintViolationException (validation AOP
+     * via @Validated) remonterait en 500 au lieu du 400 documente.
+     */
+    private void verifierCoordonnees(double origineLatitude, double origineLongitude,
+                                     double destinationLatitude, double destinationLongitude) {
+        if (Math.abs(origineLatitude) > 90.0 || Math.abs(destinationLatitude) > 90.0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "latitude hors bornes WGS84 (-90 a 90)");
+        }
+        if (Math.abs(origineLongitude) > 180.0 || Math.abs(destinationLongitude) > 180.0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "longitude hors bornes WGS84 (-180 a 180)");
+        }
     }
 
     /**

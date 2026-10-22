@@ -9,7 +9,7 @@ info:
     lot qui n'ont jamais existé dans le code réel (AxeController/HubController).
     Ce contrat est désormais généré à partir des DTOs Java existants, pas
     l'inverse.
-  version: 1.1.0
+  version: 1.2.0
 servers:
   - url: http://localhost:8084
     description: Service GEO local (hors Docker)
@@ -106,6 +106,61 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AxeResponse'
+
+  /api/geo/axes/resoudre:
+    get:
+      operationId: resoudreAxe
+      summary: Résout un axe à partir des coordonnées GPS origine/destination
+      description: |
+        Complément de la résolution par nom de ville faite côté service-mkt
+        (ServiceGeoClient.resoudreAxe) : convertit des coordonnées GPS en axe
+        orienté du référentiel, via le zonage H3 (index → k-ring → hub le plus
+        proche de chaque point → axe hubOrigine → hubDestination avec
+        matchingActif=true).
+
+        Utilisable pour toute source de coordonnées (GPS mobile, géocodage
+        Nominatim en repli côté serveur, etc.).
+
+        Aucun axe trouvé (point hors zone couverte, origine et destination sur
+        le même hub, axe inexistant/inactif ou d'un autre tenant) → 204, jamais
+        une erreur : l'appelant applique sa dégradation gracieuse (ENF-DIS-04,
+        statut AXE_NON_DESSERVI).
+      tags: [Axes]
+      parameters:
+        - name: origineLatitude
+          in: query
+          required: true
+          schema: { type: number, format: double, minimum: -90, maximum: 90 }
+        - name: origineLongitude
+          in: query
+          required: true
+          schema: { type: number, format: double, minimum: -180, maximum: 180 }
+        - name: destinationLatitude
+          in: query
+          required: true
+          schema: { type: number, format: double, minimum: -90, maximum: 90 }
+        - name: destinationLongitude
+          in: query
+          required: true
+          schema: { type: number, format: double, minimum: -180, maximum: 180 }
+        - name: tenantId
+          in: query
+          required: false
+          schema: { type: string, maxLength: 100 }
+          description: |
+            Optionnel : si fourni, l'axe retourné doit appartenir à ce tenant
+            (ENF-MUL-01). Absent = appel interne sans notion de tenant.
+      responses:
+        '200':
+          description: Axe résolu (actif pour le matching)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AxeResponse'
+        '204':
+          description: Aucun axe actif ne relie les hubs les plus proches
+        '400':
+          description: Coordonnées hors bornes (latitude ±90, longitude ±180)
 
   /api/geo/axes/{id}/etats/{etat}:
     patch:
@@ -300,7 +355,7 @@ components:
           type: string
           maxLength: 100
           nullable: true
-          description: "Optionnel. Si absent, le tenant BGFT (Phase 1 par defaut) est applique.
+          description: "Optionnel. Si absent, le tenant BGFT (Phase 1 par defaut) est applique."
 
     AxeResponse:
       type: object
