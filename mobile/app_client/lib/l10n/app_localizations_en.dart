@@ -499,6 +499,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get estimationAxeNonDesservi =>
+      'No route covers this trip yet. Your request stays saved, but won\'t be sent to any driver until a route becomes available.';
+
+  @override
+  String get estimationAucunChauffeurActif =>
+      'No driver is active on this route for this category yet. Please try again later.';
+
+  @override
   String get poidsTaxableLabel => 'Taxable weight';
 
   @override

@@ -61,6 +61,19 @@ final geoDioProvider = Provider<Dio>((ref) {
   return Dio(BaseOptions(baseUrl: _apiBaseGeo, connectTimeout: const Duration(seconds: 10)));
 });
 
+// Plan §1bis (PR #145) — service-cap, GET /api/cap/tarifs/intervalle :
+// ouvert, aucune authentification (pas de donnee personnelle exposee), meme
+// raisonnement que _apiBaseGeo. Appel direct, aucune route gateway pour le
+// role Chargeur.
+const String _apiBaseCap = String.fromEnvironment(
+  'API_BASE_CAP',
+  defaultValue: 'http://localhost:8096/api',
+);
+
+final capDioProvider = Provider<Dio>((ref) {
+  return Dio(BaseOptions(baseUrl: _apiBaseCap, connectTimeout: const Duration(seconds: 10)));
+});
+
 Dio _creerClient(String baseUrl) {
   const storage = FlutterSecureStorage();
   final dio = Dio(BaseOptions(

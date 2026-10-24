@@ -50,6 +50,11 @@ public class DemandeDto {
         private Boolean dangereuse;
         private Boolean grandeValeur;
         private String categorieMarchandise;
+        // Plan §1bis : expose au client l'axe resolu a la publication, pour
+        // que l'app Client interroge directement GET /api/cap/tarifs/intervalle
+        // (estimation de prix) sans dupliquer la logique de resolution geo.
+        // Null si AXE_NON_DESSERVI (cf. Demande.axeId, deja nullable).
+        private UUID axeId;
         private String typeDisponibilite;
         private String modeCollecte;
         private String destinataireNom;
@@ -72,6 +77,7 @@ public class DemandeDto {
                     .dangereuse(d.getDangereuse())
                     .grandeValeur(d.getGrandeValeur())
                     .categorieMarchandise(d.getCategorieMarchandise() != null ? d.getCategorieMarchandise().name() : null)
+                    .axeId(d.getAxeId())
                     .typeDisponibilite(d.getTypeDisponibilite().name())
                     .modeCollecte(d.getModeCollecte().name())
                     .destinataireNom(d.getDestinataireNom())

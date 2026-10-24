@@ -158,6 +158,8 @@
   "entre": "Entre",
   "chauffeursCompatibles": "{n} chauffeurs compatibles en ce moment",
   "@chauffeursCompatibles": {"placeholders": {"n": {"type": "int"}}},
+  "estimationAxeNonDesservi": "Aucun axe ne couvre ce trajet pour le moment. Votre demande reste enregistrée, mais ne sera diffusée à aucun chauffeur tant qu'un axe n'est pas disponible.",
+  "estimationAucunChauffeurActif": "Aucun chauffeur n'est encore actif sur cet axe pour cette catégorie. Réessayez plus tard.",
   "poidsTaxableLabel": "Poids taxable",
   "tarifsDesChauffeurs": "Tarifs des chauffeurs",
   "prixDunChauffeur": "Prix d'un chauffeur",
