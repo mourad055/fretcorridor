@@ -37,12 +37,46 @@ public class ServiceGeoClient {
     private static final Logger log = LoggerFactory.getLogger(ServiceGeoClient.class);
 
     private final RestClient restClient;
+    private final NominatimGeocodingClient nominatimGeocodingClient;
 
-    public ServiceGeoClient(@Qualifier("serviceGeoRestClient") RestClient serviceGeoRestClient) {
+    public ServiceGeoClient(@Qualifier("serviceGeoRestClient") RestClient serviceGeoRestClient,
+                             NominatimGeocodingClient nominatimGeocodingClient) {
         this.restClient = serviceGeoRestClient;
+        this.nominatimGeocodingClient = nominatimGeocodingClient;
     }
 
-    public Optional<AxeDto> resoudreAxe(String villeDepart, String villeArrivee) {
+    /**
+     * Resolution a 3 niveaux (plan §1bis, 24/10, endpoint GET /api/geo/axes/resoudre
+     * livre par Personne 3 -- PR #151) :
+     *  1. Matching exact par nom de hub (normalise accents/casse) -- rapide,
+     *     aucun appel externe, couvre l'immense majorite des cas (corridor
+     *     connu, ville tapee telle quelle).
+     *  2. Repli geocodage Nominatim (villeDepart et villeArrivee separement)
+     *     -- seulement si (1) echoue, jamais pour un corridor deja connu.
+     *  3. Si les deux coordonnees sont obtenues, GET /api/geo/axes/resoudre
+     *     avec ces coordonnees -- 204 (aucun axe) traite comme une absence
+     *     de resultat, meme degradation gracieuse que le reste de ce client.
+     */
+    public Optional<AxeDto> resoudreAxe(String villeDepart, String villeArrivee, String tenantId) {
+        Optional<AxeDto> parNom = resoudreParNomDeVille(villeDepart, villeArrivee);
+        if (parNom.isPresent()) {
+            return parNom;
+        }
+
+        log.info("Aucun hub ne correspond exactement a '{}' -> '{}' - repli sur geocodage Nominatim",
+                villeDepart, villeArrivee);
+        Optional<Coordonnees> origine = nominatimGeocodingClient.geocoder(villeDepart);
+        Optional<Coordonnees> destination = nominatimGeocodingClient.geocoder(villeArrivee);
+        if (origine.isEmpty() || destination.isEmpty()) {
+            log.warn("Geocodage Nominatim sans resultat ('{}' -> '{}') - demande non publiee vers le Moteur",
+                    villeDepart, villeArrivee);
+            return Optional.empty();
+        }
+
+        return resoudreParCoordonnees(origine.get(), destination.get(), tenantId);
+    }
+
+    private Optional<AxeDto> resoudreParNomDeVille(String villeDepart, String villeArrivee) {
         try {
             List<AxeDto> axes = restClient.get()
                     .uri("/api/geo/axes/actifs-matching")
@@ -59,9 +93,34 @@ public class ServiceGeoClient {
                     .findFirst();
 
         } catch (RestClientException exception) {
-            log.warn("Echec appel service-geo (resolution axe, {} -> {}) - "
+            log.warn("Echec appel service-geo (resolution axe par nom, {} -> {}) - "
                     + "la demande restera non publiee vers le Moteur : {}",
                     villeDepart, villeArrivee, exception.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private Optional<AxeDto> resoudreParCoordonnees(Coordonnees origine, Coordonnees destination, String tenantId) {
+        try {
+            AxeDto axe = restClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/geo/axes/resoudre")
+                            .queryParam("origineLatitude", origine.latitude())
+                            .queryParam("origineLongitude", origine.longitude())
+                            .queryParam("destinationLatitude", destination.latitude())
+                            .queryParam("destinationLongitude", destination.longitude())
+                            .queryParamIfPresent("tenantId", java.util.Optional.ofNullable(tenantId))
+                            .build())
+                    .retrieve()
+                    .body(AxeDto.class);
+            // 204 (aucun axe ne relie ces deux points) -> corps vide, jamais
+            // une exception (ENF-DIS-04) : traite comme AXE_NON_DESSERVI par
+            // l'appelant, au meme titre qu'un echec de matching par nom.
+            return Optional.ofNullable(axe);
+
+        } catch (RestClientException exception) {
+            log.warn("Echec appel service-geo (resolution axe par coordonnees) - "
+                    + "la demande restera non publiee vers le Moteur : {}", exception.getMessage());
             return Optional.empty();
         }
     }

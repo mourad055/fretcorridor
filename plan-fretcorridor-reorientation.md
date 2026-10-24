@@ -137,35 +137,38 @@ depuis la PR #143, désormais pris en compte côté backend. **Reste côté
 Moteur** (annoncé par lui, pas commencé à ce jour) : le client back-to-back
 cap→opt et le régime `TARIF_CHAUFFEUR` dans `TarificationL4Service`.
 
-**Résolution du mapping axe — décision prise le 19/10, endpoint pas encore livré** :
-le Moteur propose `GET /api/geo/axes/resoudre?origineLatitude=&origineLongitude=
+**Résolution du mapping axe — TRANCHÉE ET LIVRÉE le 24/10.**
+Le Moteur a livré `GET /api/geo/axes/resoudre?origineLatitude=&origineLongitude=
 &destinationLatitude=&destinationLongitude=&tenantId=` côté `service-geo`
-(réutilise le zonage H3 déjà en place). **Vérifié sur `dev` le 19/10 : pas
-encore livré.** Gap identifié côté Mobile en l'attendant : `publier_demande_screen.dart`
-(App Client) ne collecte que des noms de villes en texte libre
-(`villeDepart`/`villeArrivee`), aucune coordonnée GPS — `DemandeService.publier()`
-(service-mkt) résout encore l'axe par comparaison de noms de ville
-(`ServiceGeoClient.resoudreAxe`), fragile, pas du tout GPS.
+(PR #151, réutilise le zonage H3 déjà en place, contrat OpenAPI
+`shared-contracts/openapi/geo-api.yaml` v1.2.0). 200 → `AxeResponse` ; 204 →
+aucun axe (zone non couverte, hubs identiques, axe inactif) ; 400 →
+coordonnées hors bornes WGS84. Endpoint public (`permitAll`), pas de JWT.
 
-**Décision retenue : géocodage via Nominatim (OpenStreetMap)**, pas de
-sélecteur de position sur carte, pour rester dans le délai. Déjà utilisé
-dans ce code pour le sens inverse (`suivi_provider.dart`, App Client,
-coordonnées → adresse lisible) — réutiliser le même service pour le sens
-aller (ville tapée → coordonnées) est cohérent, gratuit, sans nouvelle
-dépendance ni clé API. Limite assumée : un nom de ville ambigu ou mal
-orthographié peut échouer ou être imprécis — à traiter par un message
-d'erreur clair, jamais un échec silencieux.
+**Décision finale, clarifiée par le Moteur le 21/10 (corrige la décision du
+19/10 ci-dessus, devenue obsolète) : tout le géocodage reste côté
+`service-mkt`, jamais côté mobile.** `publier_demande_screen.dart` (App
+Client) continue d'envoyer uniquement des noms de ville en texte libre,
+**aucun changement mobile nécessaire** pour ce point. Raison : la politique
+d'usage Nominatim (max 1 req/s, cache obligatoire, User-Agent identifiant,
+licence ODbL) n'est tenable que centralisée au backend, jamais depuis
+chaque téléphone (IP/débit non maîtrisables) — point que le Moteur a
+soulevé et qu'on n'avait pas identifié initialement.
 
-**Reste à faire, dans l'ordre** :
-1. Personne 3 livre `GET /api/geo/axes/resoudre` (annoncé, pas commencé).
-2. Côté Mobile, une fois l'endpoint livré : géocodage Nominatim dans
-   `publier_demande_screen.dart`/`demande_provider.dart` (App Client) avant
-   publication, nouveaux champs sur `PublierRequest`/`Demande` (service-mkt)
-   pour les coordonnées brutes, puis `DemandeService.publier()` appelle le
-   nouvel endpoint au lieu de `resoudreAxe(villeDepart, villeArrivee)`.
-3. Une fois le contrat figé : brancher les écrans Mobile déjà construits (ils ne
-   changent pas de forme, seulement leur source de données, même principe que le
-   rebranchement §1/§9 déjà fait pour la diffusion-course).
+**Résolution à 3 niveaux, livrée dans `ServiceGeoClient.resoudreAxe`
+(service-mkt, PR #148 + branchement final le 24/10)** :
+1. Matching exact par nom de hub, normalisé accents/casse (`GET
+   /api/geo/axes/actifs-matching`, déjà existant) — couvre l'immense
+   majorité des cas, aucun appel externe.
+2. Si échec : géocodage Nominatim de `villeDepart` et `villeArrivee`
+   séparément (`NominatimGeocodingClient`, cache + limiteur de débit
+   1 req/s, côté backend uniquement).
+3. Si les deux coordonnées sont obtenues : appel à
+   `GET /api/geo/axes/resoudre` avec ces coordonnées. 204 → dégradation
+   gracieuse (`AXE_NON_DESSERVI`, déjà existant), jamais d'exception.
+
+**Chantier du mapping GPS→axe entièrement clos.** Plus aucune dépendance
+Moteur en attente côté Mobile à ce jour.
 
 ---
 
@@ -401,7 +404,9 @@ Captures faites à ce jour et ce qu'elles confirment :
 | #147 | Doc : conception tarification tranchée avec le Moteur, décision géocodage | Mobile | ✅ Mergée |
 | #148 | service-mkt — normalisation accents/casse + géocodage Nominatim de repli | Mobile | ✅ Mergée |
 | #149 | Mobile — onglets En cours/Terminées (Mes missions, Mes demandes) | Mobile | ✅ Mergée |
-| #150 | service-mkt/app_client — trajets préenregistrés nommés | Mobile | Ouverte |
+| #150 | service-mkt/app_client — trajets préenregistrés nommés | Mobile | ✅ Mergée |
+| #151 | service-geo — exposer la résolution GPS vers axe | Moteur | ✅ Mergée |
+| #152 | service-mkt — branchement final sur GET /api/geo/axes/resoudre | Mobile | Ouverte |
 
 ---
 
@@ -430,10 +435,12 @@ les versions des contrats Kafka une fois le câblage Mobile réellement intégr�
    diffusion-course) — à confirmer que ça convient toujours,
    sinon le reprendre en swipe.
 6. ~~Conception technique du calcul de prix par chauffeur~~ ✅ tranchée et livrée
-   (§1bis, #145/#146). **Reste, avec Personne 3** : mapping axe géographique —
-   décision de géocodage prise (§1bis, Nominatim en repli, #148), mais
-   `GET /api/geo/axes/resoudre` pas encore livré par lui — bloquant avant de
-   brancher les écrans déjà construits sur de vraies données.
+   (§1bis, #145/#146).
+7. ~~Mapping axe géographique~~ ✅ tranché et livré le 24/10 — Personne 3 a
+   livré `GET /api/geo/axes/resoudre` (#151), branché côté service-mkt
+   (résolution à 3 niveaux : nom de hub → Nominatim → coordonnées, §1bis).
+   Aucun changement mobile nécessaire, le formulaire de publication reste
+   inchangé.
 
 **Web** (Personne 2) : à définir avec la personne concernée (§6) — la charte
 graphique la concerne directement, le reste de ce document ne couvre pas son

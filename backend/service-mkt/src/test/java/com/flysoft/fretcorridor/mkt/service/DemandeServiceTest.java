@@ -86,7 +86,7 @@ class DemandeServiceTest {
     void publishing_a_request_on_a_covered_axis_resolves_the_axis_and_publishes_the_event() {
         UUID axeId = UUID.randomUUID();
         AxeDto axe = new AxeDto(axeId, "Douala", "Yaounde", 4.05, 9.7, 3.87, 11.52, null);
-        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde")).thenReturn(Optional.of(axe));
+        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde", TENANT)).thenReturn(Optional.of(axe));
 
         service.publier(requeteValide(), clientActeurId, TENANT, "NIVEAU_1");
 
@@ -108,7 +108,7 @@ class DemandeServiceTest {
     void categorie_marchandise_flows_through_to_the_entity_and_the_event() {
         UUID axeId = UUID.randomUUID();
         AxeDto axe = new AxeDto(axeId, "Douala", "Yaounde", 4.05, 9.7, 3.87, 11.52, null);
-        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde")).thenReturn(Optional.of(axe));
+        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde", TENANT)).thenReturn(Optional.of(axe));
         var requete = requeteValide();
         requete.setCategorieMarchandise("ULTRA_FRAGILE");
 
@@ -125,7 +125,7 @@ class DemandeServiceTest {
 
     @Test
     void publishing_a_request_on_an_uncovered_axis_is_saved_but_never_published_to_the_engine() {
-        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde")).thenReturn(Optional.empty());
+        when(serviceGeoClient.resoudreAxe("Douala", "Yaounde", TENANT)).thenReturn(Optional.empty());
 
         service.publier(requeteValide(), clientActeurId, TENANT, "NIVEAU_1");
 

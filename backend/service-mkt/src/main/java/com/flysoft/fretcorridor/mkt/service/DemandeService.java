@@ -100,7 +100,7 @@ public class DemandeService {
         // le coefficient (333.0, egalement resolu par axe) deja applique
         // cote service-cap pour la meme grandeur physique.
         Optional<com.flysoft.fretcorridor.mkt.client.AxeDto> axe =
-                serviceGeoClient.resoudreAxe(request.getVilleDepart(), request.getVilleArrivee());
+                serviceGeoClient.resoudreAxe(request.getVilleDepart(), request.getVilleArrivee(), tenantId);
         Optional<UUID> axeId = axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::id);
 
         double coefficientVolumetrique = axe.map(com.flysoft.fretcorridor.mkt.client.AxeDto::parametres)
