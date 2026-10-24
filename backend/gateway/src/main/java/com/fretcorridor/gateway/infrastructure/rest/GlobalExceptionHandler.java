@@ -11,6 +11,7 @@ import com.fretcorridor.gateway.domain.agent.EnrolementIntrouvableException;
 import com.fretcorridor.gateway.domain.agent.EnrolementRefuseException;
 import com.fretcorridor.gateway.domain.cap.CapServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.cap.CapaciteRefuseeException;
+import com.fretcorridor.gateway.domain.cap.TarifChauffeurIntrouvableException;
 import com.fretcorridor.gateway.domain.exe.EtapeRefuseeException;
 import com.fretcorridor.gateway.domain.exe.ExeServiceIndisponibleException;
 import com.fretcorridor.gateway.domain.exe.MissionIntrouvableException;
@@ -233,6 +234,13 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleCapServiceIndisponible(CapServiceIndisponibleException ex) {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
         problem.setTitle("Service de capacité indisponible");
+        return problem;
+    }
+
+    @ExceptionHandler(TarifChauffeurIntrouvableException.class)
+    public ProblemDetail handleTarifChauffeurIntrouvable(TarifChauffeurIntrouvableException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Tarif introuvable");
         return problem;
     }
 
