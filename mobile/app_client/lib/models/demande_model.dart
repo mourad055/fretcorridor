@@ -11,6 +11,8 @@ class DemandeModel {
   final bool perissable;
   final bool dangereuse;
   final bool grandeValeur;
+  final String categorieMarchandise;
+  final String? axeId;
   final String typeDisponibilite;
   final String modeCollecte;
   final String destinataireNom;
@@ -31,6 +33,8 @@ class DemandeModel {
     required this.perissable,
     required this.dangereuse,
     required this.grandeValeur,
+    required this.categorieMarchandise,
+    this.axeId,
     required this.typeDisponibilite,
     required this.modeCollecte,
     required this.destinataireNom,
@@ -53,6 +57,8 @@ class DemandeModel {
       perissable: json['perissable'] ?? false,
       dangereuse: json['dangereuse'] ?? false,
       grandeValeur: json['grandeValeur'] ?? false,
+      categorieMarchandise: json['categorieMarchandise'] ?? 'STANDARD',
+      axeId: json['axeId'] as String?,
       typeDisponibilite: json['typeDisponibilite'] ?? 'DES_QUE_POSSIBLE',
       modeCollecte: json['modeCollecte'] ?? 'DOMICILE',
       destinataireNom: json['destinataireNom'] ?? '',

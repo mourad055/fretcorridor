@@ -158,6 +158,8 @@
   "entre": "Between",
   "chauffeursCompatibles": "{n} compatible drivers right now",
   "@chauffeursCompatibles": {"placeholders": {"n": {"type": "int"}}},
+  "estimationAxeNonDesservi": "No route covers this trip yet. Your request stays saved, but won't be sent to any driver until a route becomes available.",
+  "estimationAucunChauffeurActif": "No driver is active on this route for this category yet. Please try again later.",
   "poidsTaxableLabel": "Taxable weight",
   "tarifsDesChauffeurs": "Drivers' rates",
   "prixDunChauffeur": "A driver's price",

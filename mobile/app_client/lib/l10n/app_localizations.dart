@@ -998,6 +998,18 @@ abstract class AppLocalizations {
   /// **'{n} chauffeurs compatibles en ce moment'**
   String chauffeursCompatibles(int n);
 
+  /// No description provided for @estimationAxeNonDesservi.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun axe ne couvre ce trajet pour le moment. Votre demande reste enregistrée, mais ne sera diffusée à aucun chauffeur tant qu\'un axe n\'est pas disponible.'**
+  String get estimationAxeNonDesservi;
+
+  /// No description provided for @estimationAucunChauffeurActif.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun chauffeur n\'est encore actif sur cet axe pour cette catégorie. Réessayez plus tard.'**
+  String get estimationAucunChauffeurActif;
+
   /// No description provided for @poidsTaxableLabel.
   ///
   /// In fr, this message translates to:

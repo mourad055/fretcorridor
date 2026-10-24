@@ -501,6 +501,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get estimationAxeNonDesservi =>
+      'Aucun axe ne couvre ce trajet pour le moment. Votre demande reste enregistrée, mais ne sera diffusée à aucun chauffeur tant qu\'un axe n\'est pas disponible.';
+
+  @override
+  String get estimationAucunChauffeurActif =>
+      'Aucun chauffeur n\'est encore actif sur cet axe pour cette catégorie. Réessayez plus tard.';
+
+  @override
   String get poidsTaxableLabel => 'Poids taxable';
 
   @override
