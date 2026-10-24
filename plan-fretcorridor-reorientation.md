@@ -263,7 +263,7 @@ graphique, avant tout code.
 | Optimisation d'itinéraire + détours | **Moteur** | ALNS déjà exposé en synchrone | ✅ Livré |
 | Interfaces façon Yango + charte graphique | **Mobile** | Toucher en priorité les écrans à fort trafic : `home_screen.dart`, `login_screen.dart`, `propositions_mission_screen.dart` (déjà réécrit pour UC-MAT-02, PR #140 — sera refait de toute façon pour §1, autant faire charte + rewiring ensemble). Maquette d'abord (§3). | ⏳ À faire |
 | Écran swipe des demandes | **Mobile** | `propositions_mission_screen.dart` actuel liste les propositions avec boutons Accepter/Refuser en colonne — sous diffusion-course, un chauffeur peut recevoir plusieurs propositions simultanées pour des demandes différentes (diffusion à tous les compatibles), donc une pile swipeable (type `Dismissible`/`CardSwiper`) est plus adaptée qu'une liste boutonnée. Le provider (`proposition_mission_provider.dart`) devra de toute façon être réécrit pour publier vers service-cap au lieu d'appeler la gateway REST (§1) — même chantier. | ⏳ À faire |
-| Historique complet chauffeur | **Mobile** | Aucun écran d'historique consolidé n'existe aujourd'hui (`missions_screen.dart` ne montre que les missions actives/en cours). Lecture de données déjà exposées par service-opt (affectations passées) et service-exe (étapes exécutées) — nouvel écran, pas de nouvelle donnée à calculer côté backend. | ⏳ À faire, aucune dépendance |
+| Historique complet chauffeur | **Mobile** | `missions_screen.dart` converti en onglets En cours / Terminées (PR #149). Lecture de données déjà exposées par service-opt/service-exe, aucune nouvelle donnée backend. | ✅ Livré |
 
 ---
 
@@ -275,7 +275,7 @@ graphique, avant tout code.
 | Suivi carte : position chauffeur = position colis récupéré | **Moteur** (TRK) | `ColisRecuperation` + `GET /api/trk/suivi/{missionId}` | ✅ Livré |
 | Interfaces façon Yango + charte graphique | **Mobile** | `home_placeholder_screen.dart` — son nom dit tout, jamais designé, priorité évidente. `welcome_screen.dart` (déjà refait avec vidéo hero Pexels) à re-thémer plutôt qu'à refaire. Maquette d'abord (§3). | ⏳ À faire |
 | Trajets préenregistrés nommés | **Mobile** | Tranché le 21/10 : entité `TrajetPreenregistre` côté `service-mkt` (aligné avec `Demande`). PR #150. | ✅ Livré |
-| Historique demandes/actions | **Mobile** | `mes_demandes_screen.dart` existe déjà mais liste les demandes actives (`propositions_screen.dart` gère les propositions reçues) — pas d'écran "historique" consolidé au sens strict. Lecture de données déjà exposées côté service-mkt. | ⏳ À faire, aucune dépendance |
+| Historique demandes/actions | **Mobile** | `mes_demandes_screen.dart` converti en onglets En cours / Terminées (PR #149). `propositions_screen.dart` et son provider ont été supprimés (ancien modèle 3-propositions, superseded par diffusion-course). | ✅ Livré |
 
 ---
 
