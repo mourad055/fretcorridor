@@ -23,7 +23,10 @@ class _MesTarifsScreenState extends ConsumerState<MesTarifsScreen> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() => ref.read(axesProvider.notifier).charger());
+    Future.microtask(() {
+      ref.read(axesProvider.notifier).charger();
+      ref.read(tarifAxeProvider.notifier).charger();
+    });
   }
 
   @override
@@ -36,7 +39,10 @@ class _MesTarifsScreenState extends ConsumerState<MesTarifsScreen> {
       backgroundColor: AppColors.fond,
       appBar: AppBar(title: Text(t.mesTarifs)),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(axesProvider.notifier).charger(),
+        onRefresh: () => Future.wait([
+          ref.read(axesProvider.notifier).charger(),
+          ref.read(tarifAxeProvider.notifier).charger(),
+        ]),
         child: axesState.chargement && axesState.axes.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : axesState.erreur != null
